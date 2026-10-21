@@ -10147,20 +10147,30 @@ function pcArmar() {
   PC_.rpVisto = PC_.rpVisto || {};
   esp.forEach(function(c) { if (c.REPROCESO_PEND && !PC_.sel[c.ID_CUB] && !PC_.rpVisto[c.ID_CUB]) { PC_.sel[c.ID_CUB] = 'TITULAR'; PC_.rpVisto[c.ID_CUB] = 1; } });
   esp.forEach(function(c) { if (!c.MARCA && PC_.mk[c.ID_CUB] === undefined && c.DOT) PC_.mk[c.ID_CUB] = String(c.DOT).toUpperCase().replace(/\s+/g, ''); });
+  // Sugerencias del buscador: clientes y OT que tienen cubiertas esperando
+  var porCli = {}, porOT = {};
+  esp.forEach(function(c) {
+    porCli[c.CLIENTE] = (porCli[c.CLIENTE] || 0) + 1;
+    var o = pcNroOTrab(c.ID_OTRAB); if (o) { porOT[o] = porOT[o] || { n: 0, cli: c.CLIENTE, man: c.NRO_MANUAL }; porOT[o].n++; }
+  });
+  var sug = Object.keys(porCli).sort().map(function(k) { return '<option value="' + pcEsc(k) + '">' + porCli[k] + ' esperando</option>'; }).join('') +
+    Object.keys(porOT).sort().map(function(k) { return '<option value="' + pcEsc(k) + '">' + pcEsc(porOT[k].cli) + (porOT[k].man ? ' · boleta ' + pcEsc(porOT[k].man) : '') + ' · ' + porOT[k].n + '</option>'; }).join('');
   var h = '<div class="card"><div class="card-hd"><span class="card-title">Orden de servicio: qué cubiertas entran a la línea</span><span id="pc-contador" class="badge b-blue"></span></div>' +
     '<div class="card-body">' +
     '<div id="pc-a-cont" style="position:sticky;top:0;z-index:5;background:var(--accent-light);border:1px solid #93c5fd;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:15px;font-weight:600;color:var(--accent)"></div>' +
-    '<div class="fr mb2" style="align-items:flex-end;flex-wrap:nowrap"><div class="fg" style="max-width:420px"><label class="fl">Buscar por cliente, OT, N° de boleta, DOT o medida</label><input class="fi" id="pc-a-f" value="' + pcEsc(PC_.af || '') + '" placeholder="Ej: AHYNARCA, OT-00019, 23456..." autocomplete="off"/></div>' +
-    '<div class="fg" style="flex:0 0 auto"><button class="btn btn-p" onclick="pcArmTildar()"><i class="fas fa-check-double"></i> Tildar las que se ven</button></div>' +
-    '<div class="fg" style="flex:0 0 auto"><button class="btn btn-s" onclick="PC_.sel={};pcArmar()">Destildar todo</button></div></div>' +
-    '<div class="tw"><table style="font-size:12px" id="pc-tbl-armar"><thead><tr><th>Titular</th><th>Suplente</th><th>Marca grabada *</th><th>N° interno</th><th>DOT</th><th>Línea</th><th>Tipo</th><th>Medida</th><th>Trabajo</th><th>Cliente</th><th>OT</th><th>Recibida</th></tr></thead><tbody>' +
-    esp.sort(function(a, b) { return (PC_.sel[b.ID_CUB] ? 1 : 0) - (PC_.sel[a.ID_CUB] ? 1 : 0) || (b.REPROCESO_PEND ? 1 : 0) - (a.REPROCESO_PEND ? 1 : 0) || (a.FECHA_RECEPCION || 0) - (b.FECHA_RECEPCION || 0); }).map(function(c) {
+    '<div class="flex gap2 mb2" style="align-items:flex-end;flex-wrap:wrap"><div style="flex:1 1 320px;max-width:460px"><label class="fl">Cliente, OT, N° de boleta o DOT</label>' +
+    '<input class="fi" id="pc-a-f" list="pc-a-sug" value="' + pcEsc(PC_.af || '') + '" placeholder="Escribí y elegí de la lista..." autocomplete="off"/><datalist id="pc-a-sug">' + sug + '</datalist></div>' +
+    '<button class="btn btn-s" onclick="$id(\'pc-a-f\').value=\'\';PC_.af=\'\';pcArmFiltrar()">Ver todas</button>' +
+    '<button class="btn btn-s" onclick="pcArmDestildar()">Destildar todo</button></div>' +
+    '<div class="tw"><table style="font-size:12px" id="pc-tbl-armar"><thead><tr><th title="Tilda todas las que se ven, hasta completar la carga"><label style="cursor:pointer;white-space:nowrap"><input type="checkbox" id="pc-a-todas"/> Entra</label></th><th>Suplente</th><th>Marca grabada *</th><th>N° interno</th><th>DOT</th><th>Línea</th><th>Tipo</th><th>Medida</th><th>Trabajo</th><th>Cliente</th><th>OT</th><th>Boleta</th><th>Recibida</th></tr></thead><tbody>' +
+    esp.sort(function(a, b) { return (b.REPROCESO_PEND ? 1 : 0) - (a.REPROCESO_PEND ? 1 : 0) || (a.FECHA_RECEPCION || 0) - (b.FECHA_RECEPCION || 0) || a.ID_CUB - b.ID_CUB; }).map(function(c) {
       var s = PC_.sel[c.ID_CUB] || '';
       var dis = c.ID_RECETA ? '' : ' disabled title="Sin receta: cargala en Recetas"';
-      return '<tr class="pc-a-tr" data-id="' + c.ID_CUB + '" data-txt="' + pcEsc(pcArmTxt(c)) + '"' + (c.ID_RECETA ? '' : ' style="opacity:.5"') + '><td><input type="radio" name="pcs-' + c.ID_CUB + '" data-id="' + c.ID_CUB + '" value="TITULAR"' + (s === 'TITULAR' ? ' checked' : '') + dis + '/></td>' +
-        '<td><input type="radio" name="pcs-' + c.ID_CUB + '" data-id="' + c.ID_CUB + '" value="SUPLENTE"' + (s === 'SUPLENTE' ? ' checked' : '') + dis + '/>' + (s ? ' <a href="#" onclick="delete PC_.sel[' + c.ID_CUB + '];pcArmar();return false" style="font-size:10px">quitar</a>' : '') + '</td>' +
+      return '<tr class="pc-a-tr" data-id="' + c.ID_CUB + '" data-txt="' + pcEsc(pcArmTxt(c)) + '"' + (c.ID_RECETA ? '' : ' style="opacity:.5"') + '>' +
+        '<td><input type="checkbox" class="pc-ck" data-id="' + c.ID_CUB + '" data-v="TITULAR" style="width:18px;height:18px"' + (s === 'TITULAR' ? ' checked' : '') + dis + '/></td>' +
+        '<td><input type="checkbox" class="pc-ck" data-id="' + c.ID_CUB + '" data-v="SUPLENTE"' + (s === 'SUPLENTE' ? ' checked' : '') + dis + '/></td>' +
         '<td>' + (c.MARCA ? '<b class="mono">' + pcEsc(c.MARCA) + '</b>' : '<input class="fi pc-mk" data-id="' + c.ID_CUB + '" value="' + pcEsc(PC_.mk[c.ID_CUB] || '') + '" placeholder="Grabada" style="width:110px;text-transform:uppercase"' + (c.ID_RECETA ? '' : ' disabled') + '/>') + '</td>' +
-        '<td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcEsc(c.DOT || '') + '</td><td>' + pcEsc(pcLineaDeTipo(c.TIPO)) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + (c.ID_RECETA ? '' : ' <span class="badge b-red">sin receta</span>') + (c.REPROCESO_PEND ? ' <span class="badge b-orange">reproceso de ' + pcEsc(pcNroOS(c.REPROCESO_PEND)) + ': solo autoclave, control y pintura</span>' : '') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + '</td><td>' + fmtD(c.FECHA_RECEPCION) + '</td></tr>';
+        '<td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcEsc(c.DOT || '') + '</td><td>' + pcEsc(pcLineaDeTipo(c.TIPO)) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + (c.ID_RECETA ? '' : ' <span class="badge b-red">sin receta</span>') + (c.REPROCESO_PEND ? ' <span class="badge b-orange">reproceso de ' + pcEsc(pcNroOS(c.REPROCESO_PEND)) + ': solo autoclave, control y pintura</span>' : '') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + '</td><td class="mono">' + pcEsc(c.NRO_MANUAL || '') + '</td><td>' + fmtD(c.FECHA_RECEPCION) + '</td></tr>';
     }).join('') + '</tbody></table>' + (esp.length ? '' : '<div class="tdim" style="padding:12px">No hay cubiertas en espera.</div>') + '</div>' +
     '<div class="fr mt3" style="border-top:1px solid var(--border);padding-top:12px"></div>' +
     '<div class="fr"><div class="fg" id="pc-tope-wrap" style="display:none"><label class="fl">Carga mezclada: tope</label><select class="fs" id="pc-tope">' + d.lineas.filter(function(l) { return l.ACTIVO != 0; }).map(function(l) { return '<option value="' + l.LINEA + '">' + l.LINEA + ' (' + l.CAPACIDAD + ' + ' + l.SUPLENTES + ')</option>'; }).join('') + '</select></div>' +
@@ -10168,37 +10178,57 @@ function pcArmar() {
     '<button class="btn btn-p mt3" id="pc-crear" onclick="pcCrearOT()"><i class="fas fa-fire"></i> Crear orden de servicio</button></div></div>';
   $id('pc-body').innerHTML = h;
   document.querySelectorAll('#pc-body .pc-mk').forEach(function(e) { e.addEventListener('input', function() { PC_.mk[this.dataset.id] = this.value.toUpperCase().replace(/\s+/g, ''); }); });
-  document.querySelectorAll('#pc-body input[type=radio]').forEach(function(r) { r.addEventListener('change', function() { PC_.sel[this.dataset.id] = this.value; pcArmar(); }); });
+  // Tildar NO redibuja: solo cambia la casilla y el contador (la pantalla no se mueve)
+  document.querySelectorAll('#pc-tbl-armar .pc-ck').forEach(function(k) { k.addEventListener('change', function() { pcArmMarcar(this.dataset.id, this.checked ? this.dataset.v : ''); pcContador(); }); });
+  $id('pc-a-todas').addEventListener('change', function() { pcArmTodas(this.checked); });
   $id('pc-resp').addEventListener('change', function() { PC_.resp = this.value; });
-  $id('pc-a-f').addEventListener('input', function() { PC_.af = this.value; pcArmFiltrar(); $id('pc-a-cont').scrollIntoView({ block: 'start' }); });
+  $id('pc-a-f').addEventListener('input', function() { PC_.af = this.value; pcArmFiltrar(); });
   pcArmFiltrar(); pcContador();
-  if (PC_.af) { var f = $id('pc-a-f'); f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
 }
 // Texto donde busca: cliente, OT, N° de boleta, DOT, N° interno, medida, trabajo
 function pcArmTxt(c) {
   return [c.CLIENTE, pcNroOTrab(c.ID_OTRAB), c.NRO_MANUAL, c.DOT, c.ID_CASCO, c.MEDIDA, c.TRABAJO, c.MARCA].join(' ').toUpperCase();
 }
 function pcArmFiltrar() {
-  var q = String(PC_.af || '').toUpperCase().trim().split(/\s+/).filter(Boolean), n = 0;
+  var q = String(PC_.af || '').toUpperCase().trim().split(/\s+/).filter(Boolean);
   document.querySelectorAll('#pc-tbl-armar .pc-a-tr').forEach(function(tr) {
-    var ok = PC_.sel[tr.dataset.id] || q.every(function(p) { return tr.dataset.txt.indexOf(p) !== -1; });
-    tr.style.display = ok ? '' : 'none'; if (ok && !PC_.sel[tr.dataset.id]) n++;
+    tr.style.display = q.every(function(p) { return tr.dataset.txt.indexOf(p) !== -1; }) ? '' : 'none';
   });
-  PC_.afN = n;
+  var t = $id('pc-a-todas'); if (t) t.checked = false;
 }
-// Tilda como titular las que se ven (con receta), hasta llenar el tope de la línea
-function pcArmTildar() {
-  var d = PC_.d, agreg = 0, lleno = 0;
+function pcArmCub(id) { return PC_.d.cubiertas.filter(function(x) { return String(x.ID_CUB) === String(id); })[0]; }
+// Cuántos titulares hay ya en la línea de esa cubierta y cuál es el tope
+function pcArmLugar(c) {
+  var lin = pcLineaDeTipo(c.TIPO), l = PC_.d.lineas.filter(function(x) { return x.LINEA === lin; })[0] || { CAPACIDAD: 15 };
+  var ya = Object.keys(PC_.sel).filter(function(i) { var k = pcArmCub(i); return PC_.sel[i] === 'TITULAR' && k && pcLineaDeTipo(k.TIPO) === lin; }).length;
+  return { ya: ya, cap: +l.CAPACIDAD || 15 };
+}
+// Marca una cubierta (TITULAR, SUPLENTE o '' para sacarla) y deja las casillas de esa fila coherentes
+function pcArmMarcar(id, v) {
+  var c = pcArmCub(id);
+  if (v === 'TITULAR' && PC_.sel[id] !== 'TITULAR' && c) { var l = pcArmLugar(c); if (l.ya >= l.cap) { toast('La carga ya tiene ' + l.cap + ' titulares. Marcala como suplente o sacá otra.', 'r2'); v = PC_.sel[id] || ''; } }
+  if (v) PC_.sel[id] = v; else delete PC_.sel[id];
+  document.querySelectorAll('#pc-tbl-armar .pc-ck[data-id="' + id + '"]').forEach(function(k) { k.checked = (k.dataset.v === v); });
+}
+// Casilla del encabezado: tilda todas las que se ven (hasta completar) o las destilda
+function pcArmTodas(si) {
+  var agreg = 0, lleno = 0;
   document.querySelectorAll('#pc-tbl-armar .pc-a-tr').forEach(function(tr) {
-    if (tr.style.display === 'none' || PC_.sel[tr.dataset.id]) return;
-    var c = d.cubiertas.filter(function(x) { return String(x.ID_CUB) === tr.dataset.id; })[0];
+    if (tr.style.display === 'none') return;
+    var id = tr.dataset.id, c = pcArmCub(id);
     if (!c || !c.ID_RECETA) return;
-    var lin = pcLineaDeTipo(c.TIPO), l = d.lineas.filter(function(x) { return x.LINEA === lin; })[0] || { CAPACIDAD: 15 };
-    var ya = Object.keys(PC_.sel).filter(function(i) { var k = d.cubiertas.filter(function(x) { return String(x.ID_CUB) === String(i); })[0]; return PC_.sel[i] === 'TITULAR' && k && pcLineaDeTipo(k.TIPO) === lin; }).length;
-    if (ya < +l.CAPACIDAD) { PC_.sel[c.ID_CUB] = 'TITULAR'; agreg++; } else lleno++;
+    if (!si) { if (PC_.sel[id]) pcArmMarcar(id, ''); return; }
+    if (PC_.sel[id]) return;
+    var l = pcArmLugar(c);
+    if (l.ya < l.cap) { pcArmMarcar(id, 'TITULAR'); agreg++; } else lleno++;
   });
-  PC_.af = ''; pcArmar();
-  toast(agreg ? 'Tildadas ' + agreg + (lleno ? ' · ' + lleno + ' no entran, la carga está completa' : '') : (lleno ? 'La carga ya está completa' : 'No hay ninguna para tildar'), agreg ? 'g' : 'r2');
+  pcContador();
+  if (si && lleno) toast('Tildadas ' + agreg + ' · ' + lleno + ' no entran: la carga está completa', 'r2');
+}
+function pcArmDestildar() {
+  Object.keys(PC_.sel).forEach(function(id) { pcArmMarcar(id, ''); });
+  var t = $id('pc-a-todas'); if (t) t.checked = false;
+  pcContador();
 }
 function pcContador() {
   var d = PC_.d, ids = Object.keys(PC_.sel);
