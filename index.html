@@ -9858,6 +9858,8 @@ function pcLineaDeTipo(tipo) { var t = (PC_.d.tipos || []).filter(function(x) { 
 function pcRecetaDe(tipo, medida, trabajo, banda) {
   var k = function(m) { return String(m || '').toUpperCase().replace(/\s+/g, '').replace(/\./g, ',').replace(/[*X\/]/g, '-'); };
   var rs = PC_.d.recetas.filter(function(r) { return r.TIPO === tipo && k(r.MEDIDA) === k(medida) && r.TRABAJO === trabajo; });
+  // Igual que el servidor (pcReceta_): si la medida no tiene receta propia, usa la del mismo tipo y trabajo con MEDIDA = TODAS
+  if (!rs.length) rs = PC_.d.recetas.filter(function(r) { return r.TIPO === tipo && k(r.MEDIDA) === 'TODAS' && r.TRABAJO === trabajo; });
   return rs.filter(function(r) { return banda && r.ID_BANDA === banda; })[0] || rs.filter(function(r) { return !r.ID_BANDA; })[0] || null;
 }
 
