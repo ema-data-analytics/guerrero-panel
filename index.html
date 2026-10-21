@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a6f3ada4ed00"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ac75c63a7d4d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EMA — Guerrero Neumáticos</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -10785,7 +10785,8 @@ function puResuelta(r) {
   if (!r.ok) return false;
   return Math.abs(puDif(r)) <= (PU_.d.tolerancia || 0) + 1e-9 || !!r.motivo;
 }
-function puHayReemplazo() { return PU_.rows.some(function(r) { return !r.no && r.reemp; }); }
+function puSinStock(l) { return l.TIPO_LINEA !== 'HERRAMENTAL' && l.ID_INSUMO && l.STOCK !== null && l.STOCK !== undefined && Number(l.STOCK) <= 0; }
+function puHayReemplazo() { return PU_.rows.some(function(r) { return !r.no && r.reemp && !puSinStock(r.l); }); }
 function puFilaHTML(r, k) {
   var l = r.l, cls = r.no ? 'no' : (puResuelta(r) ? 'ok' : (r.ok ? 'warn' : ''));
   var nombre = r.reemp && r.idReal ? puNomIns(r.idReal) : l.NOMBRE;
@@ -10799,7 +10800,8 @@ function puFilaHTML(r, k) {
     h += '<div class="pu-pz">' + ps.map(function(p) { return '<button class="' + (String(r.pieza) === String(p.ID_PIEZA) ? 'sel' : '') + '" data-a="pieza" data-v="' + p.ID_PIEZA + '">' + puEsc(String(p.CODIGO).replace(/^.*#/, '#')) + '<small>' + p.USOS + ' de ' + (p.MAX_USOS || '∞') + ' usos</small></button>'; }).join('') +
       (PU_.d.herrObligatorio ? '' : '<button class="' + (r.sinNro ? 'sel' : '') + '" data-a="sinnro">Sin número</button>') + '</div>';
   } else {
-    h += (l.CANTIDAD ? '<button class="pu-btn pu-eq" data-a="igual">✓ Igual a receta</button>' : '') + '<div class="pu-qty"><input inputmode="decimal" data-a="real" value="' + puEsc(r.real) + '" placeholder="Medí" aria-label="Cantidad medida"><span>' + puEsc(l.UNIDAD) + '</span></div>';
+    if (puSinStock(l) && !r.reemp) h += '<span style="color:var(--danger);font-weight:700">Sin stock en planta</span><button class="pu-btn pu-eq" data-a="otro">↺ Usé otro</button>';
+    h += (l.CANTIDAD && !(puSinStock(l) && !r.reemp) ? '<button class="pu-btn pu-eq" data-a="igual">✓ Igual a receta</button>' : '') + '<div class="pu-qty"><input inputmode="decimal" data-a="real" value="' + puEsc(r.real) + '" placeholder="Medí" aria-label="Cantidad medida"><span>' + puEsc(l.UNIDAD) + '</span></div>';
   }
   h += '</div><div class="pu-est">';
   if (r.no) h += '<span class="tdim">No se usó · ' + puEsc(r.motivo) + '</span>';
@@ -10873,7 +10875,7 @@ function puFicha() {
         '<button class="pu-btn pu-add" onclick="puAgregar(' + i + ')">+ Lo uso acá</button></div>';
     }).join('') + '</div>';
   }
-  if (!PU_.ctrl) h += '<div style="display:flex;flex-wrap:wrap;gap:10px"><button class="pu-btn pu-rep" onclick="puReemplazo()">↺ Usé otro insumo (autoriza el encargado)</button>' +
+  if (!PU_.ctrl) h += '<div style="display:flex;flex-wrap:wrap;gap:10px"><button class="pu-btn pu-rep" onclick="puReemplazo()">↺ Usé otro insumo</button>' +
     '<button class="pu-btn pu-min" onclick="puNoAplica()">⊘ No pasa por esta estación</button>' +
     '<button class="pu-btn pu-min" onclick="puFalla()">' + (PU_.res === 'FALLA' ? '⚠ Hubo una falla: ' + puEsc(PU_.obs) : 'Marcar una falla') + '</button></div>';
   if (puHayReemplazo()) h += '<div class="pu-aut"><div style="font-weight:700;color:var(--warn)">Hay un reemplazo: lo autoriza el encargado de línea con su clave</div>' +
@@ -11062,6 +11064,7 @@ function puPintarFila(k) {
       if (a === 'sinnro') { r.sinNro = !r.sinNro; r.pieza = ''; if (r.sinNro) return puCerrarFila(); }
       if (a === 'deshacer') { r.no = false; r.motivo = ''; }
       if (a === 'volver') { PU_.rows.splice(PU_.rows.indexOf(r), 1); PU_.pend.push(r.l); return puCerrarFila(); }
+      if (a === 'otro') { puReemplazo(r); return; }
       if (a === 'nouso') { closeModal(); puElegir('¿Por qué no se usó ' + r.l.NOMBRE + '?', PU_NOUSO, function(m) { r.no = true; r.motivo = m; r.reemp = false; puFicha(); }); return; }
       puFicha(); puPintarFila(k);
     };
@@ -11243,20 +11246,22 @@ function puFalla() {
   if (PU_.res === 'FALLA') { PU_.res = 'OK'; PU_.obs = ''; return puFicha(); }
   puElegir('¿Qué falla tuvo?', ['Carcasa dañada', 'Mala adherencia', 'Separación', 'Corte', 'Otra'], function(m) { PU_.res = 'FALLA'; PU_.obs = m; puFicha(); });
 }
-function puReemplazo() {
+function puReemplazo(filaPre) {
   var filas = PU_.rows.filter(function(r) { return !r.no && r.l.TIPO_LINEA !== 'HERRAMENTAL'; });
   var otros = PU_.pend.filter(function(l) { return l.TIPO_LINEA !== 'HERRAMENTAL'; });
   var ops = filas.map(function(r, i) { return '<option value="r' + i + '">' + puEsc(r.l.NOMBRE) + '</option>'; }).join('') + otros.map(function(l, i) { return '<option value="p' + i + '">' + puEsc(l.NOMBRE) + '</option>'; }).join('');
   if (!ops) { toast('No hay insumos para reemplazar', 'r2'); return; }
   showModal('<div class="mh"><span class="mt">Usé otro insumo</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
     '<label>En lugar de<select id="pu-r-de">' + ops + '</select></label>' +
-    '<label>Usé (escribí código o nombre)<input id="pu-r-por" list="pu-r-list" autocomplete="off"><datalist id="pu-r-list">' + (PU_.d.insumos || []).map(function(x) { return '<option value="' + puEsc(x.ID_INSUMO) + '">' + puEsc(x.NOMBRE_INSUMO) + '</option>'; }).join('') + '</datalist></label>' +
-    '<div class="tdim" style="font-size:14px">Al confirmar el paso, lo autoriza el encargado de línea con su usuario y clave. Queda registrado.</div></div>' +
+    '<label>Usé (escribí código o nombre: COJIN, CORDON, FLUX…)<input id="pu-r-por" list="pu-r-list" autocomplete="off"><datalist id="pu-r-list">' + (PU_.d.insumos || []).filter(function(x) { return PU_.f.stockIns && PU_.f.stockIns[x.ID_INSUMO] > 0; }).map(function(x) { return '<option value="' + puEsc(x.ID_INSUMO) + '">' + puEsc(x.NOMBRE_INSUMO) + ' · hay ' + puF(PU_.f.stockIns[x.ID_INSUMO]) + ' ' + puEsc(x.UNIDAD) + '</option>'; }).join('') + '</datalist></label>' +
+    '<div class="tdim" style="font-size:14px">Solo aparecen los insumos que hay en stock. Si el de la receta no tiene stock, no hace falta clave; si tiene, lo autoriza el encargado. Queda registrado.</div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pu-r-ok">Listo</button></div>');
+  if (filaPre) { var kp = filas.indexOf(filaPre); if (kp !== -1) $id('pu-r-de').value = 'r' + kp; }
   $id('pu-r-ok').onclick = function() {
     var v = $v('pu-r-de'), por = $v('pu-r-por').trim().toUpperCase();
     var x = (PU_.d.insumos || []).filter(function(i) { return i.ID_INSUMO.toUpperCase() === por; })[0];
     if (!x) { toast('Elegí un insumo de la lista', 'r2'); return; }
+    if (!(PU_.f.stockIns && PU_.f.stockIns[x.ID_INSUMO] > 0)) { toast('De ese insumo no hay stock', 'r2'); return; }
     var r;
     if (v.charAt(0) === 'r') r = filas[+v.slice(1)];
     else { var l = otros[+v.slice(1)]; PU_.pend.splice(PU_.pend.indexOf(l), 1); r = puNuevaFila(l); PU_.rows.push(r); }
