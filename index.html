@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f9b86795c0f4"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "859e27b4a89e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EMA — Guerrero Neumáticos</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -10151,7 +10151,7 @@ function pcArmar() {
     '<div class="card-body"><div class="tdim mb3" style="font-size:12px">Marcá cada cubierta como <b>titular</b> (entra en la carga) o <b>suplente</b> (reemplaza si una se cae). ' +
     d.lineas.filter(function(l) { return l.ACTIVO != 0; }).map(function(l) { return l.LINEA + ': ' + l.CAPACIDAD + ' + ' + l.SUPLENTES + ' suplentes'; }).join(' · ') + '. Si mezclás líneas, elegís el tope.</div>' +
     '<div class="fr mb3"><div class="fg" id="pc-tope-wrap" style="display:none"><label class="fl">Carga mezclada: tope</label><select class="fs" id="pc-tope">' + d.lineas.filter(function(l) { return l.ACTIVO != 0; }).map(function(l) { return '<option value="' + l.LINEA + '">' + l.LINEA + ' (' + l.CAPACIDAD + ' + ' + l.SUPLENTES + ')</option>'; }).join('') + '</select></div>' +
-    '<div class="fg"><label class="fl">Responsable</label><input class="fi" id="pc-resp"/></div><div class="fg"><label class="fl">Observaciones</label><input class="fi" id="pc-obs"/></div></div>' +
+    '<div class="fg"><label class="fl">Responsable de la carga *</label><select class="fs" id="pc-resp"><option value="">— elegí —</option>' + (d.empleados || []).map(function(e) { return '<option' + (PC_.resp === e ? ' selected' : '') + '>' + pcEsc(e) + '</option>'; }).join('') + '</select><div class="tdim" style="font-size:11px">Sale de Maestros › Empleados</div></div><div class="fg"><label class="fl">Observaciones (opcional)</label><input class="fi" id="pc-obs" placeholder="Solo si hay algo para aclarar"/></div></div>' +
     '<div id="pc-a-cont" style="position:sticky;top:0;z-index:5;background:var(--accent-light);border:1px solid #93c5fd;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:15px;font-weight:600;color:var(--accent)"></div>' +
     '<div class="fr mb2" style="align-items:flex-end"><div class="fg"><label class="fl">Buscar por cliente, OT, N° de boleta, DOT o medida</label><input class="fi" id="pc-a-f" value="' + pcEsc(PC_.af || '') + '" placeholder="Ej: AHYNARCA, OT-00019, 23456..." autocomplete="off"/></div>' +
     '<div class="fg" style="flex:0 0 auto"><button class="btn btn-p" onclick="pcArmTildar()"><i class="fas fa-check-double"></i> Tildar las que se ven</button></div>' +
@@ -10170,6 +10170,7 @@ function pcArmar() {
   $id('pc-body').innerHTML = h;
   document.querySelectorAll('#pc-body .pc-mk').forEach(function(e) { e.addEventListener('input', function() { PC_.mk[this.dataset.id] = this.value.toUpperCase().replace(/\s+/g, ''); }); });
   document.querySelectorAll('#pc-body input[type=radio]').forEach(function(r) { r.addEventListener('change', function() { PC_.sel[this.dataset.id] = this.value; pcArmar(); }); });
+  $id('pc-resp').addEventListener('change', function() { PC_.resp = this.value; });
   $id('pc-a-f').addEventListener('input', function() { PC_.af = this.value; pcArmFiltrar(); });
   pcArmFiltrar(); pcContador();
   if (PC_.af) { var f = $id('pc-a-f'); f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
@@ -10224,6 +10225,7 @@ async function pcCrearOT() {
   var ids = Object.keys(PC_.sel);
   var tit = ids.filter(function(i) { return PC_.sel[i] === 'TITULAR'; }), sup = ids.filter(function(i) { return PC_.sel[i] === 'SUPLENTE'; });
   if (!tit.length) { toast('Marcá las cubiertas titulares', 'r2'); return; }
+  if (!$v('pc-resp')) { toast('Elegí el responsable de la carga', 'r2'); $id('pc-resp').focus(); return; }
   var mezcla = $id('pc-tope-wrap').style.display !== 'none';
   var linea = mezcla ? $v('pc-tope') : '';
   var l = mezcla ? PC_.d.lineas.filter(function(x) { return x.LINEA === linea; })[0] : null;
@@ -10349,7 +10351,7 @@ function pcRegistro(idCub, est) {
     '<datalist id="pc-ins-list">' + (insumos || []).map(function(x) { return '<option value="' + pcEsc(x.ID_INSUMO) + '">' + pcEsc(x.NOMBRE_INSUMO) + '</option>'; }).join('') + '</datalist>' +
     '<div id="pc-reg-aviso" class="mt3" style="font-size:12px"></div>' +
     '<div class="fr mt3"><div class="fg"><label class="fl">Resultado</label><select class="fs" id="pc-res"><option value="OK">OK</option><option value="FALLA">Falla</option></select></div>' +
-    '<div class="fg"><label class="fl">Operario</label><input class="fi" id="pc-oper"/></div><div class="fg"><label class="fl">Observación</label><input class="fi" id="pc-robs"/></div></div>' +
+    '<div class="fg"><label class="fl">Operario</label><select class="fs" id="pc-oper" onchange="PC_.oper=this.value"><option value="">— elegí —</option>' + (PC_.d.empleados || []).map(function(e) { return '<option' + (PC_.oper === e ? ' selected' : '') + '>' + pcEsc(e) + '</option>'; }).join('') + '</select></div><div class="fg"><label class="fl">Observación</label><input class="fi" id="pc-robs"/></div></div>' +
     '<div id="pc-aut" class="card" style="display:none;padding:10px;background:var(--warn-light)"><div class="fl mb3">Reemplazo: autoriza el encargado de línea</div><div class="fr"><div class="fg"><label class="fl">Usuario encargado</label><input class="fi" id="pc-aut-u" autocomplete="off"/></div><div class="fg"><label class="fl">Clave</label><input class="fi" type="password" id="pc-aut-c" autocomplete="new-password"/></div></div></div>' +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pc-reg-ok">Registrar</button></div>', 'md-lg');
   var revisar = function() {
