@@ -10325,7 +10325,7 @@ async function pcAnularOT() { var m = prompt('Motivo de la anulación de la OT:'
 function pcVerCosto(idCub) {
   var i = PC_.ot.items.filter(function(x) { return String(x.ID_CUB) === String(idCub); })[0], c = i.COSTO;
   showModal('<div class="mh"><span class="mt">Costo real — ' + pcEsc(i.MARCA) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
-    [['Materiales (insumos reales)', c.MATERIALES], ['Herramental (por uso)', c.HERRAMENTAL], ['Mano de obra (' + c.MINUTOS + ' min)', c.MO], ['Gastos fijos prorrateados', c.FIJOS]].map(function(x) { return '<div class="flex jb"><span class="tdim">' + x[0] + '</span><span class="mono">' + fmt(x[1]) + '</span></div>'; }).join('') +
+    [['Materiales (insumos reales)', c.MATERIALES], ['Herramental (por uso)', c.HERRAMENTAL], ['Mano de obra (' + String(Math.round((Number(c.MINUTOS) || 0) * 10) / 10).replace('.', ',') + ' min)', c.MO], ['Gastos fijos prorrateados', c.FIJOS]].map(function(x) { return '<div class="flex jb"><span class="tdim">' + x[0] + '</span><span class="mono">' + fmt(x[1]) + '</span></div>'; }).join('') +
     '<div class="flex jb" style="font-size:16px;font-weight:700;margin-top:8px"><span>Total</span><span class="mono">' + fmt(c.TOTAL) + '</span></div></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
 }
 // Tiempos por estación (solo encargado)
