@@ -10962,6 +10962,7 @@ async function puConfirmar() {
       CONSUMOS: cons, MINUTOS: PU_.d.tiempoOperario && !noAp ? Math.round(PU_.seg / 60 * 100) / 100 : '', AUTORIZA: noAp ? null : aut, INSPECCION: insp });
     if ($id('pu-aut-c')) $id('pu-aut-c').value = '';
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); b.disabled = false; b.textContent = '✓ Confirmar paso'; return; }
+    b.textContent = '✓ Confirmar paso';   // si no, en la estación siguiente el botón queda diciendo "Guardando…"
     PU_.fin = { marca: f.cub.MARCA, min: r.MINUTOS, n: cons.filter(function(c) { return !c.NO_USO; }).length, desvios: r.DESVIOS || [], sinStock: r.SIN_STOCK || [], reemplazos: r.REEMPLAZOS || [], sigue: puSiguiente() };
     PU_.fin.ot = f.ot.ID_OT; PU_.fin.cub = f.cub.ID_CUB; PU_.fin.rechazo = r.RECHAZO || null;
     if (r.RECHAZO) { PU_.vista = 'listo'; return puListoRechazo(); }
