@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a18a25105851"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e65b2a254e9c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EMA — Guerrero Neumáticos</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -9848,8 +9848,9 @@ async function recImportarRevisar(filas) {
 // ================================================================
 var PC_ = { d: null, tab: 'cascos', filas: [], sel: {}, ot: null, fEspera: '', kf: [], kcli: '', ocli: '', otr: {}, mk: {}, dsel: {}, fDiario: 'TODOS' };
 var PC_EST_TXT = { EN_ESPERA: 'En espera', EN_OT: 'En OT', TERMINADA: 'Terminada', RECHAZADA: 'Rechazada', ENTREGADA: 'Entregada', ANULADA: 'Anulada',
-  PENDIENTE: 'Pendiente', EN_PROCESO: 'En proceso', RETIRADA: 'Retirada', ARMADA: 'Armada', CERRADA: 'Cerrada' };
-var PC_EST_COL = { EN_ESPERA: 'b-orange', EN_OT: 'b-blue', TERMINADA: 'b-green', RECHAZADA: 'b-red', ANULADA: 'b-gray', PENDIENTE: 'b-gray', EN_PROCESO: 'b-blue', RETIRADA: 'b-gray', ARMADA: 'b-orange', CERRADA: 'b-green' };
+  PENDIENTE: 'Pendiente', EN_PROCESO: 'En proceso', RETIRADA: 'Retirada', ARMADA: 'Armada', CERRADA: 'Cerrada', REPROCESO: 'Reproceso: espera otra carga', REPROCESADA: 'Reprocesada' };
+var PC_EST_COL = { EN_ESPERA: 'b-orange', EN_OT: 'b-blue', TERMINADA: 'b-green', RECHAZADA: 'b-red', ANULADA: 'b-gray', PENDIENTE: 'b-gray', EN_PROCESO: 'b-blue', RETIRADA: 'b-gray', ARMADA: 'b-orange', CERRADA: 'b-green', REPROCESO: 'b-orange', REPROCESADA: 'b-gray' };
+function pcNroOS(id) { var o = ((PC_.d && PC_.d.ots) || []).filter(function(x) { return String(x.ID_OT) === String(id); })[0]; return o ? o.NRO_OT : String(id); }
 
 function pcEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function pcBadge(e) { return '<span class="badge ' + (PC_EST_COL[e] || 'b-gray') + '" style="font-size:10px">' + pcEsc(PC_EST_TXT[e] || e) + '</span>'; }
@@ -10118,6 +10119,8 @@ async function pcHistorial(m) {
 // ── Armar OT ──
 function pcArmar() {
   var d = PC_.d, esp = d.cubiertas.filter(function(c) { return c.ESTADO === 'EN_ESPERA'; });
+  PC_.rpVisto = PC_.rpVisto || {};
+  esp.forEach(function(c) { if (c.REPROCESO_PEND && !PC_.sel[c.ID_CUB] && !PC_.rpVisto[c.ID_CUB]) { PC_.sel[c.ID_CUB] = 'TITULAR'; PC_.rpVisto[c.ID_CUB] = 1; } });
   var h = '<div class="card"><div class="card-hd"><span class="card-title">Orden de servicio: qué cubiertas entran a la línea</span><span id="pc-contador" class="badge b-blue"></span></div>' +
     '<div class="card-body"><div class="tdim mb3" style="font-size:12px">Marcá cada cubierta como <b>titular</b> (entra en la carga) o <b>suplente</b> (reemplaza si una se cae). ' +
     d.lineas.filter(function(l) { return l.ACTIVO != 0; }).map(function(l) { return l.LINEA + ': ' + l.CAPACIDAD + ' + ' + l.SUPLENTES + ' suplentes'; }).join(' · ') + '. Si mezclás líneas, elegís el tope.</div>' +
@@ -10125,13 +10128,13 @@ function pcArmar() {
     '<div class="fg"><label class="fl">Responsable</label><input class="fi" id="pc-resp"/></div><div class="fg"><label class="fl">Observaciones</label><input class="fi" id="pc-obs"/></div></div>' +
     '<div class="tdim mb2" style="font-size:12px;color:var(--danger)"><b>La marca grabada va sí o sí:</b> cada cubierta que entra a la línea tiene que tener su marca grabada.</div>' +
     '<div class="tw"><table style="font-size:12px" id="pc-tbl-armar"><thead><tr><th>Titular</th><th>Suplente</th><th>Marca grabada *</th><th>N° interno</th><th>DOT</th><th>Línea</th><th>Tipo</th><th>Medida</th><th>Trabajo</th><th>Cliente</th><th>OT</th><th>Recibida</th></tr></thead><tbody>' +
-    esp.sort(function(a, b) { return (a.FECHA_RECEPCION || 0) - (b.FECHA_RECEPCION || 0); }).map(function(c) {
+    esp.sort(function(a, b) { return (b.REPROCESO_PEND ? 1 : 0) - (a.REPROCESO_PEND ? 1 : 0) || (a.FECHA_RECEPCION || 0) - (b.FECHA_RECEPCION || 0); }).map(function(c) {
       var s = PC_.sel[c.ID_CUB] || '';
       var dis = c.ID_RECETA ? '' : ' disabled title="Sin receta: cargala en Recetas"';
       return '<tr' + (c.ID_RECETA ? '' : ' style="opacity:.5"') + '><td><input type="radio" name="pcs-' + c.ID_CUB + '" data-id="' + c.ID_CUB + '" value="TITULAR"' + (s === 'TITULAR' ? ' checked' : '') + dis + '/></td>' +
         '<td><input type="radio" name="pcs-' + c.ID_CUB + '" data-id="' + c.ID_CUB + '" value="SUPLENTE"' + (s === 'SUPLENTE' ? ' checked' : '') + dis + '/>' + (s ? ' <a href="#" onclick="delete PC_.sel[' + c.ID_CUB + '];pcArmar();return false" style="font-size:10px">quitar</a>' : '') + '</td>' +
         '<td>' + (c.MARCA ? '<b class="mono">' + pcEsc(c.MARCA) + '</b>' : '<input class="fi pc-mk" data-id="' + c.ID_CUB + '" value="' + pcEsc(PC_.mk[c.ID_CUB] || '') + '" placeholder="Grabada" style="width:110px;text-transform:uppercase"' + (c.ID_RECETA ? '' : ' disabled') + '/>') + '</td>' +
-        '<td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcEsc(c.DOT || '') + '</td><td>' + pcEsc(pcLineaDeTipo(c.TIPO)) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + (c.ID_RECETA ? '' : ' <span class="badge b-red">sin receta</span>') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + '</td><td>' + fmtD(c.FECHA_RECEPCION) + '</td></tr>';
+        '<td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcEsc(c.DOT || '') + '</td><td>' + pcEsc(pcLineaDeTipo(c.TIPO)) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + (c.ID_RECETA ? '' : ' <span class="badge b-red">sin receta</span>') + (c.REPROCESO_PEND ? ' <span class="badge b-orange">reproceso de ' + pcEsc(pcNroOS(c.REPROCESO_PEND)) + ': solo autoclave, control y pintura</span>' : '') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + '</td><td>' + fmtD(c.FECHA_RECEPCION) + '</td></tr>';
     }).join('') + '</tbody></table>' + (esp.length ? '' : '<div class="tdim" style="padding:12px">No hay cubiertas en espera.</div>') + '</div>' +
     '<button class="btn btn-p mt3" id="pc-crear" onclick="pcCrearOT()"><i class="fas fa-fire"></i> Crear orden de servicio</button></div></div>';
   $id('pc-body').innerHTML = h;
@@ -10213,15 +10216,23 @@ function pcPintarOT() {
     '<div class="tw"><table style="font-size:12px" id="pc-grid"><thead><tr><th>#</th><th>Marca</th><th>Cubierta</th><th>Rol</th>' + cols.map(function(c) { return '<th class="tc" style="min-width:70px;max-width:120px;white-space:normal">' + pcEsc(c.nombre) + '</th>'; }).join('') + '<th>Estado</th><th class="tr">Costo</th><th></th></tr></thead><tbody>' +
     ot.items.map(function(i) {
       var fuera = i.ESTADO === 'RETIRADA';
-      return '<tr' + (fuera ? ' style="opacity:.45"' : '') + '><td>' + i.ORDEN + '</td><td class="mono"><b>' + pcEsc(i.MARCA) + '</b></td><td style="font-size:11px;min-width:170px">' + pcEsc(i.TIPO + ' ' + i.MEDIDA) + '<div class="tdim">' + pcEsc(i.TRABAJO + ' · ' + i.CLIENTE) + '</div></td><td>' + (i.ROL === 'SUPLENTE' ? '<span class="badge b-orange">suplente</span>' : 'titular') + '</td>' +
+      return '<tr' + (fuera ? ' style="opacity:.45"' : '') + '><td>' + i.ORDEN + '</td><td class="mono"><b>' + pcEsc(i.MARCA) + '</b>' +
+        (i.POS_AUTOCLAVE ? '<div class="tdim" style="font-size:10px">autoclave lugar ' + pcEsc(i.POS_AUTOCLAVE) + '</div>' : '') +
+        (i.PASADA > 1 ? '<div><span class="badge b-orange" style="font-size:9px">corrección</span></div>' : '') +
+        (i.REPROCESO_DE ? '<div><span class="badge b-orange" style="font-size:9px">reproceso de ' + pcEsc(i.REPROCESO_DE) + '</span></div>' : '') +
+        (i.REPROCESO_EN ? '<div class="tdim" style="font-size:10px">siguió en ' + pcEsc(i.REPROCESO_EN) + '</div>' : '') + '</td><td style="font-size:11px;min-width:170px">' + pcEsc(i.TIPO + ' ' + i.MEDIDA) + '<div class="tdim">' + pcEsc(i.TRABAJO + ' · ' + i.CLIENTE) + '</div></td><td>' + (i.ROL === 'SUPLENTE' ? '<span class="badge b-orange">suplente</span>' : 'titular') + '</td>' +
         (function() { var obl = +((PC_.d.param || {}).ESTACIONES_OBLIGATORIAS) === 1, act = !fuera && (i.ESTADO === 'PENDIENTE' || i.ESTADO === 'EN_PROCESO');
-          i._aca = null; if (obl && act) { for (var q = 0; q < cols.length; q++) { if (cols[q].id && !i.REGISTROS.some(function(r) { return r.ID_ESTACION === cols[q].id; })) { i._aca = cols[q].id; break; } } } return ''; })() +
+          i._hh = {}; if (i.HECHAS) i.HECHAS.forEach(function(x) { i._hh[x.ID_ESTACION] = x; }); else i.REGISTROS.forEach(function(r) { i._hh[r.ID_ESTACION] = r; });
+          i._aca = null; if (obl && act) { for (var q = 0; q < cols.length; q++) { if (cols[q].id && !i._hh[cols[q].id]) { i._aca = cols[q].id; break; } } } return ''; })() +
         cols.map(function(c) {
           var tiene = i.LINEAS.some(function(l) { return l.ID_ESTACION === c.id; });
-          var reg = i.REGISTROS.filter(function(r) { return r.ID_ESTACION === c.id; })[0];
+          var reg = i.REGISTROS.filter(function(r) { return r.ID_ESTACION === c.id; }).sort(function(a, b) { return (b.PASADA || 1) - (a.PASADA || 1); })[0];
+          var corregir = (i.REHACER || []).indexOf(c.id) !== -1 && i.PASADA > 1 && (!reg || (reg.PASADA || 1) < i.PASADA);
+          var previa = i._hh[c.id] && i._hh[c.id].PREVIA;
+          if (corregir) reg = null;
           if (!tiene && !reg && +((PC_.d.param || {}).ESTACIONES_OBLIGATORIAS) !== 1) return '<td class="tc tdim">—</td>';
           var min = i.TIEMPOS.filter(function(t) { return t.ID_ESTACION === c.id; })[0];
-          var cel = !reg && i._aca === c.id ? '<span class="badge b-blue" title="La cubierta está esperando en esta estación">⏳ acá está</span>' : reg ? (reg.RESULTADO === 'OK' ? '<span style="color:var(--success);font-weight:700">✓</span>' : (reg.RESULTADO === 'NO_APLICA' ? '<span class="tdim" title="No pasa por esta estación">⊘</span>' : '<span style="color:var(--danger);font-weight:700">✗</span>')) : '<span class="tdim">·</span>';
+          var cel = previa ? '<span class="tdim" title="Hecha en la orden anterior">✓</span>' : (!reg && i._aca === c.id ? '<span class="badge b-' + (corregir ? 'orange' : 'blue') + '" title="La cubierta está esperando en esta estación">' + (corregir ? '↻ corregir' : '⏳ acá está') + '</span>' : (corregir ? '<span class="badge b-orange">↻ corregir</span>' : reg ? (reg.RESULTADO === 'OK' ? '<span style="color:var(--success);font-weight:700">✓' + ((reg.PASADA || 1) > 1 ? '²' : '') + '</span>' : (reg.RESULTADO === 'NO_APLICA' ? '<span class="tdim" title="No pasa por esta estación">⊘</span>' : (reg.RESULTADO === 'REPROCESO' ? '<span style="color:var(--warn);font-weight:700" title="' + pcEsc(reg.OBSERVACION) + '">↻</span>' : '<span style="color:var(--danger);font-weight:700" title="' + pcEsc(reg.OBSERVACION || '') + '">✗</span>'))) : '<span class="tdim">·</span>'));
           var click = abierta && !fuera && (i.ESTADO === 'PENDIENTE' || i.ESTADO === 'EN_PROCESO') ? ' style="cursor:pointer" onclick="pcRegistro(' + i.ID_CUB + ',\'' + c.id + '\')"' : '';
           return '<td class="tc"' + click + '>' + cel + (min ? '<div class="tdim" style="font-size:10px">' + pcDur(min.MINUTOS) + '</div>' : '') + '</td>';
         }).join('') +
@@ -10503,6 +10514,15 @@ async function pcProrratear() {
 @keyframes puLat{50%{box-shadow:0 0 0 6px rgba(37,99,235,.3)}}
 .pu-panel-hd{display:flex;gap:10px;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px 12px}
 .pu-panel-hd .m{font:700 24px/1 var(--mono)}
+.pu-ac-mapa{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.pu-ac-lugar{border:3px dashed var(--border);border-radius:12px;background:#fff;min-height:92px;display:grid;align-content:center;justify-items:center;gap:3px;cursor:pointer;font:inherit;color:var(--dim);padding:6px 4px;text-align:center}
+.pu-ac-lugar .n{font:800 22px/1 var(--mono);color:#9ca3af}
+.pu-ac-lugar .mk{font:800 17px/1.1 var(--mono);color:var(--text);overflow-wrap:anywhere}
+.pu-ac-lugar .d{font-size:12px}
+.pu-ac-lugar.ocupado{border-style:solid;border-color:var(--accent);background:var(--accent-light)}
+.pu-ac-lugar.ocupado .n{color:var(--accent)}
+.pu-ac-lugar:disabled{cursor:default;opacity:1}
+@media (max-width:560px){.pu-ac-mapa{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .pu-aca-txt{font-size:19px;font-weight:800;text-align:center;line-height:1.2}
 .pu-ley{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;font-size:12px;color:var(--dim)}
 .pu-ley b{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:4px}
@@ -10637,6 +10657,7 @@ function puPintar() {
   if (PU_.vista === 'listo') return puListo();
   if (PU_.vista === 'herr') return puHerr();
   if (PU_.vista === 'retiro') return puRetiro();
+  if (PU_.vista === 'autoclave') return puAutoclavePintar();
   puLista();
 }
 function puElegirEst() {
@@ -10693,6 +10714,7 @@ function puPanelToca(id) {
   var c = puCubD(PU_.pan.cub); if (!c) return;
   var hechas = (c.ESTACIONES_HECHAS || []).map(String), sig = c.SIGUIENTE ? String(c.SIGUIENTE.ID_ESTACION) : '';
   if (id !== sig && hechas.indexOf(id) === -1) { toast('Todavía no: primero ' + (c.SIGUIENTE ? c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE : ''), 'r2'); return; }
+  if (id === sig && PU_.d.estAutoclave && id === String(PU_.d.estAutoclave)) return puAutoclave(PU_.pan.ot);
   puAbrir(PU_.pan.ot, PU_.pan.cub, id);
 }
 function puCubD(idCub) { return PU_.d ? PU_.d.cubiertas.filter(function(c) { return String(c.ID_CUB) === String(idCub); })[0] : null; }
@@ -10712,7 +10734,9 @@ function puLista() {
   if (puTodas()) {
     h += '<div class="pu-cubs">' + cs.map(function(c) {
       var tag = c.SIGUIENTE ? '<span class="pu-tag aca">→ Está en: ' + puEsc(c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE) + '</span>' : '<span class="pu-tag ok">✓ Pasó por todas: lista para terminar</span>';
-      return '<button class="pu-cub aca" onclick="' + (c.SIGUIENTE ? 'puPanel(' + c.ID_OT + ',' + c.ID_CUB + ')' : 'puPanel(' + c.ID_OT + ',' + c.ID_CUB + ')') + '"><span class="m">' + puEsc(c.MARCA) + '</span>' +
+      if (c.PASADA > 1) tag += '<span class="pu-tag sup">↻ Corrección</span>';
+      if (c.REPROCESO) tag += '<span class="pu-tag sup">Viene de reproceso</span>';
+      return '<button class="pu-cub aca" onclick="' + (c.AUTOCLAVE ? 'puAutoclave(' + c.ID_OT + ')' : 'puPanel(' + c.ID_OT + ',' + c.ID_CUB + ')') + '"><span class="m">' + puEsc(c.MARCA) + '</span>' +
         '<span class="d">' + puEsc(c.TIPO + ' ' + c.MEDIDA + ' · ' + c.TRABAJO) + '</span><span class="d">' + puEsc(c.CLIENTE || '') + ' · ' + puEsc(c.NRO_OT) + '</span>' + tag + puMapa(c, true) + '</button>';
     }).join('') + '</div>';
     $id('pu-body').innerHTML = h;
@@ -10742,7 +10766,9 @@ async function puAbrir(idOt, idCub, estF) {
   var f;
   try { f = await gsRun('gsPC_PuestoFicha', idOt, idCub, puE()); } catch (e) { toast(e.message, 'r2'); return puLista(); }
   if (!f || !f.ok) { toast((f && f.error) || 'No se pudo abrir', 'r2'); return puLista(); }
+  if (f.autoclave && !f.registro) return puAutoclave(idOt);
   puPararReloj();
+  PU_.ctrl = f.control && !f.registro ? { dec: '', ests: [], motivo: '', txt: '' } : null;
   PU_.f = f; PU_.vista = 'ficha'; PU_.t0 = null; PU_.seg = 0; PU_.res = 'OK'; PU_.obs = ''; PU_.aut = { u: '', c: '' }; PU_.verOtros = false;
   PU_.insp = f.inspeccion ? { apta: null, banda: f.inspeccion.bandaReceta || '', parches: [], motivo: '', reemplazo: null } : null;
   var abiertas = f.lineas.filter(function(l) { return !l.HECHO; });
@@ -10822,6 +10848,10 @@ function puFicha() {
   if (PU_.d.tiempoOperario) timer = '<div class="pu-timer"><span class="pu-clock" id="pu-clock">' + puReloj(PU_.seg) + '</span>' +
     (PU_.corriendo ? '<button class="pu-btn pu-stop" onclick="puTermine()">■ TERMINÉ</button>' : (PU_.t0 === null ? '<button class="pu-btn pu-go" onclick="puEmpezar()">▶ EMPEZAR</button>' : '<span class="pu-tag ok">✓ ' + puDur(PU_.seg) + '</span> <button class="pu-btn pu-min" onclick="puEmpezar(true)">Seguir</button>')) + '</div>';
   h += timer + '<button class="pu-btn pu-back" onclick="puVolver()">← Otra cubierta</button></div>';
+  if (f.cub.PASADA > 1) h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:19px;font-weight:700;color:var(--warn)">↻ Corrección: vuelve a ' + puEsc((f.cub.REHACER || []).map(function(e) { return e.ORDEN + ' · ' + e.NOMBRE; }).join(', ')) + '</div>' +
+    '<div style="font-size:15px">' + puEsc(f.cub.MOTIVO_REPROCESO) + '</div><div class="tdim" style="font-size:14px">Cuando termine la corrección, espera la próxima carga del autoclave (entra ocupando un lugar).</div></div>';
+  if (f.cub.REPROCESO_DE) h += '<div><span class="pu-tag sup">Viene de reproceso de ' + puEsc(f.cub.REPROCESO_DE) + '</span></div>';
+  if (PU_.ctrl) h += puControlHTML();
   if (PU_.insp) { h += puInspHTML(); if (PU_.insp.apta === false) { $id('pu-body').innerHTML = h; puPieFicha(); return; } }
   if (!PU_.rows.length) h += '<div class="pu-h">En esta estación la receta no lleva insumos</div>';
   if (!PU_.rows.length) h += '<div class="pu-otros" style="font-size:17px"><div>✓ Acá solo se hace el trabajo: tocá <b>EMPEZAR</b>, hacé el trabajo y tocá <b>TERMINÉ</b>.</div></div>';
@@ -10843,14 +10873,149 @@ function puFicha() {
         '<button class="pu-btn pu-add" onclick="puAgregar(' + i + ')">+ Lo uso acá</button></div>';
     }).join('') + '</div>';
   }
-  h += '<div style="display:flex;flex-wrap:wrap;gap:10px"><button class="pu-btn pu-rep" onclick="puReemplazo()">↺ Usé otro insumo (autoriza el encargado)</button>' +
+  if (!PU_.ctrl) h += '<div style="display:flex;flex-wrap:wrap;gap:10px"><button class="pu-btn pu-rep" onclick="puReemplazo()">↺ Usé otro insumo (autoriza el encargado)</button>' +
     '<button class="pu-btn pu-min" onclick="puNoAplica()">⊘ No pasa por esta estación</button>' +
     '<button class="pu-btn pu-min" onclick="puFalla()">' + (PU_.res === 'FALLA' ? '⚠ Hubo una falla: ' + puEsc(PU_.obs) : 'Marcar una falla') + '</button></div>';
   if (puHayReemplazo()) h += '<div class="pu-aut"><div style="font-weight:700;color:var(--warn)">Hay un reemplazo: lo autoriza el encargado de línea con su clave</div>' +
     '<div class="fr2"><input id="pu-aut-u" placeholder="Usuario del encargado" value="' + puEsc(PU_.aut.u) + '" autocomplete="off"><input id="pu-aut-c" type="password" placeholder="Clave" autocomplete="new-password"></div></div>';
   $id('pu-body').innerHTML = h;
-  if ($id('pu-aut-u')) $id('pu-aut-u').addEventListener('input', function() { PU_.aut.u = this.value; });
+  if ($id('pu-aut-u')) $id('pu-aut-u').addEventListener('input', function() { PU_.aut.u = this.value; puPieFicha(); });
+  if ($id('pu-ctrl-txt')) $id('pu-ctrl-txt').addEventListener('input', function() { PU_.ctrl.txt = this.value; });
   puPieFicha();
+}
+// ── Control final (inspección final): lo decide el encargado. OK → Pintura · Volver a una estación → corrección y otra carga del autoclave · Rechazo final ──
+function puControlHTML() {
+  var C = PU_.ctrl, X = PU_.f.control;
+  var b = function(v, txt, col) { var on = C.dec === v; return '<button class="pu-btn" style="flex:1;min-width:170px;min-height:70px;font-size:19px;' + (on ? 'background:' + col + ';color:#fff' : 'background:var(--surface2);color:var(--text);border:2px solid ' + col) + '" onclick="PU_.ctrl.dec=\'' + v + '\';puFicha()">' + txt + '</button>'; };
+  var h = '<div class="pu-reg" id="pu-ctrl" style="border-color:var(--accent)"><div style="font-size:20px;font-weight:700">Control del encargado: ¿cómo salió del autoclave?</div>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap">' + b('OK', '✓ OK · pasa a Pintura', 'var(--success)') + b('REPROCESO', '↻ Volver a una estación', 'var(--warn)') + b('RECHAZO', '✗ Rechazo final', 'var(--danger)') + '</div>';
+  if (C.dec === 'REPROCESO') {
+    h += '<div style="font-weight:700">¿A qué estación vuelve? (se puede elegir más de una)</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + X.estaciones.map(function(e) {
+      var on = C.ests.indexOf(e.ID_ESTACION) !== -1;
+      return '<button class="pu-chip" style="' + (on ? 'background:var(--warn);color:#fff;border-color:var(--warn)' : '') + '" data-e="' + puEsc(e.ID_ESTACION) + '" onclick="puCtrlEst(this.dataset.e)">' + puEsc(e.ORDEN + ' · ' + e.NOMBRE) + '</button>';
+    }).join('') + '</div><div class="tdim" style="font-size:14px">Si hay que volver a armarla, elegí también la de innerlope y envelope. Después de la corrección entra en la próxima carga del autoclave.</div>';
+  }
+  if (C.dec === 'REPROCESO' || C.dec === 'RECHAZO') {
+    h += '<div style="font-weight:700">' + (C.dec === 'REPROCESO' ? '¿Qué hay que corregir?' : '¿Por qué no tiene arreglo?') + '</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + X.motivos.map(function(m) {
+      var on = C.motivo === m;
+      return '<button class="pu-chip" style="' + (on ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : '') + '" data-m="' + puEsc(m) + '" onclick="PU_.ctrl.motivo=this.dataset.m;puFicha()">' + puEsc(m) + '</button>';
+    }).join('') + '</div><input class="pu-q" id="pu-ctrl-txt" style="font-size:17px;text-transform:none" placeholder="Detalle (opcional)" value="' + puEsc(C.txt) + '" autocomplete="off">';
+  }
+  if (C.dec && !X.soyEncargado) h += '<div class="pu-aut"><div style="font-weight:700;color:var(--warn)">Lo confirma el encargado de línea con su usuario y clave</div>' +
+    '<div class="fr2"><input id="pu-aut-u" placeholder="Usuario del encargado" value="' + puEsc(PU_.aut.u) + '" autocomplete="off"><input id="pu-aut-c" type="password" placeholder="Clave" autocomplete="new-password"></div></div>';
+  return h + '</div>';
+}
+function puCtrlEst(id) { var a = PU_.ctrl.ests, i = a.indexOf(id); if (i === -1) a.push(id); else a.splice(i, 1); puFicha(); }
+async function puCtrlConfirmar() {
+  var b = $id('pu-ok'); if (b.disabled) return;
+  var f = PU_.f, C = PU_.ctrl, cons = [];
+  if (C.dec === 'OK') PU_.rows.forEach(function(r) {
+    if (r.no) cons.push({ ID_DET: r.l.ID_DET, NO_USO: 1, MOTIVO: r.motivo });
+    else if (r.l.TIPO_LINEA === 'HERRAMENTAL') cons.push({ ID_DET: r.l.ID_DET, ID_PIEZA: r.pieza || '' });
+    else cons.push({ ID_DET: r.l.ID_DET, ID_INSUMO: r.reemp ? r.idReal : '', REAL: r.real, MOTIVO: r.motivo || (r.reemp ? 'Reemplazo en la estación' : '') });
+  });
+  var aut = f.control.soyEncargado ? null : { USUARIO: PU_.aut.u, CLAVE: $v('pu-aut-c') };
+  var motivo = [C.motivo, String(C.txt || '').trim()].filter(function(x) { return x; }).join(' · ');
+  b.disabled = true; b.textContent = 'Guardando…';
+  try {
+    var r = await gsRun('gsPC_Control', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, DECISION: C.dec, ESTACIONES: C.ests, MOTIVO: motivo, OPERARIO: PU_.oper,
+      MINUTOS: PU_.d.tiempoOperario ? Math.round(PU_.seg / 60 * 100) / 100 : '', CONSUMOS: cons, AUTORIZA: aut });
+    if ($id('pu-aut-c')) $id('pu-aut-c').value = '';
+    b.textContent = '✓ Confirmar paso';
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); b.disabled = false; return; }
+    var sigue = C.dec === 'OK' ? 'Pasa a Pintura' : (C.dec === 'REPROCESO' ? 'Vuelve a ' + (r.VUELVE_A || []).map(function(e) { return e.ORDEN + ' · ' + e.NOMBRE; }).join(', ') + ' para corregirla. Después espera la próxima carga del autoclave.' : 'Rechazo final: queda para devolver al cliente.');
+    PU_.fin = { marca: f.cub.MARCA, min: r.MINUTOS, n: cons.filter(function(c) { return !c.NO_USO; }).length, desvios: r.DESVIOS || [], sinStock: r.SIN_STOCK || [], reemplazos: r.REEMPLAZOS || [], sigue: sigue, ot: f.ot.ID_OT, cub: f.cub.ID_CUB, dec: C.dec };
+    try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e2) {}
+    PU_.ctrl = null; PU_.vista = 'listo'; puListo();
+  } catch (e) { toast(e.message, 'r2'); b.disabled = false; b.textContent = '✓ Confirmar paso'; }
+}
+
+// ── Autoclave: mapa de lugares de la carga (1 al tope). Se ubican las cubiertas listas y recién ahí empieza la cocción ──
+async function puAutoclave(idOt) {
+  puPararReloj(); PU_.vista = 'autoclave'; PU_.ac = { ot: idOt, d: null, pos: {} };
+  var wrap = document.querySelector('#page-puesto-estacion .pu-wrap'); if (wrap) wrap.classList.add('pu-enficha');
+  puPie(false);
+  $id('pu-body').innerHTML = '<div class="card"><div class="card-body tdim">Abriendo el autoclave…</div></div>';
+  var r;
+  try { r = await gsRun('gsPC_AutoclaveDatos', idOt); } catch (e) { toast(e.message, 'r2'); return puVolver(); }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo abrir', 'r2'); return puVolver(); }
+  PU_.ac.d = r;
+  if (r.cocinando) PU_.ac.pos = r.cocinando.POSICIONES || {};
+  puAutoclavePintar();
+}
+function puAutoclavePintar() {
+  var A = PU_.ac, r = A && A.d; if (!r) return;
+  puPie(false);
+  var porId = {}; r.cubiertas.forEach(function(c) { porId[String(c.ID_CUB)] = c; });
+  var usadas = {}; Object.keys(A.pos).forEach(function(k) { if (A.pos[k]) usadas[String(A.pos[k])] = k; });
+  var listas = r.cubiertas.filter(function(c) { return c.LISTA; }), noListas = r.cubiertas.filter(function(c) { return c.ACTIVA && !c.LISTA && !c.COCINADA; });
+  var ub = Object.keys(usadas).length;
+  var h = '<div class="pu-panel-hd"><div style="min-width:0"><div class="m">🔥 Autoclave · ' + puEsc(r.ot.NRO_OT) + '</div><div class="tdim" style="font-size:13px">' + r.lugares + ' lugares · cocción de unos ' + r.minutos + ' min</div></div><button class="pu-btn pu-back" onclick="puVolver()">← Volver</button></div>';
+  if (r.cocinando) {
+    var min = Math.floor((Date.now() - r.cocinando.INICIO) / 60000), falta = r.minutos - min;
+    h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:24px;font-weight:800;color:var(--warn)" id="pu-ac-min">Cocinando · ' + min + ' de ~' + r.minutos + ' min</div>' +
+      '<div style="font-size:16px">Empezó a las ' + new Date(r.cocinando.INICIO).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + '. ' + (falta > 0 ? 'Faltan unos ' + falta + ' min.' : 'Ya pasó el tiempo aproximado.') + ' Cuando salga, tocá <b>Terminó la cocción</b>.</div></div>';
+  } else if (!listas.length) {
+    h += '<div class="pu-reg"><div style="font-size:18px;font-weight:700">No hay cubiertas listas para el autoclave en esta orden.</div>' + (r.anteriores.length ? '<div class="tdim">Ya se cocinó: ' + r.anteriores.map(function(a) { return a.N + ' cubiertas · ' + a.MINUTOS + ' min'; }).join(' · ') + '</div>' : '') + '</div>';
+  } else {
+    h += '<div class="pu-h">Tocá cada lugar y elegí qué cubierta va · ' + ub + ' de ' + listas.length + ' ubicadas</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pu-btn pu-min" onclick="puAcAuto()">Ubicar en orden</button><button class="pu-btn pu-min" onclick="PU_.ac.pos={};puAutoclavePintar()">Vaciar</button></div>';
+  }
+  h += '<div class="pu-ac-mapa">';
+  for (var n = 1; n <= r.lugares; n++) {
+    var idc = A.pos[String(n)], c = idc ? porId[String(idc)] : null;
+    h += '<button class="pu-ac-lugar' + (c ? ' ocupado' : '') + '" ' + (r.cocinando || !listas.length ? 'disabled' : 'onclick="puAcElegir(' + n + ')"') + '><span class="n">' + n + '</span>' +
+      (c ? '<span class="mk">' + puEsc(c.MARCA) + '</span><span class="d">' + puEsc(c.MEDIDA) + (c.REPROCESO ? ' · reproceso' : '') + '</span>' : (idc ? '<span class="mk">' + puEsc(idc) + '</span>' : '<span class="d">vacío</span>')) + '</button>';
+  }
+  h += '</div>';
+  if (!r.cocinando && noListas.length) h += '<div class="pu-reg" style="border-color:var(--danger)"><div style="font-weight:700;color:var(--danger)">Todavía no están listas (sin ellas no se puede empezar):</div><div>' + noListas.map(function(c) { return '<b>' + puEsc(c.MARCA) + '</b> está en ' + puEsc(c.SIGUIENTE); }).join(' · ') + '</div></div>';
+  if (r.cocinando) h += '<button class="pu-btn pu-ir" onclick="puAcFin()">■ Terminó la cocción</button>';
+  else if (listas.length) {
+    var ok = ub === listas.length && !noListas.length;
+    h += '<button class="pu-btn pu-ir" ' + (ok ? '' : 'disabled ') + 'onclick="puAcIni()">▶ Empieza la cocción (' + ub + ' cubiertas)</button>' + (ok ? '' : '<div class="tdim" style="font-size:14px">Para empezar tienen que estar ubicadas todas las cubiertas listas.</div>');
+  }
+  $id('pu-body').innerHTML = h;
+  if (r.cocinando) {
+    if (puTick) clearInterval(puTick);
+    puTick = setInterval(function() { var e = $id('pu-ac-min'); if (!e || PU_.vista !== 'autoclave') { clearInterval(puTick); puTick = null; return; } e.textContent = 'Cocinando · ' + Math.floor((Date.now() - r.cocinando.INICIO) / 60000) + ' de ~' + r.minutos + ' min'; }, 30000);
+  }
+}
+function puAcElegir(n) {
+  var A = PU_.ac, r = A.d, usadas = {}; Object.keys(A.pos).forEach(function(k) { if (A.pos[k] && k !== String(n)) usadas[String(A.pos[k])] = k; });
+  var ops = r.cubiertas.filter(function(c) { return c.LISTA && !usadas[String(c.ID_CUB)]; });
+  showModal('<div class="mh"><span class="mt">Lugar ' + n + ' del autoclave</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="display:flex;flex-wrap:wrap;gap:8px">' +
+    ops.map(function(c) { return '<button class="pu-chip" data-id="' + puEsc(c.ID_CUB) + '"><b>' + puEsc(c.MARCA) + '</b> · ' + puEsc(c.MEDIDA) + (c.REPROCESO ? ' · reproceso' : '') + '</button>'; }).join('') +
+    (A.pos[String(n)] ? '<button class="pu-chip" data-id="">Dejar vacío</button>' : '') + (ops.length ? '' : '<div class="tdim">No quedan cubiertas listas sin lugar.</div>') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button></div>');
+  document.querySelectorAll('.mo .pu-chip').forEach(function(b) { b.onclick = function() { closeModal(); if (b.dataset.id) PU_.ac.pos[String(n)] = b.dataset.id; else delete PU_.ac.pos[String(n)]; puAutoclavePintar(); }; });
+}
+function puAcAuto() {
+  var A = PU_.ac, r = A.d, usadas = {}; Object.keys(A.pos).forEach(function(k) { if (A.pos[k]) usadas[String(A.pos[k])] = true; });
+  var n = 1;
+  r.cubiertas.filter(function(c) { return c.LISTA && !usadas[String(c.ID_CUB)]; }).forEach(function(c) { while (n <= r.lugares && A.pos[String(n)]) n++; if (n <= r.lugares) A.pos[String(n)] = String(c.ID_CUB); });
+  puAutoclavePintar();
+}
+async function puAcIni() {
+  var A = PU_.ac;
+  try {
+    var r = await gsRun('gsPC_AutoclaveIniciar', { ID_OT: A.ot, POSICIONES: A.pos, OPERARIO: PU_.oper });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo empezar', 'r2'); return; }
+    toast('Empezó la cocción: ' + r.N + ' cubiertas ✓', 'g'); puAutoclave(A.ot);
+  } catch (e) { toast(e.message, 'r2'); }
+}
+async function puAcFin() {
+  var A = PU_.ac, c = A.d.cocinando; if (!c) return;
+  try {
+    var r = await gsRun('gsPC_AutoclaveTerminar', c.ID_AUTOC, PU_.oper);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo terminar', 'r2'); return; }
+    if (puTick) { clearInterval(puTick); puTick = null; }
+    try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e2) {}
+    PU_.vista = 'listo';
+    var ctl = PU_.d && PU_.d.estControl ? puNomEst(PU_.d.estControl) : 'la inspección final';
+    $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">🔥</div><h2>Salió la carga del autoclave</h2><div style="font-size:18px">' + r.N + ' cubiertas · cocción de ' + r.MINUTOS + ' min</div>' +
+      '<div style="font-size:20px"><b>Pasan a ' + puEsc(ctl) + ': las confirma el encargado una por una.</b></div>' +
+      '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puVolver()">Ver las cubiertas</button></div>';
+  } catch (e) { toast(e.message, 'r2'); }
 }
 // ── Lista de control: una fila corta por insumo (gris = falta, verde = listo). Se toca y se abre la ventanita para cargarlo ──
 function puLinHTML(r, k) {
@@ -10915,6 +11080,16 @@ function puPararReloj() { if (puTick) clearInterval(puTick); puTick = null; if (
 function puFaltantes() {
   var f = [];
   if (PU_.res === 'NO_APLICA') return f;
+  if (PU_.ctrl) {
+    var C = PU_.ctrl;
+    if (PU_.d.tiempoOperario) { if (PU_.t0 === null) f.push('tocar EMPEZAR'); else if (PU_.corriendo) f.push('tocar TERMINÉ'); }
+    if (!C.dec) f.push('elegir OK, volver a una estación o rechazo final');
+    if (C.dec === 'REPROCESO' && !C.ests.length) f.push('elegir a qué estación vuelve');
+    if ((C.dec === 'REPROCESO' || C.dec === 'RECHAZO') && !C.motivo) f.push('elegir el motivo');
+    if (C.dec === 'OK') { var nf2 = PU_.rows.filter(function(r) { return !puResuelta(r); }).length; if (nf2) f.push('confirmar ' + nf2 + ' insumo' + (nf2 === 1 ? '' : 's')); }
+    if (C.dec && !PU_.f.control.soyEncargado && (!PU_.aut.u || !($id('pu-aut-c') && $id('pu-aut-c').value))) f.push('usuario y clave del encargado');
+    return f;
+  }
   if (PU_.insp) {
     var I = PU_.insp;
     if (I.apta === null && PU_.f.inspeccion.obligatoria) f.push('decir si es APTA o NO APTA');
@@ -10943,6 +11118,7 @@ function puPieFicha() {
   if ($id('pu-aut-c')) $id('pu-aut-c').oninput = puPieFicha;
 }
 async function puConfirmar() {
+  if (PU_.ctrl) return puCtrlConfirmar();
   var b = $id('pu-ok'); if (b.disabled) return;
   var f = PU_.f, cons = [], noAp = PU_.res === 'NO_APLICA';
   if (!noAp) PU_.rows.forEach(function(r) {
@@ -10966,7 +11142,12 @@ async function puConfirmar() {
     PU_.fin = { marca: f.cub.MARCA, min: r.MINUTOS, n: cons.filter(function(c) { return !c.NO_USO; }).length, desvios: r.DESVIOS || [], sinStock: r.SIN_STOCK || [], reemplazos: r.REEMPLAZOS || [], sigue: puSiguiente() };
     PU_.fin.ot = f.ot.ID_OT; PU_.fin.cub = f.cub.ID_CUB; PU_.fin.rechazo = r.RECHAZO || null;
     if (r.RECHAZO) { PU_.vista = 'listo'; return puListoRechazo(); }
-    puMarcarHecha(f.cub.ID_CUB, puE());
+    if (f.cub.PASADA > 1) {
+      // Corrección: se pide de nuevo dónde sigue (la próxima estación a rehacer o la próxima carga del autoclave)
+      try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e2) {}
+      var cdx = puCubD(f.cub.ID_CUB);
+      PU_.fin.sigue = r.A_AUTOCLAVE ? 'Corrección terminada: espera la próxima carga del autoclave (entra ocupando un lugar)' : (cdx && cdx.SIGUIENTE ? 'Sigue en: ' + cdx.SIGUIENTE.ORDEN + ' · ' + cdx.SIGUIENTE.NOMBRE : PU_.fin.sigue);
+    } else puMarcarHecha(f.cub.ID_CUB, puE());
     PU_.vista = 'listo'; puListo();
   } catch (e) { toast(e.message, 'r2'); b.disabled = false; b.textContent = '✓ Confirmar paso'; }
 }
@@ -10997,7 +11178,7 @@ function puListo() {
   var wrap = document.querySelector('#page-puesto-estacion .pu-wrap'); if (wrap) wrap.classList.remove('pu-enficha');
   puPie(false);
   var x = PU_.fin, cd = puCubD(x.cub);
-  $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">✅</div><h2>' + puEsc(x.marca) + ' · paso confirmado</h2>' +
+  $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">' + (x.dec === 'RECHAZO' ? '⛔' : (x.dec === 'REPROCESO' ? '↻' : '✅')) + '</div><h2>' + puEsc(x.marca) + ' · paso confirmado</h2>' +
     '<div class="tdim" style="font-size:18px">' + (x.min ? 'Tardó ' + puDur(x.min * 60) + ' · ' : '') + x.n + ' insumo' + (x.n === 1 ? '' : 's') + ' cargado' + (x.n === 1 ? '' : 's') + ' · el stock ya se descontó</div>' +
     (x.sinStock.length ? '<div style="color:var(--danger);font-weight:700">⚠ Sin stock en el sistema: ' + puEsc(x.sinStock.join(', ')) + '</div>' : '') +
     (x.reemplazos.length ? '<div style="color:var(--warn);font-weight:700">Reemplazo autorizado: ' + puEsc(x.reemplazos.join('; ')) + '</div>' : '') +
