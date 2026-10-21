@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e65b2a254e9c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a6f3ada4ed00"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EMA — Guerrero Neumáticos</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -10770,7 +10770,7 @@ async function puAbrir(idOt, idCub, estF) {
   puPararReloj();
   PU_.ctrl = f.control && !f.registro ? { dec: '', ests: [], motivo: '', txt: '' } : null;
   PU_.f = f; PU_.vista = 'ficha'; PU_.t0 = null; PU_.seg = 0; PU_.res = 'OK'; PU_.obs = ''; PU_.aut = { u: '', c: '' }; PU_.verOtros = false;
-  PU_.insp = f.inspeccion ? { apta: null, banda: f.inspeccion.bandaReceta || '', parches: [], motivo: '', reemplazo: null } : null;
+  PU_.insp = f.inspeccion ? { apta: null, banda: f.inspeccion.bandaReceta || '', parches: [], extras: (f.inspeccion.extrasCub || []).slice(), motivo: '', reemplazo: null } : null;
   var abiertas = f.lineas.filter(function(l) { return !l.HECHO; });
   var aca = function(l) { return l.ID_ESTACION ? l.ID_ESTACION === puE() : l.SUGERIDA === puE(); };
   PU_.rows = abiertas.filter(aca).map(puNuevaFila);
@@ -10791,7 +10791,7 @@ function puFilaHTML(r, k) {
   var nombre = r.reemp && r.idReal ? puNomIns(r.idReal) : l.NOMBRE;
   var h = '<div class="pu-row ' + cls + '" data-k="' + k + '"><div><div class="n">' + puEsc(nombre) + '</div>' +
     '<div class="c">' + puEsc(r.reemp ? 'REEMPLAZA A ' + l.NOMBRE : (l.ID_INSUMO || 'sin vincular')) + (l.STOCK !== null && l.TIPO_LINEA !== 'HERRAMENTAL' ? ' · stock ' + puF(l.STOCK) + ' ' + puEsc(l.UNIDAD) : '') + '</div>' +
-    '<div class="rec">Receta: <b>' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : puF(l.CANTIDAD) + ' ' + puEsc(l.UNIDAD)) + '</b>' +
+    '<div class="rec">' + (l.TIPO_LINEA !== 'HERRAMENTAL' && !l.CANTIDAD ? '<b>Sin cantidad todavía: medí lo que usaste</b> (si no se usó, poné 0)' : 'Receta: <b>' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : puF(l.CANTIDAD) + ' ' + puEsc(l.UNIDAD)) + '</b>') +
     (!l.ID_ESTACION && l.SUGERIDA === puE() ? ' <span class="pu-star">★ suele usarse acá</span>' : '') + '</div></div><div class="pu-act">';
   if (r.no) h += '<button class="pu-btn pu-min" data-a="deshacer">Deshacer</button>';
   else if (l.TIPO_LINEA === 'HERRAMENTAL') {
@@ -10799,7 +10799,7 @@ function puFilaHTML(r, k) {
     h += '<div class="pu-pz">' + ps.map(function(p) { return '<button class="' + (String(r.pieza) === String(p.ID_PIEZA) ? 'sel' : '') + '" data-a="pieza" data-v="' + p.ID_PIEZA + '">' + puEsc(String(p.CODIGO).replace(/^.*#/, '#')) + '<small>' + p.USOS + ' de ' + (p.MAX_USOS || '∞') + ' usos</small></button>'; }).join('') +
       (PU_.d.herrObligatorio ? '' : '<button class="' + (r.sinNro ? 'sel' : '') + '" data-a="sinnro">Sin número</button>') + '</div>';
   } else {
-    h += '<button class="pu-btn pu-eq" data-a="igual">✓ Igual a receta</button><div class="pu-qty"><input inputmode="decimal" data-a="real" value="' + puEsc(r.real) + '" placeholder="Medí" aria-label="Cantidad medida"><span>' + puEsc(l.UNIDAD) + '</span></div>';
+    h += (l.CANTIDAD ? '<button class="pu-btn pu-eq" data-a="igual">✓ Igual a receta</button>' : '') + '<div class="pu-qty"><input inputmode="decimal" data-a="real" value="' + puEsc(r.real) + '" placeholder="Medí" aria-label="Cantidad medida"><span>' + puEsc(l.UNIDAD) + '</span></div>';
   }
   h += '</div><div class="pu-est">';
   if (r.no) h += '<span class="tdim">No se usó · ' + puEsc(r.motivo) + '</span>';
@@ -11129,7 +11129,7 @@ async function puConfirmar() {
   var aut = !noAp && puHayReemplazo() ? { USUARIO: PU_.aut.u, CLAVE: $v('pu-aut-c') } : null;
   var I = PU_.insp, insp = null;
   if (I && !noAp && I.apta !== null) {
-    if (I.apta) insp = { APTA: true, ID_BANDA: I.banda, PARCHES: I.parches.map(function(p) { return { ID_INSUMO: p.id, CANTIDAD: p.cant }; }) };
+    if (I.apta) insp = { APTA: true, ID_BANDA: I.banda, PARCHES: I.parches.map(function(p) { return { ID_INSUMO: p.id, CANTIDAD: p.cant }; }), EXTRAS: I.extras || [] };
     else { insp = { APTA: false, ID_MOTIVO: I.motivo, REEMPLAZO: I.reemplazo || '' }; cons = []; aut = null; }
   }
   b.disabled = true; b.textContent = 'Guardando…';
@@ -11200,7 +11200,9 @@ function puInspHTML() {
       I.parches.map(function(p, i) { return '<div style="display:flex;gap:8px;align-items:center"><select class="pu-q pu-insp-p" data-i="' + i + '" style="font-size:16px;flex:1;text-transform:none"><option value="">— elegí el parche —</option>' +
         X.parches.map(function(x) { return '<option value="' + puEsc(x.ID_INSUMO) + '"' + (x.ID_INSUMO === p.id ? ' selected' : '') + '>' + puEsc(x.NOMBRE) + '</option>'; }).join('') + '</select>' +
         '<input class="pu-q pu-insp-c" data-i="' + i + '" type="number" min="0" step="1" value="' + puEsc(p.cant) + '" placeholder="Cant." style="width:110px;font-size:18px"/><button class="pu-btn pu-min" onclick="PU_.insp.parches.splice(' + i + ',1);puFicha()">✕</button></div>'; }).join('') +
-      '<button class="pu-btn pu-min" style="width:max-content" onclick="PU_.insp.parches.push({id:\'\',cant:1});puFicha()">+ Parche</button>';
+      '<button class="pu-btn pu-min" style="width:max-content" onclick="PU_.insp.parches.push({id:\'\',cant:1});puFicha()">+ Parche</button>' +
+      ((X.extras || []).length ? '<div style="font-weight:700">Trabajos extra que lleva</div><div class="tdim" style="font-size:14px">Tocá los que hacen falta. Sus insumos aparecen en la estación ' + puEsc(X.estExtras || '5') + '.</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px">' + X.extras.map(function(t, i) { var on = I.extras.indexOf(t) !== -1; return '<button class="pu-chip" style="' + (on ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : '') + '" onclick="puInspExtra(' + i + ')">' + (on ? '✓ ' : '') + puEsc(t) + '</button>'; }).join('') + '</div>' : '');
   } else if (I.apta === false) {
     h += '<div style="font-weight:700">¿Por qué no es apta? *</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + X.motivos.map(function(m) { var on = String(I.motivo) === String(m.ID_MOT); return '<button class="pu-chip" style="' + (on ? 'background:var(--danger);color:#fff;border-color:var(--danger)' : '') + '" onclick="PU_.insp.motivo=\'' + m.ID_MOT + '\';puFicha()">' + puEsc(m.DESCRIPCION) + '</button>'; }).join('') + '</div>';
     if (X.suplentes.length) h += '<div style="font-weight:700">¿Qué cubierta entra en su lugar? *</div><div style="display:flex;flex-wrap:wrap;gap:8px">' +
@@ -11217,6 +11219,7 @@ function puInspHTML() {
   return h;
 }
 function puInspApta(v) { PU_.insp.apta = v; if (v) { PU_.insp.motivo = ''; PU_.insp.reemplazo = null; } puFicha(); }
+function puInspExtra(i) { var t = PU_.f.inspeccion.extras[i], a = PU_.insp.extras, k = a.indexOf(t); if (k === -1) a.push(t); else a.splice(k, 1); puFicha(); }
 function puListoRechazo() {
   var wrap = document.querySelector('#page-puesto-estacion .pu-wrap'); if (wrap) wrap.classList.remove('pu-enficha');
   puPie(false);
