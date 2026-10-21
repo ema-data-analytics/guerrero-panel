@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "5e1afbd05314"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "17b13df07d68"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EMA — Guerrero Neumáticos</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -9912,7 +9912,17 @@ function pcNroOTrab(id) { var o = (PC_.d.ordTrabajo || []).filter(function(x) { 
 function pcCliId(v) { return String(v || '').split(' — ')[0].trim(); }
 function pcCliList() { return '<datalist id="pc-clientes">' + PC_.d.clientes.map(function(c) { return '<option value="' + pcEsc(c.ID_CLIENTE + ' — ' + c.NOMBRE) + '">'; }).join('') + '</datalist>'; }
 function pcCliTxt(id) { var c = PC_.d.clientes.filter(function(x) { return String(x.ID_CLIENTE) === String(id); })[0]; return c ? c.ID_CLIENTE + ' — ' + c.NOMBRE : ''; }
-function pcMedidasList() { var m = {}; PC_.d.recetas.forEach(function(r) { m[r.MEDIDA] = true; }); (PC_.d.cascos || []).forEach(function(k) { if (k.MEDIDA) m[k.MEDIDA] = true; }); return '<datalist id="pc-medidas">' + Object.keys(m).sort().map(function(x) { return '<option value="' + pcEsc(x) + '">'; }).join('') + '</datalist>'; }
+// Medidas por tipo: al elegir CAMION solo se ven las de camión; al elegir AGRICOLA, las agrícolas
+function pcMedKey(tipo) { return 'pc-medidas-' + String(tipo || 'X').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function pcMedidasList() {
+  var d = PC_.d, por = {}, todas = {};
+  var add = function(tipo, m) { m = String(m || '').trim(); if (!m || m.toUpperCase() === 'TODAS') return; var k = pcMedKey(tipo); por[k] = por[k] || {}; por[k][m] = true; todas[m] = true; };
+  (d.tipos || []).forEach(function(t) { var lin = pcLineaDeTipo(t.TIPO); (d.medidas || []).forEach(function(m) { if (m.LINEA === lin) add(t.TIPO, m.MEDIDA); }); });
+  d.recetas.forEach(function(r) { add(r.TIPO, r.MEDIDA); });
+  (d.cascos || []).forEach(function(k) { if (k.TIPO) add(k.TIPO, k.MEDIDA); });
+  var dl = function(id, o) { return '<datalist id="' + id + '">' + Object.keys(o).sort().map(function(x) { return '<option value="' + pcEsc(x) + '">'; }).join('') + '</datalist>'; };
+  return dl('pc-medidas', todas) + Object.keys(por).map(function(k) { return dl(k, por[k]); }).join('');
+}
 function pcCascos() {
   var d = PC_.d;
   if (!PC_.kf.length) PC_.kf = [pcCasVacio()];
@@ -9936,7 +9946,7 @@ function pcCasFilas() {
   $id('pc-k-filas').innerHTML = PC_.kf.map(function(f, i) {
     return '<tr><td class="mono tc">' + (i + 1) + '</td><td class="tdim">automático</td><td><select class="fs" data-i="' + i + '" data-k="TIPO" style="min-width:115px">' + opt.replace('<option>' + pcEsc(f.TIPO) + '</option>', '<option selected>' + pcEsc(f.TIPO) + '</option>') + '</select></td>' +
       '<td><input class="fi" data-i="' + i + '" data-k="DOT" value="' + pcEsc(f.DOT) + '" style="width:150px;text-transform:uppercase' + (f._AUTO ? ';color:var(--accent);font-style:italic' : '') + '" title="' + (f._AUTO ? 'Marca automática: si tiene DOT o marca, escribila encima' : '') + '"/></td>' +
-      '<td><input class="fi" list="pc-medidas" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" style="width:140px"/></td>' +
+      '<td><input class="fi" list="' + (f.TIPO ? pcMedKey(f.TIPO) : 'pc-medidas') + '" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" placeholder="' + (f.TIPO ? '' : 'Elegí el tipo') + '" style="width:140px"/></td>' +
       '<td><input class="fi" list="pc-fabricantes" data-i="' + i + '" data-k="MARCA_FAB" value="' + pcEsc(f.MARCA_FAB) + '" style="width:120px;text-transform:uppercase"/></td>' +
       '<td><select class="fs" data-i="' + i + '" data-k="TRABAJO" style="min-width:150px">' + optT.replace('<option>' + pcEsc(f.TRABAJO) + '</option>', '<option selected>' + pcEsc(f.TRABAJO) + '</option>') + '</select></td>' +
       '<td><input class="fi" data-i="' + i + '" data-k="OBSERVACIONES" value="' + pcEsc(f.OBSERVACIONES) + '"/></td>' +
@@ -9944,7 +9954,7 @@ function pcCasFilas() {
   }).join('');
   document.querySelectorAll('#pc-k-filas [data-i]').forEach(function(e) {
     var fija = function(el) { var f = PC_.kf[+el.dataset.i]; f[el.dataset.k] = el.value; if (el.dataset.k === 'DOT') { f._AUTO = false; el.style.color = ''; el.style.fontStyle = ''; } };
-    e.addEventListener('change', function() { fija(this); if (this.dataset.k === 'DOT' && !this.value.trim()) { PC_.kf[+this.dataset.i]._AUTO = true; pcCasFilas(); } });
+    e.addEventListener('change', function() { fija(this); if (this.dataset.k === 'DOT' && !this.value.trim()) { PC_.kf[+this.dataset.i]._AUTO = true; pcCasFilas(); } if (this.dataset.k === 'TIPO') pcCasFilas(); });
     e.addEventListener('input', function() { fija(this); });
   });
 }
@@ -10069,7 +10079,7 @@ function pcRecepcion() {
   var h = '<div class="card mb3"><div class="card-hd"><span class="card-title">Recibir cubiertas</span></div><div class="card-body">' +
     '<div class="fr"><div class="fg"><label class="fl">Cliente *</label><input class="fi" id="pc-cli" list="pc-clientes" placeholder="Escribí el nombre..."/><datalist id="pc-clientes">' + d.clientes.map(function(c) { return '<option value="' + pcEsc(c.ID_CLIENTE + ' — ' + c.NOMBRE) + '">'; }).join('') + '</datalist></div>' +
     '<div class="fg"><label class="fl">Fecha</label><input class="fi" type="date" id="pc-fecha" value="' + fechaISO(new Date()) + '"/></div></div>' +
-    '<datalist id="pc-medidas">' + Object.keys(medidas).sort().map(function(m) { return '<option value="' + pcEsc(m) + '">'; }).join('') + '</datalist>' +
+    pcMedidasList() +
     '<datalist id="pc-fabricantes">' + (d.marcas || []).map(function(m) { return '<option value="' + pcEsc(m) + '">'; }).join('') + '</datalist>' +
     '<div class="tw"><table style="font-size:12px" class="pc-rec"><thead><tr><th>Marca' + (auto ? ' (vacía = auto)' : ' *') + '</th><th>Tipo *</th><th>Medida *</th><th>Trabajo *</th><th>Banda</th><th>Fabricante</th><th>Modelo</th><th>Receta</th><th></th></tr></thead><tbody id="pc-filas"></tbody></table></div>' +
     '<div class="flex gap2 mt3"><button class="btn btn-s btn-sm" onclick="PC_.filas.push(pcFilaVacia());pcFilas()"><i class="fas fa-plus"></i> Otra cubierta</button>' +
@@ -10098,7 +10108,7 @@ function pcFilas() {
     var r = f.TIPO && f.MEDIDA && f.TRABAJO ? pcRecetaDe(f.TIPO, f.MEDIDA, f.TRABAJO, f.ID_BANDA) : null;
     return '<tr><td><input class="fi" data-i="' + i + '" data-k="MARCA" value="' + pcEsc(f.MARCA) + '" style="width:110px;text-transform:uppercase"/></td>' +
       '<td><select class="fs" data-i="' + i + '" data-k="TIPO" style="min-width:115px">' + opt(d.tipos, 'TIPO', f.TIPO) + '</select></td>' +
-      '<td><input class="fi" list="pc-medidas" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" style="width:95px"/></td>' +
+      '<td><input class="fi" list="' + (f.TIPO ? pcMedKey(f.TIPO) : 'pc-medidas') + '" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" style="width:95px"/></td>' +
       '<td><select class="fs" data-i="' + i + '" data-k="TRABAJO" style="min-width:150px;max-width:220px">' + opt(d.trabajos, 'TRABAJO', f.TRABAJO) + '</select></td>' +
       '<td><select class="fs" style="min-width:95px;max-width:130px" data-i="' + i + '" data-k="ID_BANDA"><option value="">—</option>' + d.bandas.map(function(b) { return '<option value="' + pcEsc(b.ID_INSUMO) + '"' + (b.ID_INSUMO === f.ID_BANDA ? ' selected' : '') + '>' + pcEsc(b.ID_INSUMO) + '</option>'; }).join('') + '</select></td>' +
       '<td><input class="fi" list="pc-fabricantes" data-i="' + i + '" data-k="FABRICANTE" value="' + pcEsc(f.FABRICANTE) + '" placeholder="Elegí" style="width:115px;text-transform:uppercase"/></td>' +
