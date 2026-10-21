@@ -10170,7 +10170,7 @@ function pcArmar() {
   document.querySelectorAll('#pc-body .pc-mk').forEach(function(e) { e.addEventListener('input', function() { PC_.mk[this.dataset.id] = this.value.toUpperCase().replace(/\s+/g, ''); }); });
   document.querySelectorAll('#pc-body input[type=radio]').forEach(function(r) { r.addEventListener('change', function() { PC_.sel[this.dataset.id] = this.value; pcArmar(); }); });
   $id('pc-resp').addEventListener('change', function() { PC_.resp = this.value; });
-  $id('pc-a-f').addEventListener('input', function() { PC_.af = this.value; pcArmFiltrar(); });
+  $id('pc-a-f').addEventListener('input', function() { PC_.af = this.value; pcArmFiltrar(); $id('pc-a-cont').scrollIntoView({ block: 'start' }); });
   pcArmFiltrar(); pcContador();
   if (PC_.af) { var f = $id('pc-a-f'); f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
 }
