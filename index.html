@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "859e27b4a89e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "5e1afbd05314"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EMA — Guerrero Neumáticos</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -9879,12 +9879,12 @@ function pcPintar() {
   var nNuevos = (d.cascos || []).filter(function(k) { return k.ESTADO === 'NUEVO'; }).length;
   var nDev = d.cubiertas.filter(function(c) { return c.ESTADO === 'RECHAZADA' && !c.FECHA_DEVOLUCION; }).length;
   var tabs = [['cascos', '1 · Carga de cascos'], ['otrab', '2 · Órdenes de trabajo' + (nNuevos ? ' (' + nNuevos + ' cascos sin orden)' : '')], ['armar', '3 · Orden de servicio (' + n('EN_ESPERA') + ' pendientes)'], ['ots', 'Órdenes de servicio (' + abiertas + ' abiertas)'],
-    ['rech', 'Rechazadas' + (nDev ? ' (' + nDev + ' a devolver)' : '')], ['costos', 'Costos'], ['herramental', 'Herramental (inner/envelope)'], ['equipos', 'Herramientas y consumibles'], ['alarmas', '⚠ Alarmas'], ['config', 'Configuración']];
+    ['rech', 'Rechazadas' + (nDev ? ' (' + nDev + ' a devolver)' : '')], ['costos', 'Costos'], ['herramental', 'Herramental (inner/envelope)'], ['equipos', 'Herramientas y consumibles'], ['alarmas', '⚠ Alarmas'], ['hist', 'Historial'], ['config', 'Configuración']];
   el.innerHTML = '<div class="page-hd"><div><div class="page-title">Producción por cubierta</div><div class="page-sub">Cada cubierta con su marca grabada: recepción, carga de autoclave, estaciones, insumos reales y costo.</div></div>' +
     '<div class="flex gap2 no-print"><input class="fi" id="pc-marca-q" placeholder="Buscar marca..." style="width:170px"/><button class="btn btn-s" onclick="pcHistorial($v(\'pc-marca-q\'))"><i class="fas fa-search"></i> Vida de la cubierta</button></div></div>' +
     '<div class="tabs mb3">' + tabs.map(function(t) { return '<div class="tab' + (PC_.tab === t[0] ? ' active' : '') + '" onclick="PC_.tab=\'' + t[0] + '\';pcPintar()">' + t[1] + '</div>'; }).join('') + '</div><div id="pc-body"></div>';
   $id('pc-marca-q').addEventListener('keydown', function(e) { if (e.key === 'Enter') pcHistorial(this.value); });
-  ({ recepcion: pcRecepcion, cascos: pcCascos, otrab: pcOTrab, rech: pcRechazadas, armar: pcArmar, ots: pcOts, costos: pcCostos, herramental: pcHerramental, equipos: pcEquipos, alarmas: pcAlarmas, config: pcConfig })[PC_.tab]();
+  ({ recepcion: pcRecepcion, cascos: pcCascos, otrab: pcOTrab, rech: pcRechazadas, armar: pcArmar, ots: pcOts, costos: pcCostos, herramental: pcHerramental, equipos: pcEquipos, alarmas: pcAlarmas, hist: pcHist, config: pcConfig })[PC_.tab]();
 }
 
 // ================================================================
@@ -9951,9 +9951,9 @@ function pcCasFilas() {
 var PC_CAS_EST = { NUEVO: ['b-orange', 'Sin orden de trabajo'], EN_OT: ['b-blue', 'En orden de trabajo'], ANULADO: ['b-gray', 'Anulado'] };
 function pcCasAnt() {
   var el = $id('pc-k-ant'); if (!el) return;
-  var cli = PC_.kcli, ks = (PC_.d.cascos || []).filter(function(k) { return cli && String(k.ID_CLIENTE) === String(cli); }).sort(function(a, b) { return b.ID_CASCO - a.ID_CASCO; });
-  $id('pc-k-n').textContent = cli ? ks.length + ' registros' : '';
-  if (!cli) { el.innerHTML = '<div class="tdim" style="padding:12px">Elegí el cliente y acá aparecen los cascos que ya trajo.</div>'; return; }
+  var cli = PC_.kcli, ks = (PC_.d.cascos || []).filter(function(k) { return cli && String(k.ID_CLIENTE) === String(cli) && (k.ESTADO === 'NUEVO' || k.ESTADO === 'EN_OT'); }).sort(function(a, b) { return b.ID_CASCO - a.ID_CASCO; });
+  $id('pc-k-n').textContent = cli ? ks.length + ' en curso' : '';
+  if (!cli) { el.innerHTML = '<div class="tdim" style="padding:12px">Elegí el cliente y acá aparecen sus cascos que todavía están en curso. Lo anterior está en "Historial".</div>'; return; }
   el.innerHTML = '<div class="tw"><table style="font-size:12px" id="pc-k-tant"><thead><tr><th>N° interno</th><th>Fecha</th><th>Tipo</th><th>N° DOT o marca de fábrica</th><th>Medida</th><th>Marca</th><th>Estado</th><th></th></tr></thead><tbody>' +
     (ks.length ? ks.map(function(k) { var e = PC_CAS_EST[k.ESTADO] || ['b-gray', k.ESTADO];
       return '<tr' + (k.ESTADO === 'ANULADO' ? ' style="opacity:.5"' : '') + '><td class="mono"><b>' + k.ID_CASCO + '</b></td><td>' + fmtD(+k.FECHA) + '</td><td>' + pcEsc(k.TIPO) + '</td><td class="mono">' + pcEsc(k.DOT) + '</td><td class="mono">' + pcEsc(k.MEDIDA) + '</td><td>' + pcEsc(k.MARCA_FAB) + '</td>' +
@@ -9986,21 +9986,21 @@ function pcOTrab() {
     '<div class="fg" style="max-width:180px"><label class="fl">N° orden manual</label><input class="fi" id="pc-o-man"/></div>' +
     '<div class="fg"><label class="fl">Observaciones</label><input class="fi" id="pc-o-obs"/></div></div><div id="pc-o-items"></div>' +
     '<button class="btn btn-p mt3" id="pc-o-ok" onclick="pcOTrabGrabar()"><i class="fas fa-save"></i> Grabar orden de trabajo</button></div></div>';
-  // Diario de órdenes de trabajo: una fila por cubierta, con la etapa en la que está
-  var ots = {}; (d.ordTrabajo || []).forEach(function(o) { ots[String(o.ID_OTRAB)] = o; });
-  var cs = d.cubiertas.filter(function(c) { return c.ID_OTRAB; }).sort(function(a, b) { return b.ID_CUB - a.ID_CUB; });
-  var etapa = function(c) { if (c.ESTADO === 'EN_ESPERA') return ['b-orange', 'Pendiente']; if (c.ESTADO === 'EN_OT') return ['b-blue', 'En la línea']; if (c.ESTADO === 'TERMINADA') return ['b-green', 'Terminada']; if (c.ESTADO === 'RECHAZADA') return ['b-red', 'No apta']; return ['b-gray', PC_EST_TXT[c.ESTADO] || c.ESTADO]; };
-  var fil = PC_.fDiario, cs2 = cs.filter(function(c) { return fil === 'TODOS' || etapa(c)[1] === fil; });
-  h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Diario de órdenes de trabajo (' + cs2.length + ')</span><span class="flex gap2">' + ['TODOS', 'Pendiente', 'En la línea', 'Terminada', 'No apta'].map(function(x) { return '<button class="btn btn-xs ' + (fil === x ? 'btn-p' : 'btn-s') + '" onclick="PC_.fDiario=\'' + x + '\';pcOTrab()">' + (x === 'TODOS' ? 'Todas' : x) + '</button>'; }).join('') + '</span></div>' +
-    '<div class="tw"><table style="font-size:12px" id="pc-o-diario"><thead><tr><th>Fecha OT</th><th>OT</th><th>Orden manual</th><th>Cliente</th><th>N° interno</th><th>DOT</th><th>Tipo</th><th>Medida</th><th>Marca</th><th>Trabajo</th><th>Etapa</th><th>Marca grabada</th></tr></thead><tbody>' +
-    (cs2.length ? cs2.map(function(c) { var o = ots[String(c.ID_OTRAB)] || {}, e = etapa(c);
-      return '<tr><td>' + fmtD(+o.FECHA) + '</td><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td class="mono">' + pcEsc(o.NRO_MANUAL) + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(c.ID_CASCO) + '</td><td class="mono">' + pcEsc(c.DOT) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE) + '</td><td>' + pcEsc(c.TRABAJO) + '</td>' +
-        '<td><span class="badge ' + e[0] + '">' + e[1] + '</span></td><td class="mono">' + pcEsc(c.MARCA || '—') + '</td></tr>'; }).join('') : '<tr><td colspan="12" class="tc tdim" style="padding:16px">Sin órdenes de trabajo.</td></tr>') + '</tbody></table></div></div>';
-  var lo = (d.ordTrabajo || []).slice().sort(function(a, b) { return b.ID_OTRAB - a.ID_OTRAB; });
-  h += '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de trabajo (' + lo.length + ')</span></div><div class="tw"><table style="font-size:12px" id="pc-o-lista"><thead><tr><th>OT</th><th>Fecha</th><th>Cliente</th><th>Orden manual</th><th class="tr">Cubiertas</th><th class="tr">Pendientes</th><th>Estado</th><th></th></tr></thead><tbody>' +
-    (lo.length ? lo.map(function(o) { var mias = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(o.ID_OTRAB) && c.ESTADO !== 'ANULADA'; }), pend = mias.filter(function(c) { return c.ESTADO === 'EN_ESPERA'; }).length;
-      return '<tr' + (o.ESTADO === 'ANULADA' ? ' style="opacity:.5"' : '') + '><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL) + '</td><td class="tr">' + mias.length + '</td><td class="tr">' + pend + '</td>' +
-        '<td><span class="badge ' + (o.ESTADO === 'ANULADA' ? 'b-gray' : 'b-blue') + '">' + (o.ESTADO === 'ANULADA' ? 'Anulada' : 'Abierta') + '</span></td><td>' + (o.ESTADO !== 'ANULADA' && pcPuede('ANULAR') && pend === mias.length ? '<button class="btn btn-s btn-xs" onclick="pcOTrabAnular(' + o.ID_OTRAB + ')">Anular</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="8" class="tc tdim" style="padding:16px">Sin órdenes de trabajo.</td></tr>') + '</tbody></table></div></div>';
+  // Clientes con cascos sin orden: un clic y se cargan
+  var sinO = {}; (d.cascos || []).forEach(function(k) { if (k.ESTADO === 'NUEVO') { var n0 = k.CLIENTE || pcCliTxt(k.ID_CLIENTE); sinO[k.ID_CLIENTE] = sinO[k.ID_CLIENTE] || { n: 0, nom: n0 }; sinO[k.ID_CLIENTE].n++; } });
+  var ks0 = Object.keys(sinO);
+  h = pcAvisoLinea() + (ks0.length ? '<div class="card mb3"><div class="card-body"><div class="fl mb2">Cascos sin orden de trabajo (tocá el cliente)</div><div class="flex gap2" style="flex-wrap:wrap">' +
+    ks0.map(function(id) { return '<button class="btn ' + (String(PC_.ocli) === String(id) ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="PC_.ocli=\'' + id + '\';PC_.otr={};pcOTrab()">' + pcEsc(sinO[id].nom) + ' (' + sinO[id].n + ')</button>'; }).join('') + '</div></div></div>' :
+    '<div class="al al-g mb3">No hay cascos sin orden de trabajo: todo lo cargado ya tiene su orden.</div>') + h.slice(pcAvisoLinea().length);
+  // Solo las órdenes de trabajo que tienen cubiertas esperando o en la línea
+  var lo = (d.ordTrabajo || []).filter(function(o) { return o.ESTADO !== 'ANULADA'; }).map(function(o) {
+    var mias = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(o.ID_OTRAB) && c.ESTADO !== 'ANULADA'; });
+    return { o: o, mias: mias, pend: mias.filter(function(c) { return c.ESTADO === 'EN_ESPERA'; }).length, linea: mias.filter(function(c) { return c.ESTADO === 'EN_OT'; }).length };
+  }).filter(function(x) { return x.pend || x.linea; }).sort(function(a, b) { return b.o.ID_OTRAB - a.o.ID_OTRAB; });
+  h += '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de trabajo en curso (' + lo.length + ')</span><span class="tdim" style="font-size:12px">Las terminadas y anuladas están en "Historial"</span></div><div class="tw"><table style="font-size:12px" id="pc-o-lista"><thead><tr><th>OT</th><th>Fecha</th><th>Cliente</th><th>N° boleta</th><th class="tr">Cubiertas</th><th class="tr">Esperando</th><th class="tr">En la línea</th><th></th></tr></thead><tbody>' +
+    (lo.length ? lo.map(function(x) { var o = x.o;
+      return '<tr><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL) + '</td><td class="tr">' + x.mias.length + '</td><td class="tr">' + x.pend + '</td><td class="tr">' + x.linea + '</td>' +
+        '<td>' + (pcPuede('ANULAR') && x.pend === x.mias.length ? '<button class="btn btn-s btn-xs" onclick="pcOTrabAnular(' + o.ID_OTRAB + ')">Anular</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="8" class="tc tdim" style="padding:16px">No hay órdenes de trabajo en curso.</td></tr>') + '</tbody></table></div></div>';
   $id('pc-body').innerHTML = h;
   $id('pc-o-cli').addEventListener('change', function() { var n = pcCliId(this.value); if (n === PC_.ocli) return; PC_.ocli = n; PC_.otr = {}; pcOTrabItems(); });
   pcOTrabItems();
@@ -10012,7 +10012,7 @@ function pcOTrabItems() {
   if (!ks.length) { el.innerHTML = '<div class="al al-y" style="margin-top:8px">Este cliente no tiene cascos nuevos. Primero cargalos en "1 · Carga de cascos".</div>'; return; }
   var opt = function(v) { return '<option value="">— elegí —</option>' + d.trabajos.filter(function(x) { return x.ACTIVO != 0; }).map(function(x) { return '<option' + (x.TRABAJO === v ? ' selected' : '') + '>' + pcEsc(x.TRABAJO) + '</option>'; }).join(''); };
   el.innerHTML = '<div class="tw"><table style="font-size:12px" id="pc-o-t"><thead><tr><th style="width:30px"></th><th>N° interno</th><th>DOT</th><th>Tipo</th><th>Medida</th><th>Marca</th><th>Trabajo *</th><th>Receta</th></tr></thead><tbody>' + ks.map(function(k) {
-    var x = PC_.otr[k.ID_CASCO] || (PC_.otr[k.ID_CASCO] = { on: true, tr: '' }), r = x.tr ? pcRecetaDe(k.TIPO, k.MEDIDA, x.tr, '') : null;
+    var x = PC_.otr[k.ID_CASCO] || (PC_.otr[k.ID_CASCO] = { on: true, tr: 'RECAPADO' }), r = x.tr ? pcRecetaDe(k.TIPO, k.MEDIDA, x.tr, '') : null;
     return '<tr><td><input type="checkbox" class="pc-o-on" data-id="' + k.ID_CASCO + '"' + (x.on ? ' checked' : '') + '/></td><td class="mono"><b>' + k.ID_CASCO + '</b></td><td class="mono">' + pcEsc(k.DOT) + '</td><td>' + pcEsc(k.TIPO) + '</td><td class="mono">' + pcEsc(k.MEDIDA) + '</td><td>' + pcEsc(k.MARCA_FAB) + '</td>' +
       '<td><select class="fs pc-o-tr" data-id="' + k.ID_CASCO + '" style="min-width:170px">' + opt(x.tr) + '</select></td><td>' + (x.tr ? (r ? '<span class="badge b-green">✓ receta ' + r.ID_RECETA + '</span>' : '<span class="badge b-red">sin receta</span>') : '') + '</td></tr>';
   }).join('') + '</tbody></table></div>';
@@ -10271,12 +10271,41 @@ async function pcCrearOT() {
 }
 
 // ── Órdenes ──
+// ── Historial: todo lo anterior (órdenes de trabajo, cubiertas por etapa y órdenes de servicio), con buscador ──
+function pcHist() {
+  var d = PC_.d, q = String(PC_.hq || '').toUpperCase().trim(), sub = PC_.hsub || 'cub';
+  var ots = {}; (d.ordTrabajo || []).forEach(function(o) { ots[String(o.ID_OTRAB)] = o; });
+  var ok = function(t) { return !q || q.split(/\s+/).every(function(p) { return t.toUpperCase().indexOf(p) !== -1; }); };
+  var etapa = function(c) { if (c.ESTADO === 'EN_ESPERA') return ['b-orange', 'Esperando']; if (c.ESTADO === 'EN_OT') return ['b-blue', 'En la línea']; if (c.ESTADO === 'TERMINADA') return ['b-green', 'Terminada']; if (c.ESTADO === 'RECHAZADA') return ['b-red', 'No apta']; if (c.ESTADO === 'ANULADA') return ['b-gray', 'Anulada']; return ['b-gray', PC_EST_TXT[c.ESTADO] || c.ESTADO]; };
+  var h = '<div class="flex gap2 mb3" style="flex-wrap:wrap;align-items:flex-end"><div style="flex:1 1 300px;max-width:420px"><label class="fl">Buscar (cliente, OT, boleta, DOT, marca)</label><input class="fi" id="pc-h-q" value="' + pcEsc(PC_.hq || '') + '" autocomplete="off"/></div>' +
+    [['cub', 'Cubiertas'], ['otr', 'Órdenes de trabajo'], ['os', 'Órdenes de servicio']].map(function(x) { return '<button class="btn ' + (sub === x[0] ? 'btn-p' : 'btn-s') + '" onclick="PC_.hsub=\'' + x[0] + '\';pcHist()">' + x[1] + '</button>'; }).join('') + '</div><div id="pc-h-res"></div>';
+  $id('pc-body').innerHTML = h;
+  var pintar = function() {
+    q = String(PC_.hq || '').toUpperCase().trim(); var r = '';
+    if (sub === 'cub') {
+      var cs = d.cubiertas.filter(function(c) { var o = ots[String(c.ID_OTRAB)] || {}; return ok([c.CLIENTE, o.NRO, o.NRO_MANUAL, c.DOT, c.MARCA, c.MEDIDA, c.TRABAJO].join(' ')); }).sort(function(a, b) { return b.ID_CUB - a.ID_CUB; });
+      r = '<div class="card"><div class="card-hd"><span class="card-title">Cubiertas (' + cs.length + ')</span></div><div class="tw"><table style="font-size:12px"><thead><tr><th>Recibida</th><th>OT</th><th>Boleta</th><th>Cliente</th><th>DOT</th><th>Tipo</th><th>Medida</th><th>Trabajo</th><th>Etapa</th><th>Marca grabada</th></tr></thead><tbody>' +
+        cs.slice(0, 300).map(function(c) { var o = ots[String(c.ID_OTRAB)] || {}, e = etapa(c); return '<tr><td>' + fmtD(c.FECHA_RECEPCION) + '</td><td class="mono">' + pcEsc(o.NRO || '') + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL || c.NRO_MANUAL || '') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(c.DOT) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + '</td><td><span class="badge ' + e[0] + '">' + e[1] + '</span></td><td class="mono">' + (c.MARCA ? '<a href="#" onclick="pcHistorial(\'' + pcEsc(c.MARCA) + '\');return false">' + pcEsc(c.MARCA) + '</a>' : '—') + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+    } else if (sub === 'otr') {
+      var lo = (d.ordTrabajo || []).filter(function(o) { return ok([o.NRO, o.CLIENTE, o.NRO_MANUAL].join(' ')); }).sort(function(a, b) { return b.ID_OTRAB - a.ID_OTRAB; });
+      r = '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de trabajo (' + lo.length + ')</span></div><div class="tw"><table style="font-size:12px"><thead><tr><th>OT</th><th>Fecha</th><th>Cliente</th><th>Boleta</th><th class="tr">Cubiertas</th><th>Estado</th></tr></thead><tbody>' +
+        lo.slice(0, 300).map(function(o) { var n = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(o.ID_OTRAB) && c.ESTADO !== 'ANULADA'; }).length; return '<tr' + (o.ESTADO === 'ANULADA' ? ' style="opacity:.55"' : '') + '><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL) + '</td><td class="tr">' + n + '</td><td><span class="badge ' + (o.ESTADO === 'ANULADA' ? 'b-gray">Anulada' : 'b-blue">' + pcEsc(o.ESTADO === 'ABIERTA' ? 'Abierta' : o.ESTADO)) + '</span></td></tr>'; }).join('') + '</tbody></table></div></div>';
+    } else {
+      var os = d.ots.filter(function(o) { return ok([o.NRO_OT, o.LINEA, o.ESTADO].join(' ')); }).sort(function(a, b) { return b.ID_OT - a.ID_OT; });
+      r = '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de servicio (' + os.length + ')</span></div><div class="tw"><table style="font-size:12px"><thead><tr><th>Orden</th><th>Fecha</th><th>Línea</th><th class="tr">Titulares</th><th class="tr">Terminadas</th><th>Estado</th><th></th></tr></thead><tbody>' +
+        os.map(function(o) { return '<tr' + (o.ESTADO === 'ANULADA' ? ' style="opacity:.55"' : '') + '><td class="mono"><b>' + pcEsc(o.NRO_OT) + '</b></td><td>' + fmtD(o.FECHA) + '</td><td>' + pcEsc(o.LINEA) + '</td><td class="tr">' + o.TITULARES + '/' + o.TOPE + '</td><td class="tr">' + o.TERMINADAS + '</td><td>' + pcBadge(o.ESTADO) + '</td><td><button class="btn btn-s btn-xs" onclick="pcAbrirOT(' + o.ID_OT + ')">Abrir</button></td></tr>'; }).join('') + '</tbody></table></div></div>';
+    }
+    $id('pc-h-res').innerHTML = r;
+  };
+  $id('pc-h-q').addEventListener('input', function() { PC_.hq = this.value; pintar(); });
+  pintar();
+}
 function pcOts() {
   var d = PC_.d;
-  var ots = d.ots.slice().sort(function(a, b) { return b.ID_OT - a.ID_OT; });
-  $id('pc-body').innerHTML = '<div class="card"><div class="tw"><table style="font-size:12px" id="pc-tbl-ots"><thead><tr><th>OT</th><th>Fecha</th><th>Línea</th><th class="tr">Titulares</th><th class="tr">Suplentes</th><th class="tr">Terminadas</th><th>Estado</th><th></th></tr></thead><tbody>' +
+  var ots = d.ots.filter(function(o) { return o.ESTADO === 'ARMADA' || o.ESTADO === 'EN_PROCESO'; }).sort(function(a, b) { return b.ID_OT - a.ID_OT; });
+  $id('pc-body').innerHTML = '<div class="tdim mb2" style="font-size:12px">Solo las abiertas. Las cerradas y anuladas están en "Historial".</div><div class="card"><div class="tw"><table style="font-size:12px" id="pc-tbl-ots"><thead><tr><th>OT</th><th>Fecha</th><th>Línea</th><th class="tr">Titulares</th><th class="tr">Suplentes</th><th class="tr">Terminadas</th><th>Estado</th><th></th></tr></thead><tbody>' +
     ots.map(function(o) { return '<tr><td class="mono"><b>' + pcEsc(o.NRO_OT) + '</b></td><td>' + fmtD(o.FECHA) + '</td><td>' + pcEsc(o.LINEA) + ' (tope ' + o.TOPE + ')</td><td class="tr">' + o.TITULARES + '/' + o.TOPE + '</td><td class="tr">' + o.SUPLENTES + '</td><td class="tr">' + o.TERMINADAS + '</td><td>' + pcBadge(o.ESTADO) + '</td><td><button class="btn btn-p btn-sm" onclick="pcAbrirOT(' + o.ID_OT + ')">Abrir</button></td></tr>'; }).join('') +
-    '</tbody></table>' + (ots.length ? '' : '<div class="tdim" style="padding:12px">Todavía no hay órdenes de servicio. Se arman en "3 · Orden de servicio".</div>') + '</div></div><div id="pc-ot"></div>';
+    '</tbody></table>' + (ots.length ? '' : '<div class="tdim" style="padding:12px">No hay órdenes de servicio abiertas. Se arman en "3 · Orden de servicio".</div>') + '</div></div><div id="pc-ot"></div>';
 }
 async function pcAbrirOT(id) {
   var r = await gsRun('gsPC_OTDetalle', id);
@@ -10893,8 +10922,10 @@ function puFilaHTML(r, k) {
     (!l.ID_ESTACION && l.SUGERIDA === puE() ? ' <span class="pu-star">★ suele usarse acá</span>' : '') + '</div></div><div class="pu-act">';
   if (r.no) h += '<button class="pu-btn pu-min" data-a="deshacer">Deshacer</button>';
   else if (l.TIPO_LINEA === 'HERRAMENTAL') {
-    var ps = PU_.f.piezas.filter(function(p) { return p.ID_INSUMO === l.ID_INSUMO && !puPiezaTomada(p.ID_PIEZA, r); });
-    h += '<div class="pu-pz">' + ps.map(function(p) { return '<button class="' + (String(r.pieza) === String(p.ID_PIEZA) ? 'sel' : '') + '" data-a="pieza" data-v="' + p.ID_PIEZA + '">' + puEsc(String(p.CODIGO).replace(/^.*#/, '#')) + '<small>' + p.USOS + ' de ' + (p.MAX_USOS || '∞') + ' usos</small></button>'; }).join('') +
+    var ps = PU_.f.piezas.filter(function(p) { return p.ID_INSUMO === l.ID_INSUMO && !puPiezaTomada(p.ID_PIEZA, r); }), otraPz = false;
+    // Si no hay de la que dice la receta, se ofrecen las del mismo tipo (inner o envelope) que haya en planta
+    if (!ps.length) { var fam = /INNER/i.test(l.NOMBRE + ' ' + l.ID_INSUMO) ? /INNER/i : (/ENVEL/i.test(l.NOMBRE + ' ' + l.ID_INSUMO) ? /ENVEL/i : null); if (fam) { ps = PU_.f.piezas.filter(function(p) { return fam.test(p.NOMBRE || '') && !puPiezaTomada(p.ID_PIEZA, r); }); otraPz = true; } }
+    h += '<div class="pu-pz">' + ps.map(function(p) { return '<button class="' + (String(r.pieza) === String(p.ID_PIEZA) ? 'sel' : '') + '" data-a="pieza" data-v="' + p.ID_PIEZA + '">' + puEsc(otraPz ? String(p.NOMBRE || p.CODIGO).replace(/^(INNERLOPE|ENVELOPE EXTERNO) MAE\s*/i, '') + ' ' + String(p.CODIGO).replace(/^.*#/, '#') : String(p.CODIGO).replace(/^.*#/, '#')) + '<small>' + p.USOS + ' de ' + (p.MAX_USOS || '∞') + ' usos</small></button>'; }).join('') +
       (PU_.d.herrObligatorio ? '' : '<button class="' + (r.sinNro ? 'sel' : '') + '" data-a="sinnro">Sin número</button>') + '</div>';
   } else {
     if (puSinStock(l) && !r.reemp) h += '<span style="color:var(--danger);font-weight:700">Sin stock en planta</span><button class="pu-btn pu-eq" data-a="otro">↺ Usé otro</button>';
@@ -11604,7 +11635,7 @@ function pqHerrForm(id) {
     '<div class="fr"><div class="fg"><label class="fl">Nombre *</label><input class="fi" id="pq-h-n" value="' + pcEsc(x.NOMBRE || '') + '" placeholder="Ej: Pulidora neumática"/></div>' +
     '<div class="fg"><label class="fl">Código</label><input class="fi" id="pq-h-c" value="' + pcEsc(x.CODIGO || '') + '" ' + (id ? 'disabled' : 'placeholder="Vacío = automático"') + '/></div></div>' +
     '<div class="fr"><div class="fg"><label class="fl">Estación *</label><select class="fs" id="pq-h-e"><option value="">—</option>' + PQ_.d.estaciones.map(function(e) { return '<option value="' + e.ID_ESTACION + '"' + (String(x.ID_ESTACION) === String(e.ID_ESTACION) ? ' selected' : '') + '>' + e.ORDEN + ' · ' + pcEsc(e.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
-    '<div class="fg"><label class="fl">Responsable</label><input class="fi" id="pq-h-r" value="' + pcEsc(x.RESPONSABLE || '') + '"/></div></div>' +
+    '<div class="fg"><label class="fl">Responsable</label><input class="fi" id="pq-h-r" list="pq-pers" placeholder="Elegí de la lista" value="' + pcEsc(x.RESPONSABLE || '') + '"/>' + pqPersList() + '</div></div>' +
     '<div class="fr"><div class="fg"><label class="fl">Próximo service</label><input class="fi" type="date" id="pq-h-s" value="' + ps + '"/></div><div class="fg"><label class="fl">Valor ($)</label><input class="fi" type="number" id="pq-h-v" value="' + (x.VALOR || '') + '"/></div></div>' +
     '<div class="fg"><label class="fl">Observaciones</label><input class="fi" id="pq-h-o" value="' + pcEsc(x.OBSERVACIONES || '') + '"/></div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pq-h-ok">Guardar</button></div>');
