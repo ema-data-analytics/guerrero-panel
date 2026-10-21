@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "c65d546782bc"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e65b2a254e9c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EMA — Guerrero Neumáticos</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -10954,7 +10954,7 @@ function puAutoclavePintar() {
   if (r.cocinando) {
     var min = Math.floor((Date.now() - r.cocinando.INICIO) / 60000), falta = r.minutos - min;
     h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:24px;font-weight:800;color:var(--warn)" id="pu-ac-min">Cocinando · ' + min + ' de ~' + r.minutos + ' min</div>' +
-      '<div style="font-size:16px">Empezó a las ' + new Date(r.cocinando.INICIO).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) + '. ' + (falta > 0 ? 'Faltan unos ' + falta + ' min.' : 'Ya pasó el tiempo aproximado.') + ' Cuando salga, tocá <b>Terminó la cocción</b>.</div></div>';
+      '<div style="font-size:16px">Empezó a las ' + new Date(r.cocinando.INICIO).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + '. ' + (falta > 0 ? 'Faltan unos ' + falta + ' min.' : 'Ya pasó el tiempo aproximado.') + ' Cuando salga, tocá <b>Terminó la cocción</b>.</div></div>';
   } else if (!listas.length) {
     h += '<div class="pu-reg"><div style="font-size:18px;font-weight:700">No hay cubiertas listas para el autoclave en esta orden.</div>' + (r.anteriores.length ? '<div class="tdim">Ya se cocinó: ' + r.anteriores.map(function(a) { return a.N + ' cubiertas · ' + a.MINUTOS + ' min'; }).join(' · ') + '</div>' : '') + '</div>';
   } else {
@@ -11009,6 +11009,7 @@ async function puAcFin() {
     var r = await gsRun('gsPC_AutoclaveTerminar', c.ID_AUTOC, PU_.oper);
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo terminar', 'r2'); return; }
     if (puTick) { clearInterval(puTick); puTick = null; }
+    try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e2) {}
     PU_.vista = 'listo';
     var ctl = PU_.d && PU_.d.estControl ? puNomEst(PU_.d.estControl) : 'la inspección final';
     $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">🔥</div><h2>Salió la carga del autoclave</h2><div style="font-size:18px">' + r.N + ' cubiertas · cocción de ' + r.MINUTOS + ' min</div>' +
