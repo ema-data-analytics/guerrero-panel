@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ac75c63a7d4d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "8a515672e1b0"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EMA — Guerrero Neumáticos</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -9890,7 +9890,16 @@ function pcPintar() {
 // ================================================================
 // 1. CARGA DE CASCOS (por cliente, cada casco con su N° interno)
 // ================================================================
-function pcCasVacio() { return { TIPO: '', DOT: '', MEDIDA: '', MARCA_FAB: '', OBSERVACIONES: '' }; }
+function pcCasVacio() { return { TIPO: '', DOT: '', MEDIDA: '', MARCA_FAB: '', OBSERVACIONES: '', _AUTO: true }; }
+// Marca automática propuesta (3 letras del cliente + 6 cifras). Se puede cambiar; al grabar, la definitiva la da el sistema.
+function pcDotNorm(s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function pcCasAuto() {
+  var c = PC_.d.clientes.filter(function(x) { return String(x.ID_CLIENTE) === String(PC_.kcli); })[0];
+  if (!c) { PC_.kf.forEach(function(f) { if (f._AUTO) f.DOT = ''; }); return; }
+  var pref = (String(c.NOMBRE || '').toUpperCase().replace(/[^A-Z]/g, '') + 'XXX').slice(0, 3), rx = new RegExp('^' + pref + '(\\d{6})$'), max = 0;
+  (PC_.d.cascos || []).forEach(function(k) { var m = rx.exec(pcDotNorm(k.DOT)); if (m) max = Math.max(max, parseInt(m[1], 10)); });
+  PC_.kf.forEach(function(f) { if (f._AUTO) { max++; f.DOT = pref + String(max).padStart(6, '0'); } });
+}
 function pcNroOTrab(id) { var o = (PC_.d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0]; return o ? o.NRO : ''; }
 function pcCliId(v) { return String(v || '').split(' — ')[0].trim(); }
 function pcCliList() { return '<datalist id="pc-clientes">' + PC_.d.clientes.map(function(c) { return '<option value="' + pcEsc(c.ID_CLIENTE + ' — ' + c.NOMBRE) + '">'; }).join('') + '</datalist>'; }
@@ -9903,25 +9912,30 @@ function pcCascos() {
     '<div class="fr"><div class="fg"><label class="fl">Cliente *</label><input class="fi" id="pc-k-cli" list="pc-clientes" placeholder="Escribí el nombre..." value="' + pcEsc(pcCliTxt(PC_.kcli)) + '"/>' + pcCliList() + '</div>' +
     '<div class="fg" style="max-width:180px"><label class="fl">Fecha</label><input class="fi" type="date" id="pc-k-f" value="' + fechaISO(new Date()) + '"/></div></div>' +
     pcMedidasList() + '<datalist id="pc-fabricantes">' + (d.marcas || []).map(function(m) { return '<option value="' + pcEsc(m) + '">'; }).join('') + '</datalist>' +
-    '<div class="tw"><table style="font-size:12px" class="pc-rec" id="pc-k-t"><thead><tr><th style="width:40px">#</th><th>N° interno</th><th>Tipo *</th><th>N° DOT o marca de fábrica *</th><th>Medida *</th><th>Marca</th><th>Observaciones</th><th></th></tr></thead><tbody id="pc-k-filas"></tbody></table></div>' +
+    '<div class="tw"><table style="font-size:12px" class="pc-rec" id="pc-k-t"><thead><tr><th style="width:40px">#</th><th>N° interno</th><th>Tipo *</th><th>N° DOT o marca de fábrica <span class="tdim" style="text-transform:none;font-weight:400">(si no tiene, la pone el sistema)</span></th><th>Medida *</th><th>Marca</th><th>Observaciones</th><th></th></tr></thead><tbody id="pc-k-filas"></tbody></table></div>' +
     '<div class="flex gap2 mt3"><button class="btn btn-s btn-sm" id="pc-k-mas" onclick="PC_.kf.push(pcCasVacio());pcCasFilas()"><i class="fas fa-plus"></i> Otro casco</button>' +
     '<button class="btn btn-p" id="pc-k-ok" onclick="pcCasGrabar()"><i class="fas fa-save"></i> Grabar</button></div></div></div>' +
     '<div class="card"><div class="card-hd"><span class="card-title">Cascos declarados con anterioridad</span><span class="badge b-blue" id="pc-k-n"></span></div><div id="pc-k-ant"></div></div>';
   $id('pc-body').innerHTML = h;
-  $id('pc-k-cli').addEventListener('change', function() { var n = pcCliId(this.value); if (n === PC_.kcli) return; PC_.kcli = n; pcCasAnt(); });
+  $id('pc-k-cli').addEventListener('change', function() { var n = pcCliId(this.value); if (n === PC_.kcli) return; PC_.kcli = n; pcCasAnt(); pcCasFilas(); });
   pcCasFilas(); pcCasAnt();
 }
 function pcCasFilas() {
+  pcCasAuto();
   var d = PC_.d, opt = '<option value="">—</option>' + d.tipos.filter(function(x) { return x.ACTIVO != 0; }).map(function(x) { return '<option>' + pcEsc(x.TIPO) + '</option>'; }).join('');
   $id('pc-k-filas').innerHTML = PC_.kf.map(function(f, i) {
     return '<tr><td class="mono tc">' + (i + 1) + '</td><td class="tdim">automático</td><td><select class="fs" data-i="' + i + '" data-k="TIPO" style="min-width:115px">' + opt.replace('<option>' + pcEsc(f.TIPO) + '</option>', '<option selected>' + pcEsc(f.TIPO) + '</option>') + '</select></td>' +
-      '<td><input class="fi" data-i="' + i + '" data-k="DOT" value="' + pcEsc(f.DOT) + '" style="width:150px;text-transform:uppercase"/></td>' +
+      '<td><input class="fi" data-i="' + i + '" data-k="DOT" value="' + pcEsc(f.DOT) + '" style="width:150px;text-transform:uppercase' + (f._AUTO ? ';color:var(--accent);font-style:italic' : '') + '" title="' + (f._AUTO ? 'Marca automática: si tiene DOT o marca, escribila encima' : '') + '"/></td>' +
       '<td><input class="fi" list="pc-medidas" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" style="width:140px"/></td>' +
       '<td><input class="fi" list="pc-fabricantes" data-i="' + i + '" data-k="MARCA_FAB" value="' + pcEsc(f.MARCA_FAB) + '" style="width:120px;text-transform:uppercase"/></td>' +
       '<td><input class="fi" data-i="' + i + '" data-k="OBSERVACIONES" value="' + pcEsc(f.OBSERVACIONES) + '"/></td>' +
       '<td>' + (PC_.kf.length > 1 ? '<button class="btn btn-xs btn-d" onclick="PC_.kf.splice(' + i + ',1);pcCasFilas()">✕</button>' : '') + '</td></tr>';
   }).join('');
-  document.querySelectorAll('#pc-k-filas [data-i]').forEach(function(e) { e.addEventListener('change', function() { PC_.kf[+this.dataset.i][this.dataset.k] = this.value; }); e.addEventListener('input', function() { PC_.kf[+this.dataset.i][this.dataset.k] = this.value; }); });
+  document.querySelectorAll('#pc-k-filas [data-i]').forEach(function(e) {
+    var fija = function(el) { var f = PC_.kf[+el.dataset.i]; f[el.dataset.k] = el.value; if (el.dataset.k === 'DOT') { f._AUTO = false; el.style.color = ''; el.style.fontStyle = ''; } };
+    e.addEventListener('change', function() { fija(this); if (this.dataset.k === 'DOT' && !this.value.trim()) { PC_.kf[+this.dataset.i]._AUTO = true; pcCasFilas(); } });
+    e.addEventListener('input', function() { fija(this); });
+  });
 }
 var PC_CAS_EST = { NUEVO: ['b-orange', 'Sin orden de trabajo'], EN_OT: ['b-blue', 'En orden de trabajo'], ANULADO: ['b-gray', 'Anulado'] };
 function pcCasAnt() {
@@ -9941,7 +9955,7 @@ async function pcCasGrabar() {
   try {
     var r = await gsRun('gsPC_CascosGuardar', { ID_CLIENTE: cli, FECHA: $v('pc-k-f'), CASCOS: PC_.kf });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
-    toast('Grabados ' + r.IDS.length + ' cascos · N° interno ' + r.IDS.join(', ') + ' ✓', 'g');
+    toast('Grabados ' + r.IDS.length + ' cascos · N° interno ' + r.IDS.join(', ') + (r.DOTS ? ' · ' + r.DOTS.join(', ') : '') + ' ✓', 'g');
     PC_.kf = []; PC_.kcli = cli; await pcRecargar();
   } catch (e) { toast(e.message, 'r2'); } finally { b.disabled = false; }
 }
