@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "17b13df07d68"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "1a15bcd3f4d2"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EMA — Guerrero Neumáticos</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -10913,6 +10913,45 @@ async function puAbrir(idOt, idCub, estF) {
   PU_.pend = abiertas.filter(function(l) { return !aca(l); });
   puFicha();
 }
+// ── Retiro del depósito: lo que se lleva a la estación. Al confirmar el paso, lo que no se usó vuelve solo al stock ──
+function puRetiroHTML() {
+  var ret = PU_.f.retirado || {}, ks = Object.keys(ret);
+  var lin = PU_.rows.filter(function(r) { return !r.no && r.l.TIPO_LINEA !== 'HERRAMENTAL' && (r.reemp ? r.idReal : r.l.ID_INSUMO); });
+  if (ks.length) return '<div class="pu-reg" style="border-color:var(--accent);background:var(--accent-light)"><div style="font-size:18px;font-weight:700;color:var(--accent)">📦 Retiraste del depósito</div>' +
+    '<div style="font-size:17px">' + ks.map(function(k) { return puEsc(puNomIns(k)) + ': <b>' + puF(ret[k]) + '</b>'; }).join(' · ') + '</div>' +
+    '<div class="tdim" style="font-size:14px">Cargá abajo lo que usaste. Al confirmar, lo que sobró vuelve solo al stock.</div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pu-btn pu-min" onclick="puRetirar()">+ Retirar más</button><button class="pu-btn pu-min" onclick="puRetDevolver()">Devolver todo</button></div></div>';
+  if (!lin.length) return '';
+  return '<button class="pu-btn" style="background:var(--accent);color:#fff;min-width:280px" onclick="puRetirar()">📦 Retirar lo que voy a usar</button>';
+}
+function puRetirar() {
+  var ret = PU_.f.retirado || {}, st = PU_.f.stockIns || {};
+  var lin = PU_.rows.filter(function(r) { return !r.no && r.l.TIPO_LINEA !== 'HERRAMENTAL' && (r.reemp ? r.idReal : r.l.ID_INSUMO); });
+  var vistos = {}, filas = [];
+  lin.forEach(function(r) { var id = r.reemp ? r.idReal : r.l.ID_INSUMO; if (vistos[id]) return; vistos[id] = 1; filas.push({ id: id, nom: r.reemp ? puNomIns(id) : r.l.NOMBRE, un: r.l.UNIDAD, sug: ret[id] ? '' : (r.l.CANTIDAD || '') }); });
+  var m = showModal('<div class="mh"><span class="mt">📦 ¿Cuánto retirás del depósito?</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
+    '<div class="tdim" style="font-size:14px;margin-bottom:8px">Viene puesto lo de la receta. Cambialo si llevás más o menos. Lo que no uses vuelve al stock cuando confirmes el paso.</div>' +
+    filas.map(function(f) { return '<label style="display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:17px">' + puEsc(f.nom) + ' <span class="tdim" style="font-size:12px">(hay ' + puF(st[f.id] || 0) + ')</span>' +
+      '<span style="display:flex;align-items:center;gap:6px"><input class="pu-ret-c" data-id="' + puEsc(f.id) + '" inputmode="decimal" value="' + puEsc(f.sug === '' ? '' : puF(f.sug)) + '" style="width:110px;font-size:18px">' + puEsc(f.un) + '</span></label>'; }).join('') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pu-ret-ok">Retirar</button></div>');
+  $id('pu-ret-ok').onclick = async function() {
+    var items = []; document.querySelectorAll('.pu-ret-c').forEach(function(i) { var v = puN(i.value); if (v > 0) items.push({ ID_INSUMO: i.dataset.id, CANTIDAD: v }); });
+    if (!items.length) { toast('Poné cuánto retirás', 'r2'); return; }
+    this.disabled = true;
+    try {
+      var r = await gsRun('gsPC_RetiroEstacion', { ID_OT: PU_.f.ot.ID_OT, ID_CUB: PU_.f.cub.ID_CUB, ID_ESTACION: puE(), OPERARIO: PU_.oper, ITEMS: items });
+      if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); this.disabled = false; return; }
+      PU_.f.retirado = r.RETIRADO; closeModal(); toast('Retiro registrado ✓', 'g'); puFicha();
+    } catch (e) { toast(e.message, 'r2'); this.disabled = false; }
+  };
+}
+async function puRetDevolver() {
+  try {
+    var r = await gsRun('gsPC_RetiroDevolver', PU_.f.ot.ID_OT, PU_.f.cub.ID_CUB, puE());
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    PU_.f.retirado = {}; toast('Volvió todo al stock ✓', 'g'); puFicha();
+  } catch (e) { toast(e.message, 'r2'); }
+}
 function puNuevaFila(l) { return { l: l, real: '', ok: false, no: false, motivo: '', pieza: '', sinNro: false, idReal: '', reemp: false }; }
 function puDif(r) { var v = puN(r.real); return r.l.CANTIDAD ? (v - r.l.CANTIDAD) / r.l.CANTIDAD : 0; }
 function puResuelta(r) {
@@ -10993,6 +11032,7 @@ function puFicha() {
   if (f.cub.REPROCESO_DE) h += '<div><span class="pu-tag sup">Viene de reproceso de ' + puEsc(f.cub.REPROCESO_DE) + '</span></div>';
   if (PU_.ctrl) h += puControlHTML();
   if (PU_.insp) { h += puInspHTML(); if (PU_.insp.apta === false) { $id('pu-body').innerHTML = h; puPieFicha(); return; } }
+  h += puRetiroHTML();
   if (!PU_.rows.length) h += '<div class="pu-h">En esta estación la receta no lleva insumos</div>';
   if (!PU_.rows.length) h += '<div class="pu-otros" style="font-size:17px"><div>✓ Acá solo se hace el trabajo: tocá <b>EMPEZAR</b>, hacé el trabajo y tocá <b>TERMINÉ</b>.</div></div>';
   if (PU_.rows.length) {
@@ -11281,7 +11321,7 @@ async function puConfirmar() {
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); b.disabled = false; b.textContent = '✓ Confirmar paso'; return; }
     b.textContent = '✓ Confirmar paso';   // si no, en la estación siguiente el botón queda diciendo "Guardando…"
     PU_.fin = { marca: f.cub.MARCA, min: r.MINUTOS, n: cons.filter(function(c) { return !c.NO_USO; }).length, desvios: r.DESVIOS || [], sinStock: r.SIN_STOCK || [], reemplazos: r.REEMPLAZOS || [], sigue: puSiguiente() };
-    PU_.fin.ot = f.ot.ID_OT; PU_.fin.cub = f.cub.ID_CUB; PU_.fin.rechazo = r.RECHAZO || null;
+    PU_.fin.ot = f.ot.ID_OT; PU_.fin.cub = f.cub.ID_CUB; PU_.fin.rechazo = r.RECHAZO || null; PU_.fin.devuelto = r.DEVUELTO || [];
     if (r.RECHAZO) { PU_.vista = 'listo'; return puListoRechazo(); }
     if (f.cub.PASADA > 1) {
       // Corrección: se pide de nuevo dónde sigue (la próxima estación a rehacer o la próxima carga del autoclave)
@@ -11323,6 +11363,7 @@ function puListo() {
     '<div class="tdim" style="font-size:18px">' + (x.min ? 'Tardó ' + puDur(x.min * 60) + ' · ' : '') + x.n + ' insumo' + (x.n === 1 ? '' : 's') + ' cargado' + (x.n === 1 ? '' : 's') + ' · el stock ya se descontó</div>' +
     (x.sinStock.length ? '<div style="color:var(--danger);font-weight:700">⚠ Sin stock en el sistema: ' + puEsc(x.sinStock.join(', ')) + '</div>' : '') +
     (x.reemplazos.length ? '<div style="color:var(--warn);font-weight:700">Reemplazo autorizado: ' + puEsc(x.reemplazos.join('; ')) + '</div>' : '') +
+    ((x.devuelto || []).filter(function(v) { return v.VUELVE > 0; }).length ? '<div style="font-size:18px;color:var(--success);font-weight:700">↩ Volvió al stock: ' + x.devuelto.filter(function(v) { return v.VUELVE > 0; }).map(function(v) { return puF(v.VUELVE) + ' ' + puEsc(v.UNIDAD) + ' de ' + puEsc(v.NOMBRE); }).join(' · ') + '</div>' : '') +
     '<div style="font-size:20px"><b>' + puEsc(x.sigue) + '</b></div>' + puMapa(cd) +
     (puTodas() && cd && cd.SIGUIENTE ? '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puAbrir(' + x.ot + ',' + x.cub + ',\'' + cd.SIGUIENTE.ID_ESTACION + '\')">→ Seguir con ' + puEsc(x.marca) + ' en ' + puEsc(cd.SIGUIENTE.ORDEN + ' · ' + cd.SIGUIENTE.NOMBRE) + '</button>' : '') +
     '<button class="pu-btn" style="min-width:260px;' + (puTodas() && cd && cd.SIGUIENTE ? '' : 'background:var(--accent);color:#fff') + '" onclick="puVolver()">' + (puTodas() ? 'Ver todas las cubiertas' : 'Siguiente cubierta') + '</button></div>';
