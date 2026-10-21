@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "1a15bcd3f4d2"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e1b08b6adfaf"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EMA — Guerrero Neumáticos</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -10914,6 +10914,27 @@ async function puAbrir(idOt, idCub, estF) {
   puFicha();
 }
 // ── Retiro del depósito: lo que se lleva a la estación. Al confirmar el paso, lo que no se usó vuelve solo al stock ──
+// Banda o taco que se saca de una cubierta y se guarda para volver a usar: entra al stock como REUTILIZADA
+function puReut() {
+  var bs = (PU_.d.insumos || []).filter(function(x) { return String(x.RUBRO).toUpperCase() === 'BANDAS Y TACOS' && !/^RU-/.test(x.ID_INSUMO); });
+  showModal('<div class="mh"><span class="mt">♻ Banda o taco para reutilizar</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
+    '<label>¿Qué modelo es?<input id="pu-ru-m" list="pu-ru-l" placeholder="Escribí y elegí de la lista" autocomplete="off" style="font-size:18px"><datalist id="pu-ru-l">' + bs.map(function(x) { return '<option value="' + puEsc(x.NOMBRE_INSUMO) + '">' + puEsc(x.ID_INSUMO) + '</option>'; }).join('') + '</datalist></label>' +
+    '<label>¿Cuánto se recuperó? <span id="pu-ru-u" class="tdim"></span><input id="pu-ru-c" inputmode="decimal" style="font-size:18px;width:140px"></label>' +
+    '<div class="tdim" style="font-size:14px">Entra al stock como "REUTILIZADA" con el costo de la banda nueva de ese modelo.</div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pu-ru-ok">Ingresar al stock</button></div>');
+  var elegido = function() { var v = $v('pu-ru-m'); return bs.filter(function(x) { return x.NOMBRE_INSUMO === v || x.ID_INSUMO === v; })[0]; };
+  $id('pu-ru-m').oninput = function() { var x = elegido(); $id('pu-ru-u').textContent = x ? '(' + x.UNIDAD + ')' : ''; };
+  $id('pu-ru-ok').onclick = async function() {
+    var x = elegido(); if (!x) { toast('Elegí el modelo de la lista', 'r2'); return; }
+    var c = puN($v('pu-ru-c')); if (!(c > 0)) { toast('Poné cuánto se recuperó', 'r2'); return; }
+    this.disabled = true;
+    try {
+      var r = await gsRun('gsPC_ReutIngresar', { ID_INSUMO: x.ID_INSUMO, CANTIDAD: c, ID_OT: PU_.f.ot.ID_OT, ID_CUB: PU_.f.cub.ID_CUB, ID_ESTACION: puE(), OPERARIO: PU_.oper });
+      if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); this.disabled = false; return; }
+      closeModal(); toast('Ingresó al stock: ' + r.NOMBRE + ' ✓', 'g');
+    } catch (e) { toast(e.message, 'r2'); this.disabled = false; }
+  };
+}
 function puRetiroHTML() {
   var ret = PU_.f.retirado || {}, ks = Object.keys(ret);
   var lin = PU_.rows.filter(function(r) { return !r.no && r.l.TIPO_LINEA !== 'HERRAMENTAL' && (r.reemp ? r.idReal : r.l.ID_INSUMO); });
@@ -11054,6 +11075,7 @@ function puFicha() {
     }).join('') + '</div>';
   }
   if (!PU_.ctrl) h += '<div style="display:flex;flex-wrap:wrap;gap:10px"><button class="pu-btn pu-rep" onclick="puReemplazo()">↺ Usé otro insumo</button>' +
+    '<button class="pu-btn pu-min" onclick="puReut()">♻ Saqué banda para reutilizar</button>' +
     '<button class="pu-btn pu-min" onclick="puNoAplica()">⊘ No pasa por esta estación</button>' +
     '<button class="pu-btn pu-min" onclick="puFalla()">' + (PU_.res === 'FALLA' ? '⚠ Hubo una falla: ' + puEsc(PU_.obs) : 'Marcar una falla') + '</button></div>';
   if (puHayReemplazo()) h += '<div class="pu-aut"><div style="font-weight:700;color:var(--warn)">Hay un reemplazo: lo autoriza el encargado de línea con su clave</div>' +
@@ -11376,8 +11398,14 @@ function puInspHTML() {
   var h = '<div class="pu-reg" id="pu-insp" style="border-color:var(--accent)"><div style="font-size:20px;font-weight:700">Resultado de la inspección</div>' +
     '<div style="display:flex;gap:12px">' + b(true, '✓ APTA', 'var(--success)') + b(false, '✗ NO APTA', 'var(--danger)') + '</div>';
   if (I.apta === true) {
-    h += '<label style="font-weight:700">Banda que lleva *<select class="pu-q" id="pu-insp-banda" style="font-size:18px;text-transform:none" onchange="PU_.insp.banda=this.value;puPieFicha()"><option value="">— elegí la banda —</option>' +
-      X.bandas.map(function(x) { return '<option value="' + puEsc(x.ID_INSUMO) + '"' + (x.ID_INSUMO === I.banda ? ' selected' : '') + '>' + puEsc(x.NOMBRE) + ' (' + puEsc(x.ID_INSUMO) + ')</option>'; }).join('') + '</select></label>' +
+    var reu = I.reut === undefined ? /^RU-/.test(I.banda || '') : I.reut;
+    var bl = X.bandas.filter(function(x) { return !!x.REUT === reu && (x.STOCK > 0 || x.ID_INSUMO === I.banda || x.ID_INSUMO === X.bandaReceta); });
+    h += '<div style="font-weight:700">Banda que lleva *</div><div style="display:flex;gap:8px">' +
+      '<button class="pu-chip" style="' + (!reu ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : '') + '" onclick="PU_.insp.reut=false;if(/^RU-/.test(PU_.insp.banda))PU_.insp.banda=\'\';puFicha()">Nueva</button>' +
+      '<button class="pu-chip" style="' + (reu ? 'background:var(--success);color:#fff;border-color:var(--success)' : '') + '" onclick="PU_.insp.reut=true;if(!/^RU-/.test(PU_.insp.banda))PU_.insp.banda=\'\';puFicha()">♻ Reutilizada</button></div>' +
+      '<select class="pu-q" id="pu-insp-banda" style="font-size:18px;text-transform:none" onchange="PU_.insp.banda=this.value;puPieFicha()"><option value="">— elegí la banda —</option>' +
+      bl.map(function(x) { return '<option value="' + puEsc(x.ID_INSUMO) + '"' + (x.ID_INSUMO === I.banda ? ' selected' : '') + '>' + puEsc(x.NOMBRE) + ' · hay ' + puF(x.STOCK) + (x.ID_INSUMO === X.bandaReceta ? ' · de la receta' : '') + '</option>'; }).join('') + '</select>' +
+      (reu && !bl.length ? '<div class="tdim">No hay bandas reutilizadas en stock. Cuando saquen una de una cubierta, cargala con "♻ Saqué banda para reutilizar".</div>' : '') +
       '<div style="font-weight:700">Parches que lleva</div>' + (I.parches.length ? '' : '<div class="tdim">Sin parches. Si lleva, tocá "+ Parche".</div>') +
       I.parches.map(function(p, i) { return '<div style="display:flex;gap:8px;align-items:center"><select class="pu-q pu-insp-p" data-i="' + i + '" style="font-size:16px;flex:1;text-transform:none"><option value="">— elegí el parche —</option>' +
         X.parches.map(function(x) { return '<option value="' + puEsc(x.ID_INSUMO) + '"' + (x.ID_INSUMO === p.id ? ' selected' : '') + '>' + puEsc(x.NOMBRE) + '</option>'; }).join('') + '</select>' +
