@@ -11482,7 +11482,7 @@ function puAutoclavePintar() {
   var ub = Object.keys(usadas).length;
   var h = '<div class="pu-panel-hd"><div style="min-width:0"><div class="m">🔥 Autoclave · ' + puEsc(r.ot.NRO_OT) + '</div><div class="tdim" style="font-size:13px">' + r.lugares + ' lugares · cocción de unos ' + r.minutos + ' min</div></div><button class="pu-btn pu-back" onclick="puVolver()">← Volver</button></div>';
   if (r.cocinando) {
-    var min = Math.floor((Date.now() - r.cocinando.INICIO) / 60000), falta = r.minutos - min;
+    var min = Math.max(0, Math.floor((Date.now() + (PU_.dt || 0) - r.cocinando.INICIO) / 60000)), falta = r.minutos - min;
     h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:24px;font-weight:800;color:var(--warn)" id="pu-ac-min">Cocinando · ' + min + ' de ~' + r.minutos + ' min</div>' +
       '<div style="font-size:16px">Empezó a las ' + new Date(r.cocinando.INICIO).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + '. ' + (falta > 0 ? 'Faltan unos ' + falta + ' min.' : 'Ya pasó el tiempo aproximado.') + ' Cuando salga, tocá <b>Terminó la cocción</b>.</div></div>';
   } else if (!listas.length) {
@@ -11507,7 +11507,7 @@ function puAutoclavePintar() {
   $id('pu-body').innerHTML = h;
   if (r.cocinando) {
     if (puTick) clearInterval(puTick);
-    puTick = setInterval(function() { var e = $id('pu-ac-min'); if (!e || PU_.vista !== 'autoclave') { clearInterval(puTick); puTick = null; return; } e.textContent = 'Cocinando · ' + Math.floor((Date.now() - r.cocinando.INICIO) / 60000) + ' de ~' + r.minutos + ' min'; }, 30000);
+    puTick = setInterval(function() { var e = $id('pu-ac-min'); if (!e || PU_.vista !== 'autoclave') { clearInterval(puTick); puTick = null; return; } e.textContent = 'Cocinando · ' + Math.max(0, Math.floor((Date.now() + (PU_.dt || 0) - r.cocinando.INICIO) / 60000)) + ' de ~' + r.minutos + ' min'; }, 30000);
   }
 }
 function puAcElegir(n) {
