@@ -11581,7 +11581,7 @@ function puRelAplicar() {
 function puEmpezar(seguir) {
   var f = PU_.f; if (!f) return;
   var go = async function(oper) {
-    var r;
+    var r, b = document.querySelector('[onclick^="puEmpezar"]'); if (b) { b.disabled = true; b.textContent = 'Empezando…'; }
     try { r = await gsRun('gsPC_RelojEmpezar', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE(), OPERARIO: oper, SEGUIR: !!seguir }); } catch (e) { toast(e.message, 'r2'); return; }
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo empezar', 'r2'); return; }
     PU_.dt = r.AHORA - Date.now(); puRelGuardar(r.RELOJ); puRelAplicar(); puFicha();
@@ -11594,7 +11594,7 @@ function puEmpezar(seguir) {
 }
 async function puTermine() {
   var f = PU_.f; if (!f) return;
-  var r;
+  var r, b = document.querySelector('[onclick="puTermine()"]'); if (b) { b.disabled = true; b.textContent = 'Guardando…'; }
   try { r = await gsRun('gsPC_RelojParar', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE() }); } catch (e) { toast(e.message, 'r2'); return; }
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   PU_.dt = r.AHORA - Date.now(); puRelGuardar(r.RELOJ); puRelAplicar(); puFicha();
