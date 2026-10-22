@@ -12102,8 +12102,25 @@ async function renderPrecios() {
   if (!PN_.d) el.innerHTML = '<div class="card"><div class="card-body tdim">Cargando precios...</div></div>';
   try { PN_.d = await gsRun('gsPN_Datos'); } catch (e) { el.innerHTML = '<div class="al al-r">' + pnEsc(e.message) + '</div>'; return; }
   pnIndexar();
+  var y = pnRestaurar();
   pnPintar();
+  if (y) setTimeout(function() { window.scrollTo(0, y); }, 60);
 }
+// Al mandar por WhatsApp el celular sale de la app; si al volver la página se recarga, se vuelve a la misma búsqueda y posición.
+function pnGuardar() {
+  try { sessionStorage.setItem('pn_estado', JSON.stringify({ q: PN_.q, rubro: PN_.rubro, marca: PN_.marca, promo: PN_.promo, max: PN_.max, y: window.scrollY || 0 })); } catch (e) {}
+}
+function pnRestaurar() {
+  if (PN_.restaurado) return 0;
+  PN_.restaurado = true;
+  try {
+    var e = JSON.parse(sessionStorage.getItem('pn_estado') || 'null');
+    if (!e) return 0;
+    PN_.q = e.q || ''; PN_.rubro = e.rubro || ''; PN_.marca = e.marca || ''; PN_.promo = e.promo || 0; PN_.max = e.max || 40;
+    return e.y || 0;
+  } catch (x) { return 0; }
+}
+document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'hidden' && PN_.d) pnGuardar(); });
 function pnIndexar() {
   var d = PN_.d, porPn = {}, proMap = {};
   (d.PROMOS || []).forEach(function(p) { proMap[p.ID_PROMO] = p; });
@@ -12209,6 +12226,7 @@ function pnCompartir(id) {
   var p = null; (PN_.d.PRECIOS || []).forEach(function(x) { if (x.ID_PN === id) p = x; });
   if (!p) return;
   var t = pnTexto(p);
+  pnGuardar();
   if (navigator.share) { navigator.share({ text: t }).catch(function() {}); return; }
   window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
 }
