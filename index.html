@@ -9923,10 +9923,60 @@ function pcMedidasList() {
   var dl = function(id, o) { return '<datalist id="' + id + '">' + Object.keys(o).sort().map(function(x) { return '<option value="' + pcEsc(x) + '">'; }).join('') + '</datalist>'; };
   return dl('pc-medidas', todas) + Object.keys(por).map(function(k) { return dl(k, por[k]); }).join('');
 }
+// ── Impresión: abre una hoja lista para imprimir o "Guardar como PDF" ──
+function pcImprimir(titulo, cuerpo) {
+  var w = window.open('', '_blank', 'width=900,height=900');
+  if (!w) { toast('El navegador bloqueó la ventana: permití las ventanas emergentes para este sitio', 'r2'); return; }
+  var css = 'body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:18px;font-size:12px}h1{font-size:18px;margin:0}h2{font-size:14px;margin:14px 0 6px}' +
+    '.enc{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}.emp{font-size:11px;color:#444}' +
+    '.dat{display:grid;grid-template-columns:repeat(4,auto);gap:4px 18px;margin:8px 0 12px}.dat b{display:block;font-size:10px;color:#555;text-transform:uppercase}' +
+    'table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:5px 6px;text-align:left;vertical-align:top}th{background:#eee;font-size:10px;text-transform:uppercase}' +
+    '.ck{width:22px;text-align:center}.firmas{display:flex;gap:40px;margin-top:40px}.firmas div{flex:1;border-top:1px solid #111;padding-top:4px;text-align:center;font-size:11px}' +
+    '.nota{font-size:10px;color:#555;margin-top:8px}@media print{.noimp{display:none}body{margin:8mm}}';
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + pcEsc(titulo) + '</title><style>' + css + '</style></head><body>' +
+    '<div class="noimp" style="margin-bottom:10px"><button onclick="window.print()" style="font-size:14px;padding:6px 14px">🖨 Imprimir / Guardar como PDF</button></div>' + cuerpo + '</body></html>');
+  w.document.close();
+  setTimeout(function() { try { w.focus(); w.print(); } catch (e) {} }, 400);
+}
+function pcEncImp(titulo, nro) {
+  return '<div class="enc"><div><h1>' + pcEsc(titulo) + '</h1><div class="emp">VULCAN TREAD NEUMÁTICOS S.R.L. · Guerrero Neumáticos · Salta</div></div><div style="text-align:right"><div style="font-size:20px;font-weight:700">' + pcEsc(nro) + '</div><div class="emp">Impreso ' + fmtD(Date.now()) + '</div></div></div>';
+}
+// Orden de trabajo: el pedido del cliente (boleta) con sus cascos
+function pcImpOTrab(id) {
+  var d = PC_.d, o = (d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0];
+  if (!o) { toast('No encontré la orden de trabajo', 'r2'); return; }
+  var cs = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(id) && c.ESTADO !== 'ANULADA'; }).sort(function(a, b) { return a.ID_CUB - b.ID_CUB; });
+  var cli = d.clientes.filter(function(c) { return String(c.ID_CLIENTE) === String(o.ID_CLIENTE); })[0] || {};
+  var h = pcEncImp('ORDEN DE TRABAJO', o.NRO) +
+    '<div class="dat"><div><b>Cliente</b>' + pcEsc(o.CLIENTE) + '</div><div><b>N° de boleta (pedido)</b>' + pcEsc(o.NRO_MANUAL || '—') + '</div><div><b>Fecha</b>' + fmtD(+o.FECHA) + '</div><div><b>Cubiertas</b>' + cs.length + '</div>' +
+    (cli.TELEFONO ? '<div><b>Teléfono</b>' + pcEsc(cli.TELEFONO) + '</div>' : '') + (cli.CUIT ? '<div><b>CUIT</b>' + pcEsc(cli.CUIT) + '</div>' : '') + (o.OBSERVACIONES ? '<div style="grid-column:span 2"><b>Observaciones</b>' + pcEsc(o.OBSERVACIONES) + '</div>' : '') + '</div>' +
+    '<table><thead><tr><th>#</th><th>N° interno</th><th>DOT / marca</th><th>Tipo</th><th>Medida</th><th>Marca casco</th><th>Trabajo</th><th>Marca grabada</th><th>Observaciones</th></tr></thead><tbody>' +
+    cs.map(function(c, i) { return '<tr><td>' + (i + 1) + '</td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcEsc(c.DOT || '') + '</td><td>' + pcEsc(c.TIPO) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + '</td><td>' + pcEsc(c.MARCA || '') + '</td><td style="width:22%"></td></tr>'; }).join('') +
+    '</tbody></table><div class="nota">Cada casco se identifica por su N° interno y su DOT o marca. La marca grabada se completa al entrar a la línea.</div>' +
+    '<div class="firmas"><div>Entregó (cliente)</div><div>Recibió (Vulcan Tread)</div></div>';
+  pcImprimir('Orden de trabajo ' + o.NRO, h);
+}
+// Orden de servicio: hoja de carga de la línea, con casilleros para tildar cada estación en papel
+async function pcImpOS(id) {
+  var r = await gsRun('gsPC_OTDetalle', id);
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  var d = PC_.d, o = d.ots.filter(function(x) { return String(x.ID_OT) === String(id); })[0] || r.ot, ests = d.estaciones.slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; });
+  var cub = {}; d.cubiertas.forEach(function(c) { cub[String(c.ID_CUB)] = c; });
+  var h = pcEncImp('ORDEN DE SERVICIO · HOJA DE CARGA', o.NRO_OT) +
+    '<div class="dat"><div><b>Línea</b>' + pcEsc(o.LINEA) + '</div><div><b>Fecha</b>' + fmtD(o.FECHA) + '</div><div><b>Responsable</b>' + pcEsc(o.RESPONSABLE || '—') + '</div><div><b>Cubiertas</b>' + r.items.filter(function(i) { return i.ROL === 'TITULAR'; }).length + ' titulares · ' + r.items.filter(function(i) { return i.ROL === 'SUPLENTE'; }).length + ' suplentes</div>' +
+    (o.OBSERVACIONES ? '<div style="grid-column:span 4"><b>Observaciones</b>' + pcEsc(o.OBSERVACIONES) + '</div>' : '') + '</div>' +
+    '<table><thead><tr><th>#</th><th>Marca grabada</th><th>Rol</th><th>Cliente</th><th>OT · boleta</th><th>Medida</th><th>Trabajo</th>' + ests.map(function(e) { return '<th class="ck" title="' + pcEsc(e.NOMBRE) + '">' + e.ORDEN + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    r.items.map(function(i, k) { var c = cub[String(i.ID_CUB)] || {}; return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(i.MARCA) + '</b></td><td>' + (i.ROL === 'SUPLENTE' ? 'Suplente' : 'Titular') + '</td><td>' + pcEsc(c.CLIENTE || '') + '</td><td>' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + (c.NRO_MANUAL ? ' · ' + pcEsc(c.NRO_MANUAL) : '') + '</td><td>' + pcEsc(c.MEDIDA || '') + '</td><td>' + pcEsc(c.TRABAJO || '') + '</td>' + ests.map(function() { return '<td class="ck"></td>'; }).join('') + '</tr>'; }).join('') +
+    '</tbody></table><div class="nota">Estaciones: ' + ests.map(function(e) { return e.ORDEN + ' ' + pcEsc(e.NOMBRE); }).join(' · ') + '</div>' +
+    '<div class="firmas"><div>Responsable de la carga</div><div>Encargado de línea</div></div>';
+  pcImprimir('Orden de servicio ' + o.NRO_OT, h);
+}
 function pcCascos() {
   var d = PC_.d;
   if (!PC_.kf.length) PC_.kf = [pcCasVacio()];
-  var h = pcAvisoLinea() + '<div class="card mb3"><div class="card-hd"><span class="card-title">Carga de la boleta: cascos y orden de trabajo</span><span class="tdim" style="font-size:12px">Se cargan los cascos con su trabajo y al grabar queda hecha la orden de trabajo.</span></div><div class="card-body">' +
+  var ult = PC_.ultOT ? (d.ordTrabajo || []).filter(function(o) { return o.NRO === PC_.ultOT; })[0] : null;
+  var h = pcAvisoLinea() + (ult ? '<div class="al al-g mb3" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>✓ Grabada la <b>' + pcEsc(ult.NRO) + '</b> · ' + pcEsc(ult.CLIENTE) + (ult.NRO_MANUAL ? ' · boleta ' + pcEsc(ult.NRO_MANUAL) : '') + '</span><button class="btn btn-p btn-sm" onclick="pcImpOTrab(' + ult.ID_OTRAB + ')"><i class="fas fa-print"></i> Imprimir la orden de trabajo</button></div>' : '') +
+    '<div class="card mb3"><div class="card-hd"><span class="card-title">Carga de la boleta: cascos y orden de trabajo</span><span class="tdim" style="font-size:12px">Se cargan los cascos con su trabajo y al grabar queda hecha la orden de trabajo.</span></div><div class="card-body">' +
     '<div class="fr"><div class="fg"><label class="fl">Cliente *</label><input class="fi" id="pc-k-cli" list="pc-clientes" placeholder="Escribí el nombre..." value="' + pcEsc(pcCliTxt(PC_.kcli)) + '"/>' + pcCliList() + '</div>' +
     '<div class="fg" style="max-width:180px"><label class="fl">N° de la boleta (orden manual)</label><input class="fi" id="pc-k-man" value="' + pcEsc(PC_.kman || '') + '" oninput="PC_.kman=this.value"/></div>' +
     '<div class="fg" style="max-width:180px"><label class="fl">Fecha</label><input class="fi" type="date" id="pc-k-f" value="' + fechaISO(new Date()) + '"/></div></div>' +
@@ -9977,7 +10027,7 @@ async function pcCasGrabar() {
     var r = await gsRun('gsPC_CascosGuardar', { ID_CLIENTE: cli, FECHA: $v('pc-k-f'), NRO_MANUAL: $v('pc-k-man'), CASCOS: PC_.kf });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
     toast('Grabados ' + r.IDS.length + ' cascos (' + (r.DOTS || []).join(', ') + ')' + (r.OT ? ' · orden de trabajo ' + r.OT + ' con ' + r.OT_N + ' cubiertas' : '') + (r.SIN_RECETA ? ' · ' + r.SIN_RECETA + ' sin receta' : '') + ' ✓', r.SIN_RECETA ? 'r2' : 'g');
-    PC_.kf = []; PC_.kcli = cli; PC_.kman = ''; await pcRecargar();
+    PC_.kf = []; PC_.kcli = cli; PC_.kman = ''; PC_.ultOT = r.OT || ''; await pcRecargar();
   } catch (e) { toast(e.message, 'r2'); } finally { b.disabled = false; }
 }
 async function pcCasAnular(id) {
@@ -10010,7 +10060,7 @@ function pcOTrab() {
   h += '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de trabajo en curso (' + lo.length + ')</span><span class="tdim" style="font-size:12px">Las terminadas y anuladas están en "Historial"</span></div><div class="tw"><table style="font-size:12px" id="pc-o-lista"><thead><tr><th>OT</th><th>Fecha</th><th>Cliente</th><th>N° boleta</th><th class="tr">Cubiertas</th><th class="tr">Esperando</th><th class="tr">En la línea</th><th></th></tr></thead><tbody>' +
     (lo.length ? lo.map(function(x) { var o = x.o;
       return '<tr><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL) + '</td><td class="tr">' + x.mias.length + '</td><td class="tr">' + x.pend + '</td><td class="tr">' + x.linea + '</td>' +
-        '<td>' + (pcPuede('ANULAR') && x.pend === x.mias.length ? '<button class="btn btn-s btn-xs" onclick="pcOTrabAnular(' + o.ID_OTRAB + ')">Anular</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="8" class="tc tdim" style="padding:16px">No hay órdenes de trabajo en curso.</td></tr>') + '</tbody></table></div></div>';
+        '<td style="white-space:nowrap"><button class="btn btn-s btn-xs" title="Imprimir" onclick="pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-print"></i></button> ' + (pcPuede('ANULAR') && x.pend === x.mias.length ? '<button class="btn btn-s btn-xs" onclick="pcOTrabAnular(' + o.ID_OTRAB + ')">Anular</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="8" class="tc tdim" style="padding:16px">No hay órdenes de trabajo en curso.</td></tr>') + '</tbody></table></div></div>';
   $id('pc-body').innerHTML = h;
   $id('pc-o-cli').addEventListener('change', function() { var n = pcCliId(this.value); if (n === PC_.ocli) return; PC_.ocli = n; PC_.otr = {}; pcOTrabItems(); });
   pcOTrabItems();
@@ -10299,7 +10349,7 @@ function pcHist() {
     } else if (sub === 'otr') {
       var lo = (d.ordTrabajo || []).filter(function(o) { return ok([o.NRO, o.CLIENTE, o.NRO_MANUAL].join(' ')); }).sort(function(a, b) { return b.ID_OTRAB - a.ID_OTRAB; });
       r = '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de trabajo (' + lo.length + ')</span></div><div class="tw"><table style="font-size:12px"><thead><tr><th>OT</th><th>Fecha</th><th>Cliente</th><th>Boleta</th><th class="tr">Cubiertas</th><th>Estado</th></tr></thead><tbody>' +
-        lo.slice(0, 300).map(function(o) { var n = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(o.ID_OTRAB) && c.ESTADO !== 'ANULADA'; }).length; return '<tr' + (o.ESTADO === 'ANULADA' ? ' style="opacity:.55"' : '') + '><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL) + '</td><td class="tr">' + n + '</td><td><span class="badge ' + (o.ESTADO === 'ANULADA' ? 'b-gray">Anulada' : 'b-blue">' + pcEsc(o.ESTADO === 'ABIERTA' ? 'Abierta' : o.ESTADO)) + '</span></td></tr>'; }).join('') + '</tbody></table></div></div>';
+        lo.slice(0, 300).map(function(o) { var n = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(o.ID_OTRAB) && c.ESTADO !== 'ANULADA'; }).length; return '<tr' + (o.ESTADO === 'ANULADA' ? ' style="opacity:.55"' : '') + '><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL) + '</td><td class="tr">' + n + '</td><td><span class="badge ' + (o.ESTADO === 'ANULADA' ? 'b-gray">Anulada' : 'b-blue">' + pcEsc(o.ESTADO === 'ABIERTA' ? 'Abierta' : o.ESTADO)) + '</span></td><td><button class="btn btn-s btn-xs" onclick="pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-print"></i></button></td></tr>'; }).join('') + '</tbody></table></div></div>';
     } else {
       var os = d.ots.filter(function(o) { return ok([o.NRO_OT, o.LINEA, o.ESTADO].join(' ')); }).sort(function(a, b) { return b.ID_OT - a.ID_OT; });
       r = '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de servicio (' + os.length + ')</span></div><div class="tw"><table style="font-size:12px"><thead><tr><th>Orden</th><th>Fecha</th><th>Línea</th><th class="tr">Titulares</th><th class="tr">Terminadas</th><th>Estado</th><th></th></tr></thead><tbody>' +
@@ -10314,7 +10364,7 @@ function pcOts() {
   var d = PC_.d;
   var ots = d.ots.filter(function(o) { return o.ESTADO === 'ARMADA' || o.ESTADO === 'EN_PROCESO'; }).sort(function(a, b) { return b.ID_OT - a.ID_OT; });
   $id('pc-body').innerHTML = '<div class="tdim mb2" style="font-size:12px">Solo las abiertas. Las cerradas y anuladas están en "Historial".</div><div class="card"><div class="tw"><table style="font-size:12px" id="pc-tbl-ots"><thead><tr><th>OT</th><th>Fecha</th><th>Línea</th><th class="tr">Titulares</th><th class="tr">Suplentes</th><th class="tr">Terminadas</th><th>Estado</th><th></th></tr></thead><tbody>' +
-    ots.map(function(o) { return '<tr><td class="mono"><b>' + pcEsc(o.NRO_OT) + '</b></td><td>' + fmtD(o.FECHA) + '</td><td>' + pcEsc(o.LINEA) + ' (tope ' + o.TOPE + ')</td><td class="tr">' + o.TITULARES + '/' + o.TOPE + '</td><td class="tr">' + o.SUPLENTES + '</td><td class="tr">' + o.TERMINADAS + '</td><td>' + pcBadge(o.ESTADO) + '</td><td><button class="btn btn-p btn-sm" onclick="pcAbrirOT(' + o.ID_OT + ')">Abrir</button></td></tr>'; }).join('') +
+    ots.map(function(o) { return '<tr><td class="mono"><b>' + pcEsc(o.NRO_OT) + '</b></td><td>' + fmtD(o.FECHA) + '</td><td>' + pcEsc(o.LINEA) + ' (tope ' + o.TOPE + ')</td><td class="tr">' + o.TITULARES + '/' + o.TOPE + '</td><td class="tr">' + o.SUPLENTES + '</td><td class="tr">' + o.TERMINADAS + '</td><td>' + pcBadge(o.ESTADO) + '</td><td style="white-space:nowrap"><button class="btn btn-p btn-sm" onclick="pcAbrirOT(' + o.ID_OT + ')">Abrir</button> <button class="btn btn-s btn-sm" onclick="pcImpOS(' + o.ID_OT + ')"><i class="fas fa-print"></i> Imprimir</button></td></tr>'; }).join('') +
     '</tbody></table>' + (ots.length ? '' : '<div class="tdim" style="padding:12px">No hay órdenes de servicio abiertas. Se arman en "3 · Orden de servicio".</div>') + '</div></div><div id="pc-ot"></div>';
 }
 async function pcAbrirOT(id) {
@@ -10346,6 +10396,7 @@ function pcPintarOT() {
   ot.items.forEach(function(i) { if (i.ESTADO === 'TERMINADA') { tot.mat += i.COSTO.MATERIALES; tot.herr += i.COSTO.HERRAMENTAL; tot.mo += i.COSTO.MO; tot.fij += i.COSTO.FIJOS; tot.t += i.COSTO.TOTAL; tot.n++; } });
   var h = '<div class="card mt3"><div class="card-hd"><span class="card-title">' + pcEsc(o.NRO_OT) + ' · ' + pcEsc(o.LINEA) + ' · tope ' + o.TOPE + ' + ' + o.SUPLENTES_MAX + ' suplentes ' + pcBadge(o.ESTADO) + '</span>' +
     '<span class="flex gap2">' + (abierta && ot.soyEncargado ? '<button class="btn btn-s btn-sm" onclick="pcTiempos()"><i class="fas fa-stopwatch"></i> Tiempos</button>' : '') +
+    '<button class="btn btn-s btn-sm" onclick="pcImpOS(' + o.ID_OT + ')"><i class="fas fa-print"></i> Imprimir</button>' +
     (abierta && pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" onclick="pcCerrarOT()">Cerrar OT</button>' : '') +
     (abierta && pcPuede('ANULAR') ? '<button class="btn btn-s btn-sm" onclick="pcAnularOT()">Anular OT</button>' : '') + '</span></div>' +
     (o.OBSERVACIONES ? '<div class="tdim" style="padding:0 14px;font-size:12px">' + pcEsc(o.OBSERVACIONES) + '</div>' : '') +
