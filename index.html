@@ -9993,11 +9993,15 @@ function pcImprimir(titulo, cuerpo, apaisado) {
     '.ck{width:22px;text-align:center}.firmas{display:flex;gap:40px;margin-top:40px}.firmas div{flex:1;border-top:1px solid #111;padding-top:4px;text-align:center;font-size:11px}' +
     '.nota{font-size:10px;color:#555;margin-top:8px}.barra{position:sticky;top:0;background:#f3f4f6;border:1px solid #ddd;border-radius:8px;padding:8px;margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}' +
     '.barra button{font-size:14px;padding:8px 14px;border-radius:6px;border:1px solid #bbb;background:#fff;cursor:pointer}.barra .p{background:#1d4ed8;color:#fff;border-color:#1d4ed8}.barra span{font-size:12px;color:#555}' +
-    '@media print{.noimp{display:none}body{margin:8mm}}';
+    '@page{size:A4 ' + (apaisado ? 'landscape' : 'portrait') + ';margin:8mm}' +
+    '@media print{.noimp{display:none}body{margin:0;font-size:11px}#doc{width:auto!important}tr,.firmas,.enc{page-break-inside:avoid;break-inside:avoid}thead{display:table-header-group}}' +
+    '#doc{max-width:' + (apaisado ? 1062 : 718) + 'px;margin:0 auto}';
   // Guardar PDF: arma el archivo en el navegador y lo descarga (no pasa por el cuadro de impresión)
   var archivo = String(titulo || 'documento').replace(/[^A-Za-z0-9\- ]/g, '').replace(/\s+/g, '_') + '.pdf';
   var js = '<scr' + 'ipt>function guardarPDF(b){b.disabled=true;b.textContent="Armando el PDF...";var ir=function(){var el=document.getElementById("doc");' +
-    'html2pdf().set({margin:8,filename:"' + archivo + '",image:{type:"jpeg",quality:0.95},html2canvas:{scale:2,backgroundColor:"#ffffff"},jsPDF:{unit:"mm",format:"a4",orientation:"' + (apaisado ? 'landscape' : 'portrait') + '"}}).from(el).save().then(function(){b.disabled=false;b.textContent="📄 Guardar PDF";});};' +
+    'var anch=' + (apaisado ? 1040 : 700) + ',ant=el.style.cssText;el.style.cssText="width:"+anch+"px;max-width:none;margin:0;font-size:11px";' +
+    'var fin=function(){el.style.cssText=ant;b.disabled=false;b.textContent="📄 Guardar PDF";};' +
+    'html2pdf().set({margin:8,filename:"' + archivo + '",image:{type:"jpeg",quality:0.95},html2canvas:{scale:2,backgroundColor:"#ffffff"},pagebreak:{mode:["css","legacy"],avoid:["tr",".firmas",".enc"]},jsPDF:{unit:"mm",format:"a4",orientation:"' + (apaisado ? 'landscape' : 'portrait') + '"}}).from(el).save().then(fin,fin);};' +
     'if(window.html2pdf){ir();return;}var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";s.onload=ir;s.onerror=function(){b.disabled=false;b.textContent="📄 Guardar PDF";alert("No se pudo cargar el generador de PDF (sin internet)");};document.head.appendChild(s);}</scr' + 'ipt>';
   var barra = '<div class="barra noimp"><button class="p" onclick="window.print()">🖨 Imprimir</button><button onclick="guardarPDF(this)">📄 Guardar PDF</button>' +
     '<button onclick="if(window.parent&&window.parent!==window&&window.parent.pcCerrarVista){window.parent.pcCerrarVista()}else{window.close()}">✕ Cerrar</button>' +
