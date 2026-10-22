@@ -12109,6 +12109,13 @@ function pnIndexar() {
     var h = [p.MEDIDA, p.MARCA, p.DISENO, p.NOMBRE, p.CODIGO, p.DESCRIPCION, p.COD_PROV, p.RUBRO, p.DATOS].join(' ');
     return { p: p, n: pnNorm(h), dig: pnNorm(h).replace(/[^0-9]/g, '') };
   });
+  var ordR = { AUTO: 1, CAMIONETA: 2, CAMION: 3, AGRICOLA: 4, INDUSTRIAL: 5 };
+  PN_.idx.sort(function(a, b) {
+    var ra = ordR[a.p.RUBRO] || 9, rb = ordR[b.p.RUBRO] || 9;
+    if (ra !== rb) return ra - rb;
+    var m = String(a.p.MEDIDA).localeCompare(String(b.p.MEDIDA), 'es', { numeric: true });
+    return m !== 0 ? m : a.p.PRECIO_CON_IVA - b.p.PRECIO_CON_IVA;
+  });
 }
 function pnPintar() {
   var d = PN_.d, el = pnEl();
