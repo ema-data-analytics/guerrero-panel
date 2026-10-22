@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "84dc10548dbc"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "19645ef8bc75"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -12183,7 +12183,7 @@ function pnTarjeta(p) {
   });
   var plz = pnPlazos(p.PLAZOS);
   if (plz.length > 1) h += '<div class="pn-plz">' + plz.map(function(z) { return '<div>' + pnEsc(z[0] === 'CONTADO' ? 'Contado' : z[0] + ' días') + '<b>' + pnPlata(z[1]) + '</b></div>'; }).join('') + '</div>';
-  h += '<div class="pn-tags"><span class="pn-tag">' + pnEsc(p.RUBRO) + '</span>' + (p.DATOS ? '<span class="pn-tag">' + pnEsc(p.DATOS) + '</span>' : '') + '<span class="pn-tag">Cód. ' + pnEsc(p.CODIGO) + '</span>' + (p.LISTA ? '<span class="pn-tag">' + pnEsc(p.LISTA) + '</span>' : '') + (p.IVA_INCLUIDO.indexOf('NO') === 0 ? '<span class="pn-tag" style="color:#b45309">IVA de la lista a confirmar</span>' : '') + '</div>' +
+  h += '<div class="pn-tags"><span class="pn-tag">' + pnEsc(p.RUBRO) + '</span>' + (p.DATOS ? '<span class="pn-tag">' + pnEsc(p.DATOS) + '</span>' : '') + '<span class="pn-tag">Cód. ' + pnEsc(p.CODIGO) + '</span>' + (p.LISTA ? '<span class="pn-tag">' + pnEsc(p.LISTA) + '</span>' : '') + '</div>' +
     '<div class="pn-acc2"><button onclick="pnCompartir(' + p.ID_PN + ')">📤 Mandar por WhatsApp</button></div></div>';
   return h;
 }
