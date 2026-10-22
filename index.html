@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "930b9f1b65bd"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9fe2dbfa79a4"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EMA — Guerrero Neumáticos</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -9971,6 +9971,11 @@ async function pcImpOS(id) {
     '<div class="firmas"><div>Responsable de la carga</div><div>Encargado de línea</div></div>';
   pcImprimir('Orden de servicio ' + o.NRO_OT, h);
 }
+function pcBoletaAviso(v) {
+  var n = String(v || '').toUpperCase().replace(/\s+/g, ''), el = $id('pc-k-man-av'); if (!el) return;
+  var o = n ? (PC_.d.ordTrabajo || []).filter(function(x) { return x.ESTADO !== 'ANULADA' && String(x.NRO_MANUAL || '').toUpperCase().replace(/\s+/g, '') === n; })[0] : null;
+  el.textContent = o ? '⚠ La boleta ' + v + ' ya está cargada en la ' + o.NRO + ' (' + o.CLIENTE + ')' : '';
+}
 function pcCascos() {
   var d = PC_.d;
   if (!PC_.kf.length) PC_.kf = [pcCasVacio()];
@@ -9978,7 +9983,7 @@ function pcCascos() {
   var h = pcAvisoLinea() + (ult ? '<div class="al al-g mb3" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>✓ Grabada la <b>' + pcEsc(ult.NRO) + '</b> · ' + pcEsc(ult.CLIENTE) + (ult.NRO_MANUAL ? ' · boleta ' + pcEsc(ult.NRO_MANUAL) : '') + '</span><button class="btn btn-p btn-sm" onclick="pcImpOTrab(' + ult.ID_OTRAB + ')"><i class="fas fa-print"></i> Imprimir la orden de trabajo</button></div>' : '') +
     '<div class="card mb3"><div class="card-hd"><span class="card-title">Carga de la boleta: cascos y orden de trabajo</span><span class="tdim" style="font-size:12px">Se cargan los cascos con su trabajo y al grabar queda hecha la orden de trabajo.</span></div><div class="card-body">' +
     '<div class="fr"><div class="fg"><label class="fl">Cliente *</label><input class="fi" id="pc-k-cli" list="pc-clientes" placeholder="Escribí el nombre..." value="' + pcEsc(pcCliTxt(PC_.kcli)) + '"/>' + pcCliList() + '</div>' +
-    '<div class="fg" style="max-width:180px"><label class="fl">N° de la boleta (orden manual)</label><input class="fi" id="pc-k-man" value="' + pcEsc(PC_.kman || '') + '" oninput="PC_.kman=this.value"/></div>' +
+    '<div class="fg" style="max-width:180px"><label class="fl">N° de la boleta (orden manual)</label><input class="fi" id="pc-k-man" value="' + pcEsc(PC_.kman || '') + '" oninput="PC_.kman=this.value;pcBoletaAviso(this.value)"/><div id="pc-k-man-av" style="color:var(--danger);font-size:12px;font-weight:700"></div></div>' +
     '<div class="fg" style="max-width:180px"><label class="fl">Fecha</label><input class="fi" type="date" id="pc-k-f" value="' + fechaISO(new Date()) + '"/></div></div>' +
     pcMedidasList() + '<datalist id="pc-fabricantes">' + (d.marcas || []).map(function(m) { return '<option value="' + pcEsc(m) + '">'; }).join('') + '</datalist>' +
     '<div class="tw"><table style="font-size:12px" class="pc-rec" id="pc-k-t"><thead><tr><th style="width:40px">#</th><th>N° interno</th><th>Tipo *</th><th>N° DOT o marca de fábrica <span class="tdim" style="text-transform:none;font-weight:400">(si no tiene, la pone el sistema)</span></th><th>Medida *</th><th>Marca</th><th>Trabajo</th><th>Observaciones</th><th></th></tr></thead><tbody id="pc-k-filas"></tbody></table></div>' +
