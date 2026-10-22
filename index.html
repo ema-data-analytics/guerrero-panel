@@ -10066,7 +10066,7 @@ function pcImprimir(titulo, cuerpo, apaisado) {
   var fd = ov.querySelector('iframe').contentWindow.document; fd.open(); fd.write(html); fd.close();
 }
 // ── AYUDA: qué hace cada botón de cada pantalla ──
-var PC_AYUDA = [["general", "Producción por cubierta · cómo se trabaja", "El circuito tiene 3 pasos y después las estaciones: 1) se cargan los cascos de la boleta del cliente → queda la orden de trabajo (OT). 2) Si hace falta, se arma la OT de cascos sueltos. 3) Se juntan 15 cubiertas de distintos clientes en una orden de servicio (OS) y entran a la línea. Cada cubierta pasa por las 10 estaciones en la tablet.", [["Buscar marca… + Vida de la cubierta", "Escribí la marca grabada (ej. CHA000001) y te muestra todo lo que le pasó a esa cubierta: cliente, OT, estaciones, insumos, costo."], ["Pestañas 1 · 2 · 3", "Son los pasos en orden. El número entre paréntesis dice cuántas cosas hay pendientes."], ["❓ Ayuda", "Muestra esta explicación de la pantalla donde estás."], ["Atrás (navegador o tablet)", "Vuelve a la pestaña anterior. Si hay una ventana abierta, la cierra. No te saca del sistema."], ["Celular / tablet de los operarios", "Los operarios entran con su usuario y van directo a las estaciones (sin menú). Link: ema-data-analytics.github.io/guerrero-panel/?puesto=1 · en el celular: Agregar a pantalla de inicio."]]], ["cascos", "1 · Carga de cascos (la boleta del cliente)", "Acá se pasa la boleta en papel que trae el cliente. Al grabar se crea sola la orden de trabajo (OT) de ese cliente.", [["Cliente", "Elegí el cliente de la lista (escribí parte del nombre)."], ["N° de boleta", "El número de la boleta de papel. No se puede repetir: si ya está cargada, avisa en rojo."], ["Tipo / Medida / Marca / Trabajo", "Se eligen de las listas. Al agregar otro casco copia los datos del anterior."], ["DOT / N° interno", "Lo pone el sistema solo (3 letras del cliente + número). Se puede cambiar."], ["Otro casco", "Agrega una fila más."], ["✕ (en la fila)", "Borra esa fila antes de grabar."], ["Grabar boleta", "Graba los cascos y crea la OT del cliente."], ["Imprimir la orden de trabajo", "Aparece después de grabar: abre la OT para imprimir o guardar en PDF y entregar al cliente."], ["Anular (cascos anteriores)", "Anula un casco cargado por error."]]], ["otrab", "2 · Órdenes de trabajo", "Lista las OT en curso (una por boleta). Si quedaron cascos sin orden, aparecen arriba por cliente.", [["Botón con el nombre del cliente (n)", "Cascos de ese cliente que no tienen OT todavía: tocá para armarla."], ["Grabar orden de trabajo", "Crea la OT con los cascos tildados."], ["🖨", "Imprime esa OT."], ["Anular", "Anula la OT (los cascos quedan sin orden)."]]], ["armar", "3 · Orden de servicio (juntar las 15)", "Acá se eligen las cubiertas que entran juntas a la línea (tope 15 en camiones). Pueden ser de distintos clientes.", [["Buscar", "Escribí cliente, OT o boleta: te sugiere y filtra la lista."], ["Casilla de cada cubierta", "Tildá las que entran. Titular = va seguro. Suplente = entra si falla una titular."], ["Casilla del encabezado", "Tilda todas las que se ven, hasta completar el tope."], ["Ver todas", "Saca el filtro y muestra todas las que esperan."], ["Destildar todo", "Saca todas las marcas."], ["Responsable", "Quién arma la carga (sale de la lista de empleados). Es obligatorio."], ["Crear orden de servicio", "Crea la OS con las tildadas. Después se imprime la hoja de carga."]]], ["ots", "Órdenes de servicio abiertas", "Solo las abiertas (armadas o en proceso). Las cerradas y anuladas están en Historial.", [["Abrir", "Entra a la OS: ves cada cubierta y en qué estación está."], ["Imprimir", "Si está armada: hoja de carga con casillas 1 a 10 para tildar a mano. Si ya avanzó o está cerrada: informe completo con insumos, tiempos y costos."]]], ["ot", "Detalle de una orden de servicio", "Cada fila es una cubierta; cada columna una estación. Tocá una celda para ver o cargar ese paso.", [["Celda de estación", "✓ = hecha · ACÁ ESTÁ = la que sigue · tocá para ver el registro o cargarlo desde la PC."], ["Tiempos", "Corrige los minutos de cada estación."], ["Imprimir", "Hoja de carga o informe de la OS (ver arriba)."], ["Terminar", "Da por terminada la cubierta (pasó todo) y calcula su costo."], ["Rechazar", "La cubierta no sirve: pide el motivo y queda para devolver al cliente."], ["A titular", "Una suplente pasa a titular (cuando falló una titular)."], ["Sacar", "Saca la cubierta de la OS: vuelve a espera para otra carga."], ["Costo", "Muestra el costo de esa cubierta: insumos, herramental, gastos."], ["Cerrar OT", "Cierra la OS cuando todas están terminadas o rechazadas."], ["Anular OT", "Anula la OS con motivo: las cubiertas vuelven a espera."]]], ["rech", "Rechazadas", "Cubiertas que no se pudieron recapar.", [["Marcar devueltas al cliente", "Marca como entregadas al cliente las cubiertas rechazadas que ya se llevó."]]], ["costos", "Costos", "Costo real de cada cubierta terminada: insumos, herramental, mano de obra y gastos del mes.", [["Excel", "Descarga la planilla de costos."], ["Prorratear gastos fijos del mes", "Reparte los gastos fijos del mes (sueldos, luz, alquiler…) entre las cubiertas hechas. Se hace una vez a fin de mes."]]], ["herramental", "Herramental (inner / envelope)", "Las piezas que se reutilizan en el autoclave, cada una con su número y cuántos usos le quedan.", [["Dar de alta", "Carga piezas nuevas (código y cantidad)."], ["Dar de baja", "Saca de uso una pieza rota o gastada."], ["Reactivar", "Vuelve a poner en uso una pieza dada de baja."]]], ["equipos", "Herramientas y consumibles", "Control de herramientas de cada estación y de lo que se entrega al personal.", [["Herramientas", "Lista por estación. Nueva herramienta = agregar una."], ["Entregas y control semanal", "Entregar = registrar lo que se le da a un empleado. Controlar = revisar el sábado si está todo."], ["Faltantes y roturas", "Decidir = si el motivo vale (no se cobra) o no vale (se le cobra al responsable)."], ["Cargos al personal", "Lo que hay que descontar. ✓ Descontado cuando se descontó del sueldo."], ["Servicios externos", "Nueva salida = algo que se manda a arreglar afuera. Registrar regreso = cuando vuelve."], ["Consumibles por estación", "Agregar / Quitar qué consumibles usa cada estación y cada cuántas cubiertas se cambian."]]], ["alarmas", "⚠ Alarmas", "Todo lo que necesita atención: stock bajo, herramientas sin control, servicios externos atrasados, consumos fuera de lo normal.", [["Actualizar", "Vuelve a revisar las alarmas."]]], ["hist", "Historial", "Todo lo anterior: cubiertas, órdenes de trabajo y órdenes de servicio cerradas o anuladas.", [["Cubiertas / Órdenes de trabajo / Órdenes de servicio", "Elegí qué querés ver."], ["Buscar", "Filtra por cliente, OT, boleta, DOT o marca."], ["🖨 / Abrir", "Imprimir la OT o abrir la OS para verla."]]], ["config", "Configuración", "Ajustes de la producción (solo encargados).", [["Encargados: Agregar / Activar / Desactivar", "Quién es encargado de cada línea (puede autorizar, corregir tiempos y cerrar)."], ["Parámetros: Guardar", "Cada ajuste tiene su explicación al lado. Cambiá el valor y tocá Guardar en esa fila."], ["Motivos de rechazo: Agregar / ✎", "La lista de motivos que se eligen al rechazar una cubierta."]]], ["impresion", "Vista de impresión", "Se abre al tocar Imprimir en cualquier orden.", [["🖨 Imprimir", "Manda a la impresora. La orden de servicio sale apaisada."], ["📄 Guardar PDF", "Descarga el PDF directo (no abre el cuadro de impresión)."], ["✕ Cerrar", "Cierra y volvés a la misma pantalla. También con Atrás."]]], ["puesto", "Puesto de estación (tablet)", "Pantalla del operario. Cada tablet queda fija en una estación (o \"Recorro todas\" para el operador de turno).", [["Elegir la carga", "Al entrar, si hay varias órdenes de servicio abiertas, elegís cuál controlar. Se ven solo sus cubiertas. Cambiar carga para pasar a otra."], ["⏱ Trabajos en curso", "Las cubiertas que alguien empezó y no confirmó, con quién y cuánto tiempo lleva. Tocá una para volver y apretar TERMINÉ."], ["¿Quién hace este trabajo?", "Al tocar EMPEZAR elegís el nombre del operario de la lista. Con un solo celular trabajan varios: cada uno queda con su reloj."], ["Operario", "Tocá y poné tu nombre: queda registrado en cada paso que confirmes."], ["Cambiar estación", "Cambia la estación de esta tablet."], ["Herramientas / Se rompió · Me falta", "Control de herramientas o avisar una rotura o faltante."], ["Retirar consumibles", "Sacar del depósito un consumible (pincel, disco…)."], ["Tocar una cubierta", "Abre su ficha en la estación que le toca."], ["▶ EMPEZAR / ■ TERMINÉ", "Marca el tiempo del trabajo. El reloj queda guardado aunque salgas, cierres la app o se apague el celular. ↺ Cero borra el tiempo si se tocó por error."], ["📦 Retirar lo que voy a usar", "Saca del stock los insumos antes de trabajar. Lo que sobre lo decidís al confirmar: vuelve al depósito o queda en la estación."], ["Lo que sobre: ↩ Vuelve al depósito / 📍 Queda en la estación", "Elegís qué pasa con lo que retiraste y no usaste. Si queda en la estación, se usa primero en la próxima cubierta (no hace falta retirarlo de nuevo)."], ["📍 Hay material guardado en esta estación / ↩ Devolver al depósito", "Muestra lo que quedó guardado de cubiertas anteriores. Con Devolver al depósito vuelve todo al stock (por ejemplo al terminar el turno)."], ["Devolver todo", "Devuelve todo lo retirado (si no se hizo el trabajo)."], ["✓ Igual a receta", "Usaste lo que dice la receta."], ["↺ Usé otro / Usé otro insumo", "Usaste otro insumo en lugar del de la receta."], ["No se usó / No es de acá", "Ese insumo no se usó en esta cubierta o no corresponde a esta estación."], ["♻ Saqué banda para reutilizar", "Entra al stock la banda que se sacó, como reutilizada."], ["⊘ No pasa por esta estación", "Esta cubierta no necesita este paso (con motivo)."], ["⚠ Hubo una falla", "Registra una falla en el paso."], ["✓ Confirmar paso", "Graba el paso: descuenta insumos y pasa a la estación siguiente."], ["Inspección: Apta / No apta", "En la estación 1: apta (elegís banda nueva o ♻ reutilizada, parches, extras) o no apta (motivo)."], ["Autoclave: Ubicar en orden / ▶ Empieza / ■ Terminó la cocción", "Se cocina la carga completa junta: todas las cubiertas de la orden tienen que haber pasado la estación 7. Cada cubierta usa su inner y su envelope, que quedan ocupados hasta que sale del autoclave."], ["Salir", "Cierra la sesión del aparato."], ["← Otra cubierta / ← Volver", "Vuelve a la lista."]]], ["precios", "Precios cubiertas nuevas (vendedores)", "Lista de precios de todas las cubiertas nuevas con las promos vigentes. Pensada para el celular: se busca por medida y se manda el precio por WhatsApp.", [["Promos (tarjetas de arriba)", "Cada promo vigente con su detalle y fechas. Tocá una para ver solo las medidas que entran. Tocá de nuevo para sacar el filtro."], ["Buscador", "Escribí la medida como quieras: 295 80 22.5, 2958022, 175/70R13. También marca, diseño o código. Se puede combinar: wanli 295."], ["Rubros: Todos / Auto / Camioneta / Camión / Agrícola / Industrial", "Muestra solo ese tipo de cubierta."], ["Marcas", "Muestra solo esa marca. Todas las marcas saca el filtro."], ["Precio grande", "Nuestro precio de venta con IVA. Abajo, el mismo precio sin IVA."], ["Recuadro de promo en la cubierta", "6x2: si la medida es del Grupo G (se compran 6) o del Grupo Ch (van de regalo) y cuántas quedan. Oferta o descuento: el precio final con IVA."], ["Plazos (camión)", "Precio contado y a 30, 45, 60, 75 y 90 días, con IVA."], ["Cód.", "El código del artículo en el sistema (el mismo que se usa al vender)."], ["📤 Mandar por WhatsApp", "Arma el mensaje con medida, marca, código, precio y promo, y lo abre para mandarlo."], ["Ver más", "La lista muestra de a 40. Tocá para ver las siguientes."], ["Celular de los vendedores", "Link directo: ema-data-analytics.github.io/guerrero-panel/?precios=1 · en el celular: Agregar a pantalla de inicio. Entra con su usuario y va directo a la lista."]]]];
+var PC_AYUDA = [["general", "Producción por cubierta · cómo se trabaja", "El circuito tiene 3 pasos y después las estaciones: 1) se cargan los cascos de la boleta del cliente → queda la orden de trabajo (OT). 2) Si hace falta, se arma la OT de cascos sueltos. 3) Se juntan 15 cubiertas de distintos clientes en una orden de servicio (OS) y entran a la línea. Cada cubierta pasa por las 10 estaciones en la tablet.", [["Buscar marca… + Vida de la cubierta", "Escribí la marca grabada (ej. CHA000001) y te muestra todo lo que le pasó a esa cubierta: cliente, OT, estaciones, insumos, costo."], ["Pestañas 1 · 2 · 3", "Son los pasos en orden. El número entre paréntesis dice cuántas cosas hay pendientes."], ["❓ Ayuda", "Muestra esta explicación de la pantalla donde estás."], ["Atrás (navegador o tablet)", "Vuelve a la pestaña anterior. Si hay una ventana abierta, la cierra. No te saca del sistema."], ["Celular / tablet de los operarios", "Los operarios entran con su usuario y van directo a las estaciones (sin menú). Link: ema-data-analytics.github.io/guerrero-panel/?puesto=1 · en el celular: Agregar a pantalla de inicio."]]], ["cascos", "1 · Carga de cascos (la boleta del cliente)", "Acá se pasa la boleta en papel que trae el cliente. Al grabar se crea sola la orden de trabajo (OT) de ese cliente.", [["Cliente", "Elegí el cliente de la lista (escribí parte del nombre)."], ["N° de boleta", "El número de la boleta de papel. No se puede repetir: si ya está cargada, avisa en rojo."], ["Tipo / Medida / Marca / Trabajo", "Se eligen de las listas. Al agregar otro casco copia los datos del anterior."], ["DOT / N° interno", "Lo pone el sistema solo (3 letras del cliente + número). Se puede cambiar."], ["Otro casco", "Agrega una fila más."], ["✕ (en la fila)", "Borra esa fila antes de grabar."], ["Grabar boleta", "Graba los cascos y crea la OT del cliente."], ["Imprimir la orden de trabajo", "Aparece después de grabar: abre la OT para imprimir o guardar en PDF y entregar al cliente."], ["Anular (cascos anteriores)", "Anula un casco cargado por error."]]], ["otrab", "2 · Órdenes de trabajo", "Lista las OT en curso (una por boleta). Si quedaron cascos sin orden, aparecen arriba por cliente.", [["Botón con el nombre del cliente (n)", "Cascos de ese cliente que no tienen OT todavía: tocá para armarla."], ["Grabar orden de trabajo", "Crea la OT con los cascos tildados."], ["🖨", "Imprime esa OT."], ["Anular", "Anula la OT (los cascos quedan sin orden)."]]], ["armar", "3 · Orden de servicio (juntar las 15)", "Acá se eligen las cubiertas que entran juntas a la línea (tope 15 en camiones). Pueden ser de distintos clientes.", [["Buscar", "Escribí cliente, OT o boleta: te sugiere y filtra la lista."], ["Casilla de cada cubierta", "Tildá las que entran. Titular = va seguro. Suplente = entra si falla una titular."], ["Casilla del encabezado", "Tilda todas las que se ven, hasta completar el tope."], ["Ver todas", "Saca el filtro y muestra todas las que esperan."], ["Destildar todo", "Saca todas las marcas."], ["Responsable", "Quién arma la carga (sale de la lista de empleados). Es obligatorio."], ["Crear orden de servicio", "Crea la OS con las tildadas. Después se imprime la hoja de carga."]]], ["ots", "Órdenes de servicio abiertas", "Solo las abiertas (armadas o en proceso). Las cerradas y anuladas están en Historial.", [["Abrir", "Entra a la OS: ves cada cubierta y en qué estación está."], ["Imprimir", "Si está armada: hoja de carga con casillas 1 a 10 para tildar a mano. Si ya avanzó o está cerrada: informe completo con insumos, tiempos y costos."]]], ["ot", "Detalle de una orden de servicio", "Cada fila es una cubierta; cada columna una estación. Tocá una celda para ver o cargar ese paso.", [["Celda de estación", "✓ = hecha · ACÁ ESTÁ = la que sigue · tocá para ver el registro o cargarlo desde la PC."], ["Tiempos", "Corrige los minutos de cada estación."], ["Imprimir", "Hoja de carga o informe de la OS (ver arriba)."], ["Terminar", "Da por terminada la cubierta (pasó todo) y calcula su costo."], ["Rechazar", "La cubierta no sirve: pide el motivo y queda para devolver al cliente."], ["A titular", "Una suplente pasa a titular (cuando falló una titular)."], ["Sacar", "Saca la cubierta de la OS: vuelve a espera para otra carga."], ["Costo", "Muestra el costo de esa cubierta: insumos, herramental, gastos."], ["Cerrar OT", "Cierra la OS cuando todas están terminadas o rechazadas."], ["Anular OT", "Anula la OS con motivo: las cubiertas vuelven a espera."]]], ["rech", "Rechazadas", "Cubiertas que no se pudieron recapar.", [["Marcar devueltas al cliente", "Marca como entregadas al cliente las cubiertas rechazadas que ya se llevó."]]], ["costos", "Costos", "Costo real de cada cubierta terminada: insumos, herramental, mano de obra y gastos del mes.", [["Excel", "Descarga la planilla de costos."], ["Prorratear gastos fijos del mes", "Reparte los gastos fijos del mes (sueldos, luz, alquiler…) entre las cubiertas hechas. Se hace una vez a fin de mes."]]], ["herramental", "Herramental (inner / envelope)", "Las piezas que se reutilizan en el autoclave, cada una con su número y cuántos usos le quedan.", [["Dar de alta", "Carga piezas nuevas (código y cantidad)."], ["Dar de baja", "Saca de uso una pieza rota o gastada."], ["Reactivar", "Vuelve a poner en uso una pieza dada de baja."]]], ["equipos", "Herramientas y consumibles", "Control de herramientas de cada estación y de lo que se entrega al personal.", [["Herramientas", "Lista por estación. Nueva herramienta = agregar una."], ["Entregas y control semanal", "Entregar = registrar lo que se le da a un empleado. Controlar = revisar el sábado si está todo."], ["Faltantes y roturas", "Decidir = si el motivo vale (no se cobra) o no vale (se le cobra al responsable)."], ["Cargos al personal", "Lo que hay que descontar. ✓ Descontado cuando se descontó del sueldo."], ["Servicios externos", "Nueva salida = algo que se manda a arreglar afuera. Registrar regreso = cuando vuelve."], ["Consumibles por estación", "Agregar / Quitar qué consumibles usa cada estación y cada cuántas cubiertas se cambian."]]], ["alarmas", "⚠ Alarmas", "Todo lo que necesita atención: stock bajo, herramientas sin control, servicios externos atrasados, consumos fuera de lo normal.", [["Actualizar", "Vuelve a revisar las alarmas."]]], ["hist", "Historial", "Todo lo anterior: cubiertas, órdenes de trabajo y órdenes de servicio cerradas o anuladas.", [["Cubiertas / Órdenes de trabajo / Órdenes de servicio", "Elegí qué querés ver."], ["Buscar", "Filtra por cliente, OT, boleta, DOT o marca."], ["🖨 / Abrir", "Imprimir la OT o abrir la OS para verla."]]], ["config", "Configuración", "Ajustes de la producción (solo encargados).", [["Encargados: Agregar / Activar / Desactivar", "Quién es encargado de cada línea (puede autorizar, corregir tiempos y cerrar)."], ["Parámetros: Guardar", "Cada ajuste tiene su explicación al lado. Cambiá el valor y tocá Guardar en esa fila."], ["Motivos de rechazo: Agregar / ✎", "La lista de motivos que se eligen al rechazar una cubierta."]]], ["impresion", "Vista de impresión", "Se abre al tocar Imprimir en cualquier orden.", [["🖨 Imprimir", "Manda a la impresora. La orden de servicio sale apaisada."], ["📄 Guardar PDF", "Descarga el PDF directo (no abre el cuadro de impresión)."], ["✕ Cerrar", "Cierra y volvés a la misma pantalla. También con Atrás."]]], ["puesto", "Puesto de estación (tablet)", "Pantalla del operario. Cada tablet queda fija en una estación (o \"Recorro todas\" para el operador de turno).", [["Elegir la carga", "Al entrar, si hay varias órdenes de servicio abiertas, elegís cuál controlar. Se ven solo sus cubiertas. Cambiar carga para pasar a otra."], ["⏱ Trabajos en curso", "Las cubiertas que alguien empezó y no confirmó, con quién y cuánto tiempo lleva. Tocá una para volver y apretar TERMINÉ."], ["¿Quién hace este trabajo?", "Al tocar EMPEZAR elegís el nombre del operario de la lista. Con un solo celular trabajan varios: cada uno queda con su reloj."], ["Operario", "Tocá y poné tu nombre: queda registrado en cada paso que confirmes."], ["Cambiar estación", "Cambia la estación de esta tablet."], ["Herramientas / Se rompió · Me falta", "Control de herramientas o avisar una rotura o faltante."], ["Retirar consumibles", "Sacar del depósito un consumible (pincel, disco…)."], ["Tocar una cubierta", "Abre su ficha en la estación que le toca."], ["▶ EMPEZAR / ■ TERMINÉ", "Marca el tiempo del trabajo. El reloj queda guardado aunque salgas, cierres la app o se apague el celular. ↺ Cero borra el tiempo si se tocó por error."], ["📦 Retirar lo que voy a usar", "Saca del stock los insumos antes de trabajar. Lo que sobre lo decidís al confirmar: vuelve al depósito o queda en la estación."], ["Lo que sobre: ↩ Vuelve al depósito / 📍 Queda en la estación", "Elegís qué pasa con lo que retiraste y no usaste. Si queda en la estación, se usa primero en la próxima cubierta (no hace falta retirarlo de nuevo)."], ["📍 Hay material guardado en esta estación / ↩ Devolver al depósito", "Muestra lo que quedó guardado de cubiertas anteriores. Con Devolver al depósito vuelve todo al stock (por ejemplo al terminar el turno)."], ["Devolver todo", "Devuelve todo lo retirado (si no se hizo el trabajo)."], ["✓ Igual a receta", "Usaste lo que dice la receta."], ["↺ Usé otro / Usé otro insumo", "Usaste otro insumo en lugar del de la receta."], ["No se usó / No es de acá", "Ese insumo no se usó en esta cubierta o no corresponde a esta estación."], ["♻ Saqué banda para reutilizar", "Entra al stock la banda que se sacó, como reutilizada."], ["⊘ No pasa por esta estación", "Esta cubierta no necesita este paso (con motivo)."], ["⚠ Hubo una falla", "Registra una falla en el paso."], ["✓ Confirmar paso", "Graba el paso: descuenta insumos y pasa a la estación siguiente."], ["Inspección: Apta / No apta", "En la estación 1: apta (elegís banda nueva o ♻ reutilizada, parches, extras) o no apta (motivo)."], ["Autoclave: Ubicar en orden / ▶ Empieza / ■ Terminó la cocción", "Se cocina la carga completa junta: todas las cubiertas de la orden tienen que haber pasado la estación 7. Cada cubierta usa su inner y su envelope, que quedan ocupados hasta que sale del autoclave."], ["Salir", "Cierra la sesión del aparato."], ["← Otra cubierta / ← Volver", "Vuelve a la lista."]]], ["precios", "Precios cubiertas nuevas (vendedores)", "Lista de precios de todas las cubiertas nuevas con las promos vigentes. Pensada para el celular: se busca por medida y se manda el precio por WhatsApp.", [["Promos (tarjetas de arriba)", "Cada promo vigente con su detalle y fechas. Tocá una para ver solo las medidas que entran. Tocá de nuevo para sacar el filtro."], ["Buscador", "Escribí la medida como quieras: 295 80 22.5, 2958022, 175/70R13. También marca, diseño o código. Se puede combinar: wanli 295."], ["Rubros: Todos / Auto / Camioneta / Camión / Agrícola / Industrial", "Muestra solo ese tipo de cubierta."], ["Marcas", "Muestra solo esa marca. Todas las marcas saca el filtro."], ["Precio grande", "Nuestro precio de venta con IVA. Abajo, el mismo precio sin IVA."], ["Recuadro de promo en la cubierta", "6x2: si la medida es del Grupo G (se compran 6) o del Grupo Ch (van de regalo) y cuántas quedan. Oferta o descuento: el precio final con IVA."], ["Plazos (camión)", "Precio contado y a 30, 45, 60, 75 y 90 días, con IVA."], ["Cód.", "El código del artículo en el sistema (el mismo que se usa al vender)."], ["➕ Agregar a cotización", "Suma esa cubierta a la cotización. Se pueden elegir varias medidas y marcas: abajo aparece la barra con la cantidad y el total."], ["Ver y mandar (barra de abajo)", "Abre la cotización: se cambia la cantidad con − y +, se pone el nombre del cliente y se manda."], ["💬 Mandar texto por WhatsApp", "Manda todas las cubiertas elegidas en un solo mensaje, con cantidades, subtotales y total."], ["📄 Armar PDF → 📤 Enviar PDF", "Arma una cotización en PDF con el logo de Vulcan. Cuando dice Enviar PDF, tocalo y elegí WhatsApp. ⬇ Descargar PDF lo guarda en el celular."], ["📤 Mandar esta", "Manda solo esa cubierta por WhatsApp."], ["Al volver de WhatsApp", "La lista queda igual: misma búsqueda, mismos filtros y la cotización armada."], ["Ver más", "La lista muestra de a 40. Tocá para ver las siguientes."], ["Celular de los vendedores", "Link directo: ema-data-analytics.github.io/guerrero-panel/?precios=1 · en el celular: Agregar a pantalla de inicio. Entra con su usuario y va directo a la lista."]]]];
 function pcAyudaSec(x) {
   return '<h2 style="margin:14px 0 4px">' + pcEsc(x[1]) + '</h2><p style="margin:0 0 6px;color:#444">' + pcEsc(x[2]) + '</p><table><thead><tr><th style="width:34%">Botón</th><th>Qué hace</th></tr></thead><tbody>' +
     x[3].map(function(b) { return '<tr><td><b>' + pcEsc(b[0]) + '</b></td><td>' + pcEsc(b[1]) + '</td></tr>'; }).join('') + '</tbody></table>';
@@ -12085,11 +12085,31 @@ async function puRtGuardar() {
 .pn-acc2 button{flex:1;font-size:13px;padding:7px 4px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer}
 .pn-mas{width:100%;padding:12px;font-size:15px;border-radius:10px;border:1px dashed var(--border);background:transparent;color:var(--text);cursor:pointer}
 @media (max-width:560px){.pn-med{font-size:16.5px}.pn-pre .c{font-size:17px}.pn-top h2{font-size:17px}}
+.pn-acc2 button.on{background:#e6f5ee;border-color:#0f7a4a;color:#0b5c38;font-weight:700}
+.pn-bar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;align-items:center;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:#14213d;color:#fff;box-shadow:0 -4px 14px rgba(0,0,0,.25)}
+.pn-bar .t{flex:1;font-size:14px;line-height:1.25}.pn-bar .t b{font-size:16px}
+.pn-bar button{border:0;border-radius:10px;padding:11px 14px;font-size:14.5px;font-weight:700;background:#E8792B;color:#fff;cursor:pointer}
+.pn-ov{position:fixed;inset:0;z-index:70;background:rgba(15,23,42,.55);display:flex;align-items:flex-end;justify-content:center}
+.pn-hoja{background:var(--card);color:var(--text);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:14px 14px calc(16px + env(safe-area-inset-bottom))}
+.pn-hoja h3{margin:0;font-size:18px;flex:1}
+.pn-hc{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pn-hc .x{border:0;background:var(--bg);border-radius:8px;font-size:18px;padding:6px 11px;cursor:pointer;color:var(--text)}
+.pn-ci{display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);padding:9px 0}
+.pn-ci .d{flex:1;min-width:0}.pn-ci .d b{display:block;font-size:14.5px}.pn-ci .d span{font-size:12px;color:var(--dim)}
+.pn-q{display:flex;align-items:center;gap:4px}.pn-q button{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:18px;color:var(--text);cursor:pointer}.pn-q span{min-width:24px;text-align:center;font-weight:800;font-size:15px}
+.pn-ci .st{min-width:92px;text-align:right;font-weight:800;font-size:14px}
+.pn-tot{display:flex;justify-content:space-between;align-items:baseline;padding:12px 2px 4px;font-size:15px}.pn-tot b{font-size:21px}
+.pn-cli{width:100%;box-sizing:border-box;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);margin:8px 0}
+.pn-hb{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.pn-hb button{border-radius:10px;padding:12px 8px;font-size:14.5px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text)}
+.pn-hb .wa{background:#1fa855;border-color:#1fa855;color:#fff}.pn-hb .pdf{background:#14213d;border-color:#14213d;color:#fff}.pn-hb .full{grid-column:1/-1}
+.pn-hb button:disabled{opacity:.6}
+#page-precios-nuevos.con-bar .pn-wrap{padding-bottom:90px}
 </style>
 <script>
 // ── Precios de cubiertas nuevas (para vendedores, pensado para el celular) ──
 // Lee las tablas pn_precios / pn_promos / pn_promo_items desde el servidor (gsPN_Datos).
-var PN_ = { d: null, q: '', rubro: '', marca: '', promo: 0, max: 40, idx: null };
+var PN_ = { d: null, q: '', rubro: '', marca: '', promo: 0, max: 40, idx: null, sel: {}, orden: [], cli: '', pdf: null };
 function pnEl() { return $id('page-precios-nuevos'); }
 function pnEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function pnPlata(n) { n = Number(n) || 0; return '$ ' + Math.round(n).toLocaleString('es-AR'); }
@@ -12108,7 +12128,7 @@ async function renderPrecios() {
 }
 // Al mandar por WhatsApp el celular sale de la app; si al volver la página se recarga, se vuelve a la misma búsqueda y posición.
 function pnGuardar() {
-  try { sessionStorage.setItem('pn_estado', JSON.stringify({ q: PN_.q, rubro: PN_.rubro, marca: PN_.marca, promo: PN_.promo, max: PN_.max, y: window.scrollY || 0 })); } catch (e) {}
+  try { sessionStorage.setItem('pn_estado', JSON.stringify({ q: PN_.q, rubro: PN_.rubro, marca: PN_.marca, promo: PN_.promo, max: PN_.max, y: window.scrollY || 0, sel: PN_.sel, orden: PN_.orden, cli: PN_.cli })); } catch (e) {}
 }
 function pnRestaurar() {
   if (PN_.restaurado) return 0;
@@ -12116,7 +12136,7 @@ function pnRestaurar() {
   try {
     var e = JSON.parse(sessionStorage.getItem('pn_estado') || 'null');
     if (!e) return 0;
-    PN_.q = e.q || ''; PN_.rubro = e.rubro || ''; PN_.marca = e.marca || ''; PN_.promo = e.promo || 0; PN_.max = e.max || 40;
+    PN_.q = e.q || ''; PN_.rubro = e.rubro || ''; PN_.marca = e.marca || ''; PN_.promo = e.promo || 0; PN_.max = e.max || 40; PN_.sel = e.sel || {}; PN_.orden = e.orden || []; PN_.cli = e.cli || '';
     return e.y || 0;
   } catch (x) { return 0; }
 }
@@ -12190,6 +12210,7 @@ function pnResultados() {
   lista.slice(0, PN_.max).forEach(function(x) { h += pnTarjeta(x.p); });
   if (lista.length > PN_.max) h += '<button class="pn-mas" onclick="PN_.max+=40;pnResultados()">Ver más (' + (lista.length - PN_.max) + ' restantes)</button>';
   r.innerHTML = h;
+  pnBarra();
 }
 function pnTarjeta(p) {
   var its = PN_.porPn[p.ID_PN] || [];
@@ -12205,7 +12226,7 @@ function pnTarjeta(p) {
   var plz = pnPlazos(p.PLAZOS);
   if (plz.length > 1) h += '<div class="pn-plz">' + plz.map(function(z) { return '<div>' + pnEsc(z[0] === 'CONTADO' ? 'Contado' : z[0] + ' días') + '<b>' + pnPlata(z[1]) + '</b></div>'; }).join('') + '</div>';
   h += '<div class="pn-tags"><span class="pn-tag">' + pnEsc(p.RUBRO) + '</span>' + (p.DATOS ? '<span class="pn-tag">' + pnEsc(p.DATOS) + '</span>' : '') + '<span class="pn-tag">Cód. ' + pnEsc(p.CODIGO) + '</span>' + (p.LISTA ? '<span class="pn-tag">' + pnEsc(p.LISTA) + '</span>' : '') + '</div>' +
-    '<div class="pn-acc2"><button onclick="pnCompartir(' + p.ID_PN + ')">📤 Mandar por WhatsApp</button></div></div>';
+    '<div class="pn-acc2"><button id="pn-sb-' + p.ID_PN + '" class="' + (PN_.sel[p.ID_PN] ? 'on' : '') + '" onclick="pnSelToggle(' + p.ID_PN + ')">' + (PN_.sel[p.ID_PN] ? '✓ En la cotización' : '➕ Agregar a cotización') + '</button><button onclick="pnCompartir(' + p.ID_PN + ')">📤 Mandar esta</button></div></div>';
   return h;
 }
 function pnPlazos(s) { if (!s) return []; return String(s).split('|').map(function(x) { var a = x.split(':'); return [a[0], Number(a[1])]; }).filter(function(z) { return z[0] && z[1]; }); }
@@ -12229,6 +12250,139 @@ function pnCompartir(id) {
   pnGuardar();
   if (navigator.share) { navigator.share({ text: t }).catch(function() {}); return; }
   window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+}
+// ── Cotización: elegir varias cubiertas y mandarlas juntas (texto o PDF con logo) ──
+function pnPorId(id) { var r = null; (PN_.d.PRECIOS || []).forEach(function(x) { if (x.ID_PN === id) r = x; }); return r; }
+function pnUnit(p) {
+  var u = { precio: p.PRECIO_CON_IVA, nota: '' };
+  (PN_.porPn[p.ID_PN] || []).forEach(function(it) {
+    var pr = PN_.proMap[it.ID_PROMO]; if (!pr) return;
+    if (it.PRECIO_OFERTA && it.PRECIO_OFERTA < u.precio) { u.precio = it.PRECIO_OFERTA; u.nota = pr.TIPO === 'OFERTA' ? 'Oferta' : 'Promo'; }
+    if (pr.TIPO === 'REGALO' && !u.nota) u.nota = 'Promo 6x2: ' + (it.GRUPO === 'CH' ? 'va de regalo' : 'grupo G');
+  });
+  return u;
+}
+function pnSelItems() {
+  return PN_.orden.filter(function(id) { return PN_.sel[id] && pnPorId(id); }).map(function(id) {
+    var p = pnPorId(id), u = pnUnit(p); return { p: p, cant: PN_.sel[id], unit: u.precio, nota: u.nota, sub: u.precio * PN_.sel[id] };
+  });
+}
+function pnSelToggle(id) {
+  if (PN_.sel[id]) { delete PN_.sel[id]; PN_.orden = PN_.orden.filter(function(x) { return x !== id; }); }
+  else { PN_.sel[id] = 1; PN_.orden.push(id); }
+  PN_.pdf = null;
+  var b = $id('pn-sb-' + id);
+  if (b) { b.className = PN_.sel[id] ? 'on' : ''; b.textContent = PN_.sel[id] ? '✓ En la cotización' : '➕ Agregar a cotización'; }
+  pnGuardar(); pnBarra();
+}
+function pnBarra() {
+  var el = pnEl(); if (!el) return;
+  var b = $id('pn-bar'), its = pnSelItems();
+  if (!its.length) { if (b) b.remove(); el.classList.remove('con-bar'); return; }
+  var n = 0, tot = 0; its.forEach(function(x) { n += x.cant; tot += x.sub; });
+  if (!b) { b = document.createElement('div'); b.id = 'pn-bar'; b.className = 'pn-bar'; el.appendChild(b); }
+  el.classList.add('con-bar');
+  b.innerHTML = '<div class="t">🧾 <b>' + n + '</b> cubierta' + (n === 1 ? '' : 's') + ' · ' + its.length + ' medida' + (its.length === 1 ? '' : 's') + '<br/><b>' + pnPlata(tot) + '</b> con IVA</div><button onclick="pnHoja()">Ver y mandar</button>';
+}
+function pnHoja() {
+  var its = pnSelItems(); pnHojaCerrar();
+  if (!its.length) return;
+  var tot = 0, h = '<div class="pn-hoja" onclick="event.stopPropagation()"><div class="pn-hc"><h3>🧾 Cotización</h3><button class="x" onclick="pnHojaCerrar()">✕</button></div>';
+  its.forEach(function(x) {
+    tot += x.sub;
+    h += '<div class="pn-ci"><div class="d"><b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><span>' + pnEsc(x.p.DISENO) + ' · ' + pnPlata(x.unit) + ' c/u' + (x.nota ? ' · ' + pnEsc(x.nota) : '') + '</span></div>' +
+      '<div class="pn-q"><button onclick="pnCant(' + x.p.ID_PN + ',-1)">−</button><span>' + x.cant + '</span><button onclick="pnCant(' + x.p.ID_PN + ',1)">+</button></div><div class="st">' + pnPlata(x.sub) + '</div></div>';
+  });
+  h += '<div class="pn-tot"><span>Total con IVA</span><b>' + pnPlata(tot) + '</b></div><div class="pn-info" style="text-align:right">' + pnPlata(tot / 1.21) + ' + IVA</div>' +
+    '<input class="pn-cli" id="pn-cli" placeholder="Cliente (opcional)" value="' + pnEsc(PN_.cli) + '" oninput="PN_.cli=this.value;PN_.pdf=null;pnPdfBotones()"/>' +
+    '<div class="pn-hb"><button class="wa full" onclick="pnCotWhats()">💬 Mandar texto por WhatsApp</button>' +
+    '<button class="pdf" id="pn-pdf-b" onclick="pnCotPdf(this)">📄 Armar PDF</button><button id="pn-pdf-d" onclick="pnCotPdfBajar()" disabled>⬇ Descargar PDF</button>' +
+    '<button class="full" onclick="pnVaciar()">🗑 Vaciar cotización</button></div></div>';
+  var ov = document.createElement('div'); ov.id = 'pn-ov'; ov.className = 'pn-ov'; ov.onclick = pnHojaCerrar; ov.innerHTML = h;
+  document.body.appendChild(ov);
+  pnPdfBotones();
+}
+function pnHojaCerrar() { var o = $id('pn-ov'); if (o) o.remove(); }
+function pnCant(id, d) {
+  if (!PN_.sel[id]) return;
+  PN_.sel[id] = Math.max(1, Math.min(99, PN_.sel[id] + d)); PN_.pdf = null;
+  pnGuardar(); pnBarra(); pnHoja();
+}
+function pnVaciar() {
+  PN_.orden.forEach(function(id) { var b = $id('pn-sb-' + id); if (b) { b.className = ''; b.textContent = '➕ Agregar a cotización'; } });
+  PN_.sel = {}; PN_.orden = []; PN_.pdf = null; pnGuardar(); pnHojaCerrar(); pnBarra();
+}
+function pnHoyTxt() { var d = new Date(); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear(); }
+function pnVendedor() { var v = $id('sb-nm'); var t = v ? v.textContent.trim() : ''; return t && t !== 'Usuario' ? t : ''; }
+function pnCotTexto() {
+  var its = pnSelItems(), tot = 0;
+  var t = '*Cotización · Vulcan Tread Neumáticos*\n' + pnHoyTxt() + (PN_.cli ? '\nCliente: ' + PN_.cli : '') + '\n';
+  its.forEach(function(x) {
+    tot += x.sub;
+    t += '\n• ' + x.cant + ' x ' + x.p.MEDIDA + ' ' + x.p.MARCA + ' ' + x.p.DISENO + '\n   ' + pnPlata(x.unit) + ' c/u' + (x.nota ? ' (' + x.nota + ')' : '') + ' · Subtotal ' + pnPlata(x.sub);
+  });
+  t += '\n\n*Total: ' + pnPlata(tot) + ' con IVA* (' + pnPlata(tot / 1.21) + ' + IVA)\nPrecios contado, con IVA. Sujetos a cambio y disponibilidad.';
+  var v = pnVendedor(); if (v) t += '\nVendedor: ' + v;
+  return t;
+}
+function pnCotWhats() {
+  var t = pnCotTexto(); pnGuardar();
+  if (navigator.share) { navigator.share({ text: t }).catch(function() {}); return; }
+  window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+}
+function pnCotHtml() {
+  var its = pnSelItems(), tot = 0, filas = '';
+  var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'logo_vulcan.jpg';
+  its.forEach(function(x, i) {
+    tot += x.sub;
+    filas += '<tr style="background:' + (i % 2 ? '#f7f8fa' : '#fff') + '"><td style="padding:7px 8px"><b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><div style="font-size:11px;color:#555">' + pnEsc(x.p.DISENO) + ' · Cód. ' + pnEsc(x.p.CODIGO) + (x.nota ? ' · <b style="color:#c2410c">' + pnEsc(x.nota) + '</b>' : '') + '</div></td>' +
+      '<td style="padding:7px 8px;text-align:center">' + x.cant + '</td><td style="padding:7px 8px;text-align:right;white-space:nowrap">' + pnPlata(x.unit) + '</td><td style="padding:7px 8px;text-align:right;white-space:nowrap"><b>' + pnPlata(x.sub) + '</b></td></tr>';
+  });
+  var v = pnVendedor();
+  return '<div style="width:700px;box-sizing:border-box;padding:24px 26px;font-family:Inter,Arial,sans-serif;color:#1f2937;background:#fff;font-size:13px">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #E8792B;padding-bottom:12px">' +
+    '<img src="' + pnEsc(logo) + '" crossorigin="anonymous" style="height:62px"/><div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#14213d">Cotización</div><div style="color:#555">Fecha: ' + pnHoyTxt() + '</div>' + (v ? '<div style="color:#555">Vendedor: ' + pnEsc(v) + '</div>' : '') + '</div></div>' +
+    (PN_.cli ? '<div style="margin:14px 0 4px;font-size:14px"><span style="color:#555">Cliente:</span> <b>' + pnEsc(PN_.cli) + '</b></div>' : '<div style="height:12px"></div>') +
+    '<table style="width:100%;border-collapse:collapse;margin-top:8px"><tr style="background:#14213d;color:#fff"><th style="padding:8px;text-align:left">Cubierta</th><th style="padding:8px">Cant.</th><th style="padding:8px;text-align:right">Precio c/u</th><th style="padding:8px;text-align:right">Subtotal</th></tr>' + filas + '</table>' +
+    '<div style="display:flex;justify-content:flex-end;margin-top:12px"><div style="min-width:260px;border-top:2px solid #14213d;padding-top:8px">' +
+    '<div style="display:flex;justify-content:space-between;color:#555"><span>Subtotal sin IVA</span><span>' + pnPlata(tot / 1.21) + '</span></div>' +
+    '<div style="display:flex;justify-content:space-between;color:#555"><span>IVA 21%</span><span>' + pnPlata(tot - tot / 1.21) + '</span></div>' +
+    '<div style="display:flex;justify-content:space-between;font-size:19px;font-weight:800;color:#14213d;margin-top:4px"><span>Total</span><span>' + pnPlata(tot) + '</span></div></div></div>' +
+    '<div style="margin-top:22px;font-size:11px;color:#666;border-top:1px solid #e5e7eb;padding-top:8px">Precios por unidad, contado, con IVA incluido. Sujetos a cambio sin previo aviso y a disponibilidad de stock.<br/><b>Vulcan Tread Neumáticos S.R.L.</b> · Salta</div></div>';
+}
+function pnPdfCargar(fn) {
+  if (window.html2pdf) { fn(); return; }
+  var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+  s.onload = fn; s.onerror = function() { toast('No se pudo cargar el generador de PDF (sin internet)', 'r2'); pnPdfBotones(); };
+  document.head.appendChild(s);
+}
+function pnPdfNombre() { return 'Cotizacion_Vulcan_' + (PN_.cli ? PN_.cli.replace(/[^A-Za-z0-9]+/g, '_') + '_' : '') + pnHoyTxt().replace(/\//g, '-') + '.pdf'; }
+function pnPdfBotones() {
+  var b = $id('pn-pdf-b'), d = $id('pn-pdf-d'); if (!b) return;
+  b.disabled = false; d.disabled = !PN_.pdf;
+  b.textContent = PN_.pdf ? '📤 Enviar PDF' : '📄 Armar PDF';
+}
+// Armar el PDF tarda unos segundos; compartir necesita un toque del usuario, por eso es en dos pasos: Armar → Enviar.
+function pnCotPdf(btn) {
+  if (PN_.pdf) {
+    var f = new File([PN_.pdf], pnPdfNombre(), { type: 'application/pdf' });
+    pnGuardar();
+    if (navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: 'Cotización Vulcan Tread' }).catch(function() {}); }
+    else { pnCotPdfBajar(); toast('Este aparato no deja compartir archivos: se descargó el PDF.', 'w'); }
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Armando el PDF...';
+  pnPdfCargar(function() {
+    var cont = document.createElement('div'); cont.style.cssText = 'position:absolute;left:-10000px;top:0;width:700px'; cont.innerHTML = pnCotHtml(); document.body.appendChild(cont);
+    html2pdf().set({ margin: 8, filename: pnPdfNombre(), image: { type: 'jpeg', quality: 0.95 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 820, scrollX: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } })
+      .from(cont.firstChild).outputPdf('blob').then(function(blob) { cont.remove(); PN_.pdf = blob; pnPdfBotones(); },
+        function(e) { cont.remove(); toast('No se pudo armar el PDF', 'r2'); pnPdfBotones(); });
+  });
+}
+function pnCotPdfBajar() {
+  if (!PN_.pdf) return;
+  var a = document.createElement('a'); a.href = URL.createObjectURL(PN_.pdf); a.download = pnPdfNombre(); document.body.appendChild(a); a.click();
+  setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
 }
 </script>
 
