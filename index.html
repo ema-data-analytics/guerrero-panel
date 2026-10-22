@@ -12231,7 +12231,7 @@ function pnTarjeta(p) {
     var pr = PN_.proMap[it.ID_PROMO]; if (!pr) return;
     var t = '';
     if (pr.TIPO === 'REGALO') t = '🎁 <b>6x2</b> · Grupo ' + pnEsc(it.GRUPO === 'CH' ? 'Ch (va de regalo)' : 'G (se compran 6)') + (it.DISPONIBLE ? ' · quedan ' + pnEsc(it.DISPONIBLE) : '');
-    else if (it.PRECIO_OFERTA) t = (pr.TIPO === 'OFERTA' ? '🔥 Oferta: ' : '💲 Con ' + String(it.PORC).replace('.', ',') + '% desc.: ') + '<b>' + pnPlata(it.PRECIO_OFERTA) + '</b> con IVA';
+    else if (it.PRECIO_OFERTA) t = (pr.TIPO === 'OFERTA' ? '🔥 Oferta: ' : '💲 Con ' + String(it.PORC).replace('.', ',') + '% desc.: ') + '<b>' + pnPlata(pnOferta(p, it)) + '</b> con IVA';
     h += '<div class="pn-pro t-' + pnEsc(pr.TIPO) + '">' + t + '<div style="font-size:11px;opacity:.85">' + pnEsc(pr.TITULO) + (pr.HASTA ? ' · hasta ' + pnFecha(pr.HASTA) : '') + '</div></div>';
   });
   var plz = pnPlazos(p.PLAZOS);
@@ -12251,7 +12251,7 @@ function pnTexto(p) {
   (PN_.porPn[p.ID_PN] || []).forEach(function(it) {
     var pr = PN_.proMap[it.ID_PROMO]; if (!pr) return;
     if (pr.TIPO === 'REGALO') t += '\n🎁 ' + pr.TITULO + (pr.HASTA ? ' (hasta ' + pnFecha(pr.HASTA) + ')' : '');
-    else if (it.PRECIO_OFERTA) t += '\n' + (pr.TIPO === 'OFERTA' ? '🔥 Oferta: ' : '💲 Promo: ') + pnPlata(it.PRECIO_OFERTA) + ' con IVA';
+    else if (it.PRECIO_OFERTA) t += '\n' + (pr.TIPO === 'OFERTA' ? '🔥 Oferta: ' : '💲 Promo: ') + pnPlata(pnOferta(p, it)) + ' con IVA';
   });
   return t + '\nVulcan Tread Neumáticos';
 }
@@ -12272,13 +12272,15 @@ function pnPrecioSel(p) {
   var l = ls.filter(function(z) { return z.NOMBRE === PN_.lista; })[0] || ls[ls.length - 1];
   return { con: l.CON, sin: l.SIN, lista: l.NOMBRE };
 }
+// La oferta viene calculada sobre el precio base (lista 30%); con otra lista se lleva en la misma proporción.
+function pnOferta(p, it) { var ps = pnPrecioSel(p); return p.PRECIO_CON_IVA ? Math.round(it.PRECIO_OFERTA * ps.con / p.PRECIO_CON_IVA * 100) / 100 : it.PRECIO_OFERTA; }
 function pnLista(n) { PN_.lista = n; PN_.pdf = null; pnGuardar(); pnResultados(); if ($id('pn-ov')) pnHoja(); }
 function pnUnit(p) {
   var ps = pnPrecioSel(p);
   var u = { precio: ps.con, nota: ps.lista ? 'Lista ' + ps.lista : '' };
   (PN_.porPn[p.ID_PN] || []).forEach(function(it) {
     var pr = PN_.proMap[it.ID_PROMO]; if (!pr) return;
-    if (it.PRECIO_OFERTA && it.PRECIO_OFERTA < u.precio) { u.precio = it.PRECIO_OFERTA; u.nota = pr.TIPO === 'OFERTA' ? 'Oferta' : 'Promo'; }
+    if (it.PRECIO_OFERTA && pnOferta(p, it) < u.precio) { u.precio = pnOferta(p, it); u.nota = pr.TIPO === 'OFERTA' ? 'Oferta' : 'Promo'; }
     if (pr.TIPO === 'REGALO') u.nota = (u.nota ? u.nota + ' · ' : '') + 'Promo 6x2: ' + (it.GRUPO === 'CH' ? 'va de regalo' : 'grupo G');
   });
   return u;
