@@ -12217,7 +12217,9 @@ function pnResultados() {
     h += '<div class="pn-lis"><span>Lista:</span>' + nombresL.map(function(n) { return '<button class="' + (n === PN_.lista ? 'on' : '') + '" onclick="pnLista(\'' + pnEsc(n) + '\')">' + pnEsc(n) + '</button>'; }).join('') + '</div>';
   }
   h += '<div class="pn-info">' + lista.length + ' resultado' + (lista.length === 1 ? '' : 's') + (filtros.length ? ' · ' + pnEsc(filtros.join(' · ')) + ' <a href="javascript:void(0)" onclick="pnVerPromo(0)">quitar</a>' : '') + '</div>';
-  if (!lista.length) h += '<div class="card"><div class="card-body tdim">No encontré esa medida. Probá escribir solo los números, por ejemplo <b>2958022</b> o <b>175 70 13</b>.</div></div>';
+  var hayFiltro = PN_.q || PN_.rubro || PN_.marca || PN_.promo;
+  if (!lista.length) h += '<div class="card"><div class="card-body tdim">No hay cubiertas con esa combinación' + (PN_.q ? ' (búsqueda: <b>' + pnEsc(PN_.q) + '</b>)' : '') + '. ' +
+    (hayFiltro ? '<br/><button class="pn-mas" style="margin-top:8px" onclick="pnLimpiar()">✕ Limpiar filtros y ver todo</button>' : 'Probá escribir solo los números, por ejemplo <b>2958022</b> o <b>175 70 13</b>.') + '</div></div>';
   lista.slice(0, PN_.max).forEach(function(x) { h += pnTarjeta(x.p); });
   if (lista.length > PN_.max) h += '<button class="pn-mas" onclick="PN_.max+=40;pnResultados()">Ver más (' + (lista.length - PN_.max) + ' restantes)</button>';
   r.innerHTML = h;
@@ -12244,7 +12246,8 @@ function pnPlazos(s) { if (!s) return []; return String(s).split('|').map(functi
 function pnBuscar(v) { PN_.q = v; PN_.max = 40; clearTimeout(PN_.t); PN_.t = setTimeout(pnResultados, 150); }
 function pnRubro(r) { PN_.rubro = r; PN_.max = 40; pnPintar(); var i = $id('pn-q'); if (i && PN_.q) i.focus(); }
 function pnMarca(m) { PN_.marca = m; PN_.max = 40; pnPintar(); }
-function pnVerPromo(id) { PN_.promo = (PN_.promo === id ? 0 : id); PN_.max = 40; pnPintar(); var r = $id('pn-res'); if (r && PN_.promo) r.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+function pnLimpiar() { PN_.q = ''; PN_.rubro = ''; PN_.marca = ''; PN_.promo = 0; PN_.max = 40; pnGuardar(); pnPintar(); window.scrollTo(0, 0); }
+function pnVerPromo(id) { PN_.promo = (PN_.promo === id ? 0 : id); PN_.max = 40; if (PN_.promo) { PN_.q = ''; PN_.rubro = ''; PN_.marca = ''; } pnPintar(); var r = $id('pn-res'); if (r && PN_.promo) r.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 function pnTexto(p) {
   var ps = pnPrecioSel(p);
   var t = p.MEDIDA + ' ' + p.MARCA + ' ' + p.DISENO + '\nCódigo: ' + p.CODIGO + '\nPrecio' + (ps.lista ? ' (lista ' + ps.lista + ')' : '') + ': ' + pnPlata(ps.con) + ' con IVA (' + pnPlata(ps.sin) + ' + IVA)';
