@@ -1162,7 +1162,9 @@ async function appInit() {
   }
   await loadConfig();
   var inicio = primeraPaginaPermitida();
-  if (window.EMA_MODO_PUESTO && puedeVerPagina('puesto-estacion')) { document.body.classList.add('modo-puesto'); inicio = 'puesto-estacion'; document.title = 'Vulcan Estaciones'; }
+  // Pantalla de estaciones sola: para los operarios (siempre) y con el link ?puesto para quien no sea administrador. Los administradores ven el sistema completo.
+  var rolP = String((SES && SES.rol) || '').toUpperCase(), adminP = rolP.indexOf('SUPER') !== -1 || rolP.indexOf('ADMIN') !== -1;
+  if (!adminP && (window.EMA_MODO_PUESTO || rolP.indexOf('OPERA') !== -1) && puedeVerPagina('puesto-estacion')) { document.body.classList.add('modo-puesto'); inicio = 'puesto-estacion'; document.title = 'Vulcan Estaciones'; }
   _hist.pagina = null;
   histReplace({ ema: 1, base: 1 });
   if (inicio) navTo(inicio);
