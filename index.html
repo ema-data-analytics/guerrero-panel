@@ -11158,16 +11158,34 @@ function puPanelToca(id) {
 }
 function puCubD(idCub) { return PU_.d ? PU_.d.cubiertas.filter(function(c) { return String(c.ID_CUB) === String(idCub); })[0] : null; }
 
+// ── 0. Qué carga (orden de servicio) se controla en este aparato ──
+function puFijarOS(id) { PU_.os = String(id || ''); puGuardar('pu_os', PU_.os); PU_.q = ''; puLista(); }
+function puElegirOS(ots, ids) {
+  var rel = (PU_.d && PU_.d.relojes) || [];
+  $id('pu-body').innerHTML = '<div class="pu-h">¿Qué carga vas a controlar?</div><div class="tdim" style="font-size:15px;margin-bottom:10px">Hay ' + ids.length + ' órdenes de servicio abiertas. Elegí una: vas a ver solo sus cubiertas. Se puede cambiar después.</div>' +
+    '<div style="display:grid;gap:12px;max-width:640px">' + ids.map(function(k) {
+      var enCurso = rel.filter(function(r) { return String(r.ID_OT) === k; }).length;
+      return '<button class="pu-btn" style="background:var(--accent);color:#fff;font-size:22px;min-height:72px;text-align:left;display:flex;justify-content:space-between;align-items:center" onclick="puFijarOS(\'' + puEsc(k) + '\')"><span>' + puEsc(ots[k].nro) + '</span><span style="font-size:16px">' + ots[k].n + ' cubiertas' + (enCurso ? ' · ⏱ ' + enCurso + ' en curso' : '') + '</span></button>';
+    }).join('') + '</div>';
+}
 // ── 1. Lista de cubiertas ──
 function puLista() {
   var wrap = document.querySelector('#page-puesto-estacion .pu-wrap'); if (wrap) wrap.classList.remove('pu-enficha');
   puPie(false);
   var q = PU_.q.trim().toUpperCase(), d = PU_.d;
-  var cs = d.cubiertas.filter(function(c) { return !q || String(c.MARCA).toUpperCase().indexOf(q) !== -1; });
+  // Una carga a la vez: se elige la orden de servicio y se ven solo sus cubiertas
+  var ots = {}, ids = [];
+  d.cubiertas.forEach(function(c) { var k = String(c.ID_OT); if (!ots[k]) { ots[k] = { nro: c.NRO_OT, n: 0 }; ids.push(k); } ots[k].n++; });
+  if (!PU_.os) PU_.os = puLeer('pu_os');
+  if (ids.length === 1) PU_.os = ids[0];
+  if (ids.length > 1 && !ots[PU_.os]) return puElegirOS(ots, ids);
+  var cs = d.cubiertas.filter(function(c) { return String(c.ID_OT) === String(PU_.os) && (!q || String(c.MARCA).toUpperCase().indexOf(q) !== -1); });
   var peso = function(c) { return c.HECHA ? 4 : (c.BLOQUEADA ? 3 : (c.LE_TOCA || c.ACA ? 0 : (c.PENDIENTES ? 1 : 2))); };
   cs.sort(function(a, b) { return peso(a) - peso(b) || String(a.NRO_OT).localeCompare(String(b.NRO_OT)) || a.ORDEN - b.ORDEN; });
   var eq = PU_.eq, h = '';
   if (eq && eq.controlDiario && eq.herramientas.length && !eq.controlInicio) h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:18px;font-weight:700;color:var(--warn)">⚠ Hoy todavía no se hizo el control de herramientas de inicio</div><button class="pu-btn" style="background:var(--warn);color:#fff;width:max-content" onclick="puVerHerr()">Hacer el control ahora</button></div>';
+  if (ots[PU_.os]) h += '<div class="pu-reg" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-color:var(--accent)"><div style="font-size:19px">Carga: <b>' + puEsc(ots[PU_.os].nro) + '</b> · ' + ots[PU_.os].n + ' cubiertas</div>' +
+    (ids.length > 1 ? '<button class="pu-btn pu-min" onclick="puFijarOS(\'\')">Cambiar carga</button>' : '') + '</div>';
   h += puRelBanner();
   h += '<div class="pu-h">1 · Elegí la cubierta</div><input class="pu-q" id="pu-q" placeholder="Marca grabada…" value="' + puEsc(PU_.q) + '" autocomplete="off" aria-label="Buscar por marca grabada">';
   if (!d.cubiertas.length) h += '<div class="card"><div class="card-body tdim">No hay cubiertas en OT abiertas. Se arma la OT en Producción por cubierta › Armar OT.</div></div>';
@@ -11629,7 +11647,7 @@ async function puRelCancelar() {
 }
 // Arriba de la lista: los trabajos que tienen el reloj en marcha o terminado sin confirmar. Se tocan para volver a esa cubierta.
 function puRelBanner() {
-  var rs = ((PU_.d && PU_.d.relojes) || []).filter(function(r) { return puTodas() || String(r.ID_ESTACION) === String(PU_.est); });
+  var rs = ((PU_.d && PU_.d.relojes) || []).filter(function(r) { return (puTodas() || String(r.ID_ESTACION) === String(PU_.est)) && (!PU_.os || String(r.ID_OT) === String(PU_.os)); });
   if (!rs.length) return '';
   return '<div class="pu-h">⏱ Trabajos en curso (' + rs.length + ')</div><div class="pu-relojes" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">' + rs.map(function(r) {
     var corre = r.ESTADO === 'CORRIENDO';
