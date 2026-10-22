@@ -12058,13 +12058,13 @@ async function puRtGuardar() {
 .pn-promo .pn-ver{display:inline-block;margin-top:6px;background:rgba(255,255,255,.22);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700}
 .pn-promo.sel{outline:3px solid #ffd54a}
 .pn-busca{position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0 6px}
-.pn-busca input{width:100%;box-sizing:border-box;font-size:18px;padding:12px 14px;border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--text)}
+.pn-busca input{width:100%;box-sizing:border-box;font-size:18px;padding:12px 14px;border-radius:12px;border:2px solid var(--border);background:var(--surface,#fff);color:var(--text)}
 .pn-busca input:focus{border-color:var(--accent);outline:none}
 .pn-chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px}
-.pn-chip{flex:0 0 auto;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:20px;padding:6px 12px;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.pn-chip{flex:0 0 auto;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);border-radius:20px;padding:6px 12px;font-size:13.5px;cursor:pointer;white-space:nowrap}
 .pn-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 .pn-info{font-size:12.5px;color:var(--dim);margin:6px 2px}
-.pn-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.pn-item{background:var(--surface,#fff);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px}
 .pn-l1{display:flex;align-items:flex-start;gap:10px}
 .pn-med{font-size:18px;font-weight:800;line-height:1.15}
 .pn-mar{font-size:13.5px;margin-top:2px}
@@ -12095,7 +12095,7 @@ async function puRtGuardar() {
 .pn-bar .t{flex:1;font-size:14px;line-height:1.25}.pn-bar .t b{font-size:16px}
 .pn-bar button{border:0;border-radius:10px;padding:11px 14px;font-size:14.5px;font-weight:700;background:#E8792B;color:#fff;cursor:pointer}
 .pn-ov{position:fixed;inset:0;z-index:70;background:rgba(15,23,42,.55);display:flex;align-items:flex-end;justify-content:center}
-.pn-hoja{background:var(--card);color:var(--text);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:14px 14px calc(16px + env(safe-area-inset-bottom))}
+.pn-hoja{background:var(--surface,#fff);color:var(--text);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:14px 14px calc(16px + env(safe-area-inset-bottom))}
 .pn-hoja h3{margin:0;font-size:18px;flex:1}
 .pn-hc{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .pn-hc .x{border:0;background:var(--bg);border-radius:8px;font-size:18px;padding:6px 11px;cursor:pointer;color:var(--text)}
@@ -12165,11 +12165,11 @@ function pnIndexar() {
 }
 function pnPintar() {
   var d = PN_.d, el = pnEl();
-  var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'logo_vulcan.jpg';
+  var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
   var marcas = {}; (d.PRECIOS || []).forEach(function(p) { marcas[p.MARCA] = 1; });
   var h = '<div class="pn-wrap">' +
     '<div class="pn-top"><img src="' + pnEsc(logo) + '" alt="Vulcan Tread"/><div><h2>Precios cubiertas nuevas</h2><div class="pn-sub">' + (d.PRECIOS || []).length + ' medidas · precios de venta con IVA</div></div>' +
-    '<div class="pn-acc"><button class="btn btn-sm" onclick="pcAyuda(\'precios\')">❓ Ayuda</button>' +
+    '<div class="pn-acc"><button class="btn btn-sm" onclick="PN_.lpdf=null;pnListasHoja()">📄 Listas PDF</button><button class="btn btn-sm" onclick="pcAyuda(\'precios\')">❓ Ayuda</button>' +
     (document.body.classList.contains('modo-puesto') ? '<button class="btn btn-sm" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Salir</button>' : '') + '</div></div>';
   if ((d.PROMOS || []).length) {
     h += '<div class="pn-promos" id="pn-promos">';
@@ -12348,7 +12348,6 @@ function pnCotTexto() {
     t += '\n• ' + x.cant + ' x ' + x.p.MEDIDA + ' ' + x.p.MARCA + ' ' + x.p.DISENO + '\n   ' + pnPlata(x.unit) + ' c/u' + (x.nota ? ' (' + x.nota + ')' : '') + ' · Subtotal ' + pnPlata(x.sub);
   });
   t += '\n\n*Total: ' + pnPlata(tot) + ' con IVA* (' + pnPlata(tot / 1.21) + ' + IVA)\nPrecios con IVA incluido. Sujetos a cambio y disponibilidad.';
-  var v = pnVendedor(); if (v) t += '\nVendedor: ' + v;
   return t;
 }
 function pnCotWhats() {
@@ -12358,18 +12357,18 @@ function pnCotWhats() {
 }
 function pnCotHtml() {
   var its = pnSelItems(), tot = 0, filas = '';
-  var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'logo_vulcan.jpg';
+  var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
   its.forEach(function(x, i) {
     tot += x.sub;
-    filas += '<tr style="background:' + (i % 2 ? '#f7f8fa' : '#fff') + '"><td style="padding:7px 8px"><b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><div style="font-size:11px;color:#555">' + pnEsc(x.p.DISENO) + ' · Cód. ' + pnEsc(x.p.CODIGO) + (x.nota ? ' · <b style="color:#c2410c">' + pnEsc(x.nota) + '</b>' : '') + '</div></td>' +
+    filas += '<tr style="background:' + (i % 2 ? '#f7f8fa' : '#fff') + '"><td style="padding:7px 8px;font-family:Inter,Arial,sans-serif;border:0"><b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><div style="font-size:11px;color:#555">' + pnEsc(x.p.DISENO) + ' · Cód. ' + pnEsc(x.p.CODIGO) + (x.nota ? ' · <b style="color:#c2410c">' + pnEsc(x.nota) + '</b>' : '') + '</div></td>' +
       '<td style="padding:7px 8px;text-align:center">' + x.cant + '</td><td style="padding:7px 8px;text-align:right;white-space:nowrap">' + pnPlata(x.unit) + '</td><td style="padding:7px 8px;text-align:right;white-space:nowrap"><b>' + pnPlata(x.sub) + '</b></td></tr>';
   });
-  var v = pnVendedor();
+  var v = '';  // vendedor: se agrega cuando se arme el registro de ventas por vendedor
   return '<div style="width:700px;box-sizing:border-box;padding:24px 26px;font-family:Inter,Arial,sans-serif;color:#1f2937;background:#fff;font-size:13px">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #E8792B;padding-bottom:12px">' +
     '<img src="' + pnEsc(logo) + '" crossorigin="anonymous" style="height:62px"/><div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#14213d">Cotización</div><div style="color:#555">Fecha: ' + pnHoyTxt() + '</div>' + (v ? '<div style="color:#555">Vendedor: ' + pnEsc(v) + '</div>' : '') + '</div></div>' +
     (PN_.cli ? '<div style="margin:14px 0 4px;font-size:14px"><span style="color:#555">Cliente:</span> <b>' + pnEsc(PN_.cli) + '</b></div>' : '<div style="height:12px"></div>') +
-    '<table style="width:100%;border-collapse:collapse;margin-top:8px"><tr style="background:#14213d;color:#fff"><th style="padding:8px;text-align:left">Cubierta</th><th style="padding:8px">Cant.</th><th style="padding:8px;text-align:right">Precio c/u</th><th style="padding:8px;text-align:right">Subtotal</th></tr>' + filas + '</table>' +
+    '<table style="width:100%;border-collapse:collapse;margin-top:8px"><tr><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:left">Cubierta</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:center">Cant.</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">Precio c/u</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">Subtotal</th></tr>' + filas + '</table>' +
     '<div style="display:flex;justify-content:flex-end;margin-top:12px"><div style="min-width:260px;border-top:2px solid #14213d;padding-top:8px">' +
     '<div style="display:flex;justify-content:space-between;color:#555"><span>Subtotal sin IVA</span><span>' + pnPlata(tot / 1.21) + '</span></div>' +
     '<div style="display:flex;justify-content:space-between;color:#555"><span>IVA 21%</span><span>' + pnPlata(tot - tot / 1.21) + '</span></div>' +
@@ -12409,6 +12408,66 @@ function pnCotPdfBajar() {
   if (!PN_.pdf) return;
   var a = document.createElement('a'); a.href = URL.createObjectURL(PN_.pdf); a.download = pnPdfNombre(); document.body.appendChild(a); a.click();
   setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+// ── Listas de precios para descargar o imprimir (por rubro) ──
+var PN_RUB_L = [['AUTO', 'Auto'], ['CAMIONETA', 'Camioneta'], ['CAMION', 'Camión'], ['AGRICOLA', 'Agrícola'], ['INDUSTRIAL', 'Industrial']];
+function pnListasHoja() {
+  pnHojaCerrar();
+  var h = '<div class="pn-hoja" onclick="event.stopPropagation()"><div class="pn-hc"><h3>📄 Listas de precios</h3><button class="x" onclick="pnHojaCerrar()">✕</button></div>' +
+    '<div class="pn-info">Elegí el rubro. Camión y agrícola salen con las 5 listas (10% a 30%), en precio neto sin IVA.</div><div class="pn-chips" style="flex-wrap:wrap">' +
+    PN_RUB_L.map(function(r) { var n = (PN_.d.PRECIOS || []).filter(function(p) { return p.RUBRO === r[0]; }).length; return n ? '<button class="pn-chip' + (PN_.lrub === r[0] ? ' on' : '') + '" onclick="PN_.lrub=\'' + r[0] + '\';PN_.lpdf=null;pnListasHoja()">' + r[1] + ' (' + n + ')</button>' : ''; }).join('') + '</div>' +
+    (PN_.lrub ? '<div class="pn-hb"><button class="pdf" id="pn-lpdf-b" onclick="pnListaPdf(this)">' + (PN_.lpdf ? '📤 Enviar PDF' : '📄 Armar PDF') + '</button><button id="pn-lpdf-d" onclick="pnListaBajar()"' + (PN_.lpdf ? '' : ' disabled') + '>⬇ Descargar PDF</button><button class="full" onclick="pnListaImprimir()">🖨 Imprimir</button></div>' : '') + '</div>';
+  var ov = document.createElement('div'); ov.id = 'pn-ov'; ov.className = 'pn-ov'; ov.onclick = pnHojaCerrar; ov.innerHTML = h; document.body.appendChild(ov);
+}
+function pnListaNombre() { var r = PN_RUB_L.filter(function(z) { return z[0] === PN_.lrub; })[0]; return r ? r[1] : ''; }
+function pnListaFilas() { return PN_.idx.filter(function(x) { return x.p.RUBRO === PN_.lrub; }).map(function(x) { return x.p; }); }
+function pnListaHtml() {
+  var ps = pnListaFilas(), conL = ps.some(function(p) { return (p.LISTAS || []).length; }), nom = pnListaNombre();
+  var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
+  var nl = conL ? ps.filter(function(p) { return (p.LISTAS || []).length; })[0].LISTAS.map(function(l) { return l.NOMBRE; }) : [];
+  var cab = '<th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:10px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:6px 5px;text-align:left">Código</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:10px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:6px 5px;text-align:left">Cubierta</th>' + (conL ? nl.map(function(n) { return '<th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:10px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:6px 5px;text-align:right;background:#E8792B">Lista ' + pnEsc(n) + '</th>'; }).join('') : '<th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:10px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:6px 5px;text-align:right">Sin IVA</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:10px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:6px 5px;text-align:right">Con IVA</th>');
+  var filas = '', med = null;
+  ps.forEach(function(p, i) {
+    if (p.MEDIDA !== med) { med = p.MEDIDA; filas += '<tr><td colspan="' + (conL ? 2 + nl.length : 4) + '" style="background:#fdf1e7;color:#14213d;font-weight:800;font-size:11px;padding:5px;border:0;font-family:Inter,Arial,sans-serif">' + pnEsc(med) + '</td></tr>'; }
+    var td = 'padding:3px 5px;border:0;border-bottom:1px solid #eceef2;font-family:Inter,Arial,sans-serif;font-size:10px;';
+    filas += '<tr><td style="' + td + 'color:#6b7280;font-size:8.5px;white-space:nowrap">' + pnEsc(p.CODIGO) + '</td><td style="' + td + '"><b>' + pnEsc(p.MARCA) + '</b> ' + pnEsc(p.DISENO) + '</td>' +
+      (conL ? nl.map(function(n) { var l = (p.LISTAS || []).filter(function(z) { return z.NOMBRE === n; })[0]; return '<td style="' + td + 'text-align:right;white-space:nowrap">' + (l ? pnPlata(l.SIN) : '—') + '</td>'; }).join('')
+            : '<td style="' + td + 'text-align:right;white-space:nowrap">' + pnPlata(p.PRECIO_SIN_IVA) + '</td><td style="' + td + 'text-align:right;white-space:nowrap;font-weight:700">' + pnPlata(p.PRECIO_CON_IVA) + '</td>') + '</tr>';
+  });
+  return '<div style="width:700px;box-sizing:border-box;padding:18px 20px;background:#fff;color:#1f2937;font-family:Inter,Arial,sans-serif">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #E8792B;padding-bottom:8px;margin-bottom:8px"><img src="' + pnEsc(logo) + '" crossorigin="anonymous" style="height:48px"/>' +
+    '<div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#14213d">Lista de precios · ' + pnEsc(nom) + '</div><div style="font-size:10px;color:#555">Al ' + pnHoyTxt() + ' · ' + ps.length + ' artículos · ' + (conL ? '<b>precios netos sin IVA</b>' : 'precios por unidad') + '</div></div></div>' +
+    '<table style="width:100%;border-collapse:collapse"><thead><tr>' + cab + '</tr></thead><tbody>' + filas + '</tbody></table>' +
+    '<div style="margin-top:10px;font-size:9px;color:#666">' + (conL ? 'Precios netos: sumar IVA 21%. ' : '') + 'Sujetos a cambio sin previo aviso y a disponibilidad de stock. Vulcan Tread Neumáticos S.R.L.</div></div>';
+}
+function pnListaArchivo() { return 'Lista_' + pnListaNombre().normalize('NFD').replace(/[^A-Za-z]/g, '') + '_Vulcan_' + pnHoyTxt().replace(/\//g, '-') + '.pdf'; }
+function pnListaPdf(btn) {
+  if (PN_.lpdf) {
+    var f = new File([PN_.lpdf], pnListaArchivo(), { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: 'Lista de precios Vulcan' }).catch(function() {}); }
+    else { pnListaBajar(); }
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Armando el PDF...';
+  pnPdfCargar(function() {
+    var cont = document.createElement('div'); cont.style.cssText = 'position:absolute;left:-10000px;top:0;width:700px'; cont.innerHTML = pnListaHtml(); document.body.appendChild(cont);
+    html2pdf().set({ margin: [8, 6, 10, 6], filename: pnListaArchivo(), image: { type: 'jpeg', quality: 0.95 }, html2canvas: { scale: pnListaFilas().length > 150 ? 1.5 : 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 820, scrollX: 0, scrollY: 0 },
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } })
+      .from(cont.firstChild).outputPdf('blob').then(function(b) { cont.remove(); PN_.lpdf = b; pnListasHoja(); }, function() { cont.remove(); toast('No se pudo armar el PDF', 'r2'); pnListasHoja(); });
+  });
+}
+function pnListaBajar() {
+  if (!PN_.lpdf) return;
+  var a = document.createElement('a'); a.href = URL.createObjectURL(PN_.lpdf); a.download = pnListaArchivo(); document.body.appendChild(a); a.click();
+  setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+function pnListaImprimir() {
+  var w = window.open('', '_blank'); if (!w) { toast('El navegador bloqueó la ventana de impresión', 'r2'); return; }
+  var base = location.href.replace(/[^\/]*$/, '');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><base href="' + base + '"><title>Lista de precios ' + pnEsc(pnListaNombre()) + '</title><style>@page{size:A4;margin:8mm}body{margin:0}tr{break-inside:avoid}thead{display:table-header-group}</style></head><body>' + pnListaHtml() + '</body></html>');
+  w.document.close();
+  var img = w.document.querySelector('img'), ir = function() { w.focus(); w.print(); };
+  if (img && !img.complete) { img.onload = ir; img.onerror = ir; } else setTimeout(ir, 300);
 }
 </script>
 
