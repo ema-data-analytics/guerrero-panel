@@ -51,7 +51,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .login-brand{text-align:center;margin-bottom:32px;}
 .login-logo{font-size:48px;font-weight:900;color:var(--accent);font-family:var(--mono);letter-spacing:-2px;line-height:1;}
 .login-subtitle{font-size:12px;color:var(--dim);margin-top:4px;letter-spacing:2px;text-transform:uppercase;}
-.login-desc{font-size:13px;color:var(--dim);margin-top:8px;}
+.login-desc{font-size:15px;font-weight:600;color:var(--text,#1f2a37);margin-top:12px;}
+.login-ema{text-align:center;font-size:11px;color:var(--dim);margin-top:22px;padding-top:14px;border-top:1px solid #eef0f4;letter-spacing:.3px;}
+.login-ema{display:flex;align-items:center;justify-content:center;gap:10px;}
+.login-ema img{height:40px;border-radius:6px;}
+@media (max-width:480px){.login-card{width:calc(100vw - 32px);padding:30px 22px;}}
 .login-err{background:var(--danger-light);border:1px solid #fca5a5;color:var(--danger);padding:9px 12px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none;}
 #app{display:flex;height:100vh;overflow:hidden;}
 #sidebar{width:240px;min-width:240px;background:#1e293b;display:flex;flex-direction:column;overflow-y:auto;}
@@ -235,15 +239,15 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
 <div id="login-wrap">
   <div class="login-card">
     <div class="login-brand">
-      <div class="login-logo" id="login-logo-el">EMA</div>
-      <div class="login-subtitle">Control de Producción</div>
-      <div class="login-desc" id="login-desc-el">Guerrero Neumáticos</div>
+      <div class="login-logo" id="login-logo-el"><img src="https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4" alt="Vulcan Tread Neumáticos" style="max-height:84px;max-width:300px;object-fit:contain"/></div>
+      <div class="login-desc" id="login-desc-el">Vulcan Tread Neumáticos S.R.L.</div>
+      <div class="login-subtitle">Sistema de gestión</div>
     </div>
     <div class="login-err" id="lerr">Usuario o contraseña incorrectos</div>
     <div class="fg"><label class="fl">Usuario</label><input id="lu" class="fi" type="text" placeholder="Ingrese su usuario" autocomplete="username"/></div>
     <div class="fg"><label class="fl">Contraseña</label><input id="lp" class="fi" type="password" placeholder="••••••" autocomplete="current-password"/></div>
     <button class="btn btn-p btn-xl" style="width:100%;justify-content:center" onclick="doLogin()">Ingresar →</button>
-    <div style="text-align:center;font-size:11px;color:var(--dim);margin-top:16px;font-family:var(--mono)">Roles: SUPER · ADMINISTRADOR · OPERADOR · FACTURACION</div>
+    <div class="login-ema"><span>Desarrollado por</span><img src="https://ema-data-analytics.github.io/guerrero-panel/logo_ema.png?v=1" alt="EMA Data Analytics"/></div>
   </div>
 </div>
 
