@@ -9975,10 +9975,47 @@ function pcImpOTrab(id) {
   pcImprimir('Orden de trabajo ' + o.NRO, h);
 }
 // Orden de servicio: hoja de carga de la línea, con casilleros para tildar cada estación en papel
+// Informe de la orden de servicio (en proceso o cerrada): cómo terminó cada cubierta, estaciones, insumos reales, herramental, tiempo y costo
+function pcImpOSInforme(r, o) {
+  var d = PC_.d, ests = d.estaciones.slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; });
+  var nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = e.ORDEN + '. ' + e.NOMBRE; });
+  var nomI = {}; (d.insumos || []).forEach(function(x) { nomI[x.ID_INSUMO] = x.NOMBRE_INSUMO; });
+  var cub = {}; d.cubiertas.forEach(function(c) { cub[String(c.ID_CUB)] = c; });
+  var $$ = function(n) { return '$ ' + (Math.round((+n || 0) * 100) / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var estTxt = { TERMINADA: 'Terminada', RECHAZADA: 'No apta / rechazada', EN_PROCESO: 'En proceso', PENDIENTE: 'Sin empezar', RETIRADA: 'Retirada' };
+  var tot = { n: 0, ok: 0, rech: 0, mat: 0, herr: 0, mo: 0, fij: 0, t: 0, min: 0 };
+  r.items.forEach(function(i) { tot.n++; if (i.ESTADO === 'TERMINADA') tot.ok++; if (i.ESTADO === 'RECHAZADA') tot.rech++; tot.mat += i.COSTO.MATERIALES; tot.herr += i.COSTO.HERRAMENTAL; tot.mo += i.COSTO.MO; tot.fij += i.COSTO.FIJOS; tot.t += i.COSTO.TOTAL; tot.min += i.COSTO.MINUTOS; });
+  var ac = (r.autoclave || [])[0];
+  var cerrada = o.ESTADO === 'CERRADA';
+  var h = pcEncImp('ORDEN DE SERVICIO · INFORME ' + (cerrada ? 'FINAL (CERRADA)' : 'PARCIAL (EN PROCESO)'), o.NRO_OT) +
+    '<div class="dat"><div><b>Línea</b>' + pcEsc(o.LINEA) + '</div><div><b>Armada</b>' + fmtD(o.FECHA) + '</div><div><b>Cerrada</b>' + (o.FECHA_CIERRE ? fmtD(o.FECHA_CIERRE) : '—') + '</div><div><b>Responsable</b>' + pcEsc(o.RESPONSABLE || '—') + '</div>' +
+    '<div><b>Cubiertas</b>' + tot.n + ' · terminadas ' + tot.ok + ' · no aptas ' + tot.rech + '</div><div><b>Autoclave</b>' + (ac ? fmtD(ac.INICIO) + (ac.MINUTOS ? ' · ' + Math.round(ac.MINUTOS) + ' min' : '') + (ac.OPERARIO ? ' · ' + pcEsc(ac.OPERARIO) : '') : '—') + '</div>' +
+    '<div><b>Costo total</b>' + $$(tot.t) + '</div><div><b>Costo promedio</b>' + (tot.ok ? $$(tot.t / tot.ok) : '—') + '</div></div>' +
+    '<h2>Resumen por cubierta</h2><table><thead><tr><th>#</th><th>Marca grabada</th><th>Cliente</th><th>OT · boleta</th><th>Medida</th><th>Trabajo</th><th>Resultado</th><th>Estaciones</th><th>Minutos</th><th>Materiales</th><th>Herramental</th><th>Mano de obra</th><th>Fijos</th><th>Total</th></tr></thead><tbody>' +
+    r.items.map(function(i, k) { var c = cub[String(i.ID_CUB)] || {}; return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(i.MARCA) + '</b>' + (i.ROL === 'SUPLENTE' ? ' (sup.)' : '') + '</td><td>' + pcEsc(i.CLIENTE || c.CLIENTE || '') + '</td><td>' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + (c.NRO_MANUAL ? ' · ' + pcEsc(c.NRO_MANUAL) : '') + '</td><td>' + pcEsc(i.MEDIDA || '') + '</td><td>' + pcEsc(i.TRABAJO || '') + '</td>' +
+      '<td>' + pcEsc(estTxt[i.ESTADO] || i.ESTADO) + (i.PASADA > 1 ? ' · reproceso' : '') + '</td><td>' + i.HECHAS.length + ' de ' + ests.length + '</td><td>' + (i.COSTO.MINUTOS ? Math.round(i.COSTO.MINUTOS) : '') + '</td><td>' + $$(i.COSTO.MATERIALES) + '</td><td>' + $$(i.COSTO.HERRAMENTAL) + '</td><td>' + $$(i.COSTO.MO) + '</td><td>' + $$(i.COSTO.FIJOS) + '</td><td><b>' + $$(i.COSTO.TOTAL) + '</b></td></tr>'; }).join('') +
+    '<tr><td colspan="8"><b>Totales</b></td><td>' + Math.round(tot.min) + '</td><td>' + $$(tot.mat) + '</td><td>' + $$(tot.herr) + '</td><td>' + $$(tot.mo) + '</td><td>' + $$(tot.fij) + '</td><td><b>' + $$(tot.t) + '</b></td></tr></tbody></table>' +
+    '<h2>Detalle por cubierta</h2>' +
+    r.items.map(function(i) {
+      var regs = i.REGISTROS.slice().sort(function(a, b) { return (+a.FECHA || 0) - (+b.FECHA || 0); });
+      var cons = (i.CONSUMOS || []).filter(function(k) { return String(k.ESTADO) !== 'ANULADO'; });
+      return '<div style="page-break-inside:avoid;border:1px solid #bbb;border-radius:6px;padding:8px;margin-bottom:10px"><div style="font-size:13px;font-weight:700">' + pcEsc(i.MARCA) + ' · ' + pcEsc(i.CLIENTE || '') + ' · ' + pcEsc(i.MEDIDA || '') + ' · ' + pcEsc(estTxt[i.ESTADO] || i.ESTADO) + '</div>' +
+        '<table style="margin-top:6px"><thead><tr><th>Estación</th><th>Fecha</th><th>Operario</th><th>Resultado</th><th>Insumos usados</th></tr></thead><tbody>' +
+        (regs.length ? regs.map(function(g) {
+          var us = cons.filter(function(k) { return String(k.ID_REG) === String(g.ID_REG); }).map(function(k) { var nm = nomI[k.ID_INSUMO] || nomI[k.ID_INSUMO_RECETA] || k.ID_INSUMO || k.ID_INSUMO_RECETA; return +k.NO_USO === 1 ? '<span style="color:#777">' + pcEsc(nm) + ': no se usó (' + pcEsc(k.MOTIVO || '') + ')</span>' : pcEsc(nm) + ': <b>' + (Math.round((+k.REAL || 0) * 1000) / 1000).toString().replace('.', ',') + ' ' + pcEsc(k.UNIDAD || '') + '</b>' + (+k.REEMPLAZO === 1 ? ' (reemplazo)' : ''); });
+          return '<tr><td>' + pcEsc(nomE[g.ID_ESTACION] || g.ID_ESTACION) + (g.PASADA > 1 ? ' (corrección)' : '') + '</td><td>' + fmtD(g.FECHA) + '</td><td>' + pcEsc(g.OPERARIO || g.USUARIO || '') + '</td><td>' + pcEsc(g.RESULTADO || '') + (g.OBSERVACION ? ' · ' + pcEsc(g.OBSERVACION) : '') + '</td><td>' + (us.join('<br>') || '—') + '</td></tr>';
+        }).join('') : '<tr><td colspan="5" style="color:#777">Todavía no pasó por ninguna estación</td></tr>') + '</tbody></table>' +
+        (i.HERRAMENTAL.length ? '<div class="nota">Herramental: ' + i.HERRAMENTAL.map(function(p) { return pcEsc(p.CODIGO) + ' (uso ' + p.NRO_USO + (p.MAX_USOS ? ' de ' + p.MAX_USOS : '') + ')'; }).join(' · ') + '</div>' : '') + '</div>';
+    }).join('') +
+    '<div class="firmas"><div>Responsable de la carga</div><div>Encargado de línea</div><div>Control final</div></div>';
+  pcImprimir('Informe ' + o.NRO_OT, h, true);
+}
 async function pcImpOS(id) {
   var r = await gsRun('gsPC_OTDetalle', id);
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
-  var d = PC_.d, o = d.ots.filter(function(x) { return String(x.ID_OT) === String(id); })[0] || r.ot, ests = d.estaciones.slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; });
+  var d0 = PC_.d, o0 = d0.ots.filter(function(x) { return String(x.ID_OT) === String(id); })[0] || r.ot;
+  if (o0.ESTADO !== 'ARMADA') return pcImpOSInforme(r, o0);
+  var d = PC_.d, o = o0, ests = d.estaciones.slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; });
   var cub = {}; d.cubiertas.forEach(function(c) { cub[String(c.ID_CUB)] = c; });
   var h = pcEncImp('ORDEN DE SERVICIO · HOJA DE CARGA', o.NRO_OT) +
     '<div class="dat"><div><b>Línea</b>' + pcEsc(o.LINEA) + '</div><div><b>Fecha</b>' + fmtD(o.FECHA) + '</div><div><b>Responsable</b>' + pcEsc(o.RESPONSABLE || '—') + '</div><div><b>Cubiertas</b>' + r.items.filter(function(i) { return i.ROL === 'TITULAR'; }).length + ' titulares · ' + r.items.filter(function(i) { return i.ROL === 'SUPLENTE'; }).length + ' suplentes</div>' +
