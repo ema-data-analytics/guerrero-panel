@@ -4,6 +4,18 @@
 <meta charset="UTF-8"/>
 <script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "4bd1d0f188f5"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<script>
+// Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
+(function() {
+  if (!/[?&#]puesto/.test(location.search + location.hash)) return;
+  window.EMA_MODO_PUESTO = true;
+  var h = document.head;
+  var link = function(rel, href) { var e = document.createElement('link'); e.rel = rel; e.href = href; h.appendChild(e); };
+  var meta = function(n, c) { var e = document.createElement('meta'); e.name = n; e.content = c; h.appendChild(e); };
+  link('manifest', 'estaciones.webmanifest'); link('apple-touch-icon', 'icono-estaciones-192.png'); link('icon', 'icono-estaciones-192.png');
+  meta('apple-mobile-web-app-title', 'Vulcan Estaciones'); meta('apple-mobile-web-app-capable', 'yes'); meta('mobile-web-app-capable', 'yes'); meta('theme-color', '#0f172a');
+})();
+</script>
 <title>EMA — Guerrero Neumáticos</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -34,6 +46,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 #app{display:flex;height:100vh;overflow:hidden;}
 #sidebar{width:240px;min-width:240px;background:#1e293b;display:flex;flex-direction:column;overflow-y:auto;}
 #main{flex:1;overflow-y:auto;}
+body.modo-puesto #sidebar,body.modo-puesto #mob-menu{display:none!important;}
 .sb-header{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.08);}
 .sb-logo{font-size:24px;font-weight:900;color:#fff;font-family:var(--mono);letter-spacing:-1px;}
 .sb-tagline{font-size:10px;color:#64748b;letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
@@ -1149,6 +1162,7 @@ async function appInit() {
   }
   await loadConfig();
   var inicio = primeraPaginaPermitida();
+  if (window.EMA_MODO_PUESTO && puedeVerPagina('puesto-estacion')) { document.body.classList.add('modo-puesto'); inicio = 'puesto-estacion'; document.title = 'Vulcan Estaciones'; }
   _hist.pagina = null;
   histReplace({ ema: 1, base: 1 });
   if (inicio) navTo(inicio);
@@ -9999,15 +10013,24 @@ function pcImprimir(titulo, cuerpo, apaisado) {
     '#doc{max-width:' + (apaisado ? 1062 : 718) + 'px;margin:0 auto}';
   // Guardar PDF: arma el archivo en el navegador y lo descarga (no pasa por el cuadro de impresión)
   var archivo = String(titulo || 'documento').replace(/[^A-Za-z0-9\- ]/g, '').replace(/\s+/g, '_') + '.pdf';
-  var js = '<scr' + 'ipt>function guardarPDF(b){b.disabled=true;b.textContent="Armando el PDF...";var ir=function(){var el=document.getElementById("doc");' +
-    'var anch=' + (apaisado ? 1040 : 700) + ',ant=el.style.cssText;el.style.cssText="width:"+anch+"px;max-width:none;margin:0;font-size:11px";' +
-    'var fin=function(){el.style.cssText=ant;b.disabled=false;b.textContent="📄 Guardar PDF";};' +
-    'html2pdf().set({margin:8,filename:"' + archivo + '",image:{type:"jpeg",quality:0.95},html2canvas:{scale:2,backgroundColor:"#ffffff"},pagebreak:{mode:["css","legacy"],avoid:["tr",".firmas",".enc"]},jsPDF:{unit:"mm",format:"a4",orientation:"' + (apaisado ? 'landscape' : 'portrait') + '"}}).from(el).save().then(fin,fin);};' +
-    'if(window.html2pdf){ir();return;}var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";s.onload=ir;s.onerror=function(){b.disabled=false;b.textContent="📄 Guardar PDF";alert("No se pudo cargar el generador de PDF (sin internet)");};document.head.appendChild(s);}</scr' + 'ipt>';
-  var barra = '<div class="barra noimp"><button class="p" onclick="window.print()">🖨 Imprimir</button><button onclick="guardarPDF(this)">📄 Guardar PDF</button>' +
+  var js = '<scr' + 'ipt>' +
+    'var PDFB=null;' + '\n' +
+    'function pdfCargar(fn){if(window.html2pdf){fn();return;}var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";s.onload=fn;s.onerror=function(){alert("No se pudo cargar el generador de PDF (sin internet)");var bs=document.querySelectorAll(".barra button");for(var i=0;i<bs.length;i++)bs[i].disabled=false;};document.head.appendChild(s);}' + '\n' +
+    'function pdfOpc(){return {margin:8,filename:"' + archivo + '",image:{type:"jpeg",quality:0.95},html2canvas:{scale:2,backgroundColor:"#ffffff"},pagebreak:{mode:["css","legacy"],avoid:["tr",".firmas",".enc"]},jsPDF:{unit:"mm",format:"a4",orientation:"' + (apaisado ? 'landscape' : 'portrait') + '"}};}' + '\n' +
+    'function pdfConAncho(fn){var el=document.getElementById("doc"),ant=el.style.cssText;el.style.cssText="width:' + (apaisado ? 1040 : 700) + 'px;max-width:none;margin:0;font-size:11px";return fn(el).then(function(r){el.style.cssText=ant;return r;},function(e){el.style.cssText=ant;throw e;});}' + '\n' +
+    'function guardarPDF(b){b.disabled=true;b.textContent="Armando el PDF...";var fin=function(){b.disabled=false;b.textContent="📄 Guardar PDF";};pdfCargar(function(){pdfConAncho(function(el){return html2pdf().set(pdfOpc()).from(el).save();}).then(fin,fin);});}' + '\n' +
+    'function pdfMandar(b){var f=new File([PDFB],"' + archivo + '",{type:"application/pdf"});navigator.share({files:[f],title:"' + String(titulo || '').replace(/["\\]/g, '') + '"}).then(function(){PDFB=null;b.textContent="📤 Compartir";},function(e){if(e&&e.name==="AbortError"){PDFB=null;b.textContent="📤 Compartir";return;}b.textContent="📤 Tocá de nuevo para enviar";});}' + '\n' +
+    'function compartirPDF(b){' + '\n' +
+    'if(PDFB){pdfMandar(b);return;}' + '\n' +
+    'b.disabled=true;b.textContent="Armando el PDF...";' + '\n' +
+    'pdfCargar(function(){pdfConAncho(function(el){return html2pdf().set(pdfOpc()).from(el).outputPdf("blob");}).then(function(blob){b.disabled=false;PDFB=blob;var f=new File([blob],"' + archivo + '",{type:"application/pdf"});' + '\n' +
+    'if(!(navigator.canShare&&navigator.canShare({files:[f]}))){PDFB=null;b.textContent="📤 Compartir";alert("Este aparato no deja compartir archivos. Usá Guardar PDF.");return;}' + '\n' +
+    'pdfMandar(b);},function(){b.disabled=false;b.textContent="📤 Compartir";});});}' + '\n' +
+    '</scr' + 'ipt>';
+  var barra = '<div class="barra noimp"><button class="p" onclick="window.print()">🖨 Imprimir</button><button onclick="guardarPDF(this)">📄 Guardar PDF</button><button id="btn-comp" onclick="compartirPDF(this)" style="display:none">📤 Compartir</button>' +
     '<button onclick="if(window.parent&&window.parent!==window&&window.parent.pcCerrarVista){window.parent.pcCerrarVista()}else{window.close()}">✕ Cerrar</button>' +
     '<span>El PDF se descarga como ' + pcEsc(archivo) + '</span></div>';
-  var html = '<!doctype html><html><head><meta charset="utf-8"><title>' + pcEsc(titulo) + '</title><style>' + css + '</style>' + js + '</head><body>' + barra + '<div id="doc">' + cuerpo + '</div></body></html>';
+  var html = '<!doctype html><html><head><meta charset="utf-8"><title>' + pcEsc(titulo) + '</title><style>' + css + '</style>' + js + '</head><body>' + barra + '<div id="doc">' + cuerpo + '</div><scr' + 'ipt>if(navigator.share){document.getElementById("btn-comp").style.display="";}</scr' + 'ipt></body></html>';
   var w = null;
   try { w = window.open('', '_blank', 'width=950,height=900'); } catch (e) { w = null; }
   if (w && w.document) { w.document.write(html); w.document.close(); try { w.focus(); } catch (e2) {} return; }
@@ -10015,7 +10038,7 @@ function pcImprimir(titulo, cuerpo, apaisado) {
   pcCerrarVista();
   var ov = document.createElement('div'); ov.id = 'pc-vista';
   ov.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.55);display:flex;align-items:stretch;justify-content:center;padding:12px';
-  ov.innerHTML = '<iframe style="flex:1;max-width:1000px;border:0;border-radius:10px;background:#fff"></iframe>';
+  ov.innerHTML = '<iframe allow="web-share" style="flex:1;max-width:1000px;border:0;border-radius:10px;background:#fff"></iframe>';
   document.body.appendChild(ov);
   var fd = ov.querySelector('iframe').contentWindow.document; fd.open(); fd.write(html); fd.close();
 }
@@ -11061,10 +11084,10 @@ function puPie(show) { var p = $id('pu-pie'); if (p) p.style.display = show ? ''
 function puPintar() {
   var el = puEl();
   var top = puTodas() ? '<div class="pu-top"><div class="est"><small>Operador de turno</small>🚶 Recorro todas las estaciones</div>' +
-    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="puOperario()"><i class="fas fa-user"></i> ' + puEsc(PU_.oper || 'Operario: tocá para poner tu nombre') + '</button><button onclick="puCambiarEst()">Cambiar estación</button><button onclick="pcAyuda(\'puesto\')">❓ Ayuda</button></div></div>' :
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="puOperario()"><i class="fas fa-user"></i> ' + puEsc(PU_.oper || 'Operario: tocá para poner tu nombre') + '</button><button onclick="puCambiarEst()">Cambiar estación</button><button onclick="pcAyuda(\'puesto\')">❓ Ayuda</button>' + (document.body.classList.contains('modo-puesto') ? '<button onclick="doLogout()">⏻ Salir</button>' : '') + '</div></div>' :
     PU_.est ? '<div class="pu-top"><div class="est"><small>Estación de esta tablet</small>' + puEsc(puNomEst(PU_.est)) + '</div>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="puVerHerr()"><i class="fas fa-tools"></i> ' + (PU_.eq && !PU_.eq.controlDiario ? 'Se rompió / Me falta' : 'Herramientas') + '</button><button onclick="puVerRetiro()"><i class="fas fa-hand-paper"></i> Retirar consumibles</button><button onclick="puOperario()"><i class="fas fa-user"></i> ' + puEsc(PU_.oper || 'Operario: tocá para poner tu nombre') + '</button>' +
-    '<button onclick="puCambiarEst()">Cambiar estación</button><button onclick="pcAyuda(\'puesto\')">❓ Ayuda</button></div></div>' : '';
+    '<button onclick="puCambiarEst()">Cambiar estación</button><button onclick="pcAyuda(\'puesto\')">❓ Ayuda</button>' + (document.body.classList.contains('modo-puesto') ? '<button onclick="doLogout()">⏻ Salir</button>' : '') + '</div></div>' : '';
   el.innerHTML = '<div class="pu-wrap">' + top + '<div id="pu-body"></div></div>' +
     '<div class="pu-pie" id="pu-pie" style="display:none"><div class="in"><div class="pu-falta" id="pu-falta"></div><button class="pu-btn pu-ok" id="pu-ok" onclick="puConfirmar()">✓ Confirmar paso</button></div></div>';
   if (!PU_.est) return puElegirEst();
