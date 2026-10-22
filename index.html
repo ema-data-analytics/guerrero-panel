@@ -9890,7 +9890,7 @@ function pcPintar() {
 // ================================================================
 // 1. CARGA DE CASCOS (por cliente, cada casco con su N° interno)
 // ================================================================
-function pcCasVacio() { var ant = PC_.kf.length ? PC_.kf[PC_.kf.length - 1] : null; return { TIPO: ant ? ant.TIPO : '', DOT: '', MEDIDA: ant ? ant.MEDIDA : '', MARCA_FAB: '', OBSERVACIONES: '', TRABAJO: ant ? ant.TRABAJO : 'RECAPADO', _AUTO: true }; }
+function pcCasVacio() { var ant = PC_.kf.length ? PC_.kf[PC_.kf.length - 1] : null; return { TIPO: ant ? ant.TIPO : '', DOT: '', MEDIDA: ant ? ant.MEDIDA : '', MARCA_FAB: ant ? ant.MARCA_FAB : '', OBSERVACIONES: '', TRABAJO: ant ? ant.TRABAJO : 'RECAPADO', _AUTO: true }; }
 // Cuántas cubiertas esperan para entrar a la línea (para saber cuándo se completa una carga del autoclave)
 function pcAvisoLinea() {
   var d = PC_.d, esp = d.cubiertas.filter(function(c) { return c.ESTADO === 'EN_ESPERA'; });
@@ -9925,8 +9925,12 @@ function pcMedidasList() {
 }
 // ── Impresión: abre una hoja lista para imprimir o "Guardar como PDF" ──
 function pcImprimir(titulo, cuerpo) {
-  var w = window.open('', '_blank', 'width=900,height=900');
-  if (!w) { toast('El navegador bloqueó la ventana: permití las ventanas emergentes para este sitio', 'r2'); return; }
+  // Se imprime desde un marco oculto en la misma página: no depende de que el navegador permita ventanas emergentes
+  var viejo = $id('pc-imp-frame'); if (viejo) viejo.remove();
+  var fr = document.createElement('iframe'); fr.id = 'pc-imp-frame';
+  fr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(fr);
+  var w = fr.contentWindow;
   var css = 'body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:18px;font-size:12px}h1{font-size:18px;margin:0}h2{font-size:14px;margin:14px 0 6px}' +
     '.enc{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}.emp{font-size:11px;color:#444}' +
     '.dat{display:grid;grid-template-columns:repeat(4,auto);gap:4px 18px;margin:8px 0 12px}.dat b{display:block;font-size:10px;color:#555;text-transform:uppercase}' +
@@ -9936,7 +9940,7 @@ function pcImprimir(titulo, cuerpo) {
   w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + pcEsc(titulo) + '</title><style>' + css + '</style></head><body>' +
     '<div class="noimp" style="margin-bottom:10px"><button onclick="window.print()" style="font-size:14px;padding:6px 14px">🖨 Imprimir / Guardar como PDF</button></div>' + cuerpo + '</body></html>');
   w.document.close();
-  setTimeout(function() { try { w.focus(); w.print(); } catch (e) {} }, 400);
+  setTimeout(function() { try { w.focus(); w.print(); } catch (e) { toast('No se pudo abrir la impresión: ' + e.message, 'r2'); } }, 400);
 }
 function pcEncImp(titulo, nro) {
   return '<div class="enc"><div><h1>' + pcEsc(titulo) + '</h1><div class="emp">VULCAN TREAD NEUMÁTICOS S.R.L. · Guerrero Neumáticos · Salta</div></div><div style="text-align:right"><div style="font-size:20px;font-weight:700">' + pcEsc(nro) + '</div><div class="emp">Impreso ' + fmtD(Date.now()) + '</div></div></div>';
