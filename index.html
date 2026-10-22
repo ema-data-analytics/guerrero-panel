@@ -9957,7 +9957,8 @@ function pcImprimir(titulo, cuerpo, apaisado) {
 }
 function pcCerrarVista() { var v = $id('pc-vista'); if (v) v.remove(); }
 function pcEncImp(titulo, nro) {
-  return '<div class="enc"><div><h1>' + pcEsc(titulo) + '</h1><div class="emp">VULCAN TREAD NEUMÁTICOS S.R.L. · Guerrero Neumáticos · Salta</div></div><div style="text-align:right"><div style="font-size:20px;font-weight:700">' + pcEsc(nro) + '</div><div class="emp">Impreso ' + fmtD(Date.now()) + '</div></div></div>';
+  var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg';
+  return '<div class="enc"><div style="display:flex;gap:12px;align-items:center"><img src="' + logo + '" crossorigin="anonymous" style="height:62px;border-radius:6px"/><div><h1>' + pcEsc(titulo) + '</h1><div class="emp">VULCAN TREAD NEUMÁTICOS S.R.L. · Salta</div></div></div><div style="text-align:right"><div style="font-size:20px;font-weight:700">' + pcEsc(nro) + '</div><div class="emp">Impreso ' + fmtD(Date.now()) + '</div></div></div>';
 }
 // Orden de trabajo: el pedido del cliente (boleta) con sus cascos
 function pcImpOTrab(id) {
