@@ -10649,6 +10649,45 @@ async function pcProrratear() {
     toast('Prorrateo aplicado ✓', 'g'); closeModal(); pcCostos();
   });
 }
+
+// ── Lista desplegable propia para los campos con sugerencias (cliente, medida, marca, buscador) ──
+// La lista del navegador (datalist) no aparece en todos los navegadores ni tablets: esta se ve siempre.
+// Solo actúa en Producción por cubierta y en el Puesto de estación.
+(function() {
+  var box = null, act = null, eligiendo = false;
+  var esc = function(x) { return String(x === undefined || x === null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+  var css = document.createElement('style');
+  css.textContent = '.ac-box{position:absolute;z-index:99999;background:var(--surface,#fff);border:1px solid var(--border,#ccc);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18);max-height:280px;overflow:auto;font-size:14px}' +
+    '.ac-op{padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border,#eee)}.ac-op:hover,.ac-op.on{background:var(--accent-light,#e8f0fe)}.ac-op span{color:var(--dim,#777);font-size:12px}.ac-vacio{padding:9px 12px;color:var(--dim,#777)}';
+  document.head.appendChild(css);
+  var enZona = function(t) { return t && t.closest && (t.closest('#page-produccion-cubiertas') || t.closest('#page-puesto-estacion') || t.closest('.pu-vent')); };
+  var cerrar = function() { if (box) { box.remove(); box = null; } act = null; };
+  var opciones = function(inp) { var dl = document.getElementById(inp.getAttribute('data-list') || ''); return dl ? Array.prototype.map.call(dl.options, function(o) { return { v: o.value, t: o.textContent || '' }; }) : []; };
+  var mostrar = function(inp) {
+    var q = String(inp.value || '').toUpperCase().trim().split(/\s+/).filter(Boolean);
+    var ops = opciones(inp).filter(function(o) { var s = (o.v + ' ' + o.t).toUpperCase(); return q.every(function(p) { return s.indexOf(p) !== -1; }); }).slice(0, 50);
+    if (!box) { box = document.createElement('div'); box.className = 'ac-box'; document.body.appendChild(box); }
+    act = inp;
+    box.innerHTML = ops.length ? ops.map(function(o, i) { return '<div class="ac-op" data-i="' + i + '"><b>' + esc(o.v) + '</b>' + (o.t && o.t !== o.v ? ' <span>' + esc(o.t) + '</span>' : '') + '</div>'; }).join('') : '<div class="ac-vacio">' + (q.length ? 'No hay coincidencias' : 'Escribí para buscar') + '</div>';
+    var r = inp.getBoundingClientRect();
+    box.style.left = (r.left + window.scrollX) + 'px'; box.style.top = (r.bottom + window.scrollY + 2) + 'px'; box.style.minWidth = Math.max(r.width, 220) + 'px';
+    box.onmousedown = function(e) {
+      var el = e.target.closest ? e.target.closest('.ac-op') : null; if (!el) return;
+      e.preventDefault();
+      var o = ops[+el.getAttribute('data-i')]; eligiendo = true;
+      inp.value = o.v; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true }));
+      eligiendo = false; cerrar();
+    };
+  };
+  document.addEventListener('focusin', function(e) {
+    var t = e.target;
+    if (t && t.tagName === 'INPUT' && t.getAttribute('list') && enZona(t)) { t.setAttribute('data-list', t.getAttribute('list')); t.removeAttribute('list'); t.setAttribute('autocomplete', 'off'); }
+    if (t && t.tagName === 'INPUT' && t.getAttribute('data-list') && enZona(t)) mostrar(t); else cerrar();
+  });
+  document.addEventListener('input', function(e) { var t = e.target; if (!eligiendo && t && t.getAttribute && t.getAttribute('data-list') && document.activeElement === t) mostrar(t); });
+  document.addEventListener('focusout', function(e) { if (e.target === act) setTimeout(function() { if (document.activeElement !== act) cerrar(); }, 150); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') cerrar(); });
+})();
 </script>
 
 <style>
