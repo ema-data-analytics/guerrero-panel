@@ -9924,24 +9924,33 @@ function pcMedidasList() {
   return dl('pc-medidas', todas) + Object.keys(por).map(function(k) { return dl(k, por[k]); }).join('');
 }
 // ── Impresión: abre una hoja lista para imprimir o "Guardar como PDF" ──
+// Vista previa de impresión: en una ventana aparte; si el navegador la bloquea, dentro del sistema en pantalla completa.
+// Desde la vista previa: Imprimir, Guardar PDF (en "Destino" se elige "Guardar como PDF") o Cerrar (vuelve a la misma pantalla).
 function pcImprimir(titulo, cuerpo) {
-  // Se imprime desde un marco oculto en la misma página: no depende de que el navegador permita ventanas emergentes
-  var viejo = $id('pc-imp-frame'); if (viejo) viejo.remove();
-  var fr = document.createElement('iframe'); fr.id = 'pc-imp-frame';
-  fr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
-  document.body.appendChild(fr);
-  var w = fr.contentWindow;
-  var css = 'body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:18px;font-size:12px}h1{font-size:18px;margin:0}h2{font-size:14px;margin:14px 0 6px}' +
+  var css = 'body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:18px;font-size:12px;background:#fff}h1{font-size:18px;margin:0}h2{font-size:14px;margin:14px 0 6px}' +
     '.enc{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}.emp{font-size:11px;color:#444}' +
     '.dat{display:grid;grid-template-columns:repeat(4,auto);gap:4px 18px;margin:8px 0 12px}.dat b{display:block;font-size:10px;color:#555;text-transform:uppercase}' +
     'table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:5px 6px;text-align:left;vertical-align:top}th{background:#eee;font-size:10px;text-transform:uppercase}' +
     '.ck{width:22px;text-align:center}.firmas{display:flex;gap:40px;margin-top:40px}.firmas div{flex:1;border-top:1px solid #111;padding-top:4px;text-align:center;font-size:11px}' +
-    '.nota{font-size:10px;color:#555;margin-top:8px}@media print{.noimp{display:none}body{margin:8mm}}';
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + pcEsc(titulo) + '</title><style>' + css + '</style></head><body>' +
-    '<div class="noimp" style="margin-bottom:10px"><button onclick="window.print()" style="font-size:14px;padding:6px 14px">🖨 Imprimir / Guardar como PDF</button></div>' + cuerpo + '</body></html>');
-  w.document.close();
-  setTimeout(function() { try { w.focus(); w.print(); } catch (e) { toast('No se pudo abrir la impresión: ' + e.message, 'r2'); } }, 400);
+    '.nota{font-size:10px;color:#555;margin-top:8px}.barra{position:sticky;top:0;background:#f3f4f6;border:1px solid #ddd;border-radius:8px;padding:8px;margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}' +
+    '.barra button{font-size:14px;padding:8px 14px;border-radius:6px;border:1px solid #bbb;background:#fff;cursor:pointer}.barra .p{background:#1d4ed8;color:#fff;border-color:#1d4ed8}.barra span{font-size:12px;color:#555}' +
+    '@media print{.noimp{display:none}body{margin:8mm}}';
+  var barra = '<div class="barra noimp"><button class="p" onclick="window.print()">🖨 Imprimir</button><button onclick="window.print()">📄 Guardar PDF</button>' +
+    '<button onclick="if(window.parent&&window.parent!==window&&window.parent.pcCerrarVista){window.parent.pcCerrarVista()}else{window.close()}">✕ Cerrar</button>' +
+    '<span>Para el PDF: en "Destino" elegí "Guardar como PDF".</span></div>';
+  var html = '<!doctype html><html><head><meta charset="utf-8"><title>' + pcEsc(titulo) + '</title><style>' + css + '</style></head><body>' + barra + cuerpo + '</body></html>';
+  var w = null;
+  try { w = window.open('', '_blank', 'width=950,height=900'); } catch (e) { w = null; }
+  if (w && w.document) { w.document.write(html); w.document.close(); try { w.focus(); } catch (e2) {} return; }
+  // Ventana bloqueada: vista previa dentro del sistema
+  pcCerrarVista();
+  var ov = document.createElement('div'); ov.id = 'pc-vista';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.55);display:flex;align-items:stretch;justify-content:center;padding:12px';
+  ov.innerHTML = '<iframe style="flex:1;max-width:1000px;border:0;border-radius:10px;background:#fff"></iframe>';
+  document.body.appendChild(ov);
+  var fd = ov.querySelector('iframe').contentWindow.document; fd.open(); fd.write(html); fd.close();
 }
+function pcCerrarVista() { var v = $id('pc-vista'); if (v) v.remove(); }
 function pcEncImp(titulo, nro) {
   return '<div class="enc"><div><h1>' + pcEsc(titulo) + '</h1><div class="emp">VULCAN TREAD NEUMÁTICOS S.R.L. · Guerrero Neumáticos · Salta</div></div><div style="text-align:right"><div style="font-size:20px;font-weight:700">' + pcEsc(nro) + '</div><div class="emp">Impreso ' + fmtD(Date.now()) + '</div></div></div>';
 }
