@@ -10055,8 +10055,8 @@ function pcTourPintar() {
   if (el) el.scrollIntoView({ block: 'center', inline: 'nearest' });
   var vw = window.innerWidth, vh = window.innerHeight, r = el ? el.getBoundingClientRect() : null;
   var bw = Math.min(380, vw - 24), ult = PCT_.i === PCT_.pasos.length - 1;
-  var luz = r ? '<div style="position:fixed;left:' + (r.left - 6) + 'px;top:' + (r.top - 6) + 'px;width:' + (r.width + 12) + 'px;height:' + (r.height + 12) + 'px;border:3px solid #f59e0b;border-radius:10px;box-shadow:0 0 0 9999px rgba(15,23,42,.62);pointer-events:none;transition:all .25s"></div>' :
-    '<div style="position:fixed;inset:0;background:rgba(15,23,42,.62)"></div>';
+  var luz = r ? '<div style="position:fixed;left:' + (r.left - 6) + 'px;top:' + (r.top - 6) + 'px;width:' + (r.width + 12) + 'px;height:' + (r.height + 12) + 'px;border:3px solid #f59e0b;border-radius:10px;box-shadow:0 0 0 9999px rgba(15,23,42,.78);pointer-events:none;transition:all .25s"></div>' :
+    '<div style="position:fixed;inset:0;background:rgba(15,23,42,.78)"></div>';
   var top, left = r ? Math.max(12, Math.min(vw - bw - 12, r.left + r.width / 2 - bw / 2)) : (vw - bw) / 2;
   var globo = '<div id="pc-tour-g" style="position:fixed;left:' + left + 'px;width:' + bw + 'px;background:#fff;color:#111;border-radius:12px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-size:14px;line-height:1.45;z-index:2">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px"><b style="font-size:15px">' + p[1] + '</b><span style="font-size:11px;color:#666;white-space:nowrap">' + (PCT_.i + 1) + ' de ' + PCT_.pasos.length + '</span></div>' +
