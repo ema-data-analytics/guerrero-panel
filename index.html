@@ -736,6 +736,7 @@ function doLogout(motivo) {
   var mods = $id('modals'); if (mods) mods.innerHTML = '';
   document.getElementById('app').classList.add('hidden');
   document.getElementById('login-wrap').style.display = 'flex';
+  _hist.pagina = null; histReplace({ ema: 1, base: 1 });
   document.getElementById('lu').value = '';
   document.getElementById('lp').value = '';
   var errEl = document.getElementById('lerr');
@@ -1078,7 +1079,63 @@ function navTo(page) {
   });
   var fn = getPage(page);
   if (fn) fn();
+  if (!_hist.volviendo && page !== _hist.pagina) histPush({ ema: 1, page: page });
+  _hist.pagina = page;
 }
+
+// ── Botón ATRÁS del navegador / tablet: vuelve a la pantalla anterior sin salir del sistema ──
+// Cada pantalla y cada pestaña queda en el historial. Si hay una ventana abierta, ATRÁS la cierra.
+var _hist = { volviendo: false, pagina: null, actual: null };
+function histPush(st) {
+  _hist.actual = st;
+  try { history.pushState(st, '', location.pathname + location.search); } catch (e) {}
+}
+function histReplace(st) {
+  _hist.actual = st;
+  try { history.replaceState(st, '', location.pathname + location.search); } catch (e) {}
+}
+function histPaginaVisible() {
+  return _hist.pagina ? $id('page-' + _hist.pagina) : null;
+}
+function histTabActiva() {
+  var pg = histPaginaVisible(); if (!pg) return '';
+  var t = pg.querySelector('.tab.active'); return t ? t.textContent.trim() : '';
+}
+function histClickTab(txt, intentos) {
+  var pg = histPaginaVisible();
+  var tabs = pg ? pg.querySelectorAll('.tab') : [], el = null;
+  for (var i = 0; i < tabs.length; i++) { if (tabs[i].textContent.trim() === txt) { el = tabs[i]; break; } }
+  if (!el) { if ((intentos || 0) < 20) setTimeout(function() { histClickTab(txt, (intentos || 0) + 1); }, 100); else _hist.volviendo = false; return; }
+  if (!el.classList.contains('active')) el.click();
+  _hist.volviendo = false;
+}
+function histHayVentana() {
+  var v = $id('pc-vista'); if (v) { v.remove(); return true; }
+  var m = document.querySelectorAll('#modals .mo'); if (m.length) { m[m.length - 1].remove(); return true; }
+  return false;
+}
+document.addEventListener('click', function(e) {
+  if (_hist.volviendo || !SES || !e.target || !e.target.closest) return;
+  var t = e.target.closest('.tab'), pg = histPaginaVisible();
+  if (!t || !pg || !pg.contains(t) || t.classList.contains('active')) return;
+  var antes = histTabActiva(), txt = t.textContent.trim();
+  if (antes) histReplace({ ema: 1, page: _hist.pagina, tab: antes });
+  histPush({ ema: 1, page: _hist.pagina, tab: txt });
+}, true);
+window.addEventListener('popstate', function(e) {
+  if (!SES) return;
+  var st = e.state;
+  if (histHayVentana()) { if (_hist.actual) histPush(_hist.actual); return; }
+  if (!st || !st.ema || !st.page) {
+    if (_hist.actual) histPush(_hist.actual);
+    toast('Estás en el inicio. Para salir usá ⏻', 'b');
+    return;
+  }
+  _hist.actual = st;
+  _hist.volviendo = true;
+  if (st.page !== _hist.pagina) navTo(st.page);
+  if (st.tab) histClickTab(st.tab, 0); else _hist.volviendo = false;
+});
 
 var _navListo = false;
 async function appInit() {
@@ -1091,6 +1148,8 @@ async function appInit() {
   }
   await loadConfig();
   var inicio = primeraPaginaPermitida();
+  _hist.pagina = null;
+  histReplace({ ema: 1, base: 1 });
   if (inicio) navTo(inicio);
 }
 
