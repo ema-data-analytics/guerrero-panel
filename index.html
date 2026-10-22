@@ -9926,7 +9926,7 @@ function pcMedidasList() {
 // ── Impresión: abre una hoja lista para imprimir o "Guardar como PDF" ──
 // Vista previa de impresión: en una ventana aparte; si el navegador la bloquea, dentro del sistema en pantalla completa.
 // Desde la vista previa: Imprimir, Guardar PDF (en "Destino" se elige "Guardar como PDF") o Cerrar (vuelve a la misma pantalla).
-function pcImprimir(titulo, cuerpo) {
+function pcImprimir(titulo, cuerpo, apaisado) {
   var css = 'body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:18px;font-size:12px;background:#fff}h1{font-size:18px;margin:0}h2{font-size:14px;margin:14px 0 6px}' +
     '.enc{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}.emp{font-size:11px;color:#444}' +
     '.dat{display:grid;grid-template-columns:repeat(4,auto);gap:4px 18px;margin:8px 0 12px}.dat b{display:block;font-size:10px;color:#555;text-transform:uppercase}' +
@@ -9935,10 +9935,15 @@ function pcImprimir(titulo, cuerpo) {
     '.nota{font-size:10px;color:#555;margin-top:8px}.barra{position:sticky;top:0;background:#f3f4f6;border:1px solid #ddd;border-radius:8px;padding:8px;margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}' +
     '.barra button{font-size:14px;padding:8px 14px;border-radius:6px;border:1px solid #bbb;background:#fff;cursor:pointer}.barra .p{background:#1d4ed8;color:#fff;border-color:#1d4ed8}.barra span{font-size:12px;color:#555}' +
     '@media print{.noimp{display:none}body{margin:8mm}}';
-  var barra = '<div class="barra noimp"><button class="p" onclick="window.print()">🖨 Imprimir</button><button onclick="window.print()">📄 Guardar PDF</button>' +
+  // Guardar PDF: arma el archivo en el navegador y lo descarga (no pasa por el cuadro de impresión)
+  var archivo = String(titulo || 'documento').replace(/[^A-Za-z0-9\- ]/g, '').replace(/\s+/g, '_') + '.pdf';
+  var js = '<scr' + 'ipt>function guardarPDF(b){b.disabled=true;b.textContent="Armando el PDF...";var ir=function(){var el=document.getElementById("doc");' +
+    'html2pdf().set({margin:8,filename:"' + archivo + '",image:{type:"jpeg",quality:0.95},html2canvas:{scale:2,backgroundColor:"#ffffff"},jsPDF:{unit:"mm",format:"a4",orientation:"' + (apaisado ? 'landscape' : 'portrait') + '"}}).from(el).save().then(function(){b.disabled=false;b.textContent="📄 Guardar PDF";});};' +
+    'if(window.html2pdf){ir();return;}var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";s.onload=ir;s.onerror=function(){b.disabled=false;b.textContent="📄 Guardar PDF";alert("No se pudo cargar el generador de PDF (sin internet)");};document.head.appendChild(s);}</scr' + 'ipt>';
+  var barra = '<div class="barra noimp"><button class="p" onclick="window.print()">🖨 Imprimir</button><button onclick="guardarPDF(this)">📄 Guardar PDF</button>' +
     '<button onclick="if(window.parent&&window.parent!==window&&window.parent.pcCerrarVista){window.parent.pcCerrarVista()}else{window.close()}">✕ Cerrar</button>' +
-    '<span>Para el PDF: en "Destino" elegí "Guardar como PDF".</span></div>';
-  var html = '<!doctype html><html><head><meta charset="utf-8"><title>' + pcEsc(titulo) + '</title><style>' + css + '</style></head><body>' + barra + cuerpo + '</body></html>';
+    '<span>El PDF se descarga como ' + pcEsc(archivo) + '</span></div>';
+  var html = '<!doctype html><html><head><meta charset="utf-8"><title>' + pcEsc(titulo) + '</title><style>' + css + '</style>' + js + '</head><body>' + barra + '<div id="doc">' + cuerpo + '</div></body></html>';
   var w = null;
   try { w = window.open('', '_blank', 'width=950,height=900'); } catch (e) { w = null; }
   if (w && w.document) { w.document.write(html); w.document.close(); try { w.focus(); } catch (e2) {} return; }
@@ -9982,7 +9987,7 @@ async function pcImpOS(id) {
     r.items.map(function(i, k) { var c = cub[String(i.ID_CUB)] || {}; return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(i.MARCA) + '</b></td><td>' + (i.ROL === 'SUPLENTE' ? 'Suplente' : 'Titular') + '</td><td>' + pcEsc(c.CLIENTE || '') + '</td><td>' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + (c.NRO_MANUAL ? ' · ' + pcEsc(c.NRO_MANUAL) : '') + '</td><td>' + pcEsc(c.MEDIDA || '') + '</td><td>' + pcEsc(c.TRABAJO || '') + '</td>' + ests.map(function() { return '<td class="ck"></td>'; }).join('') + '</tr>'; }).join('') +
     '</tbody></table><div class="nota">Estaciones: ' + ests.map(function(e) { return e.ORDEN + ' ' + pcEsc(e.NOMBRE); }).join(' · ') + '</div>' +
     '<div class="firmas"><div>Responsable de la carga</div><div>Encargado de línea</div></div>';
-  pcImprimir('Orden de servicio ' + o.NRO_OT, h);
+  pcImprimir('Orden de servicio ' + o.NRO_OT, h, true);
 }
 function pcBoletaAviso(v) {
   var n = String(v || '').toUpperCase().replace(/\s+/g, ''), el = $id('pc-k-man-av'); if (!el) return;
