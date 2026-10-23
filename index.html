@@ -12250,7 +12250,7 @@ function pnLimpiar() { PN_.q = ''; PN_.rubro = ''; PN_.marca = ''; PN_.promo = 0
 function pnVerPromo(id) { PN_.promo = (PN_.promo === id ? 0 : id); PN_.max = 40; if (PN_.promo) { PN_.q = ''; PN_.rubro = ''; PN_.marca = ''; } pnPintar(); var r = $id('pn-res'); if (r && PN_.promo) r.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 function pnTexto(p) {
   var ps = pnPrecioSel(p);
-  var t = p.MEDIDA + ' ' + p.MARCA + ' ' + p.DISENO + '\nCódigo: ' + p.CODIGO + '\nPrecio' + (ps.lista ? ' (lista ' + ps.lista + ')' : '') + ': ' + pnPlata(ps.con) + ' (IVA incluido)';
+  var t = p.MEDIDA + ' ' + p.MARCA + ' ' + p.DISENO + '\nCódigo: ' + p.CODIGO + '\nPrecio: ' + pnPlata(ps.con) + ' (IVA incluido)';
   (PN_.porPn[p.ID_PN] || []).forEach(function(it) {
     var pr = PN_.proMap[it.ID_PROMO]; if (!pr) return;
     if (pr.TIPO === 'REGALO') t += '\n🎁 ' + pr.TITULO + (pr.HASTA ? ' (hasta ' + pnFecha(pr.HASTA) + ')' : '');
@@ -12280,7 +12280,7 @@ function pnOferta(p, it) { var ps = pnPrecioSel(p); return p.PRECIO_CON_IVA ? Ma
 function pnLista(n) { PN_.lista = n; PN_.pdf = null; pnGuardar(); pnResultados(); if ($id('pn-ov')) pnHoja(); }
 function pnUnit(p) {
   var ps = pnPrecioSel(p);
-  var u = { precio: ps.con, nota: ps.lista ? 'Lista ' + ps.lista : '' };
+  var u = { precio: ps.con, nota: '', lista: ps.lista };
   (PN_.porPn[p.ID_PN] || []).forEach(function(it) {
     var pr = PN_.proMap[it.ID_PROMO]; if (!pr) return;
     if (it.PRECIO_OFERTA && pnOferta(p, it) < u.precio) { u.precio = pnOferta(p, it); u.nota = pr.TIPO === 'OFERTA' ? 'Oferta' : 'Promo'; }
@@ -12290,7 +12290,7 @@ function pnUnit(p) {
 }
 function pnSelItems() {
   return PN_.orden.filter(function(id) { return PN_.sel[id] && pnPorId(id); }).map(function(id) {
-    var p = pnPorId(id), u = pnUnit(p); return { p: p, cant: PN_.sel[id], unit: u.precio, nota: u.nota, sub: u.precio * PN_.sel[id] };
+    var p = pnPorId(id), u = pnUnit(p); return { p: p, cant: PN_.sel[id], unit: u.precio, nota: u.nota, lista: u.lista, sub: u.precio * PN_.sel[id] };
   });
 }
 function pnSelToggle(id) {
@@ -12316,7 +12316,7 @@ function pnHoja() {
   var tot = 0, h = '<div class="pn-hoja" onclick="event.stopPropagation()"><div class="pn-hc"><h3>🧾 Cotización</h3><button class="x" onclick="pnHojaCerrar()">✕</button></div>';
   its.forEach(function(x) {
     tot += x.sub;
-    h += '<div class="pn-ci"><div class="d"><b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><span>' + pnEsc(x.p.DISENO) + ' · ' + pnPlata(x.unit) + ' c/u' + (x.nota ? ' · ' + pnEsc(x.nota) : '') + '</span></div>' +
+    h += '<div class="pn-ci"><div class="d"><b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><span>' + pnEsc(x.p.DISENO) + ' · ' + pnPlata(x.unit) + ' c/u' + (x.lista ? ' · Lista ' + pnEsc(x.lista) : '') + (x.nota ? ' · ' + pnEsc(x.nota) : '') + '</span></div>' +
       '<div class="pn-q"><button onclick="pnCant(' + x.p.ID_PN + ',-1)">−</button><span>' + x.cant + '</span><button onclick="pnCant(' + x.p.ID_PN + ',1)">+</button></div><div class="st">' + pnPlata(x.sub) + '</div></div>';
   });
   h += '<div class="pn-tot"><span>Total (IVA incluido)</span><b>' + pnPlata(tot) + '</b></div>' +
