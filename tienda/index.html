@@ -61,7 +61,8 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 .panel{overflow:hidden}.scr{flex:1;overflow:auto}
 .frm{padding:10px 16px 4px;border-top:1px solid var(--li)}
 .frm label{display:block;font-size:12px;color:var(--mu);margin:8px 0 3px}
-.frm input,.frm textarea{width:100%;padding:10px;border:1px solid var(--li);border-radius:10px;font-size:16px;font-family:inherit}
+.sug button{display:block;width:100%;text-align:left;padding:9px 12px;margin:4px 0 0;border:1px solid var(--li);border-radius:8px;background:#fff;font-size:15px;cursor:pointer}.sug:empty{display:none}
+.frm input,.frm textarea,.frm select{width:100%;padding:10px;border:1px solid var(--li);border-radius:10px;font-size:16px;font-family:inherit}
 .frm textarea{min-height:60px}
 .seg{display:flex;gap:6px}.seg button{flex:1;border:1px solid var(--li);background:#fff;border-radius:10px;padding:11px 6px;font-size:14px;font-weight:700;cursor:pointer;color:var(--az)}
 .seg button.on{background:var(--az);color:#fff;border-color:var(--az)}
@@ -108,9 +109,9 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 <label>¿Cómo lo recibís? *</label>
 <div class="seg"><button type="button" id="eR" onclick="setEnt('RETIRO')">Retiro en el local</button><button type="button" id="eE" onclick="setEnt('ENVIO')">Envío</button></div>
 <div id="envBox" style="display:none">
-<label>Dirección *</label><input id="fDir" autocomplete="street-address">
-<label>Localidad *</label><input id="fLoc" autocomplete="address-level2">
-<label>Provincia</label><input id="fProv" autocomplete="address-level1" placeholder="Salta">
+<label>Dirección *</label><input id="fDir" autocomplete="street-address" placeholder="Calle y número, barrio">
+<label>Provincia *</label><select id="fProv" onchange="cambiarProv()"><option>Salta</option></select>
+<label>Localidad *</label><input id="fLoc" autocomplete="off" placeholder="Escribí 2 letras y elegí de la lista" oninput="sugLoc()"><div class="sug" id="locSug"></div>
 <label>Código postal</label><input id="fCp" inputmode="numeric" autocomplete="postal-code">
 </div>
 <div class="aviso" id="entNota" style="display:none"></div>
@@ -222,7 +223,7 @@ function paso(id,d){var e=$('q'+id);var a=BYID[id];var v=Math.max(1,(parseInt(e.
 function guardar(){try{localStorage.setItem('vt_carro',JSON.stringify(CAR));}catch(e){}}
 function agregar(id){var a=BYID[id];var v=Math.max(1,parseInt($('q'+id).value,10)||1);if(v>a.st)v=a.st;if(v<1)return;CAR[id]=v;guardar();cuenta();var b=$('b'+id);if(b){b.className='btn o';b.textContent='En pedido ('+v+')';}$('q'+id).value=v;}
 function cuenta(){var n=0;for(var k in CAR){if(BYID[k])n+=CAR[k];}$('nc').textContent=n;$('nc2').textContent=n;}
-function abrirCarro(){pintarCarro();cargarCli();$('dr').className='drawer on';}
+function abrirCarro(){pintarCarro();cargarCli();cargarProvs();$('dr').className='drawer on';}
 function cerrarCarro(){$('dr').className='drawer';pintar();}
 function pintarCarro(){
   var h='',t=0,n=0;
@@ -243,7 +244,34 @@ function setEnt(e){
   else n.innerHTML='<b>Calculamos el costo del envío</b> y te mandamos el total por WhatsApp, con el link para pagar. Ahora no pagás nada.';
   n.style.display='block';
 }
-function cargarCli(){try{var c=JSON.parse(localStorage.getItem('vt_cli')||'null');if(!c)return;['fNom','fTel','fMail','fCuit','fDir','fLoc','fProv','fCp'].forEach(function(f){if(c[f]&&!$(f).value)$(f).value=c[f];});}catch(e){}}
+// Provincias y localidades oficiales (Georef). La localidad se elige de la lista; si no está, se puede escribir.
+var LUG={prov:'',locs:[],provs:null};
+function cargarProvs(){
+  if(LUG.provs)return;
+  rpc('vt_tienda_lugares',{},function(err,r){
+    if(err||!r||!r.provincias)return;
+    LUG.provs=r.provincias;var sel=$('fProv'),act=sel.value||'Salta',h='';
+    for(var i=0;i<r.provincias.length;i++)h+='<option'+(r.provincias[i]===act?' selected':'')+'>'+esc(r.provincias[i])+'</option>';
+    sel.innerHTML=h;cambiarProv(true);
+  });
+}
+function cambiarProv(guardarLoc){
+  var p=$('fProv').value;if(p===LUG.prov)return;
+  LUG.prov=p;LUG.locs=[];if(!guardarLoc)$('fLoc').value='';$('locSug').innerHTML='';
+  rpc('vt_tienda_lugares',{prov:p},function(err,r){if(!err&&r&&r.localidades&&LUG.prov===p)LUG.locs=r.localidades;});
+}
+function nAcc(s){return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
+function sugLoc(){
+  var q=nAcc($('fLoc').value),el=$('locSug');
+  if(q.length<2){el.innerHTML='';return;}
+  var a=[],b=[],i,n;
+  for(i=0;i<LUG.locs.length;i++){n=nAcc(LUG.locs[i]);if(n===q){el.innerHTML='';return;}if(n.indexOf(q)===0)a.push(LUG.locs[i]);else if(n.indexOf(q)>0)b.push(LUG.locs[i]);}
+  var l=a.concat(b).slice(0,8),h='';
+  for(i=0;i<l.length;i++)h+='<button type="button" onclick="elegirLoc(this)">'+esc(l[i])+'</button>';
+  el.innerHTML=h||(LUG.locs.length?'<div class="note">No está en la lista: dejala escrita así.</div>':'');
+}
+function elegirLoc(b){$('fLoc').value=b.textContent;$('locSug').innerHTML='';}
+function cargarCli(){try{var c=JSON.parse(localStorage.getItem('vt_cli')||'null');if(!c)return;['fNom','fTel','fMail','fCuit','fDir','fLoc','fCp'].forEach(function(f){if(c[f]&&!$(f).value)$(f).value=c[f];});if(c.fProv)$('fProv').innerHTML='<option selected>'+esc(c.fProv)+'</option>';}catch(e){}}
 function guardarCli(){var c={};['fNom','fTel','fMail','fCuit','fDir','fLoc','fProv','fCp'].forEach(function(f){c[f]=$(f).value;});try{localStorage.setItem('vt_cli',JSON.stringify(c));}catch(e){}}
 function confirmar(){
   var e=$('err');e.textContent='';
