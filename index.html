@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "1ffaecb18d59"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "b92c0aaf1370"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -276,6 +276,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
       <div class="nav-item" data-page="recetas"><span class="nav-icon"><i class="fas fa-flask"></i></span> Recetas</div>
       <div class="nav-item" data-page="ventas"><span class="nav-icon"><i class="fas fa-shopping-cart"></i></span> Ventas</div>
       <div class="nav-item" data-page="precios-nuevos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Precios cubiertas nuevas</div>
+      <div class="nav-item" data-page="pedidos-web"><span class="nav-icon"><i class="fas fa-store"></i></span> Pedidos web</div>
       <div class="nav-item" data-page="carga-compras"><span class="nav-icon"><i class="fas fa-cart-plus"></i></span> Compras</div>
       <div class="nav-item" data-page="carga-combustible"><span class="nav-icon"><i class="fas fa-gas-pump"></i></span> Combustible</div>
       <div class="nav-item" data-page="carga-gastos"><span class="nav-icon"><i class="fas fa-receipt"></i></span> Gastos Varios</div>
@@ -342,6 +343,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-produccion-cubiertas" class="hidden"></div>
     <div id="page-puesto-estacion" class="hidden"></div>
     <div id="page-precios-nuevos" class="hidden"></div>
+    <div id="page-pedidos-web" class="hidden"></div>
     <div id="page-carga-compras" class="hidden"></div>
     <div id="page-carga-gastos" class="hidden"></div>
     <div id="page-carga-combustible" class="hidden"></div>
@@ -657,7 +659,7 @@ function _mcDelAll(){ _MC={}; }
 // El servidor devuelve un "pase" (token) que acompaña cada llamada.
 // ══════════════════════════════════════════════════════════════════
 var PAGINA_MODULO = {
-  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'precios-nuevos':'VENTAS', 'carga-compras':'COMPRAS',
+  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'precios-nuevos':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
   'carga-gastos':'GASTOS', 'carga-financiero':'ADMINISTRACION', 'carga-transporte':'ADMINISTRACION',
   'carga-impositivo':'ADMINISTRACION', 'carga-sueldos':'ADMINISTRACION', 'carga-combustible':'COMBUSTIBLE',
   'cheques':'COBRANZAS', 'cobranzas':'COBRANZAS', 'caja':'COBRANZAS', 'cta-cte-clientes':'COBRANZAS',
@@ -1042,6 +1044,7 @@ function getPage(name) {
     'produccion-cubiertas': function(){ if(typeof renderProdCub!=='undefined') renderProdCub(); },
     'puesto-estacion': function(){ if(typeof renderPuesto!=='undefined') renderPuesto(); },
     'precios-nuevos': function(){ if(typeof renderPrecios!=='undefined') renderPrecios(); },
+    'pedidos-web': function(){ if(typeof renderPedidosWeb!=='undefined') renderPedidosWeb(); },
     'carga-compras': typeof renderCargaCompras !== 'undefined' ? renderCargaCompras : null,
     'carga-gastos': typeof renderCargaGastos !== 'undefined' ? renderCargaGastos : null,
     'carga-combustible': typeof renderCargaCombustible !== 'undefined' ? renderCargaCombustible : null,
@@ -12561,6 +12564,171 @@ function pnListaImprimir() {
   w.document.close();
   var img = w.document.querySelector('img'), ir = function() { w.focus(); w.print(); };
   if (img && !img.complete) { img.onload = ir; img.onerror = ir; } else setTimeout(ir, 300);
+}
+</script>
+
+<style>
+#page-pedidos-web .tw-wrap{max-width:900px;margin:0 auto;padding:4px 0 40px}
+.tw-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.tw-top h2{margin:0;font-size:20px}.tw-top .tw-acc{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.tw-chips{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px}
+.tw-chip{flex:0 0 auto;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);border-radius:18px;padding:6px 12px;font-size:13px;cursor:pointer}
+.tw-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tw-ped{border:1px solid var(--border);border-radius:12px;background:var(--surface,#fff);margin-bottom:8px;overflow:hidden}
+.tw-cab{display:flex;gap:10px;align-items:center;padding:10px 12px;cursor:pointer;flex-wrap:wrap}
+.tw-cab b{font-size:15px}.tw-cab .tw-tot{margin-left:auto;font-weight:800;font-size:15px}
+.tw-sub{font-size:12px;color:var(--dim);width:100%}
+.tw-est{border-radius:8px;padding:2px 8px;font-size:12px;font-weight:700;white-space:nowrap}
+.tw-e1{background:#fff3e0;color:#c2410c}.tw-e2{background:#e0f2fe;color:#075985}.tw-e3{background:#dcfce7;color:#166534}.tw-e4{background:#fee2e2;color:#b91c1c}.tw-e5{background:#eef0f3;color:#4b5563}
+.tw-det{border-top:1px solid var(--border);padding:10px 12px;font-size:14px}
+.tw-det table{width:100%;border-collapse:collapse;margin:4px 0 8px}.tw-det td{padding:5px 0;border-bottom:1px solid var(--border)}.tw-det td.n{text-align:right;white-space:nowrap}
+.tw-fila{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin:8px 0}
+.tw-fila label{display:flex;flex-direction:column;font-size:12px;color:var(--dim);gap:3px;flex:1;min-width:140px}
+.tw-fila input,.tw-fila select,.tw-det textarea{font-size:15px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);width:100%;box-sizing:border-box}
+.tw-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.tw-caja{background:#fff6ee;border-left:4px solid #E8792B;padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:13px;color:#1f2937}
+.tw-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:20px 10px}
+.tw-hoja{background:var(--surface,#fff);color:var(--text);border-radius:14px;max-width:560px;width:100%;padding:16px}
+</style>
+<script>
+var TW_ = { d: null, filtro: 'PEND', abierto: '' };
+var TW_TIENDA = 'https://ema-data-analytics.github.io/guerrero-panel/tienda/';
+var TW_EST = { A_COTIZAR: ['Calcular envío', 'tw-e1'], ESPERANDO_PAGO: ['Esperando pago', 'tw-e1'], PAGO_INFORMADO: ['Dice que pagó', 'tw-e2'], PAGADO: ['Pagado', 'tw-e3'],
+  PREPARANDO: ['Preparando', 'tw-e3'], LISTO: ['Listo para retirar', 'tw-e3'], DESPACHADO: ['Despachado', 'tw-e3'], ENTREGADO: ['Entregado', 'tw-e5'], CANCELADO: ['Cancelado', 'tw-e4'] };
+var TW_GRUPOS = { PEND: ['A_COTIZAR', 'ESPERANDO_PAGO', 'PAGO_INFORMADO'], CURSO: ['PAGADO', 'PREPARANDO', 'LISTO', 'DESPACHADO'], FIN: ['ENTREGADO', 'CANCELADO'], TODOS: null };
+function twEl() { return $id('page-pedidos-web'); }
+function twEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function twPlata(n) { return '$ ' + Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+function twFecha(ms) { if (!ms) return ''; var d = new Date(ms); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+// Teléfono argentino a formato de WhatsApp (549 + área + número)
+function twWaTel(t) {
+  var d = String(t || '').replace(/[^0-9]/g, '');
+  if (d.indexOf('54') === 0) d = d.substring(2);
+  if (d.charAt(0) === '0') d = d.substring(1);
+  if (d.charAt(0) === '9' && d.length === 11) d = d.substring(1);
+  return d.length === 10 ? '549' + d : d;
+}
+function twLink(p) { return TW_TIENDA + 'pedido.html?t=' + p.TOKEN; }
+async function renderPedidosWeb() {
+  var el = twEl(); if (!el) return;
+  if (!TW_.d) el.innerHTML = '<div class="tw-wrap"><div class="al">Cargando pedidos…</div></div>';
+  try { TW_.d = await gsRun('gsWeb_Pedidos'); } catch (e) { el.innerHTML = '<div class="al al-r">' + twEsc(e.message) + '</div>'; return; }
+  twPintar();
+}
+function twPintar() {
+  var el = twEl(), d = TW_.d, g = TW_GRUPOS[TW_.filtro], n = { PEND: 0, CURSO: 0, FIN: 0, TODOS: d.PEDIDOS.length };
+  d.PEDIDOS.forEach(function(p) { ['PEND', 'CURSO', 'FIN'].forEach(function(k) { if (TW_GRUPOS[k].indexOf(p.ESTADO) !== -1) n[k]++; }); });
+  var h = '<div class="tw-wrap"><div class="tw-top"><h2>🛒 Pedidos web</h2><div class="tw-acc">' +
+    '<button class="btn btn-sm" onclick="window.open(TW_TIENDA,\'_blank\')">Ver tienda</button>' +
+    '<button class="btn btn-sm" onclick="twAjustes()">⚙ Ajustes</button><button class="btn btn-sm" onclick="renderPedidosWeb()">↻ Actualizar</button></div></div>';
+  if (!d.CFG.tienda_alias && !d.CFG.tienda_cbu) h += '<div class="tw-caja">Faltan los datos de la cuenta para transferencias. Cargalos en <b>⚙ Ajustes</b>; mientras tanto la tienda le dice al cliente que se los pasan por WhatsApp.</div>';
+  h += '<div class="tw-chips">';
+  [['PEND', 'Pendientes'], ['CURSO', 'En curso'], ['FIN', 'Terminados'], ['TODOS', 'Todos']].forEach(function(c) {
+    h += '<button class="tw-chip' + (TW_.filtro === c[0] ? ' on' : '') + '" onclick="TW_.filtro=\'' + c[0] + '\';twPintar()">' + c[1] + ' (' + n[c[0]] + ')</button>';
+  });
+  h += '</div>';
+  var l = d.PEDIDOS.filter(function(p) { return !g || g.indexOf(p.ESTADO) !== -1; });
+  if (!l.length) h += '<div class="al">No hay pedidos en esta lista.</div>';
+  l.forEach(function(p) {
+    var e = TW_EST[p.ESTADO] || [p.ESTADO, 'tw-e5'], ab = TW_.abierto === p.ID_PEDIDO;
+    h += '<div class="tw-ped" id="tw-p-' + twEsc(p.ID_PEDIDO) + '"><div class="tw-cab" onclick="TW_.abierto=(TW_.abierto===\'' + twEsc(p.ID_PEDIDO) + '\'?\'\':\'' + twEsc(p.ID_PEDIDO) + '\');twPintar()">' +
+      '<b>' + twEsc(p.NRO) + '</b><span class="tw-est ' + e[1] + '">' + twEsc(e[0]) + '</span><span class="tw-tot">' + (p.ESTADO === 'A_COTIZAR' ? twPlata(p.SUBTOTAL) + ' + envío' : twPlata(p.TOTAL)) + '</span>' +
+      '<div class="tw-sub">' + twFecha(p.FECHA) + ' · ' + twEsc(p.NOMBRE) + ' · ' + (p.ENTREGA === 'ENVIO' ? '🚚 Envío a ' + twEsc(p.LOCALIDAD) : '🏪 Retira en el local') + '</div></div>' +
+      (ab ? twDetalle(p) : '') + '</div>';
+  });
+  el.innerHTML = h + '</div>';
+}
+function twDetalle(p) {
+  var h = '<div class="tw-det"><table>', id = twEsc(p.ID_PEDIDO);
+  p.ITEMS.forEach(function(x) { h += '<tr><td>' + x.q + ' × ' + twEsc(x.d) + ' <span style="color:var(--dim);font-size:12px">' + twEsc(x.c) + '</span></td><td class="n">' + twPlata(x.p * x.q) + '</td></tr>'; });
+  h += '<tr><td>Cubiertas</td><td class="n">' + twPlata(p.SUBTOTAL) + '</td></tr>';
+  if (p.ENTREGA === 'ENVIO') h += '<tr><td>Envío' + (p.ENVIO_DETALLE ? ' (' + twEsc(p.ENVIO_DETALLE) + ')' : '') + '</td><td class="n">' + (p.ESTADO === 'A_COTIZAR' ? 'a calcular' : twPlata(p.ENVIO_COSTO)) + '</td></tr>';
+  h += '<tr><td><b>Total</b></td><td class="n"><b>' + twPlata(p.TOTAL) + '</b></td></tr></table>';
+  h += '<div>📞 <b>' + twEsc(p.TELEFONO) + '</b>' + (p.MAIL ? ' · ' + twEsc(p.MAIL) : '') + (p.CUIT_DNI ? ' · CUIT/DNI ' + twEsc(p.CUIT_DNI) : '') + '</div>';
+  if (p.ENTREGA === 'ENVIO') h += '<div>📍 ' + twEsc(p.DIRECCION) + ', ' + twEsc(p.LOCALIDAD) + (p.PROVINCIA ? ', ' + twEsc(p.PROVINCIA) : '') + (p.CP ? ' (' + twEsc(p.CP) + ')' : '') + '</div>';
+  if (p.NOTA) h += '<div>💬 ' + twEsc(p.NOTA) + '</div>';
+  if (p.PAGO_REF || p.ESTADO === 'PAGO_INFORMADO') h += '<div class="tw-caja">El cliente avisó que pagó' + (p.PAGO_FECHA ? ' el ' + twFecha(p.PAGO_FECHA) : '') + (p.PAGO_REF ? ': "' + twEsc(p.PAGO_REF) + '"' : '') + '. Revisá la cuenta antes de marcarlo pagado.</div>';
+  if (p.MEDIO_PAGO && p.ESTADO !== 'PAGO_INFORMADO') h += '<div>💳 Pagó con: <b>' + twEsc(p.MEDIO_PAGO.replace('_', ' ')) + '</b>' + (p.PAGO_FECHA ? ' · ' + twFecha(p.PAGO_FECHA) : '') + '</div>';
+  if (p.ENTREGA === 'ENVIO' && (p.ESTADO === 'A_COTIZAR' || p.ESTADO === 'ESPERANDO_PAGO')) {
+    h += '<div class="tw-caja"><b>Envío.</b> Poné cuánto se le cobra al cliente. Si el flete lo paga él al transporte, dejá 0 y aclaralo en el detalle.</div>' +
+      '<div class="tw-fila"><label>Costo del envío ($)<input id="tw-ec-' + id + '" inputmode="numeric" value="' + (p.ENVIO_COSTO || '') + '"></label>' +
+      '<label>Detalle (empresa, plazo)<input id="tw-ed-' + id + '" value="' + twEsc(p.ENVIO_DETALLE) + '" placeholder="Ej: Vía Cargo, 3 días"></label></div>' +
+      '<div class="tw-btns"><button class="btn btn-sm btn-p" onclick="twEnvio(\'' + id + '\')">Guardar envío</button></div>';
+  }
+  h += '<div class="tw-btns">';
+  if (p.ESTADO !== 'A_COTIZAR' && p.ESTADO !== 'CANCELADO' && p.ESTADO !== 'ENTREGADO') h += '<button class="btn btn-sm" style="background:#25d366;color:#fff" onclick="twWa(\'' + id + '\',\'pago\')">💬 Mandar link del pedido</button>';
+  if (p.ESTADO === 'A_COTIZAR') h += '<button class="btn btn-sm" style="background:#25d366;color:#fff" onclick="twWa(\'' + id + '\',\'hola\')">💬 Escribirle</button>';
+  if (p.ESTADO === 'LISTO' || p.ESTADO === 'DESPACHADO') h += '<button class="btn btn-sm" style="background:#25d366;color:#fff" onclick="twWa(\'' + id + '\',\'aviso\')">💬 Avisarle</button>';
+  h += '<button class="btn btn-sm" onclick="twCopiar(\'' + id + '\',this)">🔗 Copiar link</button></div>';
+  if (p.PASOS.length) {
+    h += '<div class="tw-fila">';
+    if (p.PASOS.indexOf('PAGADO') !== -1) h += '<label>Si ya pagó, ¿con qué?<select id="tw-mp-' + id + '"><option value="">Elegí…</option><option value="TRANSFERENCIA">Transferencia</option><option value="MERCADO_PAGO">Mercado Pago</option><option value="EFECTIVO">Efectivo</option><option value="OTRO">Otro</option></select></label>';
+    h += '</div><div class="tw-btns">';
+    p.PASOS.forEach(function(s) {
+      var tx = { PAGADO: '✔ Marcar pagado', PREPARANDO: 'Preparando', LISTO: 'Listo para retirar', DESPACHADO: 'Despachado', ENTREGADO: 'Entregado', ESPERANDO_PAGO: 'El pago no llegó', CANCELADO: 'Cancelar pedido' }[s] || s;
+      if (s === 'LISTO' && p.ENTREGA === 'ENVIO') return;
+      if (s === 'DESPACHADO' && p.ENTREGA !== 'ENVIO') return;
+      h += '<button class="btn btn-sm' + (s === 'CANCELADO' ? ' btn-d' : (s === 'PAGADO' ? ' btn-p' : '')) + '" onclick="twEstado(\'' + id + '\',\'' + s + '\')">' + tx + '</button>';
+    });
+    h += '</div>';
+  }
+  h += '<div style="margin-top:10px"><textarea id="tw-ob-' + id + '" rows="2" placeholder="Notas internas (no las ve el cliente)">' + twEsc(p.OBSERVACIONES) + '</textarea>' +
+    '<div class="tw-btns"><button class="btn btn-sm" onclick="twNota(\'' + id + '\')">Guardar nota</button></div></div>';
+  if (p.USUARIO_MOD) h += '<div style="font-size:11px;color:var(--dim);margin-top:6px">Último cambio: ' + twEsc(p.USUARIO_MOD) + ' · ' + twFecha(p.FECHA_MOD) + '</div>';
+  return h + '</div>';
+}
+function twPed(id) { return TW_.d.PEDIDOS.filter(function(p) { return p.ID_PEDIDO === id; })[0]; }
+async function twAccion(d, ok) {
+  try {
+    var r = await gsRun('gsWeb_PedidoAccion', d);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); return; }
+    var i; for (i = 0; i < TW_.d.PEDIDOS.length; i++) if (TW_.d.PEDIDOS[i].ID_PEDIDO === r.PEDIDO.ID_PEDIDO) TW_.d.PEDIDOS[i] = r.PEDIDO;
+    toast(ok || 'Guardado', 'g'); twPintar();
+  } catch (e) { toast(e.message, 'r2'); }
+}
+function twEnvio(id) { twAccion({ ID_PEDIDO: id, ACCION: 'COTIZAR_ENVIO', ENVIO_COSTO: ($id('tw-ec-' + id).value || '').replace(/[^0-9]/g, ''), ENVIO_DETALLE: $id('tw-ed-' + id).value }, 'Envío guardado. Ahora mandale el link para que pague.'); }
+function twEstado(id, s) {
+  var d = { ID_PEDIDO: id, ACCION: 'ESTADO', ESTADO: s };
+  if (s === 'PAGADO') { d.MEDIO_PAGO = ($id('tw-mp-' + id) || {}).value || ''; if (!d.MEDIO_PAGO) { toast('Elegí con qué pagó', 'r2'); return; } }
+  // Cancelar pide un segundo toque (sin ventanas del navegador)
+  if (s === 'CANCELADO' && TW_.conf !== id) { TW_.conf = id; toast('Tocá "Cancelar pedido" otra vez para confirmar. Las cubiertas vuelven a quedar disponibles en la tienda.', 'r2'); return; }
+  TW_.conf = '';
+  twAccion(d, 'Pedido actualizado');
+}
+function twNota(id) { twAccion({ ID_PEDIDO: id, ACCION: 'NOTA', OBSERVACIONES: $id('tw-ob-' + id).value }, 'Nota guardada'); }
+function twCopiar(id, b) { var l = twLink(twPed(id)); try { navigator.clipboard.writeText(l); b.textContent = '✔ Copiado'; } catch (e) { window.prompt('Copiá el link:', l); } }
+function twWa(id, tipo) {
+  var p = twPed(id), nom = String(p.NOMBRE).split(' ')[0], t;
+  if (tipo === 'pago') t = 'Hola ' + nom + ', te escribimos de Vulcan Tread por tu pedido ' + p.NRO + '.' + (p.ENTREGA === 'ENVIO' && p.ENVIO_COSTO ? ' El envío' + (p.ENVIO_DETALLE ? ' (' + p.ENVIO_DETALLE + ')' : '') + ' sale ' + twPlata(p.ENVIO_COSTO) + '.' : '') +
+    ' Total: ' + twPlata(p.TOTAL) + '. Podés ver el pedido y pagarlo acá: ' + twLink(p);
+  else if (tipo === 'aviso') t = 'Hola ' + nom + ', tu pedido ' + p.NRO + (p.ESTADO === 'LISTO' ? ' ya está listo para retirar.' : ' ya fue despachado' + (p.ENVIO_DETALLE ? ' (' + p.ENVIO_DETALLE + ')' : '') + '.') + ' Detalle: ' + twLink(p);
+  else t = 'Hola ' + nom + ', te escribimos de Vulcan Tread por tu pedido ' + p.NRO + '.';
+  window.open('https://wa.me/' + twWaTel(p.TELEFONO) + '?text=' + encodeURIComponent(t), '_blank');
+}
+function twAjustes() {
+  var c = TW_.d.CFG, v = function(k) { return twEsc(c[k] || ''); };
+  var h = '<div class="tw-hoja" onclick="event.stopPropagation()"><h3 style="margin:0 0 8px">⚙ Ajustes de la tienda</h3>' +
+    '<div style="font-weight:700;margin-top:6px">Envíos</div>' +
+    '<label style="display:block;margin:6px 0"><input type="radio" name="tw-modo" value="A"' + (c.tienda_envio_modo === 'A' ? ' checked' : '') + '> <b>A · Flete a cargo del cliente:</b> paga las cubiertas al hacer el pedido y el flete lo paga al transporte.</label>' +
+    '<label style="display:block;margin:6px 0"><input type="radio" name="tw-modo" value="B"' + (c.tienda_envio_modo !== 'A' ? ' checked' : '') + '> <b>B · A cotizar:</b> el pedido entra sin pago; ustedes cargan el envío y le mandan el link para pagar el total.</label>' +
+    '<div style="font-weight:700;margin-top:10px">Cuenta para transferencias (la ve el cliente)</div>' +
+    '<div class="tw-fila"><label>Alias<input id="tw-c-alias" value="' + v('tienda_alias') + '"></label><label>CBU / CVU<input id="tw-c-cbu" inputmode="numeric" value="' + v('tienda_cbu') + '"></label></div>' +
+    '<div class="tw-fila"><label>Titular<input id="tw-c-tit" value="' + v('tienda_titular') + '"></label><label>Banco<input id="tw-c-ban" value="' + v('tienda_banco') + '"></label><label>CUIT<input id="tw-c-cuit" value="' + v('tienda_cuit') + '"></label></div>' +
+    '<div style="font-weight:700;margin-top:10px">Mercado Pago</div>' +
+    '<label style="display:block;margin:6px 0"><input type="checkbox" id="tw-c-mp"' + (c.tienda_mp_activo === '1' ? ' checked' : '') + '> Mostrar el botón "Pagar con Mercado Pago"</label>' +
+    '<div class="tw-caja">Activalo solo cuando estén cargadas las credenciales de Mercado Pago y se haya hecho una compra de prueba.</div>' +
+    '<div class="tw-btns"><button class="btn btn-p" onclick="twAjustesGuardar()">Guardar</button><button class="btn" onclick="$id(\'tw-ov\').remove()">Cerrar</button></div></div>';
+  var ov = document.createElement('div'); ov.id = 'tw-ov'; ov.className = 'tw-ov'; ov.onclick = function() { ov.remove(); }; ov.innerHTML = h; document.body.appendChild(ov);
+}
+async function twAjustesGuardar() {
+  var m = document.querySelector('input[name="tw-modo"]:checked');
+  var d = { tienda_envio_modo: m ? m.value : '', tienda_alias: $id('tw-c-alias').value.trim(), tienda_cbu: $id('tw-c-cbu').value.replace(/\s+/g, ''), tienda_titular: $id('tw-c-tit').value.trim(),
+    tienda_banco: $id('tw-c-ban').value.trim(), tienda_cuit: $id('tw-c-cuit').value.trim(), tienda_mp_activo: $id('tw-c-mp').checked ? '1' : '0' };
+  try {
+    var r = await gsRun('gsWeb_ConfigGuardar', d);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); return; }
+    TW_.d.CFG = r.CFG; $id('tw-ov').remove(); toast('Ajustes guardados', 'g'); twPintar();
+  } catch (e) { toast(e.message, 'r2'); }
 }
 </script>
 
