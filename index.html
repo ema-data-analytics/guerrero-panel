@@ -8223,8 +8223,8 @@ function buildABMForm(page, d) {
       '<div class="fg"><label class="fl">Observaciones</label><textarea id="abm-obs" class="fta" rows="2" placeholder="Notas internas...">' + v('OBSERVACIONES') + '</textarea></div>';
   }
   if (page === 'abm-clientes') {
-    return '<div class="fr"><div class="fg"><label class="fl">Apellido *</label><input id="abm-ape" class="fi" value="' + v('APELLIDO') + '"/></div>' +
-      '<div class="fg"><label class="fl">Nombre *</label><input id="abm-nom" class="fi" value="' + v('NOMBRE') + '"/></div></div>' +
+    return '<div class="fr"><div class="fg"><label class="fl">Apellido / Razón social *</label><input id="abm-ape" class="fi" value="' + v('APELLIDO') + '"/></div>' +
+      '<div class="fg"><label class="fl">Nombre</label><input id="abm-nom" class="fi" value="' + v('NOMBRE') + '" placeholder="Vacío si es empresa"/></div></div>' +
       '<div class="fg"><label class="fl">Nombre Fantasía</label><input id="abm-fantasia" class="fi" value="' + v('NOMBRE_FANTASIA') + '" placeholder="Nombre comercial (opcional)"/></div>' +
       '<div class="fr"><div class="fg"><label class="fl">Teléfono</label><input id="abm-tel" class="fi" value="' + v('TELEFONO') + '"/></div>' +
       '<div class="fg"><label class="fl">Teléfono 2</label><input id="abm-tel2" class="fi" value="' + v('TELEFONO2') + '" placeholder="Alternativo"/></div></div>' +
@@ -8368,9 +8368,12 @@ async function saveABM() {
       await ADB.put('proveedores', rec);
     }
     else if (page === 'abm-clientes') {
-      if (!$v('abm-ape').trim() || !$v('abm-nom').trim()) { toast('Ingresar apellido y nombre','r2'); return; }
+      if (!$v('abm-ape').trim()) { toast('Ingresar apellido o razón social','r2'); return; }
       var idCli = d ? d.ID_CLIENTE : (await nextId('clientes','ID_CLIENTE'));
-      rec = {
+      // Al editar se parte del registro completo: los datos que esta ficha no muestra (zona, vendedor, cobrador, CP...) no se pierden.
+      var cliBase = {};
+      if (d) Object.keys(d).forEach(function(k) { cliBase[k] = d[k]; });
+      rec = Object.assign(cliBase, {
         ID_CLIENTE:       idCli,
         APELLIDO:         $v('abm-ape').trim().toUpperCase(),
         NOMBRE:           $v('abm-nom').trim().toUpperCase(),
@@ -8385,7 +8388,7 @@ async function saveABM() {
         CONDICION_PAGO:   $v('abm-cli-pago').trim(),
         OBSERVACIONES:    ($id('abm-obs')||{}).value||'',
         ACTIVO:           1
-      };
+      });
       await ADB.put('clientes', rec);
     }
     else if (page === 'abm-vehiculos') {
