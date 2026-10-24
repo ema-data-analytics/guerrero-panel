@@ -324,7 +324,7 @@ var HISTORIA = [
  ["21/10","Autoclave, control y reproceso",["Autoclave por carga con mapa de lugares.","Control del encargado: OK, volver a una estación o rechazo final.","Trabajos extra en la inspección.","Stock real cargado: 194 artículos.","La línea no para (otro insumo con stock). Stock nunca negativo.","Boleta con OT automática y marca grabada automática.","Retiro y devolución de insumos por estación, banda reutilizada, herramental por número."]],
  ["22/10","Impresiones, ayuda y precios",["Imprimir y guardar PDF de OT, OS e informe final, con logo.","Ayuda en cada pantalla y recorrido guiado.","Relojes de trabajo guardados en el servidor, varios a la vez.","La tablet trabaja una carga a la vez; acceso directo a estaciones.","Lista de precios de cubiertas nuevas para vendedores, cotización por WhatsApp y PDF, listas 10 a 30%.","Estudio de precios y margen mínimo."]],
  ["23/10","Cobro y catálogo",["Precios solo con IVA incluido.","Cómo cobrar según el medio de pago.","Catálogo Vulcan Tread en PDF e interactivo con carrito."]],
- ["24/10","Versión 25, probada y publicada",["Vulcanizado solo (sin estaciones 2, 6 y 7, sin banda).","Cantidad obligatoria en insumos a medir: solo un SUPER la saltea.","Insumo fuera de receta y botón Todo como la receta.","Remito por cliente al cerrar la carga.","Informe con costo de rechazos.","Prueba completa con un SUPER y con un operario. Datos de prueba anulados.","Publicada para todos. Esta guía queda en el sitio.","El catálogo manda los pedidos al WhatsApp de Gustavo, encargado de ventas."]]
+ ["24/10","Versión 25, probada y publicada",["Vulcanizado solo (sin estaciones 2, 6 y 7, sin banda).","Cantidad obligatoria en insumos a medir: solo un SUPER la saltea.","Insumo fuera de receta y botón Todo como la receta.","Remito por cliente al cerrar la carga.","Informe con costo de rechazos.","Prueba completa con un SUPER y con un operario. Datos de prueba anulados.","Publicada en el link nuevo (etapa de pruebas). Esta guía queda en el sitio.","El catálogo manda los pedidos al WhatsApp de Gustavo, encargado de ventas."]]
 ];
 
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
@@ -341,7 +341,7 @@ function ficha(l, extra){
 }
 function inicio(){
   var h = cabecera();
-  h += '<div class="estado"><div><b>Cómo está hoy.</b> La línea de camiones quedó probada completa el 24/10/2026, de la boleta al remito impreso. Ya está publicada: todos entran al mismo link y ven lo que explica esta guía.</div></div>';
+  h += '<div class="estado"><div><b>Cómo está hoy.</b> La línea de camiones quedó probada completa el 24/10/2026, de la boleta al remito impreso. El sistema está en etapa de pruebas: se prueba y se define a fondo, y se pasa a usar de a partes a medida que cada una queda probada. Mientras tanto se sigue trabajando con el sistema actual de Vulcan.</div></div>';
   h += '<div class="seccion-tit">La línea de camiones, en orden</div><div class="fichas">';
   LECCIONES.slice(0,7).forEach(function(l){ h += ficha(l); });
   h += '</div><div class="seccion-tit">Ventas y precios</div><div class="fichas">';
