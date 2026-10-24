@@ -94,7 +94,12 @@ function accion(){
   }
   if(P.estado==='PAGO_INFORMADO')return '<b>Recibimos tu aviso de pago.</b><p class="mu">Lo estamos verificando. Si no nos mandaste el comprobante, mandalo por WhatsApp así lo confirmamos más rápido.</p><a class="btn w" target="_blank" rel="noopener" href="'+wa(t+' Te mando el comprobante.')+'">Mandar comprobante</a>';
   if(P.estado==='CANCELADO')return '<b>Este pedido fue cancelado.</b><p class="mu">Si tenés dudas escribinos.</p><a class="btn w" target="_blank" rel="noopener" href="'+wa(t)+'">WhatsApp</a>';
-  return '<b>'+(P.entrega==='ENVIO'?'Te avisamos por WhatsApp cuando lo despachamos.':'Te avisamos por WhatsApp cuando esté listo para retirar.')+'</b><a class="btn w" target="_blank" rel="noopener" href="'+wa(t)+'">WhatsApp</a>';
+  var msg;
+  if(P.estado==='ENTREGADO')msg='<b>Pedido entregado. ¡Gracias por tu compra!</b><p class="mu">Si tenés alguna duda, escribinos.</p>';
+  else if(P.estado==='DESPACHADO')msg='<b>Ya despachamos tu pedido.</b><p class="mu">Si tenés dudas sobre la entrega, escribinos.</p>';
+  else if(P.estado==='LISTO')msg='<b>Tu pedido está listo para retirar en el local.</b>';
+  else msg='<b>'+(P.entrega==='ENVIO'?'Te avisamos por WhatsApp cuando lo despachamos.':'Te avisamos por WhatsApp cuando esté listo para retirar.')+'</b>';
+  return msg+'<a class="btn w" target="_blank" rel="noopener" href="'+wa(t)+'">WhatsApp</a>';
 }
 function informar(){
   var b=$('bInf');b.disabled=true;
