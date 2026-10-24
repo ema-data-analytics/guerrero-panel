@@ -122,7 +122,7 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 <div class="r"><span>Total con IVA</span><span id="tot">$ 0</span></div>
 <div class="err" id="err"></div>
 <div class="aviso" id="waNota" style="margin:0 0 8px"><b>📲 Tu pedido nos llega por WhatsApp.</b> Al tocar el botón se abre WhatsApp con el pedido escrito: <b>tocá ENVIAR</b> ahí para que lo recibamos.</div>
-<button class="btn" id="bConf" style="width:100%;padding:14px;background:#25d366;font-size:16px" onclick="confirmar()">Enviar pedido por WhatsApp</button>
+<a class="btn" id="bConf" href="#" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;width:100%;padding:14px;background:#25d366;font-size:16px" onclick="return confirmar(this)">Enviar pedido por WhatsApp</a>
 <a class="wa" id="waLink" href="#" target="_blank" rel="noopener">¿Dudas? Escribinos por WhatsApp</a>
 </div></div></div>
 
@@ -274,35 +274,47 @@ function sugLoc(){
 function elegirLoc(b){$('fLoc').value=b.textContent;$('locSug').innerHTML='';}
 function cargarCli(){try{var c=JSON.parse(localStorage.getItem('vt_cli')||'null');if(!c)return;['fNom','fTel','fMail','fCuit','fDir','fLoc','fCp'].forEach(function(f){if(c[f]&&!$(f).value)$(f).value=c[f];});if(c.fProv)$('fProv').innerHTML='<option selected>'+esc(c.fProv)+'</option>';}catch(e){}}
 function guardarCli(){var c={};['fNom','fTel','fMail','fCuit','fDir','fLoc','fProv','fCp'].forEach(function(f){c[f]=$(f).value;});try{localStorage.setItem('vt_cli',JSON.stringify(c));}catch(e){}}
-function confirmar(){
+// Código del pedido armado en el celular: va en el WhatsApp y el sistema lo guarda con ese mismo código
+function uuid4(){
+  var b=new Uint8Array(16),i,h='';
+  if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(b);else for(i=0;i<16;i++)b[i]=Math.floor(Math.random()*256);
+  b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;
+  for(i=0;i<16;i++){h+=(b[i]+256).toString(16).slice(1);if(i===3||i===5||i===7||i===9)h+='-';}
+  return h;
+}
+// El mismo toque abre WhatsApp y guarda el pedido. Si los datos no están completos, no se abre ni se guarda nada.
+function confirmar(btn){
   var e=$('err');e.textContent='';
-  if(!VIVO){e.textContent='Esperá a que se actualicen precios y stock';return;}
-  var its=[];for(var k in CAR){if(BYID[k])its.push({id:parseInt(k,10),q:CAR[k]});}
-  if(!its.length){e.textContent='El pedido está vacío';return;}
-  if($('fNom').value.trim().length<3){e.textContent='Poné tu nombre o el de tu empresa';$('fNom').focus();return;}
-  if(dig($('fTel').value).length<8){e.textContent='Poné un teléfono con código de área';$('fTel').focus();return;}
-  if(!ENT){e.textContent='Elegí retiro en el local o envío';return;}
-  if(ENT==='ENVIO'&&(!$('fDir').value.trim()||!$('fLoc').value.trim())){e.textContent='Para el envío poné dirección y localidad';return;}
+  if(btn.getAttribute('data-env')==='1')return false;
+  if(!VIVO){e.textContent='Esperá a que se actualicen precios y stock';return false;}
+  var its=[],t0=0;for(var k in CAR){if(BYID[k]){its.push({id:parseInt(k,10),q:CAR[k]});t0+=BYID[k].p*CAR[k];}}
+  if(!its.length){e.textContent='El pedido está vacío';return false;}
+  if($('fNom').value.trim().length<3){e.textContent='Poné tu nombre o el de tu empresa';$('fNom').focus();return false;}
+  if(dig($('fTel').value).length<8){e.textContent='Poné un teléfono con código de área';$('fTel').focus();return false;}
+  if(!ENT){e.textContent='Elegí retiro en el local o envío';return false;}
+  if(ENT==='ENVIO'&&(!$('fDir').value.trim()||!$('fLoc').value.trim())){e.textContent='Para el envío poné dirección y localidad';return false;}
   guardarCli();
-  // WhatsApp se abre en el mismo toque (si se abre después de esperar al servidor, el celular lo bloquea)
-  var w=null;try{w=window.open('','_blank');}catch(x){w=null;}
-  var b=$('bConf');b.disabled=true;b.textContent='Guardando el pedido…';
-  rpc('vt_tienda_pedido_crear',{p:{nombre:$('fNom').value,telefono:$('fTel').value,mail:$('fMail').value,cuit:$('fCuit').value,entrega:ENT,
-    direccion:$('fDir').value,localidad:$('fLoc').value,provincia:$('fProv').value,cp:$('fCp').value,nota:$('fNota').value,items:its}},function(err,r){
-    b.disabled=false;b.textContent='Enviar pedido por WhatsApp';
-    if(err||!r||!r.ok){if(w)try{w.close();}catch(x){}}
-    if(err||!r){e.textContent='No se pudo enviar: '+(err||'sin respuesta')+'. Probá de nuevo.';return;}
-    if(!r.ok){e.textContent=r.error||'No se pudo enviar el pedido';cargarVivo();return;}
-    var link=location.href.split('?')[0].split('#')[0].replace(/index\.html$/,'')+'pedido.html?t='+r.token;
-    var t='Hola, hice el pedido '+r.nro+' en la tienda web.';
-    for(var k2 in CAR){var a2=BYID[k2];if(a2)t+='\n• '+CAR[k2]+' x '+a2.me+' '+mNom(dis(a2).m)+' '+dis(a2).n;}
-    t+='\n'+(ENT==='ENVIO'?'Envío a '+$('fLoc').value.trim()+'. Cubiertas: '+pesos(r.total)+' + envío.':'Retiro en el local. Total: '+pesos(r.total)+'.');
-    t+='\nNombre: '+$('fNom').value.trim()+'\nMi pedido: '+link;
-    var u=waUrl(t);
-    CAR={};guardar();cuenta();
-    if(w){try{w.location.href=u;}catch(x){w=null;}}
-    location.href='pedido.html?t='+encodeURIComponent(r.token)+'&nuevo=1'+(w?'&wa=1':'');
-  });
+  var tok=uuid4(), link=location.href.split('?')[0].split('#')[0].replace(/index\.html$/,'')+'pedido.html?t='+tok;
+  var t='Hola, te mando mi pedido de la tienda web:';
+  for(var k2 in CAR){var a2=BYID[k2];if(a2)t+='\n• '+CAR[k2]+' x '+a2.me+' '+mNom(dis(a2).m)+' '+dis(a2).n+' — '+pesos(a2.p*CAR[k2]);}
+  t+='\n'+(ENT==='ENVIO'?'Envío a '+$('fLoc').value.trim()+', '+$('fProv').value+'. Cubiertas: '+pesos(t0)+' + envío.':'Retiro en el local. Total: '+pesos(t0)+'.');
+  t+='\nNombre: '+$('fNom').value.trim()+'\nMi pedido: '+link;
+  btn.href=waUrl(t);
+  btn.setAttribute('data-env','1');btn.textContent='Guardando el pedido…';btn.style.opacity='.7';
+  var datos={nombre:$('fNom').value,telefono:$('fTel').value,mail:$('fMail').value,cuit:$('fCuit').value,entrega:ENT,
+    direccion:$('fDir').value,localidad:$('fLoc').value,provincia:$('fProv').value,cp:$('fCp').value,nota:$('fNota').value,items:its,token:tok};
+  setTimeout(function(){
+    rpc('vt_tienda_pedido_crear',{p:datos},function(err,r){
+      if(err||!r||!r.ok){
+        btn.removeAttribute('data-env');btn.textContent='Enviar pedido por WhatsApp';btn.style.opacity='1';btn.href='#';
+        e.innerHTML='<b>El pedido no se guardó</b>: '+esc(err||(r&&r.error)||'sin respuesta')+'. No tengas en cuenta el WhatsApp. Corregí y probá de nuevo.';
+        cargarVivo();return;
+      }
+      CAR={};guardar();cuenta();
+      location.href='pedido.html?t='+encodeURIComponent(r.token)+'&nuevo=1&wa=1';
+    });
+  },50);
+  return true;
 }
 chips();filtrar();cuenta();cargarVivo();
 </script>
