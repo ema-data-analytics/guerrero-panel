@@ -12170,6 +12170,7 @@ async function puRtGuardar() {
 .pn-q{display:flex;align-items:center;gap:4px}.pn-q button{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:18px;color:var(--text);cursor:pointer}.pn-q span{min-width:24px;text-align:center;font-weight:800;font-size:15px}
 .pn-ci .st{min-width:92px;text-align:right;font-weight:800;font-size:14px}
 .pn-tot{display:flex;justify-content:space-between;align-items:baseline;padding:12px 2px 4px;font-size:15px}.pn-tot b{font-size:21px}
+.pn-sug button{display:block;width:100%;text-align:left;padding:9px 12px;margin:0 0 4px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:15px;cursor:pointer}.pn-sug button span{color:#E8792B;font-weight:600}.pn-sug:empty{display:none}
 .pn-cli{width:100%;box-sizing:border-box;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);margin:8px 0}
 .pn-hb{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .pn-hb button{border-radius:10px;padding:12px 8px;font-size:14.5px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text)}
@@ -12386,7 +12387,7 @@ function pnHoja() {
       '<div class="pn-q"><button onclick="pnCant(' + x.p.ID_PN + ',-1)">−</button><span>' + x.cant + '</span><button onclick="pnCant(' + x.p.ID_PN + ',1)">+</button></div><div class="st">' + pnPlata(x.sub) + '</div></div>';
   });
   h += '<div class="pn-tot"><span>Total (IVA incluido)</span><b>' + pnPlata(tot) + '</b></div>' +
-    '<input class="pn-cli" id="pn-cli" list="pn-cli-l" autocomplete="off" placeholder="Cliente (buscá o escribí)" value="' + pnEsc(PN_.cli) + '" oninput="pnCliElegir(this.value)"/>' + pnCliLista() +
+    '<input class="pn-cli" id="pn-cli" autocomplete="off" placeholder="Cliente (buscá o escribí)" value="' + pnEsc(PN_.cli) + '" oninput="pnCliElegir(this.value)"/><div id="pn-cli-sug" class="pn-sug"></div>' +
     '<input class="pn-cli" id="pn-pago" placeholder="Forma de pago (ej: 0-30-60-90)" value="' + pnEsc(PN_.pago || '') + '" oninput="PN_.pago=this.value;PN_.pagoDe=\'\';PN_.pdf=null;pnGuardar();pnPdfBotones()"/>' +
     '<div class="pn-hb"><button class="wa full" onclick="pnCotWhats()">💬 Mandar texto por WhatsApp</button>' +
     '<button class="pdf" id="pn-pdf-b" onclick="pnCotPdf(this)">📄 Armar PDF</button><button id="pn-pdf-d" onclick="pnCotPdfBajar()" disabled>⬇ Descargar PDF</button>' +
@@ -12395,10 +12396,20 @@ function pnHoja() {
   document.body.appendChild(ov);
   pnPdfBotones();
 }
-function pnCliLista() {
-  var cs = (PN_.d && PN_.d.CLIENTES) || [], h = '<datalist id="pn-cli-l">';
-  cs.forEach(function(c) { h += '<option value="' + pnEsc(c.N) + '"></option>'; });
-  return h + '</datalist>';
+// Sugerencias de clientes mientras se escribe (lista propia: anda igual en cualquier celular).
+function pnCliSug(v) {
+  var el = $id('pn-cli-sug'); if (!el) return;
+  var q = pnNorm(v || ''), cs = (PN_.d && PN_.d.CLIENTES) || [], h = '', n = 0, i;
+  if (q.length >= 2) for (i = 0; i < cs.length && n < 6; i++) {
+    if (cs[i].N === v) { h = ''; break; }
+    if (pnNorm(cs[i].N).indexOf(q) >= 0) { h += '<button type="button" onclick="pnCliTomar(' + i + ')">' + pnEsc(cs[i].N) + (cs[i].P ? ' <span>· ' + pnEsc(cs[i].P) + '</span>' : '') + '</button>'; n++; }
+  }
+  el.innerHTML = h;
+}
+function pnCliTomar(i) {
+  var c = ((PN_.d && PN_.d.CLIENTES) || [])[i]; if (!c) return;
+  var e = $id('pn-cli'); if (e) e.value = c.N;
+  pnCliElegir(c.N);
 }
 // Si el nombre coincide con un cliente cargado, trae su forma de pago. El vendedor la puede cambiar (solo para esta cotización).
 function pnCliElegir(v) {
@@ -12408,7 +12419,7 @@ function pnCliElegir(v) {
   var pg = $id('pn-pago');
   if (c && (!PN_.pago || PN_.pagoDe)) { PN_.pago = c.P || ''; PN_.pagoDe = c.N; if (pg) pg.value = PN_.pago; }
   else if (!c && PN_.pagoDe) { PN_.pago = ''; PN_.pagoDe = ''; if (pg) pg.value = ''; }
-  pnGuardar(); pnPdfBotones();
+  pnCliSug(v); pnGuardar(); pnPdfBotones();
 }
 function pnHojaCerrar() { var o = $id('pn-ov'); if (o) o.remove(); }
 function pnCant(id, d) {
