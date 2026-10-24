@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "4b409f4eb024"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "91721e42b675"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10158,14 +10158,15 @@ function pcImpOSInforme(r, o) {
   var cub = {}; d.cubiertas.forEach(function(c) { cub[String(c.ID_CUB)] = c; });
   var $$ = function(n) { return '$ ' + Math.round(+n || 0).toLocaleString('es-AR'); };
   var estTxt = { TERMINADA: 'Terminada', RECHAZADA: 'No apta / rechazada', EN_PROCESO: 'En proceso', PENDIENTE: 'Sin empezar', RETIRADA: 'Retirada' };
-  var tot = { n: 0, ok: 0, rech: 0, mat: 0, herr: 0, mo: 0, fij: 0, t: 0, min: 0 };
-  r.items.forEach(function(i) { tot.n++; if (i.ESTADO === 'TERMINADA') tot.ok++; if (i.ESTADO === 'RECHAZADA') tot.rech++; tot.mat += i.COSTO.MATERIALES; tot.herr += i.COSTO.HERRAMENTAL; tot.mo += i.COSTO.MO; tot.fij += i.COSTO.FIJOS; tot.t += i.COSTO.TOTAL; tot.min += i.COSTO.MINUTOS; });
+  var tot = { n: 0, ok: 0, rech: 0, mat: 0, herr: 0, mo: 0, fij: 0, t: 0, min: 0, tOk: 0, tRech: 0 };
+  r.items.forEach(function(i) { tot.n++; if (i.ESTADO === 'TERMINADA') { tot.ok++; tot.tOk += i.COSTO.TOTAL; } if (i.ESTADO === 'RECHAZADA') { tot.rech++; tot.tRech += i.COSTO.TOTAL; } tot.mat += i.COSTO.MATERIALES; tot.herr += i.COSTO.HERRAMENTAL; tot.mo += i.COSTO.MO; tot.fij += i.COSTO.FIJOS; tot.t += i.COSTO.TOTAL; tot.min += i.COSTO.MINUTOS; });
   var ac = (r.autoclave || [])[0];
   var cerrada = o.ESTADO === 'CERRADA';
   var h = pcEncImp('ORDEN DE SERVICIO · INFORME ' + (cerrada ? 'FINAL (CERRADA)' : 'PARCIAL (EN PROCESO)'), o.NRO_OT) +
     '<div class="dat"><div><b>Línea</b>' + pcEsc(o.LINEA) + '</div><div><b>Armada</b>' + fmtD(o.FECHA) + '</div><div><b>Cerrada</b>' + (o.FECHA_CIERRE ? fmtD(o.FECHA_CIERRE) : '—') + '</div><div><b>Responsable</b>' + pcEsc(o.RESPONSABLE || '—') + '</div>' +
     '<div><b>Cubiertas</b>' + tot.n + ' · terminadas ' + tot.ok + ' · no aptas ' + tot.rech + '</div><div><b>Autoclave</b>' + (ac ? fmtD(ac.INICIO) + (ac.MINUTOS ? ' · ' + Math.round(ac.MINUTOS) + ' min' : '') + (ac.OPERARIO ? ' · ' + pcEsc(ac.OPERARIO) : '') : '—') + '</div>' +
-    '<div><b>Costo total</b>' + $$(tot.t) + '</div><div><b>Costo promedio</b>' + (tot.ok ? $$(tot.t / tot.ok) : '—') + '</div></div>' +
+    '<div><b>Costo total</b>' + $$(tot.t) + '</div><div><b>Costo de las terminadas</b>' + $$(tot.tOk) + (tot.ok ? ' · ' + $$(tot.tOk / tot.ok) + ' c/u' : '') + '</div>' +
+    '<div><b>Costo de los rechazos</b>' + $$(tot.tRech) + (tot.rech ? ' (' + tot.rech + ')' : '') + '</div><div><b>Promedio por terminada con los rechazos</b>' + (tot.ok ? $$((tot.tOk + tot.tRech) / tot.ok) : '—') + '</div></div>' +
     '<h2>Resumen por cubierta</h2><table class="res"><colgroup><col style="width:3%"><col style="width:9%"><col style="width:17%"><col style="width:9%"><col style="width:9%"><col style="width:8%"><col style="width:8%"><col style="width:5%"><col style="width:5%"><col style="width:7%"><col style="width:6%"><col style="width:6%"><col style="width:7%"><col style="width:8%"></colgroup><thead><tr><th>#</th><th>Marca</th><th>Cliente</th><th>OT · boleta</th><th>Medida</th><th>Trabajo</th><th>Resultado</th><th class="n">Est.</th><th class="n">Min.</th><th class="n">Materiales</th><th class="n">Herram.</th><th class="n">M. obra</th><th class="n">Fijos</th><th class="n">Total</th></tr></thead><tbody>' +
     r.items.map(function(i, k) { var c = cub[String(i.ID_CUB)] || {}; return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(i.MARCA) + '</b>' + (i.ROL === 'SUPLENTE' ? ' (sup.)' : '') + '</td><td>' + pcEsc(i.CLIENTE || c.CLIENTE || '') + '</td><td>' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + (c.NRO_MANUAL ? ' · ' + pcEsc(c.NRO_MANUAL) : '') + '</td><td>' + pcEsc(i.MEDIDA || '') + '</td><td>' + pcEsc(i.TRABAJO || '') + '</td>' +
       '<td>' + pcEsc(estTxt[i.ESTADO] || i.ESTADO) + (i.PASADA > 1 ? ' · reproceso' : '') + '</td><td class="n">' + i.HECHAS.length + '/' + ests.length + '</td><td class="n">' + (i.COSTO.MINUTOS ? Math.round(i.COSTO.MINUTOS) : '') + '</td><td class="n">' + $$(i.COSTO.MATERIALES) + '</td><td class="n">' + $$(i.COSTO.HERRAMENTAL) + '</td><td class="n">' + $$(i.COSTO.MO) + '</td><td class="n">' + $$(i.COSTO.FIJOS) + '</td><td class="n"><b>' + $$(i.COSTO.TOTAL) + '</b></td></tr>'; }).join('') +
@@ -10632,6 +10633,7 @@ function pcPintarOT() {
   var h = '<div class="card mt3"><div class="card-hd"><span class="card-title">' + pcEsc(o.NRO_OT) + ' · ' + pcEsc(o.LINEA) + ' · tope ' + o.TOPE + ' + ' + o.SUPLENTES_MAX + ' suplentes ' + pcBadge(o.ESTADO) + '</span>' +
     '<span class="flex gap2">' + (abierta && ot.soyEncargado ? '<button class="btn btn-s btn-sm" onclick="pcTiempos()"><i class="fas fa-stopwatch"></i> Tiempos</button>' : '') +
     '<button class="btn btn-s btn-sm" onclick="pcImpOS(' + o.ID_OT + ')"><i class="fas fa-print"></i> Imprimir</button>' +
+    (o.ESTADO === 'CERRADA' ? '<button class="btn btn-p btn-sm" onclick="pcRemitos(' + o.ID_OT + ')"><i class="fas fa-file-alt"></i> Remitos</button>' : '') +
     (abierta && pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" onclick="pcCerrarOT()">Cerrar OT</button>' : '') +
     (abierta && pcPuede('ANULAR') ? '<button class="btn btn-s btn-sm" onclick="pcAnularOT()">Anular OT</button>' : '') + '</span></div>' +
     (o.OBSERVACIONES ? '<div class="tdim" style="padding:0 14px;font-size:12px">' + pcEsc(o.OBSERVACIONES) + '</div>' : '') +
@@ -10753,7 +10755,28 @@ async function pcTerminar(idCub, res) {
 }
 async function pcPromover(idCub) { var r = await gsRun('gsPC_PromoverSuplente', PC_.ot.ot.ID_OT, idCub); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Pasó a titular ✓', 'g'); pcAbrirOT(PC_.ot.ot.ID_OT); }
 async function pcRetirar(idCub) { if (!confirm('¿Sacar la cubierta de la OT? Vuelve a espera.')) return; var r = await gsRun('gsPC_RetirarCubierta', PC_.ot.ot.ID_OT, idCub, 'sacada de la OT'); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Volvió a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
-async function pcCerrarOT() { var r = await gsRun('gsPC_CerrarOT', PC_.ot.ot.ID_OT); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT cerrada ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
+async function pcCerrarOT() { var id = PC_.ot.ot.ID_OT, r = await gsRun('gsPC_CerrarOT', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT cerrada ✓ · ' + ((r.REMITOS || []).length) + ' remito(s) de entrega', 'g'); await pcRecargar(); await pcAbrirOT(id); if ((r.REMITOS || []).length) pcRemitosLista(r.REMITOS); }
+// ── Remitos de entrega: uno por cliente, se arman solos al cerrar la orden de servicio ──
+async function pcRemitos(idOt) { var r = await gsRun('gsPC_Remitos', idOt); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } if (!(r.REMITOS || []).length) { toast('Esta orden no tiene remitos', 'r2'); return; } pcRemitosLista(r.REMITOS); }
+function pcRemitosLista(rs) {
+  window.PC_REM = rs;
+  showModal('<div class="mh"><span class="mt">Remitos de entrega</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><table><thead><tr><th>Remito</th><th>Cliente</th><th class="tr">Terminadas</th><th class="tr">Devueltas sin trabajo</th><th></th></tr></thead><tbody>' +
+    rs.map(function(x, i) { return '<tr><td class="mono"><b>' + pcEsc(x.NRO) + '</b></td><td>' + pcEsc(x.CLIENTE) + '</td><td class="tr">' + x.N_TERMINADAS + '</td><td class="tr">' + x.N_DEVUELTAS + '</td><td><button class="btn btn-p btn-sm" onclick="pcImpRemito(' + i + ')"><i class="fas fa-print"></i> Imprimir</button></td></tr>'; }).join('') +
+    '</tbody></table></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
+}
+function pcImpRemito(i) {
+  var x = window.PC_REM[i]; if (!x) return;
+  var ter = x.ITEMS.filter(function(t) { return t.RESULTADO === 'TERMINADA'; }), dev = x.ITEMS.filter(function(t) { return t.RESULTADO !== 'TERMINADA'; });
+  var fila = function(t, k) { return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(t.MARCA) + '</b></td><td>' + pcEsc(t.DOT) + '</td><td>' + pcEsc(t.MEDIDA) + '</td><td>' + pcEsc(t.FABRICANTE) + '</td><td>' + pcEsc(t.TRABAJO) + (t.REPROCESO ? ' (con corrección)' : '') + '</td><td>' + pcEsc(t.OTRAB) + (t.BOLETA ? ' · boleta ' + pcEsc(t.BOLETA) : '') + '</td>' + (t.RESULTADO === 'TERMINADA' ? '' : '<td>' + pcEsc(t.MOTIVO) + '</td>') + '<td class="ck">☐</td></tr>'; };
+  var h = pcEncImp('REMITO DE ENTREGA', x.NRO) +
+    '<div class="dat"><div><b>Cliente</b>' + pcEsc(x.CLIENTE) + '</div><div><b>Fecha</b>' + fmtD(x.FECHA) + '</div><div><b>Orden de servicio</b>' + pcEsc(x.NRO_OT) + '</div><div><b>Cubiertas</b>' + x.ITEMS.length + '</div>' +
+    (x.CUIT ? '<div><b>CUIT</b>' + pcEsc(x.CUIT) + '</div>' : '') + (x.DIRECCION ? '<div><b>Dirección</b>' + pcEsc(x.DIRECCION) + '</div>' : '') + (x.TELEFONO ? '<div><b>Teléfono</b>' + pcEsc(x.TELEFONO) + '</div>' : '') + '</div>' +
+    (ter.length ? '<h2>Cubiertas terminadas (' + ter.length + ')</h2><table><thead><tr><th>#</th><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Marca casco</th><th>Trabajo</th><th>Orden de trabajo</th><th class="ck">Recibe</th></tr></thead><tbody>' + ter.map(fila).join('') + '</tbody></table>' : '') +
+    (dev.length ? '<h2>Cubiertas que se devuelven sin trabajo (' + dev.length + ')</h2><table><thead><tr><th>#</th><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Marca casco</th><th>Trabajo pedido</th><th>Orden de trabajo</th><th>Motivo</th><th class="ck">Recibe</th></tr></thead><tbody>' + dev.map(fila).join('') + '</tbody></table>' : '') +
+    '<div class="nota">Documento interno de entrega de cubiertas del cliente. No válido como factura.</div>' +
+    '<div class="firmas"><div>Entregó (Vulcan Tread)</div><div>Recibió conforme (cliente) · Aclaración y DNI</div></div>';
+  pcImprimir('Remito ' + x.NRO + ' ' + x.CLIENTE, h);
+}
 async function pcAnularOT() { var m = prompt('Motivo de la anulación de la OT:'); if (m === null) return; var r = await gsRun('gsPC_AnularOT', PC_.ot.ot.ID_OT, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT anulada: las cubiertas volvieron a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
 function pcVerCosto(idCub) {
   var i = PC_.ot.items.filter(function(x) { return String(x.ID_CUB) === String(idCub); })[0], c = i.COSTO;
@@ -11345,10 +11368,14 @@ async function puRetDevolver() {
 }
 function puNuevaFila(l) { return { l: l, real: '', ok: false, no: false, motivo: '', pieza: '', sinNro: false, idReal: '', reemp: false }; }
 function puDif(r) { var v = puN(r.real); return r.l.CANTIDAD ? (v - r.l.CANTIDAD) / r.l.CANTIDAD : 0; }
+// Insumo a medir (sin cantidad en la receta, de un trabajo extra o agregado fuera de receta): hay que poner cuánto se usó; solo un SUPER lo deja en 0
+function puMedir(l) { return !!(PU_.f && PU_.f.medirObligatorio && l.TIPO_LINEA !== 'HERRAMENTAL' && l.ID_INSUMO && (l.EXTRA || l.ADIC || !l.CANTIDAD)); }
+function puSuper() { return !!(PU_.f && PU_.f.soySuper); }
 function puResuelta(r) {
-  if (r.no) return !!r.motivo;
+  if (r.no) return !!r.motivo && (!puMedir(r.l) || puSuper());
   if (r.l.TIPO_LINEA === 'HERRAMENTAL') return !!(r.pieza || r.sinNro);
   if (!r.ok) return false;
+  if (puMedir(r.l) && !(puN(r.real) > 0) && !puSuper()) return false;
   return Math.abs(puDif(r)) <= (PU_.d.tolerancia || 0) + 1e-9 || !!r.motivo;
 }
 function puSinStock(l) { return l.TIPO_LINEA !== 'HERRAMENTAL' && l.ID_INSUMO && l.STOCK !== null && l.STOCK !== undefined && Number(l.STOCK) <= 0; }
@@ -11358,7 +11385,7 @@ function puFilaHTML(r, k) {
   var nombre = r.reemp && r.idReal ? puNomIns(r.idReal) : l.NOMBRE;
   var h = '<div class="pu-row ' + cls + '" data-k="' + k + '"><div><div class="n">' + puEsc(nombre) + '</div>' +
     '<div class="c">' + puEsc(r.reemp ? 'REEMPLAZA A ' + l.NOMBRE : (l.ID_INSUMO || 'sin vincular')) + (l.STOCK !== null && l.TIPO_LINEA !== 'HERRAMENTAL' ? ' · stock ' + puF(l.STOCK) + ' ' + puEsc(l.UNIDAD) : '') + '</div>' +
-    '<div class="rec">' + (l.TIPO_LINEA !== 'HERRAMENTAL' && !l.CANTIDAD ? '<b>Sin cantidad todavía: medí lo que usaste</b> (si no se usó, poné 0)' : 'Receta: <b>' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : puF(l.CANTIDAD) + ' ' + puEsc(l.UNIDAD)) + '</b>') +
+    '<div class="rec">' + (l.ADIC ? '<b>Agregado fuera de la receta</b>: poné cuánto usaste' : (puMedir(l) ? '<b>Medí lo que usaste</b> (obligatorio' + (puSuper() ? '; como SUPER podés dejarlo en 0' : ': solo un usuario SUPER puede dejarlo en 0') + ')' : (l.TIPO_LINEA !== 'HERRAMENTAL' && !l.CANTIDAD ? '<b>Sin cantidad todavía: medí lo que usaste</b> (si no se usó, poné 0)' : 'Receta: <b>' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : puF(l.CANTIDAD) + ' ' + puEsc(l.UNIDAD)) + '</b>'))) +
     (!l.ID_ESTACION && l.SUGERIDA === puE() ? ' <span class="pu-star">★ suele usarse acá</span>' : '') + '</div></div><div class="pu-act">';
   if (r.no) h += '<button class="pu-btn pu-min" data-a="deshacer">Deshacer</button>';
   else if (l.TIPO_LINEA === 'HERRAMENTAL') {
@@ -11379,8 +11406,10 @@ function puFilaHTML(r, k) {
     h += '<span style="color:var(--warn);font-weight:700">⚠ ' + (puDif(r) > 0 ? '+' : '') + Math.round(puDif(r) * 100) + '% contra la receta. ¿Por qué?</span>' +
       PU_MOTIVOS.map(function(m) { return '<button class="pu-chip ' + (r.motivo === m ? 'sel' : '') + '" data-a="motivo" data-v="' + puEsc(m) + '">' + puEsc(m) + '</button>'; }).join('');
   } else if (puResuelta(r)) h += '<span style="color:var(--success);font-weight:700">✓ ' + (l.TIPO_LINEA === 'HERRAMENTAL' ? (r.sinNro ? 'Sin número de pieza' : 'Pieza ' + puEsc(puCodPieza(r.pieza))) : puF(puN(r.real)) + ' ' + puEsc(l.UNIDAD)) + '</span>';
-  if (!r.no) h += '<button class="pu-btn pu-min" data-a="nouso">No se usó</button>';
+  if (l.ADIC) h += '<button class="pu-btn pu-min" data-a="quitar">Quitar</button>';
+  else if (!r.no && (!puMedir(l) || puSuper())) h += '<button class="pu-btn pu-min" data-a="nouso">No se usó</button>';
   if (!r.no && !l.ID_ESTACION) h += '<button class="pu-btn pu-min" data-a="volver">No es de acá</button>';
+  if (!r.no && r.ok && puMedir(l) && !(puN(r.real) > 0) && !puSuper()) h += '<span style="color:var(--danger);font-weight:700">Poné la cantidad que usaste (mayor a 0)</span>';
   return h + '</div></div>';
 }
 function puPiezaTomada(id, fila) { return PU_.rows.some(function(r) { return r !== fila && String(r.pieza) === String(id); }); }
@@ -11432,6 +11461,7 @@ function puFicha() {
     var listos = PU_.rows.filter(puResuelta).length;
     h += '<div class="card pu-grilla"><div class="card-hd"><span class="card-title">Insumos de esta estación</span>' +
       '<span style="display:flex;gap:8px;align-items:center"><span class="badge ' + (listos === PU_.rows.length ? 'b-green' : 'b-red') + '">' + listos + ' de ' + PU_.rows.length + ' insumos listos</span>' +
+      (PU_.rows.some(function(r) { return !r.no && !r.ok && !r.reemp && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && !puSinStock(r.l); }) ? '<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="puTodoReceta()">✓ Todo como la receta</button>' : '') +
       (PU_.pend.length ? '<button class="btn btn-p btn-sm" onclick="PU_.verOtros=true;puFicha()"><i class="fas fa-plus"></i> Agregar</button>' : '') + '</span></div>' +
       '<div class="tw"><table><thead><tr><th>#</th><th>Insumo</th><th class="tr">Receta</th><th class="tr">Usado</th><th>Estado</th><th></th></tr></thead><tbody>' +
       PU_.rows.map(puLinHTML).join('') + '</tbody></table></div></div>';
@@ -11446,7 +11476,7 @@ function puFicha() {
         '<button class="pu-btn pu-add" onclick="puAgregar(' + i + ')">+ Lo uso acá</button></div>';
     }).join('') + '</div>';
   }
-  if (!PU_.ctrl) h += '<div style="display:flex;flex-wrap:wrap;gap:10px"><button class="pu-btn pu-rep" onclick="puReemplazo()">↺ Usé otro insumo</button>' +
+  if (!PU_.ctrl) h += '<div style="display:flex;flex-wrap:wrap;gap:10px"><button class="pu-btn pu-add" onclick="puAdicional()">+ Usé algo que no está en la receta</button><button class="pu-btn pu-rep" onclick="puReemplazo()">↺ Usé otro insumo</button>' +
     '<button class="pu-btn pu-min" onclick="puReut()">♻ Saqué banda para reutilizar</button>' +
     '<button class="pu-btn pu-min" onclick="puNoAplica()">⊘ No pasa por esta estación</button>' +
     '<button class="pu-btn pu-min" onclick="puFalla()">' + (PU_.res === 'FALLA' ? '⚠ Hubo una falla: ' + puEsc(PU_.obs) : 'Marcar una falla') + '</button></div>';
@@ -11599,13 +11629,13 @@ function puLinHTML(r, k) {
   var usado = '—', est;
   if (r.no) { usado = '—'; est = '<span class="badge b-gray">No se usó</span>'; }
   else if (l.TIPO_LINEA === 'HERRAMENTAL') { if (res) usado = puEsc(r.sinNro ? 'Sin número' : String(puCodPieza(r.pieza)).replace(/^.*#/, '#')); est = res ? '<span class="badge b-green">✓ Listo</span>' : '<span class="badge b-red">Falta</span>'; }
-  else if (r.ok) { usado = puF(puN(r.real)) + ' ' + puEsc(l.UNIDAD); est = res ? '<span class="badge b-green">✓ Listo</span>' : '<span class="badge b-orange">Falta motivo</span>'; }
+  else if (r.ok) { usado = puF(puN(r.real)) + ' ' + puEsc(l.UNIDAD); est = res ? '<span class="badge b-green">✓ Listo</span>' : (puMedir(l) && !(puN(r.real) > 0) ? '<span class="badge b-red">Falta cantidad</span>' : '<span class="badge b-orange">Falta motivo</span>'); }
   else est = '<span class="badge b-red">Falta</span>';
   return '<tr class="pu-lin ' + cls + '" data-k="' + k + '" onclick="puAbrirFila(' + k + ')">' +
     '<td class="mono tc" style="font-size:11px">' + (k + 1) + '</td>' +
-    '<td style="font-size:12px"><span class="n">' + puEsc(nombre) + '</span>' + (r.reemp ? '<div class="tdim" style="font-size:10px">↺ reemplaza a ' + puEsc(l.NOMBRE) + '</div>' : '') +
+    '<td style="font-size:12px"><span class="n">' + puEsc(nombre) + '</span>' + (l.ADIC ? '<div class="tdim" style="font-size:10px">+ fuera de receta</div>' : '') + (r.reemp ? '<div class="tdim" style="font-size:10px">↺ reemplaza a ' + puEsc(l.NOMBRE) + '</div>' : '') +
     (!l.ID_ESTACION && l.SUGERIDA === puE() ? '<div style="font-size:10px"><span class="pu-star" style="font-size:10px">★ suele usarse acá</span></div>' : '') + '</td>' +
-    '<td class="mono tr" style="white-space:nowrap">' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : puF(l.CANTIDAD) + ' ' + puEsc(l.UNIDAD)) + '</td>' +
+    '<td class="mono tr" style="white-space:nowrap">' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : (l.ADIC ? '—' : (puMedir(l) ? 'medir' : puF(l.CANTIDAD) + ' ' + puEsc(l.UNIDAD)))) + '</td>' +
     '<td class="mono tr' + (res && !r.no ? ' tgreen' : '') + '" style="white-space:nowrap">' + usado + '</td>' +
     '<td>' + est + '</td>' +
     '<td style="white-space:nowrap"><button class="btn btn-xs btn-s" onclick="event.stopPropagation();puAbrirFila(' + k + ')" title="Modificar"><i class="fas fa-edit"></i></button></td></tr>';
@@ -11637,11 +11667,39 @@ function puPintarFila(k) {
       if (a === 'sinnro') { r.sinNro = !r.sinNro; r.pieza = ''; if (r.sinNro) return puCerrarFila(); }
       if (a === 'deshacer') { r.no = false; r.motivo = ''; }
       if (a === 'volver') { PU_.rows.splice(PU_.rows.indexOf(r), 1); PU_.pend.push(r.l); return puCerrarFila(); }
+      if (a === 'quitar') { PU_.rows.splice(PU_.rows.indexOf(r), 1); return puCerrarFila(); }
       if (a === 'otro') { puReemplazo(r); return; }
       if (a === 'nouso') { closeModal(); puElegir('¿Por qué no se usó ' + r.l.NOMBRE + '?', PU_NOUSO, function(m) { r.no = true; r.motivo = m; r.reemp = false; puFicha(); }); return; }
       puFicha(); puPintarFila(k);
     };
   });
+}
+// Pone la cantidad de la receta en todos los insumos que todavía no se cargaron (los que tienen cantidad y hay stock)
+function puTodoReceta() {
+  PU_.rows.forEach(function(r) { if (!r.no && !r.ok && !r.reemp && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && !puSinStock(r.l)) { r.real = puF(r.l.CANTIDAD); r.ok = true; r.motivo = ''; } });
+  puFicha();
+}
+// Insumo que no está en la receta: se elige de los que hay en stock y se pone cuánto se usó (no pide clave; queda registrado)
+var puAdicN = 0;
+function puAdicional() {
+  var hay = (PU_.d.insumos || []).filter(function(x) { return PU_.f.stockIns && PU_.f.stockIns[x.ID_INSUMO] > 0; });
+  showModal('<div class="mh"><span class="mt">Usé algo que no está en la receta</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
+    '<label>Insumo (escribí código o nombre: COJIN, CORDON, FLUX…)<input id="pu-a-ins" list="pu-a-list" autocomplete="off"><datalist id="pu-a-list">' + hay.map(function(x) { return '<option value="' + puEsc(x.ID_INSUMO) + '">' + puEsc(x.NOMBRE_INSUMO) + ' · hay ' + puF(PU_.f.stockIns[x.ID_INSUMO]) + ' ' + puEsc(x.UNIDAD) + '</option>'; }).join('') + '</datalist></label>' +
+    '<label>Cuánto usaste<input id="pu-a-cant" inputmode="decimal" autocomplete="off"></label>' +
+    '<label>Para qué (opcional)<input id="pu-a-mot" autocomplete="off" placeholder="Ej: refuerzo del talón"></label>' +
+    '<div class="tdim" style="font-size:14px">Solo aparecen los insumos que hay en stock. Se descuenta del stock y suma al costo de la cubierta.</div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pu-a-ok">Agregar</button></div>');
+  $id('pu-a-ok').onclick = function() {
+    var id = $v('pu-a-ins').trim().toUpperCase(), cant = puN($v('pu-a-cant'));
+    var x = hay.filter(function(i) { return i.ID_INSUMO.toUpperCase() === id; })[0];
+    if (!x) { toast('Elegí un insumo de la lista', 'r2'); return; }
+    if (!(cant > 0)) { toast('Poné cuánto usaste', 'r2'); return; }
+    if (cant > PU_.f.stockIns[x.ID_INSUMO] + 1e-9) { toast('No hay tanto: hay ' + puF(PU_.f.stockIns[x.ID_INSUMO]) + ' ' + x.UNIDAD, 'r2'); return; }
+    puAdicN++;
+    var r = puNuevaFila({ ID_DET: 'NUEVO-' + puAdicN, ID_INSUMO: x.ID_INSUMO, NOMBRE: x.NOMBRE_INSUMO, CANTIDAD: 0, UNIDAD: x.UNIDAD, TIPO_LINEA: 'INSUMO', ID_ESTACION: puE(), STOCK: PU_.f.stockIns[x.ID_INSUMO], ADIC: true });
+    r.real = puF(cant); r.ok = true; r.motivo = $v('pu-a-mot').trim();
+    PU_.rows.push(r); closeModal(); puFicha();
+  };
 }
 function puAgregar(i) { var l = PU_.pend.splice(i, 1)[0]; PU_.rows.push(puNuevaFila(l)); PU_.verOtros = false; puFicha(); puAbrirFila(PU_.rows.length - 1); }
 function puVolver() { puPararReloj(); PU_.vista = 'lista'; PU_.f = null; PU_.estF = ''; puCargar(); }
@@ -11724,7 +11782,7 @@ function puFaltantes() {
   if (PU_.insp) {
     var I = PU_.insp;
     if (I.apta === null && PU_.f.inspeccion.obligatoria) f.push('decir si es APTA o NO APTA');
-    if (I.apta === true && !I.banda) f.push('elegir la banda');
+    if (I.apta === true && !I.banda && !PU_.f.sinBanda) f.push('elegir la banda');
     if (I.apta === true && I.parches.some(function(p) { return !p.id || !(puN(p.cant) > 0); })) f.push('completar los parches');
     if (I.apta === false) {
       if (!I.motivo) f.push('elegir por qué no es apta');
@@ -11751,8 +11809,9 @@ function puPieFicha() {
 async function puConfirmar() {
   if (PU_.ctrl) return puCtrlConfirmar();
   var b = $id('pu-ok'); if (b.disabled) return;
-  var f = PU_.f, cons = [], noAp = PU_.res === 'NO_APLICA';
+  var f = PU_.f, cons = [], adic = [], noAp = PU_.res === 'NO_APLICA';
   if (!noAp) PU_.rows.forEach(function(r) {
+    if (r.l.ADIC) { adic.push({ ID_INSUMO: r.l.ID_INSUMO, REAL: r.real, MOTIVO: r.motivo }); return; }
     if (r.no) cons.push({ ID_DET: r.l.ID_DET, NO_USO: 1, MOTIVO: r.motivo });
     else if (r.l.TIPO_LINEA === 'HERRAMENTAL') cons.push({ ID_DET: r.l.ID_DET, ID_PIEZA: r.pieza || '' });
     else cons.push({ ID_DET: r.l.ID_DET, ID_INSUMO: r.reemp ? r.idReal : '', REAL: r.real, MOTIVO: r.motivo || (r.reemp ? 'Reemplazo en la estación' : '') });
@@ -11766,7 +11825,7 @@ async function puConfirmar() {
   b.disabled = true; b.textContent = 'Guardando…';
   try {
     var r = await gsRun('gsPC_Registrar', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE(), RESULTADO: PU_.res, OBSERVACION: PU_.obs, OPERARIO: PU_.operF || PU_.oper,
-      CONSUMOS: cons, MINUTOS: PU_.d.tiempoOperario && !noAp ? Math.round(PU_.seg / 60 * 100) / 100 : '', AUTORIZA: noAp ? null : aut, INSPECCION: insp, SOBRANTE: PU_.sobra || 'VUELVE' });
+      CONSUMOS: cons, ADICIONALES: adic, MINUTOS: PU_.d.tiempoOperario && !noAp ? Math.round(PU_.seg / 60 * 100) / 100 : '', AUTORIZA: noAp ? null : aut, INSPECCION: insp, SOBRANTE: PU_.sobra || 'VUELVE' });
     if ($id('pu-aut-c')) $id('pu-aut-c').value = '';
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); b.disabled = false; b.textContent = '✓ Confirmar paso'; return; }
     b.textContent = '✓ Confirmar paso';   // si no, en la estación siguiente el botón queda diciendo "Guardando…"
