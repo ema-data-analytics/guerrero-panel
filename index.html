@@ -12647,7 +12647,8 @@ function twDetalle(p) {
   h += '<div>📞 <b>' + twEsc(p.TELEFONO) + '</b>' + (p.MAIL ? ' · ' + twEsc(p.MAIL) : '') + (p.CUIT_DNI ? ' · CUIT/DNI ' + twEsc(p.CUIT_DNI) : '') + '</div>';
   if (p.ENTREGA === 'ENVIO') h += '<div>📍 ' + twEsc(p.DIRECCION) + ', ' + twEsc(p.LOCALIDAD) + (p.PROVINCIA ? ', ' + twEsc(p.PROVINCIA) : '') + (p.CP ? ' (' + twEsc(p.CP) + ')' : '') + '</div>';
   if (p.NOTA) h += '<div>💬 ' + twEsc(p.NOTA) + '</div>';
-  if (p.PAGO_REF || p.ESTADO === 'PAGO_INFORMADO') h += '<div class="tw-caja">El cliente avisó que pagó' + (p.PAGO_FECHA ? ' el ' + twFecha(p.PAGO_FECHA) : '') + (p.PAGO_REF ? ': "' + twEsc(p.PAGO_REF) + '"' : '') + '. Revisá la cuenta antes de marcarlo pagado.</div>';
+  if (p.ESTADO === 'PAGO_INFORMADO') h += '<div class="tw-caja">El cliente avisó que pagó' + (p.PAGO_FECHA ? ' el ' + twFecha(p.PAGO_FECHA) : '') + (p.PAGO_REF ? ': "' + twEsc(p.PAGO_REF) + '"' : '') + '. Revisá la cuenta antes de marcarlo pagado.</div>';
+  else if (p.PAGO_REF) h += '<div>📝 Aviso del cliente: "' + twEsc(p.PAGO_REF) + '"</div>';
   if (p.MEDIO_PAGO && p.ESTADO !== 'PAGO_INFORMADO') h += '<div>💳 Pagó con: <b>' + twEsc(p.MEDIO_PAGO.replace('_', ' ')) + '</b>' + (p.PAGO_FECHA ? ' · ' + twFecha(p.PAGO_FECHA) : '') + '</div>';
   if (p.ENTREGA === 'ENVIO' && (p.ESTADO === 'A_COTIZAR' || p.ESTADO === 'ESPERANDO_PAGO')) {
     h += '<div class="tw-caja"><b>Envío.</b> Poné cuánto se le cobra al cliente. Si el flete lo paga él al transporte, dejá 0 y aclaralo en el detalle.</div>' +
