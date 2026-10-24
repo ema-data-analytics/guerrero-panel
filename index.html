@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "91721e42b675"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "1ffaecb18d59"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -8233,6 +8233,7 @@ function buildABMForm(page, d) {
       '<div class="fr"><div class="fg"><label class="fl">CUIT / DNI</label><input id="abm-cuit" class="fi" value="' + v('CUIT_DNI') + '" placeholder="20-12345678-9"/></div>' +
       '<div class="fg"><label class="fl">Condición IVA *</label><select id="abm-cond-iva" class="fs"><option value="">— Cargando... —</option></select></div></div>' +
       '<div class="fg"><label class="fl">Dirección</label><input id="abm-dir" class="fi" value="' + v('DIRECCION') + '"/></div>' +
+      '<div class="fg"><label class="fl">Forma de pago</label><input id="abm-cli-pago" class="fi" value="' + v('CONDICION_PAGO') + '" placeholder="Ej: 0-30-60-90, contado, 30 días"/></div>' +
       '<div class="fg"><label class="fl">Observaciones</label><textarea id="abm-obs" class="fta" rows="2" placeholder="Notas internas...">' + v('OBSERVACIONES') + '</textarea></div>';
   }
   if (page === 'abm-vehiculos') {
@@ -8381,6 +8382,7 @@ async function saveABM() {
         LOCALIDAD:        $v('abm-loc').trim(),
         CUIT_DNI:         $v('abm-cuit').trim(),
         ID_CONDICION_IVA: parseInt($v('abm-cond-iva'))||3,
+        CONDICION_PAGO:   $v('abm-cli-pago').trim(),
         OBSERVACIONES:    ($id('abm-obs')||{}).value||'',
         ACTIVO:           1
       };
@@ -12194,7 +12196,7 @@ async function renderPrecios() {
 }
 // Al mandar por WhatsApp el celular sale de la app; si al volver la página se recarga, se vuelve a la misma búsqueda y posición.
 function pnGuardar() {
-  try { sessionStorage.setItem('pn_estado', JSON.stringify({ q: PN_.q, rubro: PN_.rubro, marca: PN_.marca, promo: PN_.promo, max: PN_.max, y: window.scrollY || 0, sel: PN_.sel, orden: PN_.orden, cli: PN_.cli, lista: PN_.lista })); } catch (e) {}
+  try { sessionStorage.setItem('pn_estado', JSON.stringify({ q: PN_.q, rubro: PN_.rubro, marca: PN_.marca, promo: PN_.promo, max: PN_.max, y: window.scrollY || 0, sel: PN_.sel, orden: PN_.orden, cli: PN_.cli, pago: PN_.pago, lista: PN_.lista })); } catch (e) {}
 }
 function pnRestaurar() {
   if (PN_.restaurado) return 0;
@@ -12202,7 +12204,7 @@ function pnRestaurar() {
   try {
     var e = JSON.parse(sessionStorage.getItem('pn_estado') || 'null');
     if (!e) return 0;
-    PN_.q = e.q || ''; PN_.rubro = e.rubro || ''; PN_.marca = e.marca || ''; PN_.promo = e.promo || 0; PN_.max = e.max || 40; PN_.sel = e.sel || {}; PN_.orden = e.orden || []; PN_.cli = e.cli || ''; PN_.lista = e.lista || '30%';
+    PN_.q = e.q || ''; PN_.rubro = e.rubro || ''; PN_.marca = e.marca || ''; PN_.promo = e.promo || 0; PN_.max = e.max || 40; PN_.sel = e.sel || {}; PN_.orden = e.orden || []; PN_.cli = e.cli || ''; PN_.pago = e.pago || ''; PN_.lista = e.lista || '30%';
     return e.y || 0;
   } catch (x) { return 0; }
 }
@@ -12381,13 +12383,29 @@ function pnHoja() {
       '<div class="pn-q"><button onclick="pnCant(' + x.p.ID_PN + ',-1)">−</button><span>' + x.cant + '</span><button onclick="pnCant(' + x.p.ID_PN + ',1)">+</button></div><div class="st">' + pnPlata(x.sub) + '</div></div>';
   });
   h += '<div class="pn-tot"><span>Total (IVA incluido)</span><b>' + pnPlata(tot) + '</b></div>' +
-    '<input class="pn-cli" id="pn-cli" placeholder="Cliente (opcional)" value="' + pnEsc(PN_.cli) + '" oninput="PN_.cli=this.value;PN_.pdf=null;pnPdfBotones()"/>' +
+    '<input class="pn-cli" id="pn-cli" list="pn-cli-l" autocomplete="off" placeholder="Cliente (buscá o escribí)" value="' + pnEsc(PN_.cli) + '" oninput="pnCliElegir(this.value)"/>' + pnCliLista() +
+    '<input class="pn-cli" id="pn-pago" placeholder="Forma de pago (ej: 0-30-60-90)" value="' + pnEsc(PN_.pago || '') + '" oninput="PN_.pago=this.value;PN_.pagoDe=\'\';PN_.pdf=null;pnGuardar();pnPdfBotones()"/>' +
     '<div class="pn-hb"><button class="wa full" onclick="pnCotWhats()">💬 Mandar texto por WhatsApp</button>' +
     '<button class="pdf" id="pn-pdf-b" onclick="pnCotPdf(this)">📄 Armar PDF</button><button id="pn-pdf-d" onclick="pnCotPdfBajar()" disabled>⬇ Descargar PDF</button>' +
     '<button class="full" onclick="pnVaciar()">🗑 Vaciar cotización</button></div></div>';
   var ov = document.createElement('div'); ov.id = 'pn-ov'; ov.className = 'pn-ov'; ov.onclick = pnHojaCerrar; ov.innerHTML = h;
   document.body.appendChild(ov);
   pnPdfBotones();
+}
+function pnCliLista() {
+  var cs = (PN_.d && PN_.d.CLIENTES) || [], h = '<datalist id="pn-cli-l">';
+  cs.forEach(function(c) { h += '<option value="' + pnEsc(c.N) + '"></option>'; });
+  return h + '</datalist>';
+}
+// Si el nombre coincide con un cliente cargado, trae su forma de pago. El vendedor la puede cambiar (solo para esta cotización).
+function pnCliElegir(v) {
+  PN_.cli = v; PN_.pdf = null;
+  var cs = (PN_.d && PN_.d.CLIENTES) || [], c = null, i;
+  for (i = 0; i < cs.length; i++) if (cs[i].N === v) { c = cs[i]; break; }
+  var pg = $id('pn-pago');
+  if (c && (!PN_.pago || PN_.pagoDe)) { PN_.pago = c.P || ''; PN_.pagoDe = c.N; if (pg) pg.value = PN_.pago; }
+  else if (!c && PN_.pagoDe) { PN_.pago = ''; PN_.pagoDe = ''; if (pg) pg.value = ''; }
+  pnGuardar(); pnPdfBotones();
 }
 function pnHojaCerrar() { var o = $id('pn-ov'); if (o) o.remove(); }
 function pnCant(id, d) {
@@ -12403,7 +12421,7 @@ function pnHoyTxt() { var d = new Date(); return ('0' + d.getDate()).slice(-2) +
 function pnVendedor() { var v = $id('sb-nm'); var t = v ? v.textContent.trim() : ''; return t && t !== 'Usuario' ? t : ''; }
 function pnCotTexto() {
   var its = pnSelItems(), tot = 0;
-  var t = '*Cotización · Vulcan Tread Neumáticos*\n' + pnHoyTxt() + (PN_.cli ? '\nCliente: ' + PN_.cli : '') + '\n';
+  var t = '*Cotización · Vulcan Tread Neumáticos*\n' + pnHoyTxt() + (PN_.cli ? '\nCliente: ' + PN_.cli : '') + (PN_.pago ? '\nForma de pago: ' + PN_.pago : '') + '\n';
   its.forEach(function(x) {
     tot += x.sub;
     t += '\n• ' + x.cant + ' x ' + x.p.MEDIDA + ' ' + x.p.MARCA + ' ' + x.p.DISENO + '\n   ' + pnPlata(x.unit) + ' c/u' + (x.nota ? ' (' + x.nota + ')' : '') + ' · Subtotal ' + pnPlata(x.sub);
@@ -12428,7 +12446,7 @@ function pnCotHtml() {
   return '<div style="width:700px;box-sizing:border-box;padding:24px 26px;font-family:Inter,Arial,sans-serif;color:#1f2937;background:#fff;font-size:13px">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #E8792B;padding-bottom:12px">' +
     '<img src="' + pnEsc(logo) + '" crossorigin="anonymous" style="height:62px"/><div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#14213d">Cotización</div><div style="color:#555">Fecha: ' + pnHoyTxt() + '</div>' + (v ? '<div style="color:#555">Vendedor: ' + pnEsc(v) + '</div>' : '') + '</div></div>' +
-    (PN_.cli ? '<div style="margin:14px 0 4px;font-size:14px"><span style="color:#555">Cliente:</span> <b>' + pnEsc(PN_.cli) + '</b></div>' : '<div style="height:12px"></div>') +
+    (PN_.cli || PN_.pago ? '<div style="margin:14px 0 4px;font-size:14px">' + (PN_.cli ? '<div><span style="color:#555">Cliente:</span> <b>' + pnEsc(PN_.cli) + '</b></div>' : '') + (PN_.pago ? '<div style="margin-top:3px"><span style="color:#555">Forma de pago:</span> <b>' + pnEsc(PN_.pago) + '</b></div>' : '') + '</div>' : '<div style="height:12px"></div>') +
     '<table style="width:100%;border-collapse:collapse;margin-top:8px"><tr><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:left">Cubierta</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:center">Cant.</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">Precio c/u</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">Subtotal</th></tr>' + filas + '</table>' +
     '<div style="display:flex;justify-content:flex-end;margin-top:12px"><div style="min-width:260px;border-top:2px solid #14213d;padding-top:8px">' +
     '<div style="display:flex;justify-content:space-between;color:#555"><span>Subtotal sin IVA</span><span>' + pnPlata(tot / 1.21) + '</span></div>' +
