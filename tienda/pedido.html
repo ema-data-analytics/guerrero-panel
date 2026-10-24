@@ -34,7 +34,7 @@ footer{text-align:center;color:var(--mu);font-size:12px;padding:20px}
 <footer>Vulcan Tread Neumáticos S.R.L. · Salta · <a href="./">Volver a la tienda</a></footer>
 <script>
 var SB='https://igxdgivroxmbuolsdagk.supabase.co', KEY='sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G';
-var T=(location.search.match(/[?&]t=([0-9a-f-]{36})/)||[])[1]||'', NUEVO=/[?&]nuevo=1/.test(location.search), P=null;
+var T=(location.search.match(/[?&]t=([0-9a-f-]{36})/)||[])[1]||'', NUEVO=/[?&]nuevo=1/.test(location.search), WA_ABIERTO=/[?&]wa=1/.test(location.search), P=null;
 function $(id){return document.getElementById(id);}
 function pesos(n){return '$ '+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -59,7 +59,7 @@ function copiar(t,b){try{navigator.clipboard.writeText(t);b.textContent='Copiado
 function pintar(){
   var e=EST[P.estado]||[P.estado,'e1'],h='';
   // Recién hecho: el cliente avisa por WhatsApp (así Vulcan se entera al momento)
-  if(NUEVO&&P.estado!=='CANCELADO')h+='<div class="aviso"><b>✅ Pedido recibido. Último paso:</b><p style="margin:6px 0">Tocá el botón y mandanos el mensaje por WhatsApp. Así te atendemos enseguida.</p><a class="btn w" target="_blank" rel="noopener" href="'+wa(avisoTxt())+'" onclick="avisado()">Avisar a Vulcan Tread por WhatsApp</a></div>';
+  if(NUEVO&&P.estado!=='CANCELADO')h+='<div class="aviso"><b>'+(WA_ABIERTO?'📲 ¿Tocaste ENVIAR en WhatsApp?':'📲 Falta un paso: mandanos el pedido por WhatsApp')+'</b><p style="margin:6px 0">'+(WA_ABIERTO?'Tu pedido nos llega cuando tocás ENVIAR en WhatsApp. Si no se abrió o no lo mandaste, tocá acá:':'Tu pedido nos llega cuando lo mandás por WhatsApp. Tocá el botón y después ENVIAR:')+'</p><a class="btn w" target="_blank" rel="noopener" href="'+wa(avisoTxt())+'" onclick="avisado()">Mandar el pedido por WhatsApp</a></div>';
   h+='<div class="box"><h2>Pedido '+esc(P.nro)+'</h2><div class="mu">'+fecha(P.fecha)+' · '+esc(P.nombre)+' · '+(P.entrega==='ENVIO'?'Envío a '+esc(P.localidad):'Retiro en el local')+'</div><span class="est '+e[1]+'">'+esc(e[0])+'</span></div>';
   h+='<div class="box"><table>';
   for(var i=0;i<P.items.length;i++){var x=P.items[i];h+='<tr><td>'+x.q+' × '+esc(x.d)+'<div class="mu">'+pesos(x.p)+' c/u</div></td><td class="n">'+pesos(x.p*x.q)+'</td></tr>';}

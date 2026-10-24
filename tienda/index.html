@@ -121,7 +121,8 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 <div class="tot">
 <div class="r"><span>Total con IVA</span><span id="tot">$ 0</span></div>
 <div class="err" id="err"></div>
-<button class="btn o" id="bConf" style="width:100%;padding:13px" onclick="confirmar()">Confirmar pedido</button>
+<div class="aviso" id="waNota" style="margin:0 0 8px"><b>📲 Tu pedido nos llega por WhatsApp.</b> Al tocar el botón se abre WhatsApp con el pedido escrito: <b>tocá ENVIAR</b> ahí para que lo recibamos.</div>
+<button class="btn" id="bConf" style="width:100%;padding:14px;background:#25d366;font-size:16px" onclick="confirmar()">Enviar pedido por WhatsApp</button>
 <a class="wa" id="waLink" href="#" target="_blank" rel="noopener">¿Dudas? Escribinos por WhatsApp</a>
 </div></div></div>
 
@@ -231,7 +232,7 @@ function pintarCarro(){
     h+='<div class="it">'+(d.i?'<img src="img/'+esc(d.i)+'">':'')+'<div class="x"><b>'+esc(a.me)+' · '+esc(d.n)+'</b>'+esc(mNom(d.m))+' · '+q+' × '+pesos(a.p)+'<br><b>'+pesos(a.p*q)+'</b></div>'+
     '<div class="qty"><button onclick="cq('+k+',-1)">−</button><input value="'+q+'" readonly><button onclick="cq('+k+',1)">+</button></div><button class="rm" onclick="cq('+k+',-999)">✕</button></div>';}
   $('items').innerHTML=h||'<p class="note" style="padding:20px 0">Todavía no agregaste cubiertas.</p>';
-  $('frm').style.display=n?'block':'none';$('bConf').style.display=n?'block':'none';
+  $('frm').style.display=n?'block':'none';$('bConf').style.display=n?'block':'none';$('waNota').style.display=n?'block':'none';
   $('tot').textContent=pesos(t);$('err').textContent='';
 }
 function cq(k,d){var a=BYID[k];var v=(CAR[k]||0)+d;if(a&&v>a.st){v=a.st;$('err').textContent='No hay más stock de esa medida';}if(v<=0)delete CAR[k];else CAR[k]=v;guardar();cuenta();pintarCarro();}
@@ -239,7 +240,7 @@ function setEnt(e){
   ENT=e;$('eR').className=e==='RETIRO'?'on':'';$('eE').className=e==='ENVIO'?'on':'';
   $('envBox').style.display=e==='ENVIO'?'block':'none';
   var n=$('entNota'),pago='transferencia bancaria'+(CFG.mp?' o Mercado Pago (tarjetas)':'');
-  if(e==='RETIRO')n.innerHTML='Al confirmar te mostramos cómo pagar: '+pago+'. Cuando el pago esté acreditado te avisamos por WhatsApp para que pases a retirarlo.';
+  if(e==='RETIRO')n.innerHTML='Después de mandar el pedido te mostramos cómo pagar: '+pago+'. Cuando el pago esté acreditado te avisamos por WhatsApp para que pases a retirarlo.';
   else if(CFG.envio_modo==='A')n.innerHTML='<b>El flete lo pagás vos a la empresa de transporte</b> cuando lo recibís. Ahora pagás solo las cubiertas ('+pago+') y te avisamos por WhatsApp cuando lo despachamos.';
   else n.innerHTML='<b>Calculamos el costo del envío</b> y te mandamos el total por WhatsApp, con el link para pagar. Ahora no pagás nada.';
   n.style.display='block';
@@ -283,14 +284,24 @@ function confirmar(){
   if(!ENT){e.textContent='Elegí retiro en el local o envío';return;}
   if(ENT==='ENVIO'&&(!$('fDir').value.trim()||!$('fLoc').value.trim())){e.textContent='Para el envío poné dirección y localidad';return;}
   guardarCli();
-  var b=$('bConf');b.disabled=true;b.textContent='Enviando pedido…';
+  // WhatsApp se abre en el mismo toque (si se abre después de esperar al servidor, el celular lo bloquea)
+  var w=null;try{w=window.open('','_blank');}catch(x){w=null;}
+  var b=$('bConf');b.disabled=true;b.textContent='Guardando el pedido…';
   rpc('vt_tienda_pedido_crear',{p:{nombre:$('fNom').value,telefono:$('fTel').value,mail:$('fMail').value,cuit:$('fCuit').value,entrega:ENT,
     direccion:$('fDir').value,localidad:$('fLoc').value,provincia:$('fProv').value,cp:$('fCp').value,nota:$('fNota').value,items:its}},function(err,r){
-    b.disabled=false;b.textContent='Confirmar pedido';
+    b.disabled=false;b.textContent='Enviar pedido por WhatsApp';
+    if(err||!r||!r.ok){if(w)try{w.close();}catch(x){}}
     if(err||!r){e.textContent='No se pudo enviar: '+(err||'sin respuesta')+'. Probá de nuevo.';return;}
     if(!r.ok){e.textContent=r.error||'No se pudo enviar el pedido';cargarVivo();return;}
+    var link=location.href.split('?')[0].split('#')[0].replace(/index\.html$/,'')+'pedido.html?t='+r.token;
+    var t='Hola, hice el pedido '+r.nro+' en la tienda web.';
+    for(var k2 in CAR){var a2=BYID[k2];if(a2)t+='\n• '+CAR[k2]+' x '+a2.me+' '+mNom(dis(a2).m)+' '+dis(a2).n;}
+    t+='\n'+(ENT==='ENVIO'?'Envío a '+$('fLoc').value.trim()+'. Cubiertas: '+pesos(r.total)+' + envío.':'Retiro en el local. Total: '+pesos(r.total)+'.');
+    t+='\nNombre: '+$('fNom').value.trim()+'\nMi pedido: '+link;
+    var u=waUrl(t);
     CAR={};guardar();cuenta();
-    location.href='pedido.html?t='+encodeURIComponent(r.token)+'&nuevo=1';
+    if(w){try{w.location.href=u;}catch(x){w=null;}}
+    location.href='pedido.html?t='+encodeURIComponent(r.token)+'&nuevo=1'+(w?'&wa=1':'');
   });
 }
 chips();filtrar();cuenta();cargarVivo();
