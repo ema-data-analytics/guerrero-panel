@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "b92c0aaf1370"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "bd441ff06c5e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -12683,6 +12683,10 @@ async function twAccion(d, ok) {
     var r = await gsRun('gsWeb_PedidoAccion', d);
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); return; }
     var i; for (i = 0; i < TW_.d.PEDIDOS.length; i++) if (TW_.d.PEDIDOS[i].ID_PEDIDO === r.PEDIDO.ID_PEDIDO) TW_.d.PEDIDOS[i] = r.PEDIDO;
+    // La lista sigue al pedido: si cambió de grupo (ej. pasó a pagado), se muestra ese grupo
+    var gk = ['PEND', 'CURSO', 'FIN'].filter(function(k) { return TW_GRUPOS[k].indexOf(r.PEDIDO.ESTADO) !== -1; })[0];
+    if (TW_.filtro !== 'TODOS' && gk) TW_.filtro = gk;
+    TW_.abierto = r.PEDIDO.ID_PEDIDO;
     toast(ok || 'Guardado', 'g'); twPintar();
   } catch (e) { toast(e.message, 'r2'); }
 }
