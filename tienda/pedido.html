@@ -24,6 +24,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td{padding:7px 0;border
 .dato span{font-size:12px;color:var(--mu)}.dato b{font-size:16px;word-break:break-all}.dato button{border:1px solid var(--li);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}
 input{width:100%;padding:10px;border:1px solid var(--li);border-radius:10px;font-size:16px;margin-top:6px}
 .err{color:var(--bad);font-weight:600;margin-top:6px}
+.aviso{background:#dcfce7;border:2px solid #25d366;border-radius:14px;padding:14px 16px;margin-bottom:12px}.aviso b{font-size:17px}.aviso .btn{font-size:17px;padding:15px}
 footer{text-align:center;color:var(--mu);font-size:12px;padding:20px}
 </style>
 </head>
@@ -33,7 +34,7 @@ footer{text-align:center;color:var(--mu);font-size:12px;padding:20px}
 <footer>Vulcan Tread Neumáticos S.R.L. · Salta · <a href="./">Volver a la tienda</a></footer>
 <script>
 var SB='https://igxdgivroxmbuolsdagk.supabase.co', KEY='sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G';
-var T=(location.search.match(/[?&]t=([0-9a-f-]{36})/)||[])[1]||'', P=null;
+var T=(location.search.match(/[?&]t=([0-9a-f-]{36})/)||[])[1]||'', NUEVO=/[?&]nuevo=1/.test(location.search), P=null;
 function $(id){return document.getElementById(id);}
 function pesos(n){return '$ '+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -57,6 +58,8 @@ function cargar(){
 function copiar(t,b){try{navigator.clipboard.writeText(t);b.textContent='Copiado';}catch(e){window.prompt('Copiá el dato:',t);}}
 function pintar(){
   var e=EST[P.estado]||[P.estado,'e1'],h='';
+  // Recién hecho: el cliente avisa por WhatsApp (así Vulcan se entera al momento)
+  if(NUEVO&&P.estado!=='CANCELADO')h+='<div class="aviso"><b>✅ Pedido recibido. Último paso:</b><p style="margin:6px 0">Tocá el botón y mandanos el mensaje por WhatsApp. Así te atendemos enseguida.</p><a class="btn w" target="_blank" rel="noopener" href="'+wa(avisoTxt())+'" onclick="avisado()">Avisar a Vulcan Tread por WhatsApp</a></div>';
   h+='<div class="box"><h2>Pedido '+esc(P.nro)+'</h2><div class="mu">'+fecha(P.fecha)+' · '+esc(P.nombre)+' · '+(P.entrega==='ENVIO'?'Envío a '+esc(P.localidad):'Retiro en el local')+'</div><span class="est '+e[1]+'">'+esc(e[0])+'</span></div>';
   h+='<div class="box"><table>';
   for(var i=0;i<P.items.length;i++){var x=P.items[i];h+='<tr><td>'+x.q+' × '+esc(x.d)+'<div class="mu">'+pesos(x.p)+' c/u</div></td><td class="n">'+pesos(x.p*x.q)+'</td></tr>';}
@@ -66,6 +69,13 @@ function pintar(){
   h+='<div class="box">'+accion()+'</div>';
   $('m').innerHTML=h;
 }
+function avisoTxt(){
+  var t='Hola, hice el pedido '+P.nro+' en la tienda web. ';
+  for(var i=0;i<P.items.length;i++)t+='\n• '+P.items[i].q+' x '+P.items[i].d;
+  t+='\n'+(P.entrega==='ENVIO'?'Envío a '+P.localidad+'. Cubiertas: '+pesos(P.subtotal)+' + envío.':'Retiro en el local. Total: '+pesos(P.total)+'.');
+  return t+'\nMi pedido: '+location.href.split('&')[0].replace('?nuevo=1','');
+}
+function avisado(){NUEVO=false;try{history.replaceState(null,'','pedido.html?t='+T);}catch(e){}setTimeout(pintar,500);}
 function accion(){
   var t='Hola, te escribo por el pedido '+P.nro+' de la tienda web.';
   if(P.estado==='A_COTIZAR')return '<b>Estamos calculando el costo del envío.</b><p class="mu">Te escribimos por WhatsApp con el total y el link para pagar. No tenés que pagar nada todavía.</p><a class="btn w" target="_blank" rel="noopener" href="'+wa(t)+'">Escribinos por WhatsApp</a>';

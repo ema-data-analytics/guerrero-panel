@@ -290,7 +290,7 @@ function confirmar(){
     if(err||!r){e.textContent='No se pudo enviar: '+(err||'sin respuesta')+'. Probá de nuevo.';return;}
     if(!r.ok){e.textContent=r.error||'No se pudo enviar el pedido';cargarVivo();return;}
     CAR={};guardar();cuenta();
-    location.href='pedido.html?t='+encodeURIComponent(r.token);
+    location.href='pedido.html?t='+encodeURIComponent(r.token)+'&nuevo=1';
   });
 }
 chips();filtrar();cuenta();cargarVivo();
