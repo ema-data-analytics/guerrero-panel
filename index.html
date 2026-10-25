@@ -11350,20 +11350,25 @@ function puRetirar() {
   var ret = PU_.f.retirado || {}, st = PU_.f.stockIns || {};
   var lin = PU_.rows.filter(function(r) { return !r.no && r.l.TIPO_LINEA !== 'HERRAMENTAL' && (r.reemp ? r.idReal : r.l.ID_INSUMO); });
   var vistos = {}, filas = [];
-  lin.forEach(function(r) { var id = r.reemp ? r.idReal : r.l.ID_INSUMO; if (vistos[id]) return; vistos[id] = 1; filas.push({ id: id, nom: r.reemp ? puNomIns(id) : r.l.NOMBRE, un: r.l.UNIDAD, sug: ret[id] ? '' : (r.l.CANTIDAD || '') }); });
+  // Un renglón por insumo: si la receta lo tiene dos veces en la estación, se sugiere la suma
+  lin.forEach(function(r) { var id = r.reemp ? r.idReal : r.l.ID_INSUMO, c = +r.l.CANTIDAD || 0;
+    if (vistos[id] !== undefined) { var f0 = filas[vistos[id]]; if (f0.sug !== '') f0.sug = Math.round(((+f0.sug || 0) + c) * 1000) / 1000; return; }
+    vistos[id] = filas.length; filas.push({ id: id, nom: r.reemp ? puNomIns(id) : r.l.NOMBRE, un: r.l.UNIDAD, sug: ret[id] ? '' : (c || '') }); });
+  // Una sola ventana de retiro aunque se toque dos veces el botón
+  document.querySelectorAll('#modals .mo').forEach(function(x) { if (x.querySelector('#pu-ret-ok')) x.remove(); });
   var m = showModal('<div class="mh"><span class="mt">📦 ¿Cuánto retirás del depósito?</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
     '<div class="tdim" style="font-size:14px;margin-bottom:8px">Viene puesto lo de la receta. Cambialo si llevás más o menos. Lo que no uses vuelve al stock cuando confirmes el paso.</div>' +
     filas.map(function(f) { return '<label style="display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:17px">' + puEsc(f.nom) + ' <span class="tdim" style="font-size:12px">(hay ' + puF(st[f.id] || 0) + ')</span>' +
       '<span style="display:flex;align-items:center;gap:6px"><input class="pu-ret-c" data-id="' + puEsc(f.id) + '" inputmode="decimal" value="' + puEsc(f.sug === '' ? '' : puF(f.sug)) + '" style="width:110px;font-size:18px">' + puEsc(f.un) + '</span></label>'; }).join('') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pu-ret-ok">Retirar</button></div>');
-  $id('pu-ret-ok').onclick = async function() {
-    var items = []; document.querySelectorAll('.pu-ret-c').forEach(function(i) { var v = puN(i.value); if (v > 0) items.push({ ID_INSUMO: i.dataset.id, CANTIDAD: v }); });
+  m.querySelector('#pu-ret-ok').onclick = async function() {
+    var items = []; m.querySelectorAll('.pu-ret-c').forEach(function(i) { var v = puN(i.value); if (v > 0) items.push({ ID_INSUMO: i.dataset.id, CANTIDAD: v }); });
     if (!items.length) { toast('Poné cuánto retirás', 'r2'); return; }
     this.disabled = true;
     try {
       var r = await gsRun('gsPC_RetiroEstacion', { ID_OT: PU_.f.ot.ID_OT, ID_CUB: PU_.f.cub.ID_CUB, ID_ESTACION: puE(), OPERARIO: PU_.oper, ITEMS: items });
       if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); this.disabled = false; return; }
-      PU_.f.retirado = r.RETIRADO; closeModal(); toast('Retiro registrado ✓', 'g'); puFicha();
+      PU_.f.retirado = r.RETIRADO; m.remove(); toast('Retiro registrado ✓', 'g'); puFicha();
     } catch (e) { toast(e.message, 'r2'); this.disabled = false; }
   };
 }
