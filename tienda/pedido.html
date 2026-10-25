@@ -26,6 +26,7 @@ input{width:100%;padding:10px;border:1px solid var(--li);border-radius:10px;font
 .err{color:var(--bad);font-weight:600;margin-top:6px}
 .aviso{background:#dcfce7;border:2px solid #25d366;border-radius:14px;padding:14px 16px;margin-bottom:12px}.aviso b{font-size:17px}.aviso .btn{font-size:17px;padding:15px}
 footer{text-align:center;color:var(--mu);font-size:12px;padding:20px}
+.cuo-cont{font-size:14px;margin:4px 0 8px}.cuo{border:1px solid #d5d9e0;border-radius:10px;padding:8px 10px;margin:8px 0}.cuo-d{font-size:10px;color:#333}.cuo-cft{font-size:50px;font-weight:800;color:#c62828;line-height:1.05}.cuo-n{font-size:11px;color:#666;margin-top:6px}
 </style>
 </head>
 <body>
@@ -37,6 +38,17 @@ var SB='https://igxdgivroxmbuolsdagk.supabase.co', KEY='sb_publishable_dgGGJ5PSV
 var T=(location.search.match(/[?&]t=([0-9a-f-]{36})/)||[])[1]||'', NUEVO=/[?&]nuevo=1/.test(location.search), WA_ABIERTO=/[?&]wa=1/.test(location.search), P=null;
 function $(id){return document.getElementById(id);}
 function pesos(n){return '$ '+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+// Cuotas con recargo (config tienda_cuotas "3:19,6:34"). TEA: tasa que iguala las cuotas mensuales con el precio de contado. CFT = TEA (no hay otros cargos).
+function planesCuotas(txt,P){var out=[],vis={};String(txt||'').split(',').forEach(function(x){var m=/^(\d{1,2}):(\d{1,3}(?:\.\d{1,2})?)$/.exec(String(x).trim());if(!m)return;var n=+m[1],r=+m[2];if(n<2||n>24||r>200||vis[n]||!(P>0))return;vis[n]=1;
+  var T=Math.round(P*(1+r/100)),C=T/n,i=0;
+  if(T>P){var lo=0,hi=1;for(var k=0;k<200;k++){var mid=(lo+hi)/2;var v=C*(1-Math.pow(1+mid,-n))/mid;if(v>P)lo=mid;else hi=mid;}i=(lo+hi)/2;}
+  var tea=(Math.pow(1+i,12)-1)*100;out.push({n:n,r:r,total:T,cuota:Math.round(C),tea:tea,cft:tea});});
+  out.sort(function(a,b){return a.n-b.n;});return out;}
+function pct(x){return x.toFixed(2).replace('.',',')+'%';}
+function cuotasHtml(P,planes,boton){var h='<div class="cuo-cont">Precio de contado (efectivo, transferencia o tarjeta en 1 pago): <b>'+pesos(P)+'</b></div>';
+  planes.forEach(function(p){h+='<div class="cuo"><div class="cuo-d">'+p.n+' cuotas de '+pesos(p.cuota)+' · Total financiado '+pesos(p.total)+' · Precio de contado '+pesos(P)+' · TEA '+pct(p.tea)+'</div><div class="cuo-cft">CFT '+pct(p.cft)+'</div>'+(boton?boton(p):'')+'</div>';});
+  return h+'<div class="cuo-n">Cuotas con tarjeta de crédito a través de Mercado Pago. CFT: costo financiero total efectivo anual. No hay otros cargos.</div>';}
+
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function fecha(ms){var d=new Date(ms);return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
 function post(url,body,cb){
@@ -81,7 +93,12 @@ function accion(){
   if(P.estado==='A_COTIZAR')return '<b>Estamos calculando el costo del envío.</b><p class="mu">Te escribimos por WhatsApp con el total y el link para pagar. No tenés que pagar nada todavía.</p><a class="btn w" target="_blank" rel="noopener" href="'+wa(t)+'">Escribinos por WhatsApp</a>';
   if(P.estado==='ESPERANDO_PAGO'){
     var h='<b>Elegí cómo pagar '+pesos(P.total)+'</b>';
-    if(P.mp)h+='<button class="btn o" id="bMp" onclick="pagarMp()">Pagar con Mercado Pago (tarjetas)</button><div class="err" id="eMp"></div>';
+    if(P.mp){
+      h+='<p style="margin:14px 0 4px"><b>Mercado Pago (tarjetas)</b></p><button class="btn o" onclick="pagarMp(1,this)">Pagar de contado en 1 pago · '+pesos(P.total)+'</button>';
+      var pl=planesCuotas(P.cuotas,P.total);
+      if(pl.length)h+=cuotasHtml(P.total,pl,function(p){return '<button class="btn l" onclick="pagarMp('+p.n+',this)">Pagar en '+p.n+' cuotas</button>';});
+      h+='<div class="err" id="eMp"></div>';
+    }
     h+='<p style="margin:14px 0 4px"><b>Transferencia bancaria</b></p>';
     if(P.alias||P.cbu){
       if(P.alias)h+='<div class="dato"><div><span>Alias</span><br><b>'+esc(P.alias)+'</b></div><button onclick="copiar(\''+esc(P.alias)+'\',this)">Copiar</button></div>';
@@ -109,10 +126,10 @@ function informar(){
     cargar();
   });
 }
-function pagarMp(){
-  var b=$('bMp');b.disabled=true;b.textContent='Abriendo Mercado Pago…';
-  post(SB+'/functions/v1/tienda-mp',{accion:'crear',t:T},function(err,r){
-    if(err||!r||!r.ok||!r.url){b.disabled=false;b.textContent='Pagar con Mercado Pago (tarjetas)';$('eMp').textContent=err||(r&&r.error)||'Mercado Pago no respondió';return;}
+function pagarMp(n,b){
+  var txt=b.textContent;b.disabled=true;b.textContent='Abriendo Mercado Pago…';
+  post(SB+'/functions/v1/tienda-mp',{accion:'crear',t:T,cuotas:n},function(err,r){
+    if(err||!r||!r.ok||!r.url){b.disabled=false;b.textContent=txt;$('eMp').textContent=err||(r&&r.error)||'Mercado Pago no respondió';return;}
     location.href=r.url;
   });
 }

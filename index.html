@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "bd441ff06c5e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e96a7d7a6060"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -12722,13 +12722,16 @@ function twAjustes() {
     '<div style="font-weight:700;margin-top:10px">Mercado Pago</div>' +
     '<label style="display:block;margin:6px 0"><input type="checkbox" id="tw-c-mp"' + (c.tienda_mp_activo === '1' ? ' checked' : '') + '> Mostrar el botón "Pagar con Mercado Pago"</label>' +
     '<div class="tw-caja">Activalo solo cuando estén cargadas las credenciales de Mercado Pago y se haya hecho una compra de prueba.</div>' +
+    '<div style="font-weight:700;margin-top:10px">Cuotas con recargo (con Mercado Pago)</div>' +
+    '<label style="display:block;margin:6px 0">Cuotas y recargo sobre el precio de contado<input id="tw-c-cuo" value="' + v('tienda_cuotas') + '" placeholder="3:19,6:34"></label>' +
+    '<div class="tw-caja">Ejemplo <b>3:19,6:34</b> = 3 cuotas con 19% y 6 cuotas con 34%. El cliente ve el precio de contado, el valor de cada cuota, el total, la TEA y el CFT. En la cuenta de Mercado Pago hay que ofrecer esas cuotas <b>sin interés para el cliente</b> (las paga Vulcan con el recargo); si no, el cliente paga el interés dos veces. Los recargos de hoy son provisorios: se ajustan con las tasas reales de la cuenta. Dejalo vacío para no ofrecer cuotas.</div>' +
     '<div class="tw-btns"><button class="btn btn-p" onclick="twAjustesGuardar()">Guardar</button><button class="btn" onclick="$id(\'tw-ov\').remove()">Cerrar</button></div></div>';
   var ov = document.createElement('div'); ov.id = 'tw-ov'; ov.className = 'tw-ov'; ov.onclick = function() { ov.remove(); }; ov.innerHTML = h; document.body.appendChild(ov);
 }
 async function twAjustesGuardar() {
   var m = document.querySelector('input[name="tw-modo"]:checked');
   var d = { tienda_envio_modo: m ? m.value : '', tienda_alias: $id('tw-c-alias').value.trim(), tienda_cbu: $id('tw-c-cbu').value.replace(/\s+/g, ''), tienda_titular: $id('tw-c-tit').value.trim(),
-    tienda_banco: $id('tw-c-ban').value.trim(), tienda_cuit: $id('tw-c-cuit').value.trim(), tienda_mp_activo: $id('tw-c-mp').checked ? '1' : '0' };
+    tienda_banco: $id('tw-c-ban').value.trim(), tienda_cuit: $id('tw-c-cuit').value.trim(), tienda_mp_activo: $id('tw-c-mp').checked ? '1' : '0', tienda_cuotas: $id('tw-c-cuo').value.trim() };
   try {
     var r = await gsRun('gsWeb_ConfigGuardar', d);
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); return; }

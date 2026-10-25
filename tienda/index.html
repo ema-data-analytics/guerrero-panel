@@ -70,6 +70,8 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 .tot{border-top:1px solid var(--li)}
 .wa{display:block;text-align:center;color:#128c7e;font-weight:700;font-size:14px;margin-top:8px;text-decoration:none}
 #carga{position:fixed;left:50%;transform:translateX(-50%);bottom:70px;background:var(--az);color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;z-index:40}
+.cuo-cont{font-size:14px;margin:4px 0 8px}.cuo{border:1px solid #d5d9e0;border-radius:10px;padding:8px 10px;margin:8px 0}.cuo-d{font-size:10px;color:#333}.cuo-cft{font-size:50px;font-weight:800;color:#c62828;line-height:1.05}.cuo-n{font-size:11px;color:#666;margin-top:6px}
+.vc{display:block;margin-top:2px;background:none;border:0;color:#1d4f91;text-decoration:underline;font-size:12px;padding:0;cursor:pointer}.cuo-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}.cuo-box{background:#fff;border-radius:14px;max-width:420px;width:100%;max-height:90vh;overflow:auto;padding:14px}
 </style>
 </head>
 <body>
@@ -133,7 +135,7 @@ var RUB=[['','Todo'],['AUTO','Auto'],['CAMIONETA','Camioneta / SUV'],['CAMION','
 var LOGOK={'GITI':'GITI','GT RADIAL':'GT_RADIAL','WANLI':'WANLI','SUNNY':'SUNNY','GOODYEAR':'GOODYEAR','MIRAGE':'MIRAGE','ASCENSO':'ASCENSO'};
 var MARCAS=['GITI','GT RADIAL','WANLI','SUNNY','GOODYEAR','KELLY','COOPER','MIRAGE','ASCENSO'];
 var S={rub:'',mar:'',q:'',lim:40,res:[]};
-var VIVO=null, CFG={wa:'',envio_modo:'B',mp:false,transf:false}, ENT='';
+var VIVO=null, CFG={wa:'',envio_modo:'B',mp:false,transf:false,cuotas:''}, ENT='';
 var CAR={};
 try{CAR=JSON.parse(localStorage.getItem('vt_carro')||'{}')||{};}catch(e){CAR={};}
 var BYID={};
@@ -141,6 +143,17 @@ for(var i=0;i<D.arts.length;i++){BYID[D.arts[i].id]=D.arts[i];D.arts[i].st=0;D.a
 
 function $(id){return document.getElementById(id);}
 function pesos(n){return '$ '+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+// Cuotas con recargo (config tienda_cuotas "3:19,6:34"). TEA: tasa que iguala las cuotas mensuales con el precio de contado. CFT = TEA (no hay otros cargos).
+function planesCuotas(txt,P){var out=[],vis={};String(txt||'').split(',').forEach(function(x){var m=/^(\d{1,2}):(\d{1,3}(?:\.\d{1,2})?)$/.exec(String(x).trim());if(!m)return;var n=+m[1],r=+m[2];if(n<2||n>24||r>200||vis[n]||!(P>0))return;vis[n]=1;
+  var T=Math.round(P*(1+r/100)),C=T/n,i=0;
+  if(T>P){var lo=0,hi=1;for(var k=0;k<200;k++){var mid=(lo+hi)/2;var v=C*(1-Math.pow(1+mid,-n))/mid;if(v>P)lo=mid;else hi=mid;}i=(lo+hi)/2;}
+  var tea=(Math.pow(1+i,12)-1)*100;out.push({n:n,r:r,total:T,cuota:Math.round(C),tea:tea,cft:tea});});
+  out.sort(function(a,b){return a.n-b.n;});return out;}
+function pct(x){return x.toFixed(2).replace('.',',')+'%';}
+function cuotasHtml(P,planes,boton){var h='<div class="cuo-cont">Precio de contado (efectivo, transferencia o tarjeta en 1 pago): <b>'+pesos(P)+'</b></div>';
+  planes.forEach(function(p){h+='<div class="cuo"><div class="cuo-d">'+p.n+' cuotas de '+pesos(p.cuota)+' · Total financiado '+pesos(p.total)+' · Precio de contado '+pesos(P)+' · TEA '+pct(p.tea)+'</div><div class="cuo-cft">CFT '+pct(p.cft)+'</div>'+(boton?boton(p):'')+'</div>';});
+  return h+'<div class="cuo-n">Cuotas con tarjeta de crédito a través de Mercado Pago. CFT: costo financiero total efectivo anual. No hay otros cargos.</div>';}
+
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function dis(a){return D.dis[a.s];}
 function mNom(m){return m==='GT RADIAL'?'GT Radial':m;}
@@ -164,7 +177,7 @@ function cargarVivo(){
     $('carga').style.display='none';
     if(err||!r||!r.arts){$('estadoDatos').innerHTML='<div class="aviso r">No pudimos actualizar precios y stock ('+esc(err||'sin datos')+'). <a href="#" onclick="cargarVivo();return false">Probar de nuevo</a></div>';return;}
     $('estadoDatos').innerHTML='';
-    CFG.wa=r.wa||'';CFG.envio_modo=r.envio_modo||'B';CFG.mp=!!r.mp;CFG.transf=!!r.transf;
+    CFG.wa=r.wa||'';CFG.envio_modo=r.envio_modo||'B';CFG.mp=!!r.mp;CFG.transf=!!r.transf;CFG.cuotas=r.cuotas||'';
     VIVO={};
     for(var i=0;i<r.arts.length;i++){VIVO[r.arts[i][0]]=1;var a=BYID[r.arts[i][0]];if(a){a.p=r.arts[i][1];a.st=r.arts[i][2];a.ok=true;}}
     for(var k in CAR){var b=BYID[k];if(!b||!b.ok||b.st<=0)delete CAR[k];else if(CAR[k]>b.st)CAR[k]=b.st;}
@@ -201,6 +214,9 @@ function filtrar(){
   S.res=r;pintar();
 }
 function mas(){S.lim+=40;pintar();}
+function hayCuotas(){return !!(VIVO&&CFG.mp&&planesCuotas(CFG.cuotas,1000).length);}
+function verCuotas(id){var a=BYID[id];if(!a)return;var d=dis(a);var ov=document.createElement('div');ov.className='cuo-ov';ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  ov.innerHTML='<div class="cuo-box"><b>'+esc(a.me)+' '+esc(mNom(d.m))+' '+esc(d.n)+'</b>'+cuotasHtml(a.p,planesCuotas(CFG.cuotas,a.p))+'<button class="btn l" style="width:100%;margin-top:8px" onclick="this.closest(\'.cuo-ov\').remove()">Cerrar</button></div>';document.body.appendChild(ov);}
 function card(a){
   var d=dis(a);var im=d.i?'<img class="t" loading="lazy" src="img/'+esc(d.i)+'" alt="'+esc(d.n)+'">':'<div class="noimg">'+logo(d.m)+'<span>Imagen no disponible</span></div>';
   var mk=d.i&&LOGOK[d.m]?'<img class="mk" src="logos/'+LOGOK[d.m]+'.png" alt="">':'';
@@ -212,7 +228,7 @@ function card(a){
   else acc='<div class="qty"><button onclick="paso('+a.id+',-1)">−</button><input id="q'+a.id+'" value="'+(q||1)+'" inputmode="numeric"><button onclick="paso('+a.id+',1)">+</button></div>'+
     '<button class="btn'+(q?' o':'')+'" id="b'+a.id+'" onclick="agregar('+a.id+')">'+(q?'En pedido ('+q+')':'Agregar')+'</button>';
   return '<div class="card'+(sin?' cardx':'')+'"><div class="ph">'+mk+im+'</div><div class="bdy"><div class="med">'+esc(a.me)+'</div><div class="dis"><b>'+esc(mNom(d.m))+'</b> '+esc(d.n)+'</div><div class="sp">'+esc(a.sp)+' '+est+'</div>'+
-  '<div class="pr">'+pesos(a.p)+' <small>c/IVA</small></div><div class="add">'+acc+'</div></div></div>';
+  '<div class="pr">'+pesos(a.p)+' <small>c/IVA'+(hayCuotas()?' · contado':'')+'</small></div>'+(hayCuotas()&&!sin?'<button class="vc" onclick="verCuotas('+a.id+')">Ver cuotas</button>':'')+'<div class="add">'+acc+'</div></div></div>';
 }
 function pintar(){
   var h='';var n=Math.min(S.lim,S.res.length);for(var i=0;i<n;i++)h+=card(S.res[i]);
@@ -242,7 +258,7 @@ function setEnt(e){
   var n=$('entNota'),pago='transferencia bancaria'+(CFG.mp?' o Mercado Pago (tarjetas)':'');
   if(e==='RETIRO')n.innerHTML='Después de mandar el pedido te mostramos cómo pagar: '+pago+'. Cuando el pago esté acreditado te avisamos por WhatsApp para que pases a retirarlo.';
   else if(CFG.envio_modo==='A')n.innerHTML='<b>El flete lo pagás vos a la empresa de transporte</b> cuando lo recibís. Ahora pagás solo las cubiertas ('+pago+') y te avisamos por WhatsApp cuando lo despachamos.';
-  else n.innerHTML='<b>Calculamos el costo del envío</b> y te mandamos el total por WhatsApp, con el link para pagar. Ahora no pagás nada.';
+  else n.innerHTML='<b>Envío a convenir.</b> Calculamos el costo del flete y te mandamos el total por WhatsApp, con el link para pagar. Ahora no pagás nada.';
   n.style.display='block';
 }
 // Provincias y localidades oficiales (Georef). La localidad se elige de la lista; si no está, se puede escribir.
