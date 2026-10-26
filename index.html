@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "18ef3d4cd3ec"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e7c6fb18fc6a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10517,7 +10517,7 @@ async function pcHistorial(m) {
     var v = r.vidas[k], h = '';
     for (var j = 0; j < (v.OTS || []).length; j++) {
       try { var d = await gsRun('gsPC_OTDetalle', v.OTS[j].ID_OT); var it = (d.items || []).filter(function(x) { return String(x.ID_CUB) === String(v.ID_CUB); })[0];
-        if (it) { h += pcVidaDet(it, v.OTS[j]); var rm = null; try { rm = await gsRun('gsPC_Remitos', v.OTS[j].ID_OT); } catch (e2) {} PC_.vida.det[k] = PC_.vida.det[k] || []; PC_.vida.det[k].push({ it: it, os: v.OTS[j], auto: d.autoclave || [], rem: rm && rm.REMITOS || [] }); } } catch (e) { h += '<div class="al al-r">' + pcEsc(e.message) + '</div>'; }
+        if (it) { h += pcVidaDet(it, v.OTS[j], d); var rm = null; try { rm = await gsRun('gsPC_Remitos', v.OTS[j].ID_OT); } catch (e2) {} PC_.vida.det[k] = PC_.vida.det[k] || []; PC_.vida.det[k].push({ it: it, os: v.OTS[j], auto: d.autoclave || [], espec: d.espec || null, rem: rm && rm.REMITOS || [] }); } } catch (e) { h += '<div class="al al-r">' + pcEsc(e.message) + '</div>'; }
     }
     var el = $id('pc-vida-' + k); if (el) { el.className = ''; el.innerHTML = h || '<div class="tdim">Todavía no entró a la línea.</div>'; }
   }
@@ -10548,11 +10548,13 @@ function pcVidaImprimir(k) {
     h += '<h2>Proceso · ' + pcEsc(x.os.NRO_OT) + ' · línea ' + pcEsc(x.os.LINEA) + '</h2><table class="det"><colgroup><col style="width:26%"><col style="width:15%"><col style="width:19%"><col style="width:40%"></colgroup><thead><tr><th>Paso</th><th>Fecha y hora</th><th>Resultado</th><th>Materiales usados</th></tr></thead><tbody>' +
       regs.map(function(g) {
         var us = cons.filter(function(c) { return String(c.ID_REG) === String(g.ID_REG); }).map(function(c) { var nm = nomI[c.ID_INSUMO] || c.ID_INSUMO; return pcEsc(nm) + ': ' + (c.UNIDAD === 'pieza' ? '1 pieza' : n3(c.REAL) + ' ' + pcEsc(c.UNIDAD || '')) + (String(c.PESO_ANTES || '') !== '' ? ' (pesado)' : ''); });
-        var extra = String(g.ID_ESTACION) && ac && /autoclave|cocci/i.test(nomE[g.ID_ESTACION] || '') ? '<br>Cocción desde ' + fmtDT(+ac.INICIO) + (+ac.MINUTOS ? ' · ' + Math.round(+ac.MINUTOS) + ' min' : '') + (i.POS_AUTOCLAVE ? ' · lugar ' + pcEsc(i.POS_AUTOCLAVE) : '') : '';
+        var extra = String(g.ID_ESTACION) && ac && /autoclave|cocci/i.test(nomE[g.ID_ESTACION] || '') ? '<br>Cocción desde ' + fmtDT(+ac.INICIO) + (ac.FIN ? ' hasta ' + fmtDT(+ac.FIN) : '') + (+ac.MINUTOS ? ' · ' + Math.round(+ac.MINUTOS) + ' min' : '') + (i.POS_AUTOCLAVE ? ' · lugar ' + pcEsc(i.POS_AUTOCLAVE) : '') +
+          (x.espec ? '<br>Especificado: ' + pcEsc(pcEspTxt(x.espec)) : '') +
+          ((ac.LECTURAS || []).length ? '<br>Registrado: ' + ac.LECTURAS.map(function(l) { return pcEsc(pcLectTxt(l, true)); }).join('<br>') : '<br>Registrado: sin lecturas cargadas') : '';
         return '<tr><td>' + pcEsc(nomE[g.ID_ESTACION] || g.ID_ESTACION) + (g.PASADA > 1 ? ' (2ª pasada)' : '') + '</td><td>' + fmtDT(+g.FECHA) + '</td><td>' + pcEsc(resTxt[g.RESULTADO] || g.RESULTADO || '') + extra + '</td><td>' + (us.join('<br>') || '—') + '</td></tr>';
       }).join('') + '</tbody></table>';
   });
-  h += '<div class="emp" style="margin-top:10px">Cada paso queda registrado en el sistema de producción de Vulcan Tread en el momento en que se hace: quién lo hizo, cuándo y con qué materiales. Este certificado no incluye precios.</div>' +
+  h += '<div class="emp" style="margin-top:10px">Cada paso queda registrado en el sistema de producción de Vulcan Tread en el momento en que se hace: quién lo hizo, cuándo y con qué materiales. La temperatura y la presión de cocción son lecturas del termómetro y el manómetro del autoclave, tomadas por el operario y respaldadas con foto. Este certificado no incluye precios.</div>' +
     '<div class="firmas"><div>Control de calidad</div><div>Encargado de línea</div></div>';
   pcImprimir('Trazabilidad ' + (v.MARCA || V.r.marca), h, false);
 }
@@ -10566,7 +10568,16 @@ function pcVidaCab(v) {
     f('Motivo de rechazo', pcEsc(v.MOTIVO_RECHAZO)) + '</div>' +
     (v.CAMBIOS || []).map(function(c) { return '<div style="font-size:12px;color:#b45309;margin-top:6px">Trabajo cambiado de ' + pcEsc(c.ANTES) + ' a ' + pcEsc(c.DESPUES) + ' en la inspección (' + fmtDT(c.FECHA) + ') · ' + pcEsc(c.MOTIVO) + ' · decidió ' + pcEsc(c.DECIDE) + '</div>'; }).join('') + '</div>';
 }
-function pcVidaDet(i, os) {
+// Cocción en la que entró la cubierta, con sus lecturas de temperatura y presión
+function pcAcDeCub(auto, idCub) { return (auto || []).filter(function(a) { try { var p = JSON.parse(a.POSICIONES || '{}'); return Object.keys(p).some(function(q) { return String(p[q]) === String(idCub); }); } catch (e) { return false; } })[0] || null; }
+function pcEspTxt(e) {
+  if (!e) return '';
+  var t = e.TMIN !== null || e.TMAX !== null ? (e.TMIN !== null ? e.TMIN : '…') + ' a ' + (e.TMAX !== null ? e.TMAX : '…') + ' °C' : 'temperatura sin especificación cargada';
+  var p = e.PMIN !== null || e.PMAX !== null ? (e.PMIN !== null ? e.PMIN : '…') + ' a ' + (e.PMAX !== null ? e.PMAX : '…') + ' ' + e.PUNI : 'presión sin especificación cargada';
+  return t + ' · ' + p;
+}
+function pcLectTxt(l, conFoto) { return new Date(l.FECHA).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' → ' + String(l.TEMP).replace('.', ',') + ' °C · ' + String(l.PRESION).replace('.', ',') + ' ' + (l.UNIDAD || '') + (l.MOMENTO === 'FIN' ? ' (final)' : '') + (conFoto ? (l.FOTO_ID ? ' · con foto' : ' · sin foto') : ''); }
+function pcVidaDet(i, os, d0) {
   var d = PC_.d, ests = pcEstLin(os.LINEA).slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; });
   var nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = e.ORDEN + '. ' + e.NOMBRE; });
   var nomI = {}; (d.insumos || []).forEach(function(x) { nomI[x.ID_INSUMO] = x.NOMBRE_INSUMO; });
@@ -10587,7 +10598,10 @@ function pcVidaDet(i, os) {
       });
       return '<tr><td>' + pcEsc(nomE[g.ID_ESTACION] || g.ID_ESTACION) + (g.PASADA > 1 ? ' (2ª pasada)' : '') + '</td><td style="white-space:nowrap">' + fmtDT(+g.FECHA) + '</td><td>' + pcEsc(g.OPERARIO || g.USUARIO || '') + '</td><td class="tr">' + (min[g.ID_ESTACION] ? (min[g.ID_ESTACION] < 1 ? '&lt;1' : Math.round(min[g.ID_ESTACION])) : '') + '</td><td>' + pcEsc(g.RESULTADO || '') + (g.OBSERVACION ? ' · ' + pcEsc(g.OBSERVACION) : '') + '</td><td>' + (us.join('<br>') || '—') + '</td></tr>';
     }).join('') : '<tr><td colspan="6" class="tdim">Todavía no pasó por ninguna estación de esta orden.</td></tr>') + '</tbody></table></div>' +
-    ((i.HERRAMENTAL || []).length ? '<div style="font-size:11.5px;margin-top:4px">Herramental: ' + i.HERRAMENTAL.map(function(p) { return pcEsc(p.CODIGO) + ' (uso ' + p.NRO_USO + (p.MAX_USOS ? ' de ' + p.MAX_USOS : '') + ')'; }).join(' · ') + '</div>' : '');
+    ((i.HERRAMENTAL || []).length ? '<div style="font-size:11.5px;margin-top:4px">Herramental: ' + i.HERRAMENTAL.map(function(p) { return pcEsc(p.CODIGO) + ' (uso ' + p.NRO_USO + (p.MAX_USOS ? ' de ' + p.MAX_USOS : '') + ')'; }).join(' · ') + '</div>' : '') +
+    (function() { var ac = pcAcDeCub(d0 && d0.autoclave, i.ID_CUB); if (!ac) return '';
+      return '<div style="font-size:11.5px;margin-top:4px"><b>Cocción:</b> ' + fmtDT(+ac.INICIO) + (ac.FIN ? ' a ' + fmtDT(+ac.FIN) : '') + (+ac.MINUTOS ? ' · ' + Math.round(+ac.MINUTOS) + ' min' : '') + (d0.espec ? ' · especificado ' + pcEsc(pcEspTxt(d0.espec)) : '') + '</div>' +
+        ((ac.LECTURAS || []).length ? ac.LECTURAS.map(function(l) { return '<div style="font-size:11.5px">🌡 ' + pcEsc(pcLectTxt(l, false)) + ' · ' + pcEsc(l.OPERARIO) + (l.FOTO_ID ? ' <button class="btn btn-xs btn-s" onclick="asVerImg(' + Number(l.FOTO_ID) + ',\'Lectura del autoclave\')">📷 Ver foto</button>' : ' · sin foto') + (l.FUERA ? ' <span style="color:var(--danger)">' + pcEsc(l.FUERA) + ' · ' + pcEsc(l.JUSTIFICACION) + '</span>' : '') + '</div>'; }).join('') : '<div class="tdim" style="font-size:11.5px">Sin lecturas de temperatura y presión registradas.</div>'); })();
 }
 
 // ── Armar OT ──
@@ -11789,7 +11803,9 @@ function puAutoclavePintar() {
   if (r.cocinando) {
     var min = Math.max(0, Math.floor((Date.now() + (PU_.dt || 0) - r.cocinando.INICIO) / 60000)), falta = r.minutos - min;
     h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:24px;font-weight:800;color:var(--warn)" id="pu-ac-min">Cocinando · ' + min + ' de ~' + r.minutos + ' min</div>' +
-      '<div style="font-size:16px">Empezó a las ' + new Date(r.cocinando.INICIO).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + '. ' + (falta > 0 ? 'Faltan unos ' + falta + ' min.' : 'Ya pasó el tiempo aproximado.') + ' Cuando salga, tocá <b>Terminó la cocción</b>.</div></div>';
+      '<div style="font-size:16px">Empezó a las ' + new Date(r.cocinando.INICIO).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + '. ' + (falta > 0 ? 'Faltan unos ' + falta + ' min.' : 'Ya pasó el tiempo aproximado.') + ' Cuando salga, tocá <b>Terminó la cocción</b>.</div></div>' +
+      '<div class="pu-reg"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:17px;font-weight:700">🌡 Lecturas de temperatura y presión</div><button class="pu-btn pu-min" onclick="puAcLectura(\'DURANTE\')">+ Registrar lectura</button></div>' +
+      '<div class="tdim" style="font-size:13px">' + puEsc(puAcEspTxt(r.espec)) + (r.lecturaObligatoria ? ' · al terminar, la lectura final es obligatoria' : '') + '</div>' + puAcLecturasHTML(r.cocinando.LECTURAS, r.espec && r.espec.PUNI) + '</div>';
   } else if (!listas.length) {
     h += '<div class="pu-reg"><div style="font-size:18px;font-weight:700">No hay cubiertas listas para el autoclave en esta orden.</div>' + (r.anteriores.length ? '<div class="tdim">Ya se cocinó: ' + r.anteriores.map(function(a) { return a.N + ' cubiertas · ' + a.MINUTOS + ' min'; }).join(' · ') + '</div>' : '') + '</div>';
   } else {
@@ -11814,6 +11830,60 @@ function puAutoclavePintar() {
     if (puTick) clearInterval(puTick);
     puTick = setInterval(function() { var e = $id('pu-ac-min'); if (!e || PU_.vista !== 'autoclave') { clearInterval(puTick); puTick = null; return; } e.textContent = 'Cocinando · ' + Math.max(0, Math.floor((Date.now() + (PU_.dt || 0) - r.cocinando.INICIO) / 60000)) + ' de ~' + r.minutos + ' min'; }, 30000);
   }
+}
+// ── Lecturas del autoclave (termómetro y manómetro) con foto ──
+function puAcEspTxt(e) {
+  if (!e) return '';
+  var t = e.TMIN !== null || e.TMAX !== null ? (e.TMIN !== null ? e.TMIN : '…') + ' a ' + (e.TMAX !== null ? e.TMAX : '…') + ' °C' : 'temperatura sin especificación cargada';
+  var p = e.PMIN !== null || e.PMAX !== null ? (e.PMIN !== null ? e.PMIN : '…') + ' a ' + (e.PMAX !== null ? e.PMAX : '…') + ' ' + e.PUNI : 'presión sin especificación cargada';
+  return 'Especificado: ' + t + ' · ' + p;
+}
+function puAcLecturasHTML(ls, uni) {
+  if (!ls || !ls.length) return '<div class="tdim" style="font-size:14px">Todavía no se cargó ninguna lectura.</div>';
+  return '<div style="display:flex;flex-direction:column;gap:4px">' + ls.map(function(l) {
+    return '<div style="font-size:15px">' + new Date(l.FECHA).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' · <b>' + puF(l.TEMP) + ' °C</b> · <b>' + puF(l.PRESION) + ' ' + puEsc(l.UNIDAD || uni || '') + '</b> · ' + puEsc(l.OPERARIO) + (l.FOTO_ID ? ' · 📷' : ' · sin foto') + (l.FUERA ? ' <span style="color:var(--danger);font-weight:700">· ' + puEsc(l.FUERA) + '</span>' : '') + '</div>';
+  }).join('') + '</div>';
+}
+function puAcLectura(momento) {
+  var A = PU_.ac, r = A.d, c = r.cocinando; if (!c) return;
+  var emps = ((PU_.d && PU_.d.empleados) || []).map(function(e) { return e.NOMBRE; });
+  PU_.acL = { oper: PU_.operF || PU_.oper || '', foto: '' };
+  var fin = momento === 'FIN';
+  showModal('<div class="mh"><span class="mt">' + (fin ? '■ Terminó la cocción · lectura final' : '🌡 Lectura del autoclave') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
+    '<div style="font-size:15px">' + (fin ? 'Antes de abrir, mirá el termómetro y el manómetro y cargá lo que marcan.' : 'Cargá lo que marcan el termómetro y el manómetro ahora.') + ' <span class="tdim">' + puEsc(puAcEspTxt(r.espec)) + '</span></div>' +
+    '<div class="pu-qty"><b style="font-size:15px;min-width:110px">Temperatura</b><input inputmode="decimal" id="pu-acl-t" placeholder="°C" aria-label="Temperatura"><span>°C</span></div>' +
+    '<div class="pu-qty"><b style="font-size:15px;min-width:110px">Presión</b><input inputmode="decimal" id="pu-acl-p" placeholder="Presión" aria-label="Presión"><span>' + puEsc((r.espec && r.espec.PUNI) || '') + '</span></div>' +
+    '<div><b style="font-size:15px">Foto del termómetro y el manómetro</b> <span class="tdim" style="font-size:13px">(es la prueba de la lectura)</span><br><input type="file" accept="image/*" capture="environment" id="pu-acl-f" style="font-size:15px;margin-top:4px"><div id="pu-acl-prev"></div></div>' +
+    (emps.length ? '<div><div style="font-weight:700;font-size:15px">¿Quién leyó?</div><div style="display:flex;flex-wrap:wrap;gap:6px">' + emps.map(function(n) { return '<button class="pu-chip pu-acl-op' + (PU_.acL.oper === n ? ' sel' : '') + '" data-n="' + puEsc(n) + '">' + puEsc(n) + '</button>'; }).join('') + '</div></div>' : '') +
+    '<div id="pu-acl-just"></div></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pu-acl-ok" style="min-height:48px;font-size:17px">' + (fin ? 'Guardar y terminar la cocción' : 'Guardar lectura') + '</button></div>', 'md-lg');
+  document.querySelectorAll('.mo .pu-acl-op').forEach(function(b) { b.onclick = function() { PU_.acL.oper = b.dataset.n; document.querySelectorAll('.mo .pu-acl-op').forEach(function(x) { x.classList.toggle('sel', x === b); }); }; });
+  $id('pu-acl-f').onchange = function() { var f = this.files && this.files[0]; if (!f) return; var rd = new FileReader(); rd.onload = function() { var im = new Image(); im.onload = function() { PU_.acL.foto = asComprimir(im, 1400, 0.72); $id('pu-acl-prev').innerHTML = '<img src="' + PU_.acL.foto + '" style="max-width:220px;border-radius:8px;margin-top:6px">'; }; im.src = rd.result; }; rd.readAsDataURL(f); };
+  $id('pu-acl-ok').onclick = async function() {
+    var b = this, t = $v('pu-acl-t').trim(), p = $v('pu-acl-p').trim(), j = $id('pu-acl-jtx');
+    if (t === '' || p === '') return toast('Poné la temperatura y la presión', 'r2');
+    if (emps.length && !PU_.acL.oper) return toast('Elegí quién leyó', 'r2');
+    b.disabled = true; b.textContent = 'Guardando…';
+    try {
+      var fid = PU_.acL.fid || '';
+      if (PU_.acL.foto && !fid) { var fi = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'AUTOCLAVE', ref: r.ot.NRO_OT, data: PU_.acL.foto }); if (!fi || !fi.ok) { toast((fi && fi.error) || 'No se pudo subir la foto', 'r2'); b.disabled = false; b.textContent = 'Reintentar'; return; } fid = PU_.acL.fid = String(fi.id); }
+      var L = { ID_AUTOC: c.ID_AUTOC, TEMP: puN(t), PRESION: puN(p), FOTO_ID: fid, OPERARIO: PU_.acL.oper || PU_.oper, JUSTIFICACION: j ? j.value.trim() : '' };
+      var res = fin ? await gsRun('gsPC_AutoclaveTerminar', c.ID_AUTOC, PU_.acL.oper || PU_.oper, L) : await gsRun('gsPC_AutoclaveLectura', L);
+      if (res && res.PIDE_JUSTIFICACION) { $id('pu-acl-just').innerHTML = '<div style="color:var(--danger);font-weight:700;font-size:16px">Fuera de lo especificado: ' + puEsc(res.FUERA.join(', ')) + '. Explicá qué pasó (lo ve el encargado en el control final).</div><input class="pu-q" id="pu-acl-jtx" style="font-size:16px;text-transform:none" autocomplete="off">'; b.disabled = false; b.textContent = fin ? 'Guardar y terminar la cocción' : 'Guardar lectura'; return; }
+      if (!res || !res.ok) { toast((res && res.error) || 'No se pudo', 'r2'); b.disabled = false; b.textContent = fin ? 'Guardar y terminar la cocción' : 'Guardar lectura'; return; }
+      closeModal();
+      if (fin) return puAcFinListo(res);
+      toast('Lectura guardada ✓', 'g'); puAutoclave(A.ot);
+    } catch (e) { toast(e.message, 'r2'); b.disabled = false; b.textContent = 'Reintentar'; }
+  };
+}
+function puAcFinListo(r) {
+  if (puTick) { clearInterval(puTick); puTick = null; }
+  PU_.vista = 'listo';
+  var ctl = 'el control final';
+  $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">🔥</div><h2>Salió la carga del autoclave</h2><div style="font-size:18px">' + r.N + (r.N === 1 ? ' cubierta' : ' cubiertas') + ' · cocción de ' + r.MINUTOS + ' min</div>' +
+    '<div style="font-size:20px"><b>Pasan ' + puEsc(ctl.replace(/^el /, 'al ')) + ': las confirma el encargado una por una.</b></div>' +
+    '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puVolver()">Ver las cubiertas</button></div>';
+  gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est).then(function(d) { PU_.d = d; }, function() {});
 }
 function puAcElegir(n) {
   var A = PU_.ac, r = A.d, usadas = {}; Object.keys(A.pos).forEach(function(k) { if (A.pos[k] && k !== String(n)) usadas[String(A.pos[k])] = k; });
@@ -11840,6 +11910,7 @@ async function puAcIni() {
 }
 async function puAcFin() {
   var A = PU_.ac, c = A.d.cocinando; if (!c) return;
+  if (A.d.lecturaObligatoria) return puAcLectura('FIN');
   try {
     var r = await gsRun('gsPC_AutoclaveTerminar', c.ID_AUTOC, PU_.oper);
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo terminar', 'r2'); return; }
