@@ -23,73 +23,100 @@ ol li{margin:4px 0}.tw{overflow-x:auto}
 footer{max-width:1000px;margin:0 auto;padding:16px;color:var(--dim);font-size:12.5px}
 @media print{header{-webkit-print-color-adjust:exact;print-color-adjust:exact}.caja,.kpi,table{break-inside:avoid}}
 </style></head><body>
-<header><div class="in"><img src="../logo_vulcan.jpg" alt="Vulcan Tread"><div><h1>Avance del sistema de gestión</h1><p>Vulcan Tread / Guerrero Neumáticos · actualizado el lunes 26/10/2026 · EMA Data Analytics</p></div></div></header>
+<header><div class="in"><img src="../logo_vulcan.jpg" alt="Vulcan Tread"><div><h1>Avance del sistema de gestión</h1><p>Vulcan Tread / Guerrero Neumáticos · informe completo desde el inicio · actualizado el lunes 26/10/2026 · EMA Data Analytics</p></div></div></header>
 <main>
 
-<div class="nota"><b>Cómo leer este informe.</b> Todo lo que figura como «probado» se probó en el <b>sistema de pruebas</b> (datos de prueba). <b>Nada está todavía en uso real</b>: la empresa sigue trabajando con su sistema actual y el nuevo se va pasando por partes, a medida que cada una queda probada. No se ponen porcentajes de avance porque no hay una base firme para calcularlos; se muestra qué está hecho, qué está a medias y qué falta. Lo que está en <span class="est">rojo</span> es estimado o falta confirmar.</div>
+<div class="nota"><b>Cómo leer este informe.</b> Todo lo que figura como «probado» se probó en el <b>sistema de pruebas</b>, con datos de prueba. <b>Nada está todavía en uso real</b>: la empresa sigue con su sistema actual y el nuevo se pasa por partes, a medida que cada una queda probada y aprobada. No hay porcentajes de avance porque no hay una base firme para calcularlos: se muestra qué está hecho, qué está a medias y qué falta. Lo que está en <span class="est">rojo</span> es estimado o falta confirmar.</div>
+
+<h2>Resumen</h2>
+<div class="caja"><ul style="margin:0">
+<li>El trabajo empezó el <b>18/02/2026</b> con la propuesta de implementación. Lleva <b>8 meses</b>, en cuatro etapas: diseño (febrero y marzo), primer sistema en Google (abril a junio), auditoría y base nueva (septiembre) y sistema nuevo en internet (octubre).</li>
+<li>Hoy están <b>probadas las dos líneas de producción</b> (camiones y agrícola), con su tablet por estación, autoclave, control del encargado y costo por cubierta. También están probados el stock de insumos con avisos, la lista de precios para vendedores, los pedidos web, la asistencia del personal y los remitos.</li>
+<li>Quedan <b>a medias</b> la parte comercial y administrativa en el motor nuevo (ventas, compras, caja, cuentas corrientes) y la tienda web (faltan cuentas y datos reales). <b>Sin empezar</b>: factura electrónica y el pase a uso real.</li>
+</ul></div>
 
 <h2>Cuándo empezamos</h2>
 <div class="caja">
-<p style="margin:0 0 6px"><b>Inicio:</b> <span class="est">entre mayo y junio de 2026 (a confirmar)</span>. Lo que hay registrado:</p>
+<p style="margin:0 0 6px"><b>Inicio: 18/02/2026.</b> Es la fecha del primer documento del proyecto que se puede comprobar:</p>
 <ul style="margin:0;font-size:14.5px">
-<li><b>27/05/2026</b>: primer registro de trabajo sobre el sistema, que ya tenía ventas, compras, gastos, combustible, stock, cuentas corrientes, producción y reportes funcionando.</li>
-<li><b>28/05/2026</b>: respaldo más viejo guardado del módulo de producción.</li>
-<li>Estimación del propio equipo a octubre: «3 o 4 meses de trabajo».</li>
+<li><b>18/02/2026</b>: «Propuesta de implementación Gustavo Guerrero» (PDF).</li>
+<li><b>19/02/2026</b>: reporte de estructura de la base de datos. <b>22/02/2026</b>: documentación integral.</li>
+<li>Antes de esa fecha hay material de la empresa (planilla de costos 2025 de camión, 21/02), pero no trabajo sobre el sistema.</li>
 </ul>
+<p style="margin:8px 0 0;font-size:13px;color:var(--dim)">Fuente: fechas de los archivos en la carpeta del proyecto (EMA1 / gustavo guerrero). El informe anterior decía «mayo a junio»: era un error, y en la guía figuraba marzo. Lo correcto es febrero.</p>
 </div>
 
-<h2>En números (al 26/10)</h2>
+<h2>En números (al 26/10/2026)</h2>
 <div class="kpis">
-<div class="kpi"><b>10</b><span>áreas probadas</span></div>
-<div class="kpi"><b>3</b><span>áreas a medias</span></div>
-<div class="kpi"><b>4</b><span>áreas sin empezar</span></div>
-<div class="kpi"><b>v32</b><span>versión actual (18 versiones desde el 23/09)</span></div>
+<div class="kpi"><b>8</b><span>meses de trabajo (desde el 18/02)</span></div>
+<div class="kpi"><b>v33</b><span>versión actual · 22 versiones desde el 25/09</span></div>
+<div class="kpi"><b>2</b><span>líneas de producción probadas (camiones 10 estaciones, agrícola 13)</span></div>
+<div class="kpi"><b>12</b><span>áreas probadas · 3 a medias · 3 sin empezar</span></div>
+<div class="kpi"><b>129</b><span>tablas del sistema (81 con datos)</span></div>
 <div class="kpi"><b>2</b><span>videos para el personal y una guía de 14 lecciones</span></div>
 </div>
 
 <h2>Línea de tiempo</h2>
 <div class="tl">
-<div class="it"><div class="f">Mayo a septiembre 2026 — Sistema EMA original</div><div>Google Sheets + Apps Script: ventas, compras, gastos, combustible, caja, cuentas corrientes, stock, producción, reportes (Dashboard, Estado de Resultados, Panel Gerencial) y módulos de administración (financiero, transporte, impositivo, sueldos). Plan de acción mensual con punto de equilibrio.</div></div>
-<div class="it"><div class="f">Septiembre 2026 — Auditoría del sistema viejo de Vulcan</div><div>Recuperación y análisis de los datos de mayo a septiembre del sistema actual de la empresa (ventas, compras, caja, cheques, Santa Mónica) e informe de resultados.</div></div>
-<div class="it"><div class="f">23 al 27/09 — Base nueva de producción (v15 a v18)</div><div>Maestro de insumos con stock por movimientos, compras con remitos y notas de crédito, recetas por tipo, medida y trabajo, producción por cubierta con costo real. Recetas agrícolas preparadas para cargar (228 recetas).</div></div>
-<div class="it"><div class="f">16/10 — Motor nuevo</div><div>El sistema pasa a trabajar sobre una base de datos (Supabase) en lugar de planillas.</div></div>
-<div class="it"><div class="f">19 al 21/10 — Línea de camiones (v22 a v24)</div><div>Receta de recapado camión, panel nuevo en internet (20/10), autoclave por carga con mapa de lugares, control del encargado, reproceso, trabajos extra y carga del stock real (194 artículos).</div></div>
-<div class="it"><div class="f">22 al 24/10 — Tablet, precios, vulcanizado, tienda (v25 a v28)</div><div>Impresiones y PDF, tablet por estación, lista de precios para vendedores con cotización por WhatsApp, vulcanizado, remitos por cliente, forma de pago del cliente, tienda web con carrito y pedidos web. El sistema viejo en Apps Script queda apagado (sin borrar).</div></div>
-<div class="it"><div class="f">25/10 — Cuotas y video (v29)</div><div>Cuotas con recargo en la tienda (Mercado Pago, apagado hasta cargar la cuenta). Video de la línea de producción para el personal.</div></div>
-<div class="it"><div class="f">26/10 — Clientes, insumos y personal (v30 a v32)</div><div>Control de cliente en la tienda (CUIT/DNI), stock de insumos con aviso de faltantes, video de pedidos de la tienda, asistencia del personal con tarjeta, horas extra, premios, sanciones y feriados, y los pedidos de la planta (casco soplado, marca y DOT en la tablet, vulcanizado por la 7).</div></div>
+<div class="it"><div class="f">Etapa 1 · Febrero y marzo 2026 — Diseño</div><div><b>18/02</b> propuesta de implementación · <b>19/02</b> estructura de la base de datos · <b>22/02</b> documentación integral · <b>11 y 12/03</b> se reciben de la empresa insumos, medidas, lista de materiales y trabajos de febrero · <b>26/03</b> primera base de datos (Access) y limpieza de tablas maestras · <b>27/03</b> base EMA en Excel · <b>28/03</b> primer prototipo en Supabase.</div></div>
+<div class="it"><div class="f">Etapa 2 · Abril a junio 2026 — Primer sistema (Google Sheets + Apps Script)</div><div><b>07/04</b> definición de tablas · <b>25 y 26/04</b> primeras pantallas y código · <b>12/05</b> versión completa en una sola página · <b>12 al 21/05</b> se separan los módulos y se hacen cheques, cobranzas, caja, ventas, compras, gastos y combustible · <b>27/05</b> plan de acción mensual con punto de equilibrio · <b>28/05</b> respaldo del módulo de producción · <b>30 y 31/05</b> financiero, impositivo, sueldos y transporte · <b>01/06</b> últimos ajustes.</div></div>
+<div class="it"><div class="f">Junio a agosto 2026 — Sin registros</div><div>No hay archivos ni cambios guardados de este período. <span class="est">Falta confirmar qué pasó (pausa o uso del sistema).</span></div></div>
+<div class="it"><div class="f">Etapa 3 · Septiembre 2026 — Auditoría y base nueva de producción</div><div><b>07/09</b> sitio web de Vulcan Tread · <b>12/09</b> auditoría del sistema actual de la empresa: se recuperan y analizan ventas, compras, caja, cheques y Santa Mónica de mayo a septiembre · <b>22/09</b> informe de resultados (versión 2) · <b>24/09</b> se crea la base nueva en Supabase · <b>25 al 29/09</b> versiones 12 a 21: maestro de insumos con stock por movimientos, compras con remitos y notas de crédito, recetas por tipo, medida y trabajo, producción por cubierta con costo real y 228 recetas agrícolas preparadas.</div></div>
+<div class="it"><div class="f">Etapa 4 · Octubre 2026 — Sistema nuevo en internet</div><div>
+<b>16/10</b> el sistema pasa a trabajar sobre la base de datos en lugar de planillas · <b>19/10</b> receta de recapado camión · <b>20/10</b> panel nuevo en internet, sin Apps Script · <b>21/10</b> autoclave por carga con mapa de lugares, control del encargado, reproceso, trabajos extra y carga del stock real (194 artículos) · <b>22/10</b> impresiones y PDF, tablet por estación, lista de precios para vendedores con cotización por WhatsApp · <b>23/10</b> precios con IVA y catálogo · <b>24/10</b> vulcanizado, remitos por cliente, forma de pago del cliente, tienda web con carrito y pedidos web; el sistema viejo de Apps Script queda en pausa, sin borrar nada · <b>25/10</b> cuotas con recargo en la tienda y video de la línea de producción · <b>26/10</b> control de clientes de la tienda (CUIT/DNI), stock de insumos con aviso de faltantes, asistencia del personal, los pedidos de la planta (casco soplado, marca y DOT en la tablet, vulcanizado por la 7), propuesta de compra de tablet y lector, y <b>línea agrícola completa</b>.</div></div>
 </div>
 
 <h2>Estado por área</h2>
 <div class="tw"><table>
 <tr><th>Área</th><th>Estado</th><th>Qué falta</th></tr>
-<tr><td><b>Producción línea camiones</b> (cascos, OT, tablet por estación, autoclave, control, pintura, costo por cubierta)</td><td><span class="b g">Probado</span></td><td>Usarla con cubiertas reales y ajustar recetas con el promedio real.</td></tr>
-<tr><td><b>Vulcanizado y trabajos extra</b></td><td><span class="b g">Probado</span></td><td>Probar en vivo el paso por la 7 (cambio de hoy).</td></tr>
-<tr><td><b>Stock de insumos y avisos</b> (flux, cojín, cordón…)</td><td><span class="b g">Probado</span></td><td>Stock real de insumos y demoras reales de cada proveedor (hoy <span class="est">7 días supuestos</span>).</td></tr>
+<tr><td><b>Producción, línea camiones</b>: cascos, órdenes de trabajo y de servicio, tablet por estación, autoclave, control, pintura, costo por cubierta</td><td><span class="b g">Probado</span></td><td>Usarla con cubiertas reales y ajustar las recetas con el promedio real.</td></tr>
+<tr><td><b>Producción, línea agrícola</b>: 13 estaciones, de la revisión a la terminación y pintura</td><td><span class="b g">Probado hoy</span> <span class="b n">con datos de prueba</span></td><td>Confirmar en planta los minutos de cada estación (<span class="est">hoy estimados</span>), la carga de 2 cubiertas con 1 suplente (<span class="est">el suplente es supuesto</span>), las piezas de inner/envelope agrícola y el nombre de cada estación.</td></tr>
+<tr><td><b>Vulcanizado y trabajos extra</b></td><td><span class="b g">Probado</span></td><td>—</td></tr>
+<tr><td><b>Pedidos de la planta del 26/10</b> (casco soplado, marca y DOT en la tablet, vulcanizado por la 7)</td><td><span class="b g">Probado</span></td><td>Que lo vea el personal en la tablet.</td></tr>
+<tr><td><b>Stock de insumos y avisos</b> (flux, cojín, cordón…)</td><td><span class="b g">Probado</span></td><td>Stock real de insumos (hoy figura cojín de baja temperatura sin stock) y demora real de cada proveedor (<span class="est">hoy 7 días supuestos</span>).</td></tr>
 <tr><td><b>Remitos por cliente</b></td><td><span class="b g">Probado</span></td><td>—</td></tr>
 <tr><td><b>Lista de precios y cotización</b> para vendedores</td><td><span class="b g">Probado</span></td><td>Enviar una cotización desde un celular real. Precios revisados con Gustavo.</td></tr>
 <tr><td><b>Pedidos web y clientes de la tienda</b></td><td><span class="b g">Probado</span></td><td>—</td></tr>
-<tr><td><b>Asistencia del personal</b> (tarjeta, tablet, almuerzo, horas extra, premios, sanciones, feriados)</td><td><span class="b g">Probado</span> <span class="b n">con datos simulados</span></td><td>Comprar tablet y lector, imprimir tarjetas, que los dueños definan las reglas, verificar el convenio y firmar el consentimiento de la foto.</td></tr>
-<tr><td><b>Guía y videos</b> para el personal</td><td><span class="b g">Hecho</span></td><td>Agregar asistencia y los cambios de hoy.</td></tr>
+<tr><td><b>Asistencia del personal</b> (tarjeta, tablet, almuerzo, horas extra, premios, sanciones, feriados)</td><td><span class="b g">Probado</span> <span class="b n">con datos simulados</span></td><td>Comprar la tablet y el lector (<a href="../propuesta-asistencia/">propuesta</a>), imprimir las tarjetas, que los dueños definan las reglas, verificar el convenio con un abogado laboral y firmar el consentimiento de la foto.</td></tr>
+<tr><td><b>Guía y videos</b> para el personal</td><td><span class="b g">Hecho</span></td><td>Agregar asistencia y la línea agrícola.</td></tr>
 <tr><td><b>Panel en internet</b> (sin Apps Script)</td><td><span class="b g">En uso para pruebas</span></td><td>—</td></tr>
 <tr><td><b>Seguridad</b> (usuarios, roles, claves)</td><td><span class="b g">Probado</span></td><td>Cambiar las claves antes de pasar a uso real.</td></tr>
 <tr><td><b>Tienda web</b></td><td><span class="b y">A medias</span></td><td>Cuenta de Mercado Pago, alias/CBU, dominio propio, stock y precios reales.</td></tr>
-<tr><td><b>Ventas, compras, gastos, caja, cuentas corrientes</b> en el motor nuevo</td><td><span class="b y">A medias</span></td><td>Revisión completa en el motor nuevo; quedaban arreglos pendientes en órdenes de pago, caja y estado de resultados (relevado en septiembre).</td></tr>
-<tr><td><b>Recetas reales</b></td><td><span class="b y">A medias</span></td><td>Camión en «modo aprendizaje»; recetas agrícolas listas para cargar, con dudas a confirmar con Gustavo.</td></tr>
-<tr><td><b>Línea agrícola</b> (taco por taco)</td><td><span class="b r">Sin empezar</span></td><td>Es lo próximo: mismo recorrido para recapado, arreglo y refuerzos, 1 o 2 cubiertas por día, con control final como camiones.</td></tr>
+<tr><td><b>Ventas, compras, gastos, caja, cheques, cuentas corrientes</b> en el motor nuevo</td><td><span class="b y">A medias</span></td><td>Las pantallas existen desde mayo, pero sus tablas en la base nueva están vacías: falta probarlas completas. En septiembre quedaron arreglos pendientes en órdenes de pago, caja y estado de resultados.</td></tr>
+<tr><td><b>Recetas reales</b></td><td><span class="b y">A medias</span></td><td>Camión en «modo aprendizaje»; recetas agrícolas cargadas (225), con cantidades a confirmar.</td></tr>
 <tr><td><b>Factura electrónica (ARCA)</b></td><td><span class="b r">Sin empezar</span></td><td>Certificado y datos de la cuenta (los carga Anibal).</td></tr>
 <tr><td><b>Ventas por WhatsApp automáticas</b></td><td><span class="b r">Sin empezar</span></td><td>Después de la tienda.</td></tr>
 <tr><td><b>Pase a uso real</b></td><td><span class="b r">Sin empezar</span></td><td>Se hace por partes, cuando cada una esté probada y aprobada.</td></tr>
 </table></div>
 
+<h2>Cómo se probó la línea agrícola (26/10)</h2>
+<div class="caja" style="font-size:14.5px">
+<ul style="margin:0">
+<li>Dos cubiertas de prueba: <b>AGR901</b> (agrícola 700-12, recapado) y <b>AGR902</b> (agrícola 600-9, vulcanizado con un parche). Las dos pasaron de la 11 a la 20 con sus insumos y su inner y envelope.</li>
+<li>Cocción con mapa de 2 lugares y <b>260 minutos</b>. Después, control final del encargado: AGR901 salió OK y AGR902 volvió a la estación 18 y siguió en la carga siguiente desde la cocción, igual que en camiones.</li>
+<li>Terminación, cierre de las dos cargas y <b>remitos RE-00004 y RE-00005</b>. El costo por cubierta lo calcula el sistema.</li>
+<li>El sistema <b>no deja</b> mezclar agrícola y camiones en una carga, saltear una estación, ni usar una estación de camiones para una agrícola.</li>
+<li>La línea de camiones sigue igual: la carga OS-00028 quedó en la estación 7 y el vulcanizado de camión saltea la 2 y la 6.</li>
+</ul></div>
+
+<h2>Lo que tienen que decidir o confirmar los dueños</h2>
+<div class="caja"><ol style="margin:0">
+<li>Minutos de cada estación agrícola y la cantidad por carga (<span class="est">hoy 2 cubiertas y 1 suplente</span>).</li>
+<li>Compra de la tablet y el lector para asistencia: opción A <b>$434.389</b> u opción B <b>$582.714</b>, según los precios publicados al 26/10.</li>
+<li>Reglas de asistencia: tolerancia, sábado, almuerzo, horas extra, premios y sanciones. Hoy las reglas de sanción son un <span class="est">ejemplo</span>.</li>
+<li>Cuenta de Mercado Pago, alias y dominio para la tienda.</li>
+<li>Precios de la lista para vendedores.</li>
+</ol></div>
+
 <h2>Lo que sigue, en orden</h2>
 <div class="caja"><ol style="margin:0">
-<li>Probar en la planta los 3 pedidos de hoy (casco soplado, marca y DOT en la tablet, vulcanizado por la 7).</li>
-<li><b>Línea agrícola</b>, paso a paso como la de camiones.</li>
-<li>Propuesta de compra para asistencia (tablet + lector) y reglas que tienen que decidir los dueños.</li>
+<li>Que el personal vea en la tablet los cambios del 26/10 y la línea agrícola, y ajustar lo que digan.</li>
+<li>Agenda de control del proyecto para Anibal: cada punto con su estado, al día.</li>
+<li>Ordenar la base de datos: hay 85 tablas internas de trabajo (temporales y respaldos de octubre) para pasar a archivo. Requiere aprobación.</li>
 <li>Tienda: cuenta de Mercado Pago, alias, dominio, stock y precios reales.</li>
-<li>Factura electrónica.</li>
 <li>Revisión completa de ventas, compras, caja y cuentas corrientes en el motor nuevo.</li>
+<li>Factura electrónica.</li>
 </ol></div>
 </main>
-<footer>Fuentes: registro de cambios de la carpeta del proyecto (_LEEME.md), estado de avance del 27/09/2026 y pruebas hechas en el sistema de pruebas. Informe preparado por EMA Data Analytics. BORRADOR hasta que lo revise Anibal.</footer>
+<footer>Fuentes: fechas de los archivos de la carpeta del proyecto (EMA1 / gustavo guerrero, desde el 18/02/2026), registro de cambios de la carpeta del proyecto (_LEEME.md, desde el 16/10/2026), base de datos de pruebas consultada el 26/10/2026 y pruebas hechas en el sistema de pruebas. Informe preparado por EMA Data Analytics. BORRADOR hasta que lo revise Anibal.</footer>
 </body></html>
