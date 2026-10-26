@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "141b41c7eee9"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "fb2be48e3198"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10007,12 +10007,12 @@ function pcPintar() {
   var nNuevos = (d.cascos || []).filter(function(k) { return k.ESTADO === 'NUEVO'; }).length;
   var nDev = d.cubiertas.filter(function(c) { return c.ESTADO === 'RECHAZADA' && !c.FECHA_DEVOLUCION; }).length;
   var tabs = [['cascos', '1 · Carga de cascos'], ['otrab', '2 · Órdenes de trabajo' + (nNuevos ? ' (' + nNuevos + ' cascos sin orden)' : '')], ['armar', '3 · Orden de servicio (' + n('EN_ESPERA') + ' pendientes)'], ['ots', 'Órdenes de servicio (' + abiertas + ' abiertas)'],
-    ['rech', 'Rechazadas' + (nDev ? ' (' + nDev + ' a devolver)' : '')], ['costos', 'Costos'], ['herramental', 'Herramental (inner/envelope)'], ['equipos', 'Herramientas y consumibles'], ['alarmas', '⚠ Alarmas'], ['hist', 'Historial'], ['config', 'Configuración']];
+    ['rech', 'Rechazadas' + (nDev ? ' (' + nDev + ' a devolver)' : '')], ['costos', 'Costos'], ['herramental', 'Herramental (inner/envelope)'], ['equipos', 'Herramientas y consumibles'], ['alarmas', '⚠ Alarmas'], ['hist', 'Historial'], ['config', 'Configuración'], ['pesaje', '⚖ Pesaje cojín y flux']];
   el.innerHTML = '<div class="page-hd"><div><div class="page-title">Producción por cubierta</div><div class="page-sub">Cada cubierta con su marca grabada: recepción, carga de autoclave, estaciones, insumos reales y costo.</div></div>' +
     '<div class="flex gap2 no-print"><input class="fi" id="pc-marca-q" placeholder="Buscar marca..." style="width:170px"/><button class="btn btn-s" onclick="pcHistorial($v(\'pc-marca-q\'))"><i class="fas fa-search"></i> Vida de la cubierta</button><button class="btn btn-p" onclick="pcAyuda(pcAyudaClave())">❓ Ayuda</button></div></div>' +
     '<div class="tabs mb3">' + tabs.map(function(t) { return '<div class="tab' + (PC_.tab === t[0] ? ' active' : '') + '" onclick="PC_.tab=\'' + t[0] + '\';pcPintar()">' + t[1] + '</div>'; }).join('') + '</div><div id="pc-body"></div>';
   $id('pc-marca-q').addEventListener('keydown', function(e) { if (e.key === 'Enter') pcHistorial(this.value); });
-  ({ recepcion: pcRecepcion, cascos: pcCascos, otrab: pcOTrab, rech: pcRechazadas, armar: pcArmar, ots: pcOts, costos: pcCostos, herramental: pcHerramental, equipos: pcEquipos, alarmas: pcAlarmas, hist: pcHist, config: pcConfig })[PC_.tab]();
+  ({ recepcion: pcRecepcion, cascos: pcCascos, otrab: pcOTrab, rech: pcRechazadas, armar: pcArmar, ots: pcOts, costos: pcCostos, herramental: pcHerramental, equipos: pcEquipos, alarmas: pcAlarmas, hist: pcHist, config: pcConfig, pesaje: pcPesaje })[PC_.tab]();
 }
 
 // ================================================================
@@ -10839,6 +10839,54 @@ function pcTiempos() {
 }
 
 // ── Herramental ──
+// ── Pesaje de cojín y flux: informe por día y configuración (qué estaciones pesan además cada cubierta) ──
+async function pcPesaje() {
+  var b = $id('pc-body'); b.innerHTML = '<div class="card"><div class="card-body tdim">Cargando…</div></div>';
+  var hoy = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
+  PC_.pesD = PC_.pesD || hoy; PC_.pesH = PC_.pesH || hoy;
+  var inf, cfg;
+  try { var r = await Promise.all([gsRun('gsPC_PesajeInforme', PC_.pesD, PC_.pesH), gsRun('gsPC_PesajeConfig')]); inf = r[0]; cfg = r[1]; } catch (e) { b.innerHTML = '<div class="al al-r">' + pcEsc(e.message) + '</div>'; return; }
+  if (!inf.ok || !cfg.ok) { b.innerHTML = '<div class="al al-r">' + pcEsc(inf.error || cfg.error) + '</div>'; return; }
+  var f3 = function(n) { return n === null || n === undefined ? '—' : (Math.round(n * 1000) / 1000).toLocaleString('es-AR'); };
+  var dd = function(s) { return String(s).split('-').reverse().join('/'); };
+  var h = '<div class="card mb3"><div class="card-hd"><span class="card-title">⚖ Pesaje del día: lo que se fue contra lo cargado en las cubiertas</span><span style="display:flex;gap:6px;align-items:center">' +
+    '<input type="date" class="fi" id="pc-pes-d" value="' + pcEsc(PC_.pesD) + '"> a <input type="date" class="fi" id="pc-pes-h" value="' + pcEsc(PC_.pesH) + '"><button class="btn btn-p btn-sm" onclick="PC_.pesD=$v(\'pc-pes-d\');PC_.pesH=$v(\'pc-pes-h\');pcPesaje()">Ver</button></span></div>' +
+    '<div class="card-body"><div class="tdim mb2" style="font-size:12px">Retirado a la mañana − sobrante a la tarde = <b>se fue</b>. Se compara con lo cargado en las cubiertas ese día en esa estación. Rojo: la diferencia pasa el ' + inf.MARGEN + '%. Fecha de Argentina.</div>';
+  if (!inf.FILAS.length) h += '<div class="tdim">No hay pesajes ni consumos de cojín o flux en esas fechas.</div>';
+  else h += '<div class="tw"><table id="pc-tbl-pes"><thead><tr><th>Fecha</th><th>Estación</th><th>Insumo</th><th class="tr">Retirado</th><th class="tr">Sobró</th><th class="tr">Se fue</th><th class="tr">En cubiertas</th><th class="tr">Diferencia</th><th>Sobrante</th><th>Quién · explicación</th></tr></thead><tbody>' +
+    inf.FILAS.map(function(x) {
+      var P = x.PES, c = x.CALC, u = pcEsc(x.UNIDAD), est;
+      if (x.SIN_PESAJE) est = '<span class="badge b-red">Sin pesaje del día</span>';
+      else if (P.ESTADO === 'ANULADO') est = '<span class="badge b-gray">Anulado: ' + pcEsc(P.MOTIVO_ANULA) + '</span>';
+      else if (P.ESTADO === 'ABIERTO') est = '<span class="badge b-orange">Falta el pesaje del final</span>';
+      else est = c && c.FUERA ? '<b style="color:var(--danger)">' + (c.DIF > 0 ? '+' : '') + f3(c.DIF) + ' ' + u + ' (' + (c.PCT > 0 ? '+' : '') + c.PCT + '%)</b>' : '<span style="color:var(--success);font-weight:700">' + (c.DIF > 0 ? '+' : '') + f3(c.DIF) + ' ' + u + ' (' + c.PCT + '%)</span>';
+      return '<tr' + (P && P.ESTADO === 'ANULADO' ? ' style="opacity:.5"' : '') + '><td>' + dd(x.FECHA) + '</td><td>' + pcEsc(x.ESTACION) + '</td><td>' + pcEsc(x.INSUMO) + '</td>' +
+        '<td class="tr mono">' + (P ? f3(P.INICIO) + ' ' + u : '—') + '</td><td class="tr mono">' + (P && P.FIN !== null ? f3(P.FIN) + ' ' + u : '—') + '</td><td class="tr mono">' + (c ? f3(c.REAL) + ' ' + u : '—') + '</td>' +
+        '<td class="tr mono">' + f3(x.USADO_CUB) + ' ' + u + '<div class="tdim" style="font-size:10px">' + x.CUBIERTAS + ' cub.' + (x.PESADAS ? ' · ' + x.PESADAS + ' pesadas' : ' · receta') + '</div></td><td class="tr">' + est + '</td>' +
+        '<td>' + (P && P.DESTINO ? (P.DESTINO === 'QUEDA' ? 'Quedó en la estación' : 'Volvió al depósito') : '') + '</td>' +
+        '<td style="font-size:11px">' + (P ? pcEsc([P.OPERARIO_INI ? 'inicio ' + P.OPERARIO_INI : '', P.OPERARIO_FIN ? 'fin ' + P.OPERARIO_FIN : ''].filter(Boolean).join(' · ')) + (P.JUSTIFICACION ? '<div><b>' + pcEsc(P.JUSTIFICACION) + '</b>' + (P.AUTORIZA ? ' · ' + pcEsc(P.AUTORIZA) : '') + '</div>' : '') : '') +
+        (P && P.ESTADO !== 'ANULADO' ? ' <button class="btn btn-xs btn-s" onclick="pcPesAnular(' + P.ID_PES + ')">Anular</button>' : '') + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+  h += '</div></div>';
+  h += '<div class="card"><div class="card-hd"><span class="card-title">Qué se pesa en cada estación</span></div><div class="card-body"><div class="tdim mb2" style="font-size:12px">Insumos que se pesan: <b>' + pcEsc(cfg.INSUMOS.map(function(i) { return i.NOMBRE + ' (' + i.ID_INSUMO + ')'; }).join(' · ')) + '</b>.<br>' +
+    '<b>Inicio y fin del día</b>: obligatorio en toda estación que usa alguno (no se puede apagar). <b>Por cubierta</b>: se elige acá; con el tilde, la tablet pide peso de antes y de después en cada cubierta.</div>' +
+    '<div class="tw"><table><thead><tr><th>Estación</th><th>Línea</th><th>Usa</th><th>Inicio y fin del día</th><th>Por cubierta</th></tr></thead><tbody>' +
+    cfg.ESTACIONES.filter(function(e) { return e.DIA || e.CUB; }).map(function(e) {
+      return '<tr><td>' + pcEsc(e.ORDEN + ' · ' + e.NOMBRE) + '</td><td>' + pcEsc(e.LINEA || '') + '</td><td style="font-size:11px">' + pcEsc(e.INSUMOS.join(', ')) + '</td><td>' + (e.DIA ? '<span class="badge b-green">Obligatorio</span>' : '—') + '</td>' +
+        '<td><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="pc-pes-cub" value="' + pcEsc(e.ID_ESTACION) + '"' + (e.CUB ? ' checked' : '') + '> pesar cada cubierta</label></td></tr>';
+    }).join('') + '</tbody></table></div>' +
+    '<div class="flex gap2 mt2" style="align-items:center">Margen de diferencia permitido <input class="fi" id="pc-pes-mg" style="width:70px" value="' + pcEsc(cfg.MARGEN) + '"> % <button class="btn btn-p" onclick="pcPesGuardar()">Guardar</button></div></div></div>';
+  b.innerHTML = h;
+}
+PC_TOUR.pesaje = [['', '⚖ Pesaje de cojín y flux', 'A la mañana cada estación pesa lo que retira y a la tarde lo que sobra. Acá se ve, día por día, lo que se fue contra lo cargado en las cubiertas.'], ['#pc-tbl-pes', 'El informe', '<b>Se fue</b> = retirado − sobrante. <b>En cubiertas</b> = lo cargado en la tablet ese día. En rojo, la diferencia que pasa el margen, con la explicación del encargado.'], ['.pc-pes-cub', 'Por cubierta', 'Con el tilde, en esa estación la tablet pide el peso de antes y de después en cada cubierta.']];
+async function pcPesGuardar() {
+  var cub = Array.prototype.filter.call(document.querySelectorAll('.pc-pes-cub'), function(x) { return x.checked; }).map(function(x) { return x.value; });
+  try { var r = await gsRun('gsPC_PesajeGuardarConfig', { CUB: cub, MARGEN: $v('pc-pes-mg') }); if (!r.ok) return toast(r.error, 'r2'); toast('Guardado ✓', 'g'); pcPesaje(); } catch (e) { toast(e.message, 'r2'); }
+}
+async function pcPesAnular(id) {
+  var m = prompt('¿Por qué se anula este pesaje?'); if (!m) return;
+  try { var r = await gsRun('gsPC_PesajeAnular', id, m); if (!r.ok) return toast(r.error, 'r2'); toast('Anulado', 'g'); pcPesaje(); } catch (e) { toast(e.message, 'r2'); }
+}
 async function pcHerramental() {
   $id('pc-body').innerHTML = '<div class="tdim">Cargando...</div>';
   var r = await gsRun('gsPC_Piezas');
@@ -11156,6 +11204,7 @@ async function puCargar() {
   PU_.dt = PU_.d.ahora ? PU_.d.ahora - Date.now() : 0;
   if (PU_.est && !puTodas() && !PU_.d.estacion) PU_.est = '';
   PU_.eq = await pEq;
+  if (PU_.est) await puPesajeCargar(); else PU_.pes = null;
   puPintar();
 }
 // Después de confirmar un paso: se actualiza la cubierta acá mismo, sin volver a pedir todo al servidor
@@ -11278,6 +11327,7 @@ function puLista() {
   if (ots[PU_.os]) h += '<div class="pu-reg" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-color:var(--accent)"><div style="font-size:19px">Carga: <b>' + puEsc(ots[PU_.os].nro) + '</b> · ' + ots[PU_.os].n + ' cubiertas</div>' +
     (ids.length > 1 ? '<button class="pu-btn pu-min" onclick="puFijarOS(\'\')">Cambiar carga</button>' : '') + '</div>';
   h += puRelBanner();
+  h += puPesajeBanner();
   h += '<div class="pu-h">1 · Elegí la cubierta</div><input class="pu-q" id="pu-q" placeholder="Marca grabada…" value="' + puEsc(PU_.q) + '" autocomplete="off" aria-label="Buscar por marca grabada">';
   if (!d.cubiertas.length) h += '<div class="card"><div class="card-body tdim">No hay cubiertas en OT abiertas. Se arma la OT en Producción por cubierta › Armar OT.</div></div>';
   if (puTodas()) {
@@ -11416,7 +11466,7 @@ async function puRetDevolver() {
     PU_.f.retirado = {}; toast('Volvió todo al stock ✓', 'g'); puFicha();
   } catch (e) { toast(e.message, 'r2'); }
 }
-function puNuevaFila(l) { return { l: l, real: '', ok: false, no: false, motivo: '', pieza: '', sinNro: false, idReal: '', reemp: false }; }
+function puNuevaFila(l) { return { l: l, real: '', ok: false, no: false, motivo: '', pieza: '', sinNro: false, idReal: '', reemp: false, pa: '', pz: '' }; }
 function puDif(r) { var v = puN(r.real); return r.l.CANTIDAD ? (v - r.l.CANTIDAD) / r.l.CANTIDAD : 0; }
 // Insumo a medir (sin cantidad en la receta, de un trabajo extra o agregado fuera de receta): hay que poner cuánto se usó; solo un SUPER lo deja en 0
 function puMedir(l) { return !!(PU_.f && PU_.f.medirObligatorio && l.TIPO_LINEA !== 'HERRAMENTAL' && l.ID_INSUMO && (l.EXTRA || l.ADIC || !l.CANTIDAD)); }
@@ -11425,6 +11475,7 @@ function puResuelta(r) {
   if (r.no) return !!r.motivo && (!puMedir(r.l) || puSuper());
   if (r.l.TIPO_LINEA === 'HERRAMENTAL') return !!(r.pieza || r.sinNro);
   if (!r.ok) return false;
+  if (puPesarCub(r) && !puPesoOk(r)) return false;
   if (puMedir(r.l) && !(puN(r.real) > 0) && !puSuper()) return false;
   return Math.abs(puDif(r)) <= (PU_.d.tolerancia || 0) + 1e-9 || !!r.motivo;
 }
@@ -11448,7 +11499,9 @@ function puFilaHTML(r, k) {
       (PU_.d.herrObligatorio ? '' : '<button class="' + (r.sinNro ? 'sel' : '') + '" data-a="sinnro">Sin número</button>') + '</div>';
   } else {
     if (puSinStock(l) && !r.reemp) h += '<span style="color:var(--danger);font-weight:700">Sin stock en planta</span><button class="pu-btn pu-eq" data-a="otro">↺ Usé otro</button>';
-    h += (l.CANTIDAD && !(puSinStock(l) && !r.reemp) ? '<button class="pu-btn pu-eq" data-a="igual">✓ Igual a receta</button>' : '') + '<div class="pu-qty"><input inputmode="decimal" data-a="real" value="' + puEsc(r.real) + '" placeholder="Medí" aria-label="Cantidad medida"><span>' + puEsc(l.UNIDAD) + '</span></div>';
+    if (puPesarCub(r)) h += '<div style="font-weight:700;font-size:15px">⚖ Se pesa en cada cubierta</div><div class="pu-qty"><input inputmode="decimal" data-a="pa" value="' + puEsc(r.pa) + '" placeholder="Antes" aria-label="Peso antes"><span>' + puEsc(l.UNIDAD) + '</span></div>' +
+      '<div class="pu-qty"><input inputmode="decimal" data-a="pz" value="' + puEsc(r.pz) + '" placeholder="Después" aria-label="Peso después"><span>' + puEsc(l.UNIDAD) + '</span></div>';
+    else h += (l.CANTIDAD && !(puSinStock(l) && !r.reemp) ? '<button class="pu-btn pu-eq" data-a="igual">✓ Igual a receta</button>' : '') + '<div class="pu-qty"><input inputmode="decimal" data-a="real" value="' + puEsc(r.real) + '" placeholder="Medí" aria-label="Cantidad medida"><span>' + puEsc(l.UNIDAD) + '</span></div>';
   }
   h += '</div><div class="pu-est">';
   if (r.no) h += '<span class="tdim">No se usó · ' + puEsc(r.motivo) + '</span>';
@@ -11709,6 +11762,11 @@ function puPintarFila(k) {
   cont.innerHTML = puFilaHTML(r, k);
   cont.querySelectorAll('[data-a]').forEach(function(e) {
     var a = e.dataset.a;
+    if (a === 'pa' || a === 'pz') {
+      e.addEventListener('change', function() { r[a] = e.value; if (puPesoOk(r)) { r.real = puF(Math.round((puN(r.pa) - puN(r.pz)) * 1000) / 1000); r.ok = true; } else { r.ok = false; if (r.pa !== '' && r.pz !== '' && puN(r.pz) > puN(r.pa)) toast('El peso de después no puede ser mayor que el de antes', 'r2'); } r.motivo = ''; setTimeout(function() { puFicha(); puPintarFila(k); }, 0); });
+      e.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') { e.blur(); } });
+      return;
+    }
     if (a === 'real') {
       e.addEventListener('change', function() { r.real = e.value; r.ok = e.value !== '' && !isNaN(puN(e.value)); r.motivo = ''; setTimeout(function() { puFicha(); puPintarFila(k); }, 0); });
       e.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') { e.blur(); } });
@@ -11730,7 +11788,7 @@ function puPintarFila(k) {
 }
 // Pone la cantidad de la receta en todos los insumos que todavía no se cargaron (los que tienen cantidad y hay stock)
 function puTodoReceta() {
-  PU_.rows.forEach(function(r) { if (!r.no && !r.ok && !r.reemp && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && !puSinStock(r.l)) { r.real = puF(r.l.CANTIDAD); r.ok = true; r.motivo = ''; } });
+  PU_.rows.forEach(function(r) { if (!r.no && !r.ok && !r.reemp && !puPesarCub(r) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && !puSinStock(r.l)) { r.real = puF(r.l.CANTIDAD); r.ok = true; r.motivo = ''; } });
   puFicha();
 }
 // Insumo que no está en la receta: se elige de los que hay en stock y se pone cuánto se usó (no pide clave; queda registrado)
@@ -11753,6 +11811,7 @@ function puAdicional() {
     var r = puNuevaFila({ ID_DET: 'NUEVO-' + puAdicN, ID_INSUMO: x.ID_INSUMO, NOMBRE: x.NOMBRE_INSUMO, CANTIDAD: 0, UNIDAD: x.UNIDAD, TIPO_LINEA: 'INSUMO', ID_ESTACION: puE(), STOCK: PU_.f.stockIns[x.ID_INSUMO], ADIC: true });
     r.real = puF(cant); r.ok = true; r.motivo = $v('pu-a-mot').trim();
     PU_.rows.push(r); closeModal(); puFicha();
+    if (puPesarCub(r)) { r.ok = false; r.real = ''; puFicha(); puAbrirFila(PU_.rows.length - 1); }
   };
 }
 function puAgregar(i) { var l = PU_.pend.splice(i, 1)[0]; PU_.rows.push(puNuevaFila(l)); PU_.verOtros = false; puFicha(); puAbrirFila(PU_.rows.length - 1); }
@@ -11865,10 +11924,11 @@ async function puConfirmar() {
   var b = $id('pu-ok'); if (b.disabled) return;
   var f = PU_.f, cons = [], adic = [], noAp = PU_.res === 'NO_APLICA';
   if (!noAp) PU_.rows.forEach(function(r) {
-    if (r.l.ADIC) { adic.push({ ID_INSUMO: r.l.ID_INSUMO, REAL: r.real, MOTIVO: r.motivo }); return; }
+    var pw = puPesarCub(r) && !r.no ? { PESO_ANTES: puN(r.pa), PESO_DESPUES: puN(r.pz) } : {};
+    if (r.l.ADIC) { adic.push(Object.assign({ ID_INSUMO: r.l.ID_INSUMO, REAL: r.real, MOTIVO: r.motivo }, pw)); return; }
     if (r.no) cons.push({ ID_DET: r.l.ID_DET, NO_USO: 1, MOTIVO: r.motivo });
     else if (r.l.TIPO_LINEA === 'HERRAMENTAL') cons.push({ ID_DET: r.l.ID_DET, ID_PIEZA: r.pieza || '' });
-    else cons.push({ ID_DET: r.l.ID_DET, ID_INSUMO: r.reemp ? r.idReal : '', REAL: r.real, MOTIVO: r.motivo || (r.reemp ? 'Reemplazo en la estación' : '') });
+    else cons.push(Object.assign({ ID_DET: r.l.ID_DET, ID_INSUMO: r.reemp ? r.idReal : '', REAL: r.real, MOTIVO: r.motivo || (r.reemp ? 'Reemplazo en la estación' : '') }, pw));
   });
   var aut = !noAp && puHayReemplazo() ? { USUARIO: PU_.aut.u, CLAVE: $v('pu-aut-c') } : null;
   var I = PU_.insp, insp = null;
@@ -11986,6 +12046,86 @@ function puListoRechazo() {
 }
 
 // ── Ventanas ──
+// ── Pesaje de cojín y flux ──
+// Del día (obligatorio): a la mañana se pesa lo que se retira; a la tarde, lo que sobra. Por cubierta (si la estación lo tiene): peso antes y después
+function puPesarIns(id) { var p = PU_.f && PU_.f.pesar; return !!(p && id && p.ins.indexOf(String(id).toUpperCase()) !== -1); }
+function puPesarCub(r) { return !!(PU_.f && PU_.f.pesar && PU_.f.pesar.cub && r.l.TIPO_LINEA !== 'HERRAMENTAL' && puPesarIns(r.reemp && r.idReal ? r.idReal : r.l.ID_INSUMO)); }
+function puPesoOk(r) { var a = puN(r.pa), z = puN(r.pz); return r.pa !== '' && r.pz !== '' && r.pa !== undefined && r.pz !== undefined && !isNaN(a) && !isNaN(z) && z <= a + 1e-9; }
+function puPesajeBanner() {
+  var p = PU_.pes; if (!p || !p.ITEMS || !p.ITEMS.length) return '';
+  var sinIni = p.ITEMS.filter(function(i) { return !i.PES; }), abiertos = p.ITEMS.filter(function(i) { return i.PES && i.PES.ESTADO === 'ABIERTO'; });
+  if (sinIni.length) return '<div class="pu-reg" style="border-color:var(--danger);background:var(--danger-light, #fde8e8)"><div style="font-size:19px;font-weight:700;color:var(--danger)">⚖ Falta el pesaje de inicio del día: ' + puEsc(sinIni.map(function(i) { return i.NOMBRE + (puTodas() ? ' (' + i.ESTACION + ')' : ''); }).join(', ')) + '</div>' +
+    '<div style="font-size:15px">Hasta que no se pese lo que se retira, esta estación no deja cargar ese insumo.</div><button class="pu-btn" style="background:var(--danger);color:#fff;width:max-content" onclick="puPesaje()">Pesar ahora</button></div>';
+  if (abiertos.length) return '<div class="pu-reg" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-color:var(--accent)"><div style="font-size:17px">⚖ Pesaje del día abierto: ' + puEsc(abiertos.map(function(i) { return i.NOMBRE; }).join(', ')) + '. Al terminar el día pesá lo que sobra.</div><button class="pu-btn pu-min" onclick="puPesaje()">Pesaje del día</button></div>';
+  return '<div class="pu-reg" style="border-color:var(--success)"><div style="font-size:16px;color:var(--success);font-weight:700">⚖ Pesaje del día cerrado ✓</div><button class="pu-btn pu-min" style="width:max-content" onclick="puPesaje()">Ver</button></div>';
+}
+async function puPesajeCargar() { try { PU_.pes = await gsRun('gsPC_PesajeDia', puTodas() ? '' : PU_.est); } catch (e) { PU_.pes = null; } }
+async function puPesaje() {
+  await puPesajeCargar();
+  var p = PU_.pes; if (!p) return toast('No se pudo leer el pesaje', 'r2');
+  var h = '<div class="mh"><span class="mt">⚖ Pesaje del día · ' + puEsc(p.HOY.split('-').reverse().join('/')) + '</span><button class="mc" onclick="closeModal();puCargar()">×</button></div><div class="mb2 pu-vent">';
+  if (!p.ITEMS.length) h += '<div class="tdim">En esta estación no se usa ningún insumo que se pese.</div>';
+  p.ITEMS.forEach(function(i, k) {
+    var P = i.PES, u = puEsc(i.UNIDAD);
+    h += '<div class="pu-reg" style="border-color:' + (!P ? 'var(--danger)' : (P.ESTADO === 'CERRADO' ? 'var(--success)' : 'var(--accent)')) + '"><div style="font-size:19px;font-weight:700">' + puEsc(i.NOMBRE) + (puTodas() ? ' <span class="tdim" style="font-size:14px">· ' + puEsc(i.ESTACION) + '</span>' : '') + '</div>';
+    if (!P) {
+      h += '<div style="font-size:15px"><b>Inicio del día:</b> pesá lo que retirás del depósito para hoy (más lo que haya quedado en la estación).</div>' +
+        (i.QUEDO_ANTES ? '<div class="tdim" style="font-size:14px">El ' + puEsc(i.QUEDO_ANTES.FECHA.split('-').reverse().join('/')) + ' quedaron ' + puF(i.QUEDO_ANTES.CANT) + ' ' + u + ' en la estación.</div>' : '') +
+        '<div class="pu-qty"><input inputmode="decimal" id="pu-pes-ini-' + k + '" placeholder="Peso" aria-label="Peso de inicio"><span>' + u + '</span></div>' +
+        '<button class="pu-btn pu-ok" style="width:max-content" onclick="puPesIni(' + k + ')">Guardar inicio</button>';
+    } else {
+      h += '<div style="font-size:15px">Inicio: <b>' + puF(P.INICIO) + ' ' + u + '</b> · pesó ' + puEsc(P.OPERARIO_INI) + '</div>' +
+        '<div style="font-size:15px">Cargado por cubierta hoy: <b>' + puF(i.USADO_CUB) + ' ' + u + '</b> en ' + i.CUBIERTAS + ' cubierta' + (i.CUBIERTAS === 1 ? '' : 's') + '</div>';
+      if (P.ESTADO === 'CERRADO') {
+        var c = i.CALC || {};
+        h += '<div style="font-size:15px">Sobró: <b>' + puF(P.FIN) + ' ' + u + '</b>' + (P.DESTINO ? ' · ' + (P.DESTINO === 'QUEDA' ? 'quedó en la estación' : 'volvió al depósito') : '') + ' · pesó ' + puEsc(P.OPERARIO_FIN) + '</div>' +
+          '<div style="font-size:16px;font-weight:700;color:' + (c.FUERA ? 'var(--danger)' : 'var(--success)') + '">Se fue: ' + puF(c.REAL) + ' ' + u + ' · diferencia con lo cargado: ' + (c.DIF > 0 ? '+' : '') + puF(c.DIF) + ' ' + u + ' (' + (c.PCT > 0 ? '+' : '') + c.PCT + '%)</div>' +
+          (P.JUSTIFICACION ? '<div style="font-size:14px">Explicación: ' + puEsc(P.JUSTIFICACION) + (P.AUTORIZA ? ' · ' + puEsc(P.AUTORIZA) : '') + '</div>' : '');
+      } else {
+        h += '<div style="font-size:15px;margin-top:6px"><b>Fin del día:</b> pesá lo que sobró.</div>' +
+          '<div class="pu-qty"><input inputmode="decimal" id="pu-pes-fin-' + k + '" placeholder="Peso" aria-label="Peso de lo que sobró"><span>' + u + '</span></div>' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pu-chip" id="pu-pes-dep-' + k + '" onclick="puPesDest(' + k + ',\'DEPOSITO\')">Vuelve al depósito</button><button class="pu-chip" id="pu-pes-que-' + k + '" onclick="puPesDest(' + k + ',\'QUEDA\')">Queda en la estación</button></div>' +
+          '<div id="pu-pes-just-' + k + '"></div>' +
+          '<button class="pu-btn pu-ok" style="width:max-content" onclick="puPesFin(' + k + ')">Cerrar el día</button>';
+      }
+    }
+    h += '</div>';
+  });
+  h += '<div class="tdim" style="font-size:13px">Lo que se fue (inicio − sobrante) se compara con lo cargado en las cubiertas. Si la diferencia pasa el ' + p.MARGEN + '%, la explica el encargado.</div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal();puCargar()">Cerrar</button></div>';
+  closeModal(); showModal(h, 'md-lg'); PU_.pesDest = {};
+}
+function puPesDest(k, v) { PU_.pesDest[k] = v; var a = $id('pu-pes-dep-' + k), b = $id('pu-pes-que-' + k); if (a) a.classList.toggle('sel', v === 'DEPOSITO'); if (b) b.classList.toggle('sel', v === 'QUEDA'); }
+function puPesOper(fn) { var emps = ((PU_.d && PU_.d.empleados) || []).map(function(e) { return e.NOMBRE; }); if (!emps.length) return fn(PU_.oper || 'SIN NOMBRE'); puElegir('¿Quién pesa?', emps, fn); }
+function puPesIni(k) {
+  var i = PU_.pes.ITEMS[k], v = $v('pu-pes-ini-' + k).trim();
+  if (v === '' || isNaN(puN(v))) return toast('Poné el peso', 'r2');
+  puPesOper(async function(oper) {
+    try { var r = await gsRun('gsPC_PesajeInicio', { ID_ESTACION: i.ID_ESTACION, ID_INSUMO: i.ID_INSUMO, CANTIDAD: puN(v), OPERARIO: oper });
+      if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return puPesaje(); }
+      toast('Inicio guardado ✓', 'g'); puPesaje(); } catch (e) { toast(e.message, 'r2'); }
+  });
+}
+function puPesFin(k) {
+  var i = PU_.pes.ITEMS[k], v = $v('pu-pes-fin-' + k).trim(), j = $id('pu-pes-jtx-' + k), au = $id('pu-pes-au-' + k), ac = $id('pu-pes-ac-' + k);
+  if (v === '' || isNaN(puN(v))) return toast('Poné cuánto pesa lo que sobró (0 si no sobró nada)', 'r2');
+  if (puN(v) > 0 && !PU_.pesDest[k]) return toast('Decí qué se hace con lo que sobró', 'r2');
+  var d = { ID_PES: i.PES.ID_PES, CANTIDAD: puN(v), DESTINO: PU_.pesDest[k] || '', JUSTIFICACION: j ? j.value.trim() : '', AUTORIZA: au ? { USUARIO: au.value.trim(), CLAVE: ac ? ac.value : '' } : null };
+  puPesOper(async function(oper) {
+    d.OPERARIO = oper;
+    try { var r = await gsRun('gsPC_PesajeFin', d);
+      if (ac) ac.value = '';
+      if (r && r.PIDE_JUSTIFICACION) {
+        var c = r.CALC, box = $id('pu-pes-just-' + k);
+        box.innerHTML = '<div style="color:var(--danger);font-weight:700;font-size:16px">Se fueron ' + puF(c.REAL) + ' ' + puEsc(i.UNIDAD) + ' y en las cubiertas se cargaron ' + puF(c.USADO) + ': diferencia ' + (c.DIF > 0 ? '+' : '') + puF(c.DIF) + ' (' + c.PCT + '%). El encargado tiene que explicarla.</div>' +
+          '<input class="pu-q" id="pu-pes-jtx-' + k + '" style="font-size:16px;text-transform:none" placeholder="¿Qué pasó con la diferencia?" autocomplete="off">' +
+          (PU_.pes.SOY_ENCARGADO ? '' : '<div class="fr2"><input id="pu-pes-au-' + k + '" placeholder="Usuario del encargado" autocomplete="off"><input id="pu-pes-ac-' + k + '" type="password" placeholder="Clave" autocomplete="new-password"></div>');
+        $id('pu-pes-fin-' + k).value = v; return;
+      }
+      if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+      toast('Día cerrado ✓', 'g'); puPesaje(); } catch (e) { toast(e.message, 'r2'); }
+  });
+}
 function puElegir(tit, ops, fn) {
   showModal('<div class="mh"><span class="mt">' + puEsc(tit) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="display:flex;flex-wrap:wrap;gap:8px">' +
     ops.map(function(o) { return '<button class="pu-chip" data-v="' + puEsc(o) + '">' + puEsc(o) + '</button>'; }).join('') + '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button></div>');
