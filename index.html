@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "1de27dccb61f"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "18ef3d4cd3ec"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -11447,7 +11447,7 @@ function puLista() {
   cs.sort(function(a, b) { return peso(a) - peso(b) || String(a.NRO_OT).localeCompare(String(b.NRO_OT)) || a.ORDEN - b.ORDEN; });
   var eq = PU_.eq, h = '';
   if (eq && eq.controlDiario && eq.herramientas.length && !eq.controlInicio) h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:18px;font-weight:700;color:var(--warn)">⚠ Hoy todavía no se hizo el control de herramientas de inicio</div><button class="pu-btn" style="background:var(--warn);color:#fff;width:max-content" onclick="puVerHerr()">Hacer el control ahora</button></div>';
-  if (ots[PU_.os]) h += '<div class="pu-reg" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-color:var(--accent)"><div style="font-size:19px">Carga: <b>' + puEsc(ots[PU_.os].nro) + '</b> · ' + ots[PU_.os].n + ' cubiertas</div>' +
+  if (ots[PU_.os]) h += '<div class="pu-reg" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-color:var(--accent)"><div style="font-size:19px">Carga: <b>' + puEsc(ots[PU_.os].nro) + '</b> · ' + ots[PU_.os].n + (ots[PU_.os].n === 1 ? ' cubierta' : ' cubiertas') + '</div>' +
     (ids.length > 1 ? '<button class="pu-btn pu-min" onclick="puFijarOS(\'\')">Cambiar carga</button>' : '') + '</div>';
   h += puRelBanner();
   h += puPesajeBanner();
@@ -12247,7 +12247,8 @@ async function puPesaje() {
         var c = i.CALC || {};
         h += '<div style="font-size:15px">Sobró: <b>' + puF(P.FIN) + ' ' + u + '</b>' + (P.DESTINO ? ' · ' + (P.DESTINO === 'QUEDA' ? 'quedó en la estación' : 'volvió al depósito') : '') + ' · pesó ' + puEsc(P.OPERARIO_FIN) + '</div>' +
           '<div style="font-size:16px;font-weight:700;color:' + (c.FUERA ? 'var(--danger)' : 'var(--success)') + '">Se fue: ' + puF(c.REAL) + ' ' + u + ' · diferencia con lo cargado: ' + (c.DIF > 0 ? '+' : '') + puF(c.DIF) + ' ' + u + ' (' + (c.PCT > 0 ? '+' : '') + String(c.PCT).replace('.', ',') + '%)</div>' +
-          (P.JUSTIFICACION ? '<div style="font-size:14px">Explicación: ' + puEsc(P.JUSTIFICACION) + (P.AUTORIZA ? ' · ' + puEsc(P.AUTORIZA) : '') + '</div>' : '');
+          (P.JUSTIFICACION ? '<div style="font-size:14px">Explicación: ' + puEsc(P.JUSTIFICACION) + (P.AUTORIZA ? ' · ' + puEsc(P.AUTORIZA) : '') + '</div>' : '') +
+          '<button class="pu-btn pu-min" style="width:max-content" onclick="puPesReabrir(' + k + ', this)">Reabrir (encargado): hay que seguir usando</button>';
       } else {
         h += '<div style="font-size:15px;margin-top:6px"><b>Fin del día:</b> pesá lo que sobró.</div>' +
           '<div class="pu-qty"><input inputmode="decimal" id="pu-pes-fin-' + k + '" placeholder="Peso" aria-label="Peso de lo que sobró"><span>' + u + '</span></div>' +
@@ -12263,6 +12264,18 @@ async function puPesaje() {
   h += '<div class="tdim" style="font-size:13px">Lo que se fue (inicio − sobrante) se compara con lo cargado en las cubiertas. Si la diferencia pasa el ' + p.MARGEN + '%, la explica el encargado.</div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal();puCargar()">Cerrar</button></div>';
   closeModal(); showModal(h, 'md-lg'); PU_.pesDest = {};
+}
+function puPesReabrir(k, btn) {
+  if ($id('pu-pes-rm-' + k)) return;
+  var div = document.createElement('div');
+  div.innerHTML = '<div style="font-weight:700;margin-top:6px">¿Por qué se reabre?</div><input class="pu-q" id="pu-pes-rm-' + k + '" style="font-size:16px;text-transform:none" placeholder="Ej: entró otra carga a la tarde" autocomplete="off"><button class="pu-btn pu-ok" style="width:max-content" onclick="puPesReabrirOk(' + k + ')">Reabrir</button>';
+  btn.parentNode.appendChild(div);
+}
+async function puPesReabrirOk(k) {
+  var i = PU_.pes.ITEMS[k], m = $v('pu-pes-rm-' + k).trim();
+  if (m.length < 3) return toast('Decí por qué se reabre', 'r2');
+  try { var r = await gsRun('gsPC_PesajeReabrir', i.PES.ID_PES, m);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Pesaje reabierto', 'g'); puPesaje(); } catch (e) { toast(e.message, 'r2'); }
 }
 function puPesDest(k, v) { PU_.pesDest[k] = v; var a = $id('pu-pes-dep-' + k), b = $id('pu-pes-que-' + k); if (a) a.classList.toggle('sel', v === 'DEPOSITO'); if (b) b.classList.toggle('sel', v === 'QUEDA'); }
 function puPesOper(fn) { var emps = ((PU_.d && PU_.d.empleados) || []).map(function(e) { return e.NOMBRE; }); if (!emps.length) return fn(PU_.oper || 'SIN NOMBRE'); if (!PU_.pesOper) return toast('Elegí arriba quién pesa', 'r2'); fn(PU_.pesOper); }
