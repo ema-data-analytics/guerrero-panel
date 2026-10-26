@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "29cf6078ac6a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e2b84d9ece9e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -3544,7 +3544,7 @@ async function renderCargaCompras() {
   _proveedoresCache=provs;
 
   var metOpts=metodos.map(function(m){return '<option value="'+m.ID_METODO_PAGO+'">'+m.METODO_PAGO+'</option>';}).join('');
-  var cajaOpts=cajas.map(function(c){return '<option value="'+c.ID_CAJA+'">'+c.CAJA_DESC+'</option>';}).join('');
+  var cajaOpts=cajas.filter(function(c){var e=String(c.ESTADO||'').toUpperCase();return e!=='INACTIVA'&&e!=='ANULADA';}).map(function(c){return '<option value="'+c.ID_CAJA+'">'+c.CAJA_DESC+'</option>';}).join('');
 
   el.innerHTML =
   '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-cart-plus" style="color:var(--accent)"></i> Compras</div>'+
@@ -4124,7 +4124,7 @@ async function renderCargaGastos() {
     '<div class="fr mb3"><div class="fg"><label class="fl">Importe que sale de la caja *</label><input id="gas-importe" class="fi" type="number" min="0" step="0.01" oninput="gaCalc()"></div>' +
     '<div class="fg"><label class="fl">Descripción</label><input id="gas-desc" class="fi" placeholder="Si se deja vacío se arma sola"></div></div>' +
     '<div id="gas-calc" class="mb3"></div>' +
-    '<div class="al al-b mb3" style="font-size:12px">El descuento de cheques se carga en <b>Cheques → Descontar</b>: ahí queda el costo como gasto financiero.</div>' +
+    '<div class="al al-b mb3" style="font-size:12px">Sueldos, impuestos y fletes se cargan en su pantalla (Sueldos, Impositivo, Transporte). El descuento de cheques se carga en <b>Cheques → Descontar</b>: ahí queda el costo como gasto financiero.</div>' +
     '<button class="btn btn-p" id="gas-btn" style="width:100%;justify-content:center" onclick="gaGuardar()"><i class="fas fa-check-circle"></i> Registrar gasto</button>' +
     '</div></div></div>' +
     '<div class="card"><div class="card-hd"><span class="card-title">Gastos</span><span class="badge b-warn" id="gas-cnt">...</span></div>' +
@@ -5058,13 +5058,13 @@ async function cjCargar() {
 function cjPintarSaldos() {
   var el = $id('cj-saldos'); if (!el) return;
   var act = _CJ.CAJAS.filter(function(c) { return c.ACTIVA || Math.abs(c.SALDO) > 0.005; });
-  var tot = act.reduce(function(s, c) { return s + c.SALDO; }, 0);
-  el.innerHTML = '<div class="tw"><table><thead><tr><th>Caja / cuenta</th><th class="tr">Saldo al inicio del período</th><th class="tr">Ingresos</th><th class="tr">Egresos</th><th class="tr">Saldo actual</th></tr></thead><tbody>' +
+  var tot = act.reduce(function(s, c) { return s + c.SALDO_FIN; }, 0), totHoy = act.reduce(function(s, c) { return s + c.SALDO; }, 0);
+  el.innerHTML = '<div class="tw"><table><thead><tr><th>Caja / cuenta</th><th class="tr">Saldo al inicio del período</th><th class="tr">Ingresos</th><th class="tr">Egresos</th><th class="tr">Saldo al cierre del período</th></tr></thead><tbody>' +
     act.map(function(c) {
       return '<tr style="cursor:pointer" onclick="cjVerCaja(\'' + cjEsc(c.ID_CAJA) + '\')"><td style="font-weight:600">' + cjEsc(c.CAJA_DESC) + (c.ACTIVA ? '' : ' <span class="badge b-gray" style="font-size:9px">inactiva</span>') + '</td>' +
         '<td class="mono tr">' + fmt(c.SALDO_ANTES) + '</td><td class="mono tr tgreen">' + fmt(c.INGRESOS) + '</td><td class="mono tr tred">' + fmt(c.EGRESOS) + '</td>' +
-        '<td class="mono tr" style="font-weight:700;color:' + (c.SALDO < 0 ? 'var(--danger)' : 'var(--text)') + '">' + fmt(c.SALDO) + '</td></tr>';
-    }).join('') + '</tbody><tfoot><tr><td colspan="4" style="font-weight:700">TOTAL</td><td class="mono tr" style="font-weight:700">' + fmt(tot) + '</td></tr></tfoot></table></div>';
+        '<td class="mono tr" style="font-weight:700;color:' + (c.SALDO_FIN < 0 ? 'var(--danger)' : 'var(--text)') + '">' + fmt(c.SALDO_FIN) + (Math.abs(c.SALDO_FIN - c.SALDO) > 0.005 ? '<div class="tdim" style="font-size:10px;font-weight:400">hoy ' + fmt(c.SALDO) + '</div>' : '') + '</td></tr>';
+    }).join('') + '</tbody><tfoot><tr><td colspan="4" style="font-weight:700">TOTAL' + (Math.abs(tot - totHoy) > 0.005 ? ' <span class="tdim" style="font-weight:400">(hoy ' + fmt(totHoy) + ')</span>' : '') + '</td><td class="mono tr" style="font-weight:700">' + fmt(tot) + '</td></tr></tfoot></table></div>';
 }
 function cjVerCaja(id) { var s = $id('cj-caja'); if (s) { s.value = id; cjCargar(); } }
 function cjPintarMovs() {
