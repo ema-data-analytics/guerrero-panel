@@ -6781,7 +6781,7 @@ async function renderOrdenesPago() {
     '<div class="content">' +
     '<div class="g3 mb4">' +
     '<div class="stat" style="border-top:3px solid var(--danger)"><div class="stat-label">Deuda con proveedores</div><div class="stat-val sv-red">' + fmt(deuda) + '</div><div class="stat-sub">' + pend.length + ' factura' + (pend.length === 1 ? '' : 's') + ' por pagar</div></div>' +
-    '<div class="stat" style="border-top:3px solid var(--success)"><div class="stat-label">Total pagado</div><div class="stat-val sv-green">' + fmt(pagado) + '</div><div class="stat-sub">' + activas.length + ' orden' + (activas.length === 1 ? '' : 'es') + ' de pago</div></div>' +
+    '<div class="stat" style="border-top:3px solid var(--success)"><div class="stat-label">Total pagado</div><div class="stat-val sv-green">' + fmt(pagado) + '</div><div class="stat-sub">' + activas.length + (activas.length === 1 ? ' orden' : ' órdenes') + ' de pago</div></div>' +
     '<div class="stat" style="border-top:3px solid var(--warn)"><div class="stat-label">Proveedores con deuda</div><div class="stat-val sv-warn">' + Object.keys(provsDeuda).length + '</div><div class="stat-sub">a pagar</div></div>' +
     '</div>' +
     '<div class="card mb4"><div class="card-hd"><span class="card-title">Facturas por pagar</span><span class="badge b-warn">' + pend.length + '</span></div>' +
@@ -7039,7 +7039,7 @@ async function renderCtaCteProveedores() {
   '<div class="page-sub">SALDOS Y MOVIMIENTOS POR PROVEEDOR</div></div></div>' +
   '<div class="content">' +
   '<div class="g3 mb4">' +
-  '<div class="stat" style="border-top:3px solid var(--danger)"><div class="stat-label">Total Deuda Proveedores</div><div class="stat-val sv-red">'+fmt(totalDeuda)+'</div><div class="stat-sub">'+provConDeuda.length+' proveedores con saldo</div></div>' +
+  '<div class="stat" style="border-top:3px solid var(--danger)"><div class="stat-label">Total Deuda Proveedores</div><div class="stat-val sv-red">'+fmt(totalDeuda)+'</div><div class="stat-sub">'+provConDeuda.length+(provConDeuda.length===1?' proveedor con saldo':' proveedores con saldo')+'</div></div>' +
   '<div class="stat" style="border-top:3px solid var(--accent)"><div class="stat-label">Total Movimientos</div><div class="stat-val sv-blue">'+movs.length+'</div><div class="stat-sub">Débitos y créditos</div></div>' +
   '<div class="stat" style="border-top:3px solid var(--success)"><div class="stat-label">Proveedores al día</div><div class="stat-val sv-green">'+provs.filter(function(p){return !saldos[p.ID_PROVEEDOR]||saldos[p.ID_PROVEEDOR]<=0;}).length+'</div><div class="stat-sub">Sin deuda pendiente</div></div>' +
   '</div>' +
