@@ -10531,7 +10531,7 @@ function pcVidaImprimir(k) {
     f('Marca de fábrica', pcEsc(v.FABRICANTE)) + f('Cubierta', pcEsc(v.TIPO + ' ' + v.MEDIDA)) + f('Trabajo', pcEsc(v.TRABAJO)) + f('Recibida', fmtD(v.FECHA_RECEPCION)) +
     f('Orden de trabajo', pcEsc(v.OTRAB + (v.NRO_MANUAL ? ' · boleta ' + v.NRO_MANUAL : ''))) + f('Orden de servicio', pcEsc(dets.map(function(x) { return x.os.NRO_OT; }).join(' · '))) +
     f('Remito de entrega', rem ? pcEsc(rem.NRO) + ' · ' + fmtD(rem.FECHA) : 'Todavía no se entregó') + f('Estado', pcEsc({ TERMINADA: 'Terminada', RECHAZADA: 'No apta', EN_OT: 'En proceso', EN_ESPERA: 'Esperando entrar a la línea' }[v.ESTADO] || v.ESTADO)) + '</div>' +
-    '<h2>Inspección inicial</h2><div class="dat">' + f('Resultado', v.INSPECCION === 'APTA' ? 'Apta para el trabajo' : v.INSPECCION === 'NO_APTA' ? 'No apta' : 'Sin inspección') + f('Banda colocada', pcEsc(v.BANDA)) +
+    '<h2>Inspección inicial</h2><div class="dat">' + f('Resultado', v.INSPECCION === 'APTA' ? 'Apta para el trabajo' : v.INSPECCION === 'NO_APTA' ? 'No apta' : 'Sin inspección') + f('Banda indicada', pcEsc(v.BANDA)) +
     f('Parches', pcEsc((v.PARCHES || []).join(' · '))) + f('Trabajos extra', pcEsc((v.EXTRAS || []).join(' · '))) + (v.MOTIVO_RECHAZO ? f('Motivo', pcEsc(v.MOTIVO_RECHAZO)) : '') + '</div>' +
     (v.CAMBIOS || []).map(function(c) { return '<div class="emp">Trabajo cambiado en la inspección de ' + pcEsc(c.ANTES) + ' a ' + pcEsc(c.DESPUES) + ' (' + fmtD(c.FECHA) + '): ' + pcEsc(c.MOTIVO) + '.</div>'; }).join('');
   dets.forEach(function(x) {
@@ -10580,7 +10580,7 @@ function pcVidaDet(i, os) {
         return pcEsc(nm) + ': <b>' + n3(k.REAL) + ' ' + pcEsc(k.UNIDAD || '') + '</b>' + (+k.PREVISTO ? ' <span class="tdim">· receta ' + n3(k.PREVISTO) + '</span>' : '') +
           (String(k.PESO_ANTES || '') !== '' ? ' <span class="tdim">· pesado ' + n3(k.PESO_ANTES) + ' → ' + n3(k.PESO_DESPUES) + '</span>' : '') + (+k.REEMPLAZO === 1 ? ' (reemplazo)' : '') + pz + (k.MOTIVO ? ' <span style="color:#b45309">· ' + pcEsc(k.MOTIVO) + '</span>' : '');
       });
-      return '<tr><td>' + pcEsc(nomE[g.ID_ESTACION] || g.ID_ESTACION) + (g.PASADA > 1 ? ' (2ª pasada)' : '') + '</td><td style="white-space:nowrap">' + fmtDT(+g.FECHA) + '</td><td>' + pcEsc(g.OPERARIO || g.USUARIO || '') + '</td><td class="tr">' + (min[g.ID_ESTACION] ? Math.round(min[g.ID_ESTACION]) : '') + '</td><td>' + pcEsc(g.RESULTADO || '') + (g.OBSERVACION ? ' · ' + pcEsc(g.OBSERVACION) : '') + '</td><td>' + (us.join('<br>') || '—') + '</td></tr>';
+      return '<tr><td>' + pcEsc(nomE[g.ID_ESTACION] || g.ID_ESTACION) + (g.PASADA > 1 ? ' (2ª pasada)' : '') + '</td><td style="white-space:nowrap">' + fmtDT(+g.FECHA) + '</td><td>' + pcEsc(g.OPERARIO || g.USUARIO || '') + '</td><td class="tr">' + (min[g.ID_ESTACION] ? (min[g.ID_ESTACION] < 1 ? '&lt;1' : Math.round(min[g.ID_ESTACION])) : '') + '</td><td>' + pcEsc(g.RESULTADO || '') + (g.OBSERVACION ? ' · ' + pcEsc(g.OBSERVACION) : '') + '</td><td>' + (us.join('<br>') || '—') + '</td></tr>';
     }).join('') : '<tr><td colspan="6" class="tdim">Todavía no pasó por ninguna estación de esta orden.</td></tr>') + '</tbody></table></div>' +
     ((i.HERRAMENTAL || []).length ? '<div style="font-size:11.5px;margin-top:4px">Herramental: ' + i.HERRAMENTAL.map(function(p) { return pcEsc(p.CODIGO) + ' (uso ' + p.NRO_USO + (p.MAX_USOS ? ' de ' + p.MAX_USOS : '') + ')'; }).join(' · ') + '</div>' : '');
 }
