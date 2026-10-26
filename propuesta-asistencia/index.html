@@ -27,6 +27,7 @@ figure{margin:12px 0;background:#fff;border:1px solid var(--bd);border-radius:12
 .calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
 .calc label{font-size:13px;color:var(--dim);display:flex;flex-direction:column;gap:4px}.calc label input{margin-top:auto}.calc input{font-size:18px;padding:8px 10px;border:2px solid #fca5a5;border-radius:10px;color:var(--r);font-weight:bold}
 .res{background:var(--az);color:#fff;border-radius:12px;padding:14px 16px;margin-top:10px}.res b{font-size:24px;color:#fde7d3}
+.pr{color:#166534;background:#dcfce7}.np{color:#b91c1c;background:#fee2e2}.pr,.np{display:inline-block;border-radius:8px;padding:2px 8px;font-size:12px;font-weight:bold;white-space:nowrap}
 ul.ck{list-style:none;padding:0;margin:0}ul.ck li{padding:5px 0 5px 26px;position:relative;font-size:14.5px}ul.ck li:before{content:"✔";position:absolute;left:4px;color:var(--ok);font-weight:bold}
 ul.no li:before{content:"✖";color:var(--r)}
 footer{max-width:1000px;margin:0 auto;padding:16px;color:var(--dim);font-size:12.5px}
@@ -36,7 +37,7 @@ a{color:#1d4ed8}
 <header><div class="in"><img src="../logo_vulcan.jpg" alt="Vulcan Tread"><div><h1>Control de asistencia del personal</h1><p>Propuesta para Vulcan Tread · 26/10/2026 · EMA Data Analytics · BORRADOR para decidir</p></div></div></header>
 <main>
 
-<div class="nota"><b>En una línea:</b> una tablet en la entrada y una tarjeta por empleado. Cada uno pasa su tarjeta al entrar, al salir a comer, al volver y al irse. El sistema registra la hora del servidor (no se puede adelantar ni atrasar), saca una foto en ese momento y arma solo el resumen del mes: faltas, llegadas tarde, horas, horas extra y certificados. <b>El sistema ya está hecho y probado</b>; lo que falta es comprar el equipo y que los dueños definan sus reglas. Lo que figura en <span class="est">rojo</span> es estimado o ejemplo.</div>
+<div class="nota"><b>En una línea:</b> una tablet en la entrada y una tarjeta por empleado. Cada uno pasa su tarjeta al entrar, al salir a comer, al volver y al irse. El sistema registra la hora del servidor (no se puede adelantar ni atrasar), saca una foto en ese momento y arma solo el resumen del mes: faltas, llegadas tarde, horas, horas extra y certificados. <b>El sistema ya está hecho y probado en el sistema de pruebas</b> (el detalle de qué se probó y qué no está en el punto 3); lo que falta es comprar el equipo y que los dueños definan sus reglas. Lo que figura en <span class="est">rojo</span> es estimado o ejemplo.</div>
 
 <h2>1. Qué problema resuelve</h2>
 <div class="grid2">
@@ -50,7 +51,7 @@ a{color:#1d4ed8}
 <div class="caja"><h3>Con el sistema</h3><ul class="ck">
 <li>Cada marca con hora del servidor y foto: nadie marca por otro.</li>
 <li>Al abrir el sistema aparece quién falta y quién llegó tarde.</li>
-<li>Resumen del mes automático, listo para liquidar sueldos.</li>
+<li>Resumen del mes automático por empleado, en pantalla (todavía no se imprime ni pasa solo a sueldos).</li>
 <li>Horas extra calculadas con las reglas de la empresa y aprobadas por la oficina.</li>
 <li>Certificados con foto, aprobados o rechazados, con historial.</li>
 <li>Registro guardado y ordenado, que sirve como respaldo ante un reclamo.</li>
@@ -80,7 +81,23 @@ a{color:#1d4ed8}
 </div>
 <figure><img src="img/tarjetas.jpg" alt="Tarjetas"><figcaption>Tarjetas con QR listas para imprimir y la hoja de consentimiento para la foto.</figcaption></figure>
 
-<h2>3. Qué hay que comprar</h2>
+<h2>3. Circuito completo y qué está probado</h2>
+<div class="nota">Todo se probó el <b>26/10/2026 en el sistema de pruebas</b>, con 10 empleados de prueba y marcas simuladas del 13 al 24 de octubre, desde la computadora. <b>No se probó todavía en una tablet real</b>: la tablet no está comprada.</div>
+<div class="tw"><table>
+<tr><th class="n">#</th><th>Quién</th><th>Qué pasa</th><th>Estado</th><th>Cómo se probó</th></tr>
+<tr><td class="n">1</td><td>Oficina</td><td>Se carga el empleado en Maestros → Empleados y en Asistencia → Tarjetas se genera su tarjeta con un código único (VT-…).</td><td><span class="pr">Probado</span></td><td style="font-size:13px">Tarjetas generadas para los 10 empleados de prueba.</td></tr><tr><td class="n">2</td><td>Oficina</td><td>Si una tarjeta se pierde: «Tarjeta nueva». La vieja deja de andar.</td><td><span class="pr">Probado</span></td><td style="font-size:13px">Se pasó la tarjeta vieja en la tablet: respondió «Esa tarjeta está anulada. Pedí una nueva en la oficina.». Un código inventado: «tarjeta desconocida».</td></tr><tr><td class="n">3</td><td>Oficina</td><td>Imprimir las tarjetas y la hoja de consentimiento de la foto.</td><td><span class="np">Armado, no impreso</span></td><td style="font-size:13px">Las hojas se arman en pantalla; no se imprimieron en papel.</td></tr><tr><td class="n">4</td><td>Oficina</td><td>Dejar la tablet abierta en la pantalla de fichaje (link con ?fichaje) con un usuario que solo use esa pantalla. La sesión se renueva sola cada 20 minutos.</td><td><span class="np">No probado</span></td><td style="font-size:13px">Se probó la pantalla con el usuario administrador. Falta crear el usuario de la tablet y probarla abierta un día y una noche enteros.</td></tr><tr><td class="n">5</td><td>Empleado</td><td>Pasa la tarjeta: por el lector USB (escribe el código y Enter) o mostrándola a la cámara.</td><td><span class="pr">Probado con lector simulado</span><br><span class="np">No probado</span> con cámara</td><td style="font-size:13px">El lector se simuló escribiendo el código y Enter, que es exactamente lo que hace un lector USB. La lectura del QR con la cámara no se probó: hace falta la tablet.</td></tr><tr><td class="n">6</td><td>Sistema</td><td>Decide solo si es entrada o salida, con la hora del servidor, y muestra el cartel grande («ENTRADA 07:28»).</td><td><span class="pr">Probado</span></td><td style="font-size:13px">Entrada, salida, vuelta: alternó bien. La hora es la del servidor, no la de la tablet.</td></tr><tr><td class="n">7</td><td>Sistema</td><td>Si pasa la tarjeta dos veces seguidas, no la cuenta de nuevo.</td><td><span class="pr">Probado</span></td><td style="font-size:13px">Se pasó la misma tarjeta dos veces seguidas: mostró la marca anterior y no guardó otra.</td></tr><tr><td class="n">8</td><td>Sistema</td><td>Saca una foto en cada marca y la guarda; la foto solo la ve un usuario con sesión.</td><td><span class="pr">Probado el guardado</span><br><span class="np">No probado</span> con cámara real</td><td style="font-size:13px">Se guardó y se leyó una foto de prueba; sin sesión el sistema no la entrega. Falta con la cámara de la tablet.</td></tr><tr><td class="n">9</td><td>Empleado</td><td>Almuerzo: marca al salir y al volver; si se pasa de los 60 min queda anotado.</td><td><span class="pr">Probado</span></td><td style="font-size:13px">Con las marcas simuladas del 13 al 24/10: almuerzos largos y sin marcar aparecen en el resumen.</td></tr><tr><td class="n">10</td><td>Empleado</td><td>Certificado: en la tablet toca «Presentar certificado», pasa la tarjeta y saca foto del papel.</td><td><span class="pr">Probado</span> (foto de prueba)</td><td style="font-size:13px">Llegó a la oficina como pendiente.</td></tr><tr><td class="n">11</td><td>Oficina</td><td>Pestaña Hoy y aviso al entrar al sistema: quién está, quién llegó tarde, quién falta, quién está con certificado o suspendido.</td><td><span class="pr">Probado</span></td><td style="font-size:13px">Revisado con los datos de prueba del 26/10.</td></tr><tr><td class="n">12</td><td>Oficina</td><td>Aprobar o rechazar certificados; cargar una novedad que llegó por WhatsApp.</td><td><span class="pr">Probado</span></td><td style="font-size:13px">Un certificado aprobado (cuenta como justificada) y otro rechazado (vuelve a contar como falta).</td></tr><tr><td class="n">13</td><td>Oficina</td><td>Cargar a mano una marca que faltó (con motivo) o anular una mal hecha. Queda quién lo hizo.</td><td><span class="pr">Probado</span></td><td style="font-size:13px">Marca manual con asterisco en el resumen y anulación con motivo.</td></tr><tr><td class="n">14</td><td>Oficina</td><td>Feriados: el día no cuenta como falta.</td><td><span class="pr">Probado</span></td><td style="font-size:13px">Feriado cargado: ese día no figuró como falta.</td></tr><tr><td class="n">15</td><td>Oficina</td><td>Horas extra: se calculan solas (desde 30 min, en bloques de 30; 50% y 100% según el día y la hora) y la oficina las aprueba o no.</td><td><span class="pr">Probado</span></td><td style="font-size:13px">Días con extra al 50%, sábado partido 50%/100%, aprobada, rechazada y pendiente.</td></tr><tr><td class="n">16</td><td>Oficina</td><td>Sanciones: el sistema sugiere según las reglas; la oficina arma la nota, la imprime, la hace firmar y carga la fecha.</td><td><span class="pr">Probado</span> (sin imprimir)</td><td style="font-size:13px">Suspensión notificada: esos días figuran «suspendido», no como falta, y no le quita el premio; el tope de 30 días en 12 meses frena una suspensión que lo pasa. La nota no se imprimió en papel.</td></tr><tr><td class="n">17</td><td>Oficina</td><td>Premio por asistencia: se pierde un % según faltas y llegadas tarde.</td><td><span class="pr">Probado</span></td><td style="font-size:13px">Premio de prueba cargado y apagado.</td></tr><tr><td class="n">18</td><td>Oficina</td><td>Resumen del mes por empleado y día por día.</td><td><span class="pr">Probado en pantalla</span></td><td style="font-size:13px">Con 387 marcas simuladas del 13 al 24/10. <b>No se imprime ni pasa solo a sueldos</b>: hoy hay que copiarlo.</td></tr><tr><td class="n">19</td><td>Oficina</td><td>Reglas: horario, tolerancia, sábado, almuerzo, extras, premios y sanciones se cambian en pantalla.</td><td><span class="pr">Probado</span></td><td style="font-size:13px">Se cambiaron y se probaron valores mal escritos: los rechaza sin tocar el resto.</td></tr></table></div>
+<h3>Lo que falta probar, en este orden</h3>
+<div class="caja"><ol style="margin:0;font-size:14.5px">
+<li>Con la tablet comprada: lectura del QR con la cámara, la foto real y el cartel, a la luz de la entrada.</li>
+<li>Crear el usuario de la tablet y dejarla abierta un día y una noche: que a la mañana siga funcionando sin volver a entrar.</li>
+<li>WiFi de la entrada: que la marca llegue al sistema sin demoras.</li>
+<li>Imprimir en papel las tarjetas, el consentimiento y una nota de sanción.</li>
+<li>Si se compra el lector (opción B): que la tablet lo reconozca y cargue al mismo tiempo.</li>
+<li>Una semana en paralelo con empleados reales antes de usarlo para sueldos.</li>
+<li>Falta hacer: imprimir o exportar el resumen del mes para sueldos.</li>
+</ol></div>
+
+<h2>4. Qué hay que comprar</h2>
 <div class="grid2">
 <div class="op rec"><h3>Opción A — solo tablet<span class="tag">Recomendada para empezar</span></h3>
 <p style="margin:4px 0 8px;font-size:14.5px">La cámara frontal de la tablet lee el QR de la tarjeta y saca la foto. No hace falta nada más.</p>
@@ -102,7 +119,7 @@ a{color:#1d4ed8}
 <div class="nota"><b>Otros lectores encontrados:</b> Nictom LCB2600 fijo 2D USB a $99.999 en <a href="https://www.fravega.com/p/lector-codigo-de-barras-comercial-2d-usb-nictom-lcb2600-21923647/" target="_blank" rel="noopener">Frávega</a>, y un escáner 1D/2D USB a $45.013 en todomicro.com.ar. <b>Ya hay WiFi en la entrada.</b> <span class="est">Falta confirmar que haya un enchufe cerca.</span> <span class="est">A probar antes de comprar la opción B:</span> que esa tablet reconozca el lector y cargue a la vez por el adaptador.</div>
 <div class="caja"><b>Recomendación:</b> comprar la <b>opción A</b> y usarla una semana. Si la lectura con la cámara resulta lenta (poca luz, tarjetas gastadas), recién ahí agregar el lector y el adaptador (<b>$148.325</b> más). Así no se gasta en algo que quizás no haga falta. <span class="est">La lectura con la cámara todavía no se probó en una tablet real</span>: es lo primero que se prueba al comprarla.</div>
 
-<h2>4. Cuánto se pierde hoy (calculadora)</h2>
+<h2>5. Cuánto se pierde hoy (calculadora)</h2>
 <div class="nota">No hay datos reales de cuánto tiempo se pierde hoy, por eso la calculadora viene <b>vacía</b>. Se completa con los datos de la empresa (cantidad de empleados, minutos que se pierden, días y costo de la hora) y la cuenta se hace sola.</div>
 <div class="caja">
 <div class="calc">
@@ -114,7 +131,7 @@ a{color:#1d4ed8}
 <div class="res"><span id="r-falta">Completá los 4 datos para ver la cuenta.</span><span id="r-ok" style="display:none">Tiempo pagado y no trabajado por mes: <b id="r-h">—</b><br>Cuesta por mes: <b id="r-m">—</b> · por año: <b id="r-a">—</b><br>La opción A se paga sola en: <b id="r-p">—</b></span></div>
 </div>
 
-<h2>5. Lo que tienen que decidir los dueños</h2>
+<h2>6. Lo que tienen que decidir los dueños</h2>
 <div class="tw"><table>
 <tr><th>Regla</th><th>Cargado hoy</th><th>Estado</th></tr>
 <tr><td>Horario lunes a viernes</td><td>7:30 a 17:30</td><td>Confirmado</td></tr>
@@ -126,7 +143,7 @@ a{color:#1d4ed8}
 <tr><td>Sanciones sugeridas</td><td>3 tardanzas → apercibimiento; 5 → 1 día de suspensión…</td><td class="est">Ejemplo</td></tr>
 </table></div>
 
-<h2>6. Lo legal (resumen, a revisar con el abogado laboral)</h2>
+<h2>7. Lo legal (resumen, a revisar con el abogado laboral)</h2>
 <div class="caja"><ul class="ck">
 <li><b>Foto al marcar:</b> aviso por escrito y consentimiento firmado de cada empleado (Ley 25.326 de datos personales). La hoja ya sale impresa del sistema. No se usa reconocimiento facial.</li>
 <li><b>Llegadas tarde:</b> no se pueden cobrar multas (art. 67 LCT). El sistema muestra el tiempo no trabajado, no una multa.</li>
@@ -135,7 +152,7 @@ a{color:#1d4ed8}
 <li><b>Horas extra:</b> 50% día común, 100% sábado después de las 13, domingos y feriados; tope 30 h por mes y 200 por año. El sistema avisa al llegar.</li>
 </ul></div>
 
-<h2>7. Cómo se pone en marcha</h2>
+<h2>8. Cómo se pone en marcha</h2>
 <div class="paso"><b class="n">1</b><div>Comprar la tablet y el soporte (opción A) e instalarlos en la entrada, cerca de un enchufe.</div></div>
 <div class="paso"><b class="n">2</b><div>Crear el usuario propio de la tablet (solo puede fichar) y dejarla abierta en la pantalla de fichaje.</div></div>
 <div class="paso"><b class="n">3</b><div>Cargar los datos reales de los empleados, imprimir las tarjetas y firmar el consentimiento de la foto.</div></div>
