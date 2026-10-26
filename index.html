@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a97b483677ed"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "147169a1c57d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10568,11 +10568,16 @@ function pcContador() {
   var tit = ids.filter(function(i) { return PC_.sel[i] === 'TITULAR'; }), sup = ids.filter(function(i) { return PC_.sel[i] === 'SUPLENTE'; });
   var lineas = {}; tit.concat(sup).forEach(function(i) { var c = d.cubiertas.filter(function(x) { return String(x.ID_CUB) === String(i); })[0]; if (c) lineas[pcLineaDeTipo(c.TIPO)] = true; });
   var lu = Object.keys(lineas), mezcla = lu.length > 1;
-  $id('pc-tope-wrap').style.display = mezcla ? '' : 'none';
-  var lin = mezcla ? $v('pc-tope') : lu[0];
+  // Cada línea tiene sus estaciones y su cocción: no se puede armar una carga mezclada (avisa antes de grabar)
+  PC_.mezcla = mezcla ? lu : null;
+  $id('pc-tope-wrap').style.display = 'none';
+  var cr = $id('pc-crear'); if (cr) { cr.disabled = mezcla; cr.title = mezcla ? 'No se pueden mezclar ' + lu.join(' y ') + ' en una carga' : ''; }
+  var av = $id('pc-mezcla-av'); if (!av && $id('pc-contador')) { av = document.createElement('div'); av.id = 'pc-mezcla-av'; av.className = 'al al-r'; av.style.marginTop = '6px'; $id('pc-contador').parentNode.appendChild(av); }
+  if (av) { av.style.display = mezcla ? '' : 'none'; av.innerHTML = mezcla ? '⛔ Elegiste cubiertas de <b>' + pcEsc(lu.join(' y ')) + '</b>. No se pueden mezclar en la misma carga: cada línea tiene sus estaciones y su cocción. Destildá las de una línea y armá una carga por línea.' : ''; }
+  var lin = lu[0];
   var l = d.lineas.filter(function(x) { return x.LINEA === lin; })[0] || { CAPACIDAD: 0, SUPLENTES: 0 };
-  $id('pc-contador').textContent = (lin || '—') + ' · titulares ' + tit.length + '/' + l.CAPACIDAD + ' · suplentes ' + sup.length + '/' + l.SUPLENTES + (mezcla ? ' · carga mezclada' : '');
-  $id('pc-contador').className = 'badge ' + (tit.length > l.CAPACIDAD || sup.length > l.SUPLENTES ? 'b-red' : 'b-blue');
+  $id('pc-contador').textContent = (lin || '—') + ' · titulares ' + tit.length + '/' + l.CAPACIDAD + ' · suplentes ' + sup.length + '/' + l.SUPLENTES + (mezcla ? ' · NO SE PUEDE: carga mezclada' : '');
+  $id('pc-contador').className = 'badge ' + (mezcla || tit.length > l.CAPACIDAD || sup.length > l.SUPLENTES ? 'b-red' : 'b-blue');
   $id('pc-tope').onchange = pcContador;
   var g = $id('pc-a-cont');
   if (g) {
@@ -10588,8 +10593,9 @@ async function pcCrearOT() {
   var tit = ids.filter(function(i) { return PC_.sel[i] === 'TITULAR'; }), sup = ids.filter(function(i) { return PC_.sel[i] === 'SUPLENTE'; });
   if (!tit.length) { toast('Marcá las cubiertas titulares', 'r2'); return; }
   if (!$v('pc-resp')) { toast('Elegí el responsable de la carga', 'r2'); $id('pc-resp').focus(); return; }
-  var mezcla = $id('pc-tope-wrap').style.display !== 'none';
-  var linea = mezcla ? $v('pc-tope') : '';
+  if (PC_.mezcla) { toast('No se pueden mezclar ' + PC_.mezcla.join(' y ') + ' en la misma carga: armá una carga por línea', 'r2'); return; }
+  var mezcla = false;
+  var linea = '';
   var l = mezcla ? PC_.d.lineas.filter(function(x) { return x.LINEA === linea; })[0] : null;
   var b = $id('pc-crear'); b.disabled = true;
   try {
@@ -11558,7 +11564,7 @@ function puFicha() {
     '<div style="font-size:15px">' + puEsc(f.cub.MOTIVO_REPROCESO) + '</div><div class="tdim" style="font-size:14px">Cuando termine la corrección, espera la próxima carga del autoclave (entra ocupando un lugar).</div></div>';
   if (f.cub.REPROCESO_DE) h += '<div><span class="pu-tag sup">Viene de reproceso de ' + puEsc(f.cub.REPROCESO_DE) + '</span></div>';
   if (PU_.ctrl) h += puControlHTML();
-  if (PU_.insp) { h += puInspHTML(); if (PU_.insp.apta === false) { $id('pu-body').innerHTML = h; puPieFicha(); return; } }
+  if (PU_.insp) { h += puTrabajoHTML(); h += puInspHTML(); if (PU_.insp.apta === false) { $id('pu-body').innerHTML = h; puPieFicha(); return; } }
   h += puRetiroHTML();
   if (!PU_.rows.length) h += '<div class="pu-h">En esta estación la receta no lleva insumos</div>';
   if (!PU_.rows.length) h += '<div class="pu-otros" style="font-size:17px"><div>✓ Acá solo se hace el trabajo: tocá <b>EMPEZAR</b>, hacé el trabajo y tocá <b>TERMINÉ</b>.</div></div>';
@@ -11996,6 +12002,45 @@ function puListo() {
 }
 
 // ── Estación 1: inspección. APTA → el inspector elige banda y parches. NO APTA → motivo y qué suplente entra en su lugar ──
+// ── Cambio de trabajo en la inspección: lo decide el encargado (ej. VULCANIZADO ↔ RECAPADO) ──
+function puTrabajoHTML() {
+  var X = PU_.f.inspeccion; if (!X) return '';
+  var h = '<div class="pu-reg" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-color:var(--warn)"><div><div style="font-size:15px" class="tdim">Trabajo</div><div style="font-size:21px;font-weight:700">' + puEsc(X.trabajo || '—') + '</div>' +
+    (X.cambios || []).map(function(c) { return '<div class="tdim" style="font-size:13px">Cambiado de ' + puEsc(c.ANTES) + ' a ' + puEsc(c.DESPUES) + ' · ' + puEsc(c.MOTIVO) + ' · decide ' + puEsc(c.DECIDE) + '</div>'; }).join('') + '</div>';
+  if (!PU_.f.registro && (X.trabajos || []).filter(function(t) { return t !== X.trabajo; }).length) h += '<button class="pu-btn pu-min" onclick="puCambioTrabajo()">⇄ Cambiar trabajo (encargado)</button>';
+  return h + '</div>';
+}
+function puCambioTrabajo() {
+  var X = PU_.f.inspeccion, C = PU_.ct = { t: '', m: '', txt: '' };
+  var pri = ['RECAPADO', 'VULCANIZADO'], ops = (X.trabajos || []).filter(function(t) { return t !== X.trabajo; });
+  ops.sort(function(a, b) { var ia = pri.indexOf(a), ib = pri.indexOf(b); return (ia === -1 ? 9 : ia) - (ib === -1 ? 9 : ib) || a.localeCompare(b); });
+  var mot = ['El casco no da para recapar', 'El casco da para recapar', 'Lo pidió el cliente', 'Otro'];
+  var h = '<div class="mh"><span class="mt">Cambiar el trabajo de ' + puEsc(PU_.f.cub.MARCA) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
+    '<div style="font-size:16px">Ahora: <b>' + puEsc(X.trabajo) + '</b>. Lo decide el encargado de línea y queda registrado. Cambia la receta y las estaciones por las que pasa.</div>' +
+    '<div style="font-weight:700">Trabajo nuevo</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + ops.map(function(t, i) { return '<button class="pu-chip pu-ct-t' + (i < 2 && pri.indexOf(t) !== -1 ? '" style="font-size:18px;font-weight:700' : '') + '" data-v="' + puEsc(t) + '">' + puEsc(t) + '</button>'; }).join('') + '</div>' +
+    '<div style="font-weight:700">¿Por qué?</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + mot.map(function(m) { return '<button class="pu-chip pu-ct-m" data-v="' + puEsc(m) + '">' + puEsc(m) + '</button>'; }).join('') + '</div>' +
+    '<input class="pu-q" id="pu-ct-txt" style="font-size:16px;text-transform:none" placeholder="Detalle (opcional)" autocomplete="off">' +
+    (X.soyEncargado ? '' : '<div class="pu-aut"><div style="font-weight:700;color:var(--warn)">Lo confirma el encargado de línea con su usuario y clave</div><div class="fr2"><input id="pu-ct-u" placeholder="Usuario del encargado" autocomplete="off"><input id="pu-ct-c" type="password" placeholder="Clave" autocomplete="new-password"></div></div>') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pu-ct-ok" style="min-height:48px;font-size:17px">Cambiar trabajo</button></div>';
+  showModal(h, 'md-lg');
+  var sel = function(cls, key) { document.querySelectorAll('.mo .' + cls).forEach(function(b) { b.onclick = function() { C[key] = b.dataset.v; document.querySelectorAll('.mo .' + cls).forEach(function(x) { x.classList.toggle('sel', x === b); }); }; }); };
+  sel('pu-ct-t', 't'); sel('pu-ct-m', 'm');
+  $id('pu-ct-ok').onclick = async function() {
+    var motivo = [C.m, $v('pu-ct-txt').trim()].filter(function(x) { return x; }).join(' · ');
+    if (!C.t) return toast('Elegí el trabajo nuevo', 'r2');
+    if (!C.m) return toast('Elegí por qué', 'r2');
+    var aut = X.soyEncargado ? null : { USUARIO: $v('pu-ct-u').trim(), CLAVE: $v('pu-ct-c') };
+    if (aut && (!aut.USUARIO || !aut.CLAVE)) return toast('Falta el usuario y la clave del encargado', 'r2');
+    var b = this; b.disabled = true; b.textContent = 'Guardando…';
+    try {
+      var r = await gsRun('gsPC_CambiarTrabajo', { ID_OT: PU_.f.ot.ID_OT, ID_CUB: PU_.f.cub.ID_CUB, TRABAJO: C.t, MOTIVO: motivo, AUTORIZA: aut });
+      if ($id('pu-ct-c')) $id('pu-ct-c').value = '';
+      if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); b.disabled = false; b.textContent = 'Cambiar trabajo'; return; }
+      closeModal(); toast('Trabajo cambiado: ' + r.ANTES + ' → ' + r.DESPUES, 'g');
+      puAbrir(PU_.f.ot.ID_OT, PU_.f.cub.ID_CUB);
+    } catch (e) { toast(e.message, 'r2'); b.disabled = false; b.textContent = 'Cambiar trabajo'; }
+  };
+}
 function puInspHTML() {
   var I = PU_.insp, X = PU_.f.inspeccion;
   var b = function(v, txt, col) { var on = I.apta === v; return '<button class="pu-btn" style="flex:1;min-height:70px;font-size:22px;' + (on ? 'background:' + col + ';color:#fff' : 'background:var(--surface2);color:var(--text);border:2px solid ' + col) + '" onclick="puInspApta(' + v + ')">' + txt + '</button>'; };
@@ -12720,7 +12765,8 @@ function pnListaHtml() {
     if (p.MEDIDA !== med) { med = p.MEDIDA; filas += '<tr><td colspan="' + (conL ? 2 + nl.length : 3) + '" style="background:#fdf1e7;color:#14213d;font-weight:800;font-size:11px;padding:5px;border:0;font-family:Inter,Arial,sans-serif">' + pnEsc(med) + '</td></tr>'; }
     var td = 'padding:3px 5px;border:0;border-bottom:1px solid #eceef2;font-family:Inter,Arial,sans-serif;font-size:10px;';
     filas += '<tr><td style="' + td + 'color:#6b7280;font-size:8.5px;white-space:nowrap">' + pnEsc(p.CODIGO) + '</td><td style="' + td + '"><b>' + pnEsc(p.MARCA) + '</b> ' + pnEsc(p.DISENO) + '</td>' +
-      (conL ? nl.map(function(n) { var l = (p.LISTAS || []).filter(function(z) { return z.NOMBRE === n; })[0]; return '<td style="' + td + 'text-align:right;white-space:nowrap">' + (l ? pnPlata(l.CON) : '—') + '</td>'; }).join('')
+      (conL && !(p.LISTAS || []).length ? '<td colspan="' + nl.length + '" style="' + td + 'text-align:right;white-space:nowrap;font-weight:700">' + pnPlata(p.PRECIO_CON_IVA) + ' <span style="font-weight:400;color:#6b7280;font-size:8.5px">precio único</span></td>' :
+       conL ? nl.map(function(n) { var l = (p.LISTAS || []).filter(function(z) { return z.NOMBRE === n; })[0]; return '<td style="' + td + 'text-align:right;white-space:nowrap">' + (l ? pnPlata(l.CON) : '—') + '</td>'; }).join('')
             : '<td style="' + td + 'text-align:right;white-space:nowrap;font-weight:700">' + pnPlata(p.PRECIO_CON_IVA) + '</td>') + '</tr>';
   });
   return '<div style="width:700px;box-sizing:border-box;padding:18px 20px;background:#fff;color:#1f2937;font-family:Inter,Arial,sans-serif">' +
@@ -17926,6 +17972,7 @@ function asPremioCelda(r) {
 function asMes() {
   var d = AS_.d, P = d.PARAM, pre = (d.PREMIOS || []).filter(function(p) { return p.ACTIVO; }).length;
   var h = '<div class="as-caja">Resumen de ' + asEsc(AS_.mes) + ' hasta hoy, contando desde el ' + asFechaTxt(d.INICIO) + ' (primer día con el control). <b>Faltó</b> = día laborable sin marcar y sin novedad aprobada. <b>Suspendido</b> = días de una suspensión notificada (sin goce: no cuentan como falta). <b>Horas</b> no cuentan el almuerzo. <b>Extra</b>: las aprobadas (o todas, si en Reglas no hace falta aprobarlas). ' + (pre ? '<b>Premio</b>: % que pierde según la escala de Reglas.' : '') + ' Tocá un empleado para ver día por día.</div>';
+  h += '<div style="margin:6px 0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm btn-p" onclick="asMesExcel()">⬇ Excel para sueldos</button><button class="btn btn-sm" onclick="asMesImprimir()">🖨 Imprimir el resumen</button></div>';
   var nc = 11 + (P.ALM_MARCA ? 1 : 0) + (pre ? 1 : 0);
   h += '<div style="overflow-x:auto"><table class="as-t"><tr><th>Empleado</th><th class="n">Días trab.</th><th class="n">Faltas</th><th class="n">Justif.</th><th class="n">Susp.</th><th class="n">Llegadas tarde</th><th class="n">Salidas antes</th><th class="n">Sin salida</th>' +
     (P.ALM_MARCA ? '<th>Almuerzo</th>' : '') + '<th class="n">Horas</th><th>Extra</th>' + (pre ? '<th>Premio</th>' : '') + '<th>Sugerencia</th></tr>';
@@ -17952,6 +17999,40 @@ function asMes() {
   });
   return h + '</table></div>';
 }
+// ── Resumen del mes para sueldos: Excel (resumen + detalle día por día) e impresión ──
+function asMesFilas() {
+  var d = AS_.d, P = d.PARAM;
+  var cab = ['Empleado', 'Días trabajados', 'Faltas', 'Justificadas', 'Días suspendido', 'Llegadas tarde', 'Minutos tarde', 'Salidas antes', 'Sin marcar salida', 'Almuerzos largos', 'Minutos de almuerzo de más', 'Almuerzo sin marcar', 'Horas trabajadas', 'Extra al ' + P.EXTRA_PCT_COMUN + '%', 'Extra al ' + P.EXTRA_PCT_ESPECIAL + '%', 'Extra a aprobar', 'Premio', 'Sanción sugerida'];
+  var filas = d.RESUMEN.map(function(r) {
+    var pre = (r.PREMIOS || []).map(function(p) { return (p.PIERDE ? 'pierde ' + p.PIERDE + '%' : 'completo') + (p.COBRA !== null && p.COBRA !== undefined ? ' $' + Number(p.COBRA).toLocaleString('es-AR') : '') + ((r.PREMIOS || []).length > 1 ? ' (' + p.NOMBRE + ')' : ''); }).join(' · ');
+    return [r.NOMBRE, r.TRABAJADOS, r.FALTAS, r.JUSTIFICADAS, r.SUSPENDIDO, r.TARDES, r.MIN_TARDE, r.ANTES, r.SIN_SALIDA, r.ALM_LARGOS || 0, r.MIN_ALM_EXCESO || 0, r.ALM_SIN_MARCAR || 0,
+      asHM(r.MIN_TRAB), r.MIN_EXTRA50 ? asHM(r.MIN_EXTRA50) : '', r.MIN_EXTRA100 ? asHM(r.MIN_EXTRA100) : '', r.EXTRA_DIAS_PEND ? asHM(r.EXTRA_PEND) : '', pre, r.SUGERIDA ? asSanTxt(r.SUGERIDA) + (r.SUGERIDA_POR ? ' · ' + r.SUGERIDA_POR : '') : ''];
+  });
+  return { cab: cab, filas: filas };
+}
+function asMesExcel() {
+  if (typeof XLSX === 'undefined') return toast('No se cargó la librería de Excel. Recargá la página.', 'r2');
+  var d = AS_.d, m = asMesFilas(), nom = {};
+  d.RESUMEN.forEach(function(r) { nom[r.ID_EMPLEADO] = r.NOMBRE; });
+  var det = [['Empleado', 'Día', 'Fecha', 'Estado', 'Entrada', 'Salida', 'Horas', 'Min. tarde', 'Min. antes', 'Extra', 'Almuerzo (min)', 'Feriado', 'Novedad']].concat(d.DIAS.map(function(x) {
+    var tmp = document.createElement('div'); tmp.innerHTML = asEstBadge(x);
+    return [nom[x.ID_EMPLEADO] || x.ID_EMPLEADO, asDiaNom(x.DIA), x.DIA.split('-').reverse().join('/'), tmp.innerText, x.ENTRADA || '', x.SALIDA || '', x.MIN_TRAB ? asHM(x.MIN_TRAB) : '', x.TARDE || '', x.ANTES || '', asExtraTxt(x, d.PARAM), x.ALM_REAL || '', x.FERIADO || '', x.NOVEDAD || ''];
+  }));
+  var wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet([['Vulcan Tread · Asistencia de ' + AS_.mes + ' (desde el ' + asFechaTxt(d.INICIO) + ')'], []].concat([m.cab]).concat(m.filas));
+  ws['!cols'] = [26, 9, 7, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 22, 28].map(function(w) { return { wch: w }; });
+  XLSX.utils.book_append_sheet(wb, ws, 'RESUMEN');
+  var wd = XLSX.utils.aoa_to_sheet(det); wd['!cols'] = [26, 5, 11, 16, 8, 8, 8, 8, 8, 9, 9, 18, 30].map(function(w) { return { wch: w }; });
+  XLSX.utils.book_append_sheet(wb, wd, 'DIA POR DIA');
+  XLSX.writeFile(wb, 'Asistencia_' + String(AS_.mes).replace(/[^0-9A-Za-z-]/g, '_') + '_Vulcan.xlsx');
+}
+function asMesImpHtml() {
+  var d = AS_.d, m = asMesFilas();
+  return '<h1>Asistencia de ' + asEsc(AS_.mes) + '</h1><div style="font-size:9pt;margin-bottom:8px">Desde el ' + asFechaTxt(d.INICIO) + ' (primer día con el control) hasta el ' + asFechaTxt(asHoyLocal()) + '. Horas sin almuerzo. Extra: las aprobadas.</div>' +
+    '<table style="border-collapse:collapse;width:100%;font-size:7.5pt"><tr>' + m.cab.map(function(c) { return '<th style="border:1px solid #999;padding:3px;background:#eee;text-align:left">' + asEsc(c) + '</th>'; }).join('') + '</tr>' +
+    m.filas.map(function(f) { return '<tr>' + f.map(function(v, i) { return '<td style="border:1px solid #bbb;padding:3px;' + (i ? 'text-align:center' : '') + '">' + asEsc(v) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>' +
+    '<div class="f"><div>Recursos Humanos</div><div>Encargado</div></div>';
+}
+function asMesImprimir() { asImprimirHtml('Asistencia ' + AS_.mes, '<style>@page{size:A4 landscape;margin:10mm}</style>' + asMesImpHtml()); }
 // ── Horas extra ──
 function asExtras() {
   var d = AS_.d, P = d.PARAM, ad = asAdmin();
