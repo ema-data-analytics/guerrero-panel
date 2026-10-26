@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "68d0348ac124"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "3b3529582007"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -12594,6 +12594,13 @@ function pnListaImprimir() {
 .tw-caja{background:#fff6ee;border-left:4px solid #E8792B;padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:13px;color:#1f2937}
 .tw-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:20px 10px}
 .tw-hoja{background:var(--surface,#fff);color:var(--text);border-radius:14px;max-width:560px;width:100%;padding:16px}
+.tw-cl{border-radius:8px;padding:1px 7px;font-size:12px;font-weight:700;margin-right:4px;display:inline-block}
+.tw-c1{background:#dcfce7;color:#166534}.tw-c2{background:#fef9c3;color:#854d0e}.tw-c3{background:#e0f2fe;color:#075985}.tw-c4{background:#fee2e2;color:#b91c1c}
+.tw-cli{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--bg)}
+.tw-cli-t{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--dim);text-transform:uppercase;margin-bottom:4px}
+.tw-cli p{margin:4px 0}.tw-av{background:#fff1f2;border-left:4px solid #e11d48;padding:6px 10px;border-radius:0 8px 8px 0;margin:6px 0;color:#1f2937}
+.tw-dif{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}.tw-dif th{text-align:left;font-size:11px;color:var(--dim);font-weight:700;padding:3px 4px}.tw-dif td{padding:4px;border-top:1px solid var(--border);vertical-align:middle}
+.tw-ayuda h3{margin:12px 0 4px;font-size:15px}.tw-ayuda p,.tw-ayuda li{font-size:14px;line-height:1.45;margin:4px 0}
 </style>
 <script>
 var TW_ = { d: null, filtro: 'PEND', abierto: '' };
@@ -12625,7 +12632,7 @@ function twPintar() {
   d.PEDIDOS.forEach(function(p) { ['PEND', 'CURSO', 'FIN'].forEach(function(k) { if (TW_GRUPOS[k].indexOf(p.ESTADO) !== -1) n[k]++; }); });
   var h = '<div class="tw-wrap"><div class="tw-top"><h2>🛒 Pedidos web</h2><div class="tw-acc">' +
     '<button class="btn btn-sm" onclick="window.open(TW_TIENDA,\'_blank\')">Ver tienda</button>' +
-    '<button class="btn btn-sm" onclick="twAjustes()">⚙ Ajustes</button><button class="btn btn-sm" onclick="renderPedidosWeb()">↻ Actualizar</button></div></div>';
+    '<button class="btn btn-sm" onclick="twAyudaCli()">❓ Clientes de la tienda</button><button class="btn btn-sm" onclick="twAjustes()">⚙ Ajustes</button><button class="btn btn-sm" onclick="renderPedidosWeb()">↻ Actualizar</button></div></div>';
   if (!d.CFG.tienda_alias && !d.CFG.tienda_cbu) h += '<div class="tw-caja">Faltan los datos de la cuenta para transferencias. Cargalos en <b>⚙ Ajustes</b>; mientras tanto la tienda le dice al cliente que se los pasan por WhatsApp.</div>';
   h += '<div class="tw-chips">';
   [['PEND', 'Pendientes'], ['CURSO', 'En curso'], ['FIN', 'Terminados'], ['TODOS', 'Todos']].forEach(function(c) {
@@ -12638,7 +12645,8 @@ function twPintar() {
     var e = TW_EST[p.ESTADO] || [p.ESTADO, 'tw-e5'], ab = TW_.abierto === p.ID_PEDIDO;
     h += '<div class="tw-ped" id="tw-p-' + twEsc(p.ID_PEDIDO) + '"><div class="tw-cab" onclick="TW_.abierto=(TW_.abierto===\'' + twEsc(p.ID_PEDIDO) + '\'?\'\':\'' + twEsc(p.ID_PEDIDO) + '\');twPintar()">' +
       '<b>' + twEsc(p.NRO) + '</b><span class="tw-est ' + e[1] + '">' + twEsc(e[0]) + '</span><span class="tw-tot">' + (p.ESTADO === 'A_COTIZAR' ? twPlata(p.SUBTOTAL) + ' + envío' : twPlata(p.TOTAL)) + '</span>' +
-      '<div class="tw-sub">' + twFecha(p.FECHA) + ' · ' + twEsc(p.NOMBRE) + ' · ' + (p.ENTREGA === 'ENVIO' ? '🚚 Envío a ' + twEsc(p.LOCALIDAD) : '🏪 Retira en el local') + '</div></div>' +
+      '<div class="tw-sub">' + twFecha(p.FECHA) + ' · ' + twEsc(p.NOMBRE) + ' · ' + (p.ENTREGA === 'ENVIO' ? '🚚 Envío a ' + twEsc(p.LOCALIDAD) : '🏪 Retira en el local') + '</div>' +
+      '<div class="tw-sub">' + twCliTag(p) + '</div></div>' +
       (ab ? twDetalle(p) : '') + '</div>';
   });
   el.innerHTML = h + '</div>';
@@ -12652,6 +12660,7 @@ function twDetalle(p) {
   h += '<div>📞 <b>' + twEsc(p.TELEFONO) + '</b>' + (p.MAIL ? ' · ' + twEsc(p.MAIL) : '') + (p.CUIT_DNI ? ' · CUIT/DNI ' + twEsc(p.CUIT_DNI) : '') + '</div>';
   if (p.ENTREGA === 'ENVIO') h += '<div>📍 ' + twEsc(p.DIRECCION) + ', ' + twEsc(p.LOCALIDAD) + (p.PROVINCIA ? ', ' + twEsc(p.PROVINCIA) : '') + (p.CP ? ' (' + twEsc(p.CP) + ')' : '') + '</div>';
   if (p.NOTA) h += '<div>💬 ' + twEsc(p.NOTA) + '</div>';
+  h += twCliBloque(p);
   if (p.ESTADO === 'PAGO_INFORMADO') h += '<div class="tw-caja">El cliente avisó que pagó' + (p.PAGO_FECHA ? ' el ' + twFecha(p.PAGO_FECHA) : '') + (p.PAGO_REF ? ': "' + twEsc(p.PAGO_REF) + '"' : '') + '. Revisá la cuenta antes de marcarlo pagado.</div>';
   else if (p.PAGO_REF) h += '<div>📝 Aviso del cliente: "' + twEsc(p.PAGO_REF) + '"</div>';
   if (p.MEDIO_PAGO && p.ESTADO !== 'PAGO_INFORMADO') h += '<div>💳 Pagó con: <b>' + twEsc(p.MEDIO_PAGO.replace('_', ' ')) + '</b>' + (p.PAGO_FECHA ? ' · ' + twFecha(p.PAGO_FECHA) : '') + '</div>';
@@ -12682,6 +12691,109 @@ function twDetalle(p) {
     '<div class="tw-btns"><button class="btn btn-sm" onclick="twNota(\'' + id + '\')">Guardar nota</button></div></div>';
   if (p.USUARIO_MOD) h += '<div style="font-size:11px;color:var(--dim);margin-top:6px">Último cambio: ' + twEsc(p.USUARIO_MOD) + ' · ' + twFecha(p.FECHA_MOD) + '</div>';
   return h + '</div>';
+}
+function twCondNom(id) {
+  var c = ((TW_.d && TW_.d.CONDS) || []).filter(function(x) { return x.ID === String(id); })[0];
+  return c ? c.NOMBRE : (id ? 'Condición ' + id : 'sin cargar');
+}
+function twCliTag(p) {
+  var c = p.CLI || {}, h = '';
+  if (c.EST === 'VINCULADO' || c.EST === 'EXISTE') h = '<span class="tw-cl tw-c1">👤 ' + twEsc(c.NOMBRE) + '</span>';
+  else if (c.EST === 'POSIBLE') h = '<span class="tw-cl tw-c2">❓ ¿Es ' + twEsc(c.NOMBRE) + '?</span>';
+  else if (c.EST === 'NUEVO') h = '<span class="tw-cl tw-c3">🆕 Cliente nuevo</span>';
+  else h = '<span class="tw-cl tw-c4">Sin CUIT/DNI</span>';
+  if (c.INACTIVO) h += '<span class="tw-cl tw-c4">⛔ Inactivo</span>';
+  if (c.SALDO > 0) h += '<span class="tw-cl tw-c4">💰 Debe ' + twPlata(c.SALDO) + '</span>';
+  if (c.ABIERTOS && c.ABIERTOS.length) h += '<span class="tw-cl tw-c2">📦 Otro pedido abierto</span>';
+  return h;
+}
+function twCliBloque(p) {
+  var c = p.CLI || {}, id = twEsc(p.ID_PEDIDO), cid = twEsc(c.ID_CLIENTE), h = '<div class="tw-cli"><div class="tw-cli-t">Cliente</div>';
+  h += '<p>En el pedido puso: <b>' + (p.CUIT_DNI ? (c.DOC_TIPO || 'CUIT/DNI') + ' ' + twEsc(p.CUIT_DNI) : 'sin CUIT/DNI') + '</b> · Condición IVA: <b>' + twEsc(twCondNom(p.COND_IVA)) + '</b></p>';
+  if (c.EST === 'VINCULADO') {
+    h += '<p>✔ Es el cliente <b>' + twEsc(c.NOMBRE) + '</b> (N° ' + cid + '). Ya quedó confirmado.</p>' +
+      '<div class="tw-btns"><button class="btn btn-sm" onclick="twCliQuitar(\'' + id + '\')">No es este cliente</button></div>';
+  } else if (c.EST === 'EXISTE') {
+    h += '<p>✔ Ya es cliente: <b>' + twEsc(c.NOMBRE) + '</b> (N° ' + cid + '). El sistema lo encontró por el ' +
+      (c.POR === 'DNI' && String(c.CUIT_DNI || '').replace(/[^0-9]/g, '').length === 11 ? '<b>DNI</b>, que está dentro de su CUIT (' + twEsc(c.CUIT_DNI) + ')' : '<b>' + twEsc(c.POR) + '</b>') + '.</p>';
+  } else if (c.EST === 'POSIBLE') {
+    h += '<p>❓ Ese ' + (p.CUIT_DNI ? 'CUIT/DNI' : 'pedido') + ' no está en Clientes, pero el <b>teléfono</b> es el de <b>' + twEsc(c.NOMBRE) + '</b> (N° ' + cid + (c.CUIT_DNI ? ', ' + twEsc(c.CUIT_DNI) : '') + '). ' +
+      'Puede ser la misma persona o alguien que usa el mismo teléfono: confirmalo vos.</p><div class="tw-btns">' +
+      '<button class="btn btn-sm btn-p" onclick="twCliVincular(\'' + id + '\',\'' + cid + '\')">Sí, es este cliente</button>' +
+      (c.DOC_TIPO ? '<button class="btn btn-sm" onclick="twCliAlta(\'' + id + '\')">No, es otro: dar de alta</button>' : '') + '</div>';
+  } else if (c.EST === 'NUEVO') {
+    h += '<p>🆕 Ese ' + twEsc(c.DOC_TIPO) + ' no está en Clientes. Revisá los datos y dalo de alta: queda cargado para la factura y para los próximos pedidos.</p>' +
+      '<div class="tw-btns"><button class="btn btn-sm btn-p" onclick="twCliAlta(\'' + id + '\')">Dar de alta el cliente</button></div>';
+  } else {
+    h += '<p>Este pedido no tiene un CUIT o DNI válido (se hizo antes de que la tienda lo pidiera). Pedíselo por WhatsApp para buscarlo o darlo de alta.</p>';
+  }
+  if (c.VARIOS) h += '<div class="tw-av">⚠ Hay ' + c.VARIOS + ' clientes con ese mismo dato en Clientes; se muestra el primero. Revisalos en Maestros › Clientes.</div>';
+  if (c.INACTIVO) h += '<div class="tw-av">⛔ Ese cliente está <b>inactivo</b> (dado de baja) en Clientes. Fijate por qué antes de aceptar el pedido.</div>';
+  if (c.SALDO > 0) h += '<div class="tw-av">💰 Debe <b>' + twPlata(c.SALDO) + '</b> en cuenta corriente. Fijate antes de aceptar el pedido.</div>';
+  if (c.ABIERTOS && c.ABIERTOS.length) h += '<div class="tw-av">📦 Tiene ' + (c.ABIERTOS.length === 1 ? 'otro pedido sin terminar: ' : 'otros pedidos sin terminar: ') + '<b>' + twEsc(c.ABIERTOS.join(', ')) + '</b>. Fijate que no sea el mismo pedido repetido.</div>';
+  if ((c.EST === 'VINCULADO' || c.EST === 'EXISTE') && c.DIFS && c.DIFS.length) {
+    h += '<p style="margin-top:8px"><b>Datos distintos a los cargados.</b> No se cambia nada solo: si el dato del pedido es el correcto, tocá «Pasar al cliente».</p><table class="tw-dif"><tr><th>Dato</th><th>En el pedido</th><th>En Clientes</th><th></th></tr>';
+    c.DIFS.forEach(function(x) {
+      var pv = x.C === 'COND_IVA' ? twCondNom(x.P) : x.P, kv = x.C === 'COND_IVA' ? twCondNom(x.K) : x.K;
+      h += '<tr><td>' + twEsc(x.L) + '</td><td><b>' + twEsc(pv) + '</b></td><td>' + (kv ? twEsc(kv) : '<i style="color:var(--dim)">vacío</i>') + '</td>' +
+        '<td style="text-align:right"><button class="btn btn-sm" onclick="twCliDato(\'' + id + '\',\'' + x.C + '\')">' + (x.C === 'TELEFONO' ? 'Agregar al cliente' : 'Pasar al cliente') + '</button></td></tr>';
+    });
+    h += '</table>';
+  }
+  return h + '</div>';
+}
+function twCliVincular(id, cid) { twAccion({ ID_PEDIDO: id, ACCION: 'VINCULAR', ID_CLIENTE: cid }, 'Cliente confirmado'); }
+function twCliQuitar(id) {
+  if (TW_.confQ !== id) { TW_.confQ = id; toast('Tocá «No es este cliente» otra vez para confirmar', 'r2'); return; }
+  TW_.confQ = ''; twAccion({ ID_PEDIDO: id, ACCION: 'DESVINCULAR' }, 'Se sacó el cliente del pedido');
+}
+function twCliDato(id, campo) { twAccion({ ID_PEDIDO: id, ACCION: 'CLI_DATO', CAMPO: campo }, 'Dato pasado al cliente'); if (typeof _mcDel === 'function') _mcDel('clientes'); }
+function twCliAlta(id) {
+  var p = twPed(id), doc = String(p.CUIT_DNI || '').replace(/[^0-9]/g, ''), ops = '';
+  (TW_.d.CONDS || []).forEach(function(c) { ops += '<option value="' + twEsc(c.ID) + '"' + (c.ID === (p.COND_IVA || '3') ? ' selected' : '') + '>' + twEsc(c.NOMBRE) + '</option>'; });
+  var o = document.createElement('div'); o.className = 'tw-ov'; o.id = 'tw-alta';
+  o.innerHTML = '<div class="tw-hoja"><h3 style="margin:0 0 6px">Dar de alta el cliente</h3>' +
+    '<div class="tw-caja">Vienen puestos los datos del pedido ' + twEsc(p.NRO) + '. Revisalos: así queda el cliente en Maestros › Clientes. Si es una persona, poné el apellido arriba y el nombre abajo. Si es una empresa, la razón social arriba y el nombre vacío.</div>' +
+    '<div class="tw-fila"><label>Apellido o razón social *<input id="tw-a-ape" value="' + twEsc(String(p.NOMBRE || '').toUpperCase()) + '"></label><label>Nombre<input id="tw-a-nom"></label></div>' +
+    '<div class="tw-fila"><label>CUIT o DNI *<input id="tw-a-doc" inputmode="numeric" value="' + twEsc(doc) + '"></label><label>Condición IVA *<select id="tw-a-iva">' + ops + '</select></label></div>' +
+    '<div class="tw-fila"><label>Teléfono<input id="tw-a-tel" value="' + twEsc(p.TELEFONO) + '"></label><label>Mail<input id="tw-a-mail" value="' + twEsc(p.MAIL) + '"></label></div>' +
+    '<div class="tw-fila"><label>Dirección<input id="tw-a-dir" value="' + twEsc(p.DIRECCION) + '"></label><label>Localidad<input id="tw-a-loc" value="' + twEsc(p.LOCALIDAD) + '"></label></div>' +
+    '<div class="tw-fila"><label>Provincia<input id="tw-a-prov" value="' + twEsc(p.PROVINCIA) + '"></label><label>Código postal<input id="tw-a-cp" value="' + twEsc(p.CP) + '"></label></div>' +
+    '<div class="tw-btns" style="justify-content:flex-end"><button class="btn btn-sm" onclick="$id(\'tw-alta\').remove()">Cancelar</button>' +
+    '<button class="btn btn-sm btn-p" id="tw-a-ok" onclick="twCliAltaOk(\'' + twEsc(id) + '\')">Dar de alta</button></div></div>';
+  o.addEventListener('click', function(e) { if (e.target === o) o.remove(); });
+  document.body.appendChild(o);
+}
+async function twCliAltaOk(id) {
+  var b = $id('tw-a-ok'); b.disabled = true;
+  var d = { ID_PEDIDO: id, APELLIDO: $id('tw-a-ape').value, NOMBRE: $id('tw-a-nom').value, CUIT_DNI: $id('tw-a-doc').value, ID_CONDICION_IVA: $id('tw-a-iva').value,
+    TELEFONO: $id('tw-a-tel').value, MAIL: $id('tw-a-mail').value, DIRECCION: $id('tw-a-dir').value, LOCALIDAD: $id('tw-a-loc').value, PROVINCIA: $id('tw-a-prov').value, CP: $id('tw-a-cp').value };
+  try {
+    var r = await gsRun('gsWeb_ClienteAlta', d);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo dar de alta', 'r2'); b.disabled = false; return; }
+    var i; for (i = 0; i < TW_.d.PEDIDOS.length; i++) if (TW_.d.PEDIDOS[i].ID_PEDIDO === r.PEDIDO.ID_PEDIDO) TW_.d.PEDIDOS[i] = r.PEDIDO;
+    if (typeof _mcDel === 'function') _mcDel('clientes');
+    $id('tw-alta').remove(); TW_.abierto = id; toast('Cliente dado de alta: N° ' + r.ID_CLIENTE, 'g'); twPintar();
+  } catch (e) { toast(e.message, 'r2'); b.disabled = false; }
+}
+function twAyudaCli() {
+  var o = document.createElement('div'); o.className = 'tw-ov'; o.id = 'tw-ayu';
+  o.innerHTML = '<div class="tw-hoja tw-ayuda"><h3 style="margin-top:0">Cómo se controla el cliente de cada pedido</h3>' +
+    '<p>En la tienda, el que hace el pedido tiene que poner su <b>CUIT o DNI</b> y su <b>condición frente al IVA</b>. La tienda no lo deja seguir si el número está mal: el DNI tiene que tener 7 u 8 números y el CUIT 11, con el último número (dígito verificador) correcto. Con DNI solo puede ser Consumidor final; para las otras condiciones hace falta el CUIT.</p>' +
+    '<p>La tienda <b>nunca</b> le muestra a nadie si ya es cliente ni sus datos: si lo hiciera, cualquiera podría escribir el DNI de otra persona y ver su nombre y dirección. El control se hace acá, en el panel.</p>' +
+    '<h3>Qué dice cada pedido</h3><ul>' +
+    '<li><span class="tw-cl tw-c1">👤 Nombre</span> <b>Ya es cliente.</b> El CUIT o el DNI coincide con uno de Clientes. Si puso DNI y el cliente está cargado con CUIT, igual lo encuentra: en una persona, el DNI está dentro del CUIT (20-<b>12345678</b>-9).</li>' +
+    '<li><span class="tw-cl tw-c2">❓ ¿Es …?</span> <b>Posible cliente.</b> El documento no está, pero el teléfono sí. Puede ser la misma persona o alguien que usa ese teléfono: lo confirmás vos con «Sí, es este cliente» o lo das de alta como otro.</li>' +
+    '<li><span class="tw-cl tw-c3">🆕 Cliente nuevo</span> No está en Clientes. Tocá «Dar de alta el cliente»: vienen puestos los datos del pedido, los revisás y queda cargado. Si ese CUIT o DNI ya existe, no lo deja duplicar y te dice cuál es.</li>' +
+    '<li><span class="tw-cl tw-c4">Sin CUIT/DNI</span> Pedidos de antes de este control. Pedile el dato por WhatsApp.</li></ul>' +
+    '<h3>Avisos</h3><ul>' +
+    '<li><b>💰 Debe</b>: tiene saldo en la cuenta corriente de clientes.</li>' +
+    '<li><b>⛔ Inactivo</b>: el cliente está dado de baja en Clientes.</li>' +
+    '<li><b>📦 Otro pedido abierto</b>: hay otro pedido sin terminar con el mismo documento o teléfono. Fijate que no sea el mismo repetido.</li></ul>' +
+    '<h3>Datos distintos</h3><p>Si el cliente ya existe pero en el pedido puso otro teléfono, mail, dirección o condición IVA, se muestran los dos. <b>No se cambia nada solo.</b> Si el del pedido es el correcto, tocá «Pasar al cliente» (el teléfono nuevo se agrega como segundo teléfono si ya tiene uno).</p>' +
+    '<div class="tw-btns" style="justify-content:flex-end"><button class="btn btn-sm btn-p" onclick="$id(\'tw-ayu\').remove()">Entendido</button></div></div>';
+  o.addEventListener('click', function(e) { if (e.target === o) o.remove(); });
+  document.body.appendChild(o);
 }
 function twPed(id) { return TW_.d.PEDIDOS.filter(function(p) { return p.ID_PEDIDO === id; })[0]; }
 async function twAccion(d, ok) {

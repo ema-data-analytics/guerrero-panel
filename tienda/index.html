@@ -60,7 +60,7 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 .aviso.r{background:#fef2f2;border-color:var(--bad)}
 .panel{overflow:hidden}.scr{flex:1;overflow:auto}
 .frm{padding:10px 16px 4px;border-top:1px solid var(--li)}
-.frm label{display:block;font-size:12px;color:var(--mu);margin:8px 0 3px}
+.frm label{display:block;font-size:12px;color:var(--mu);margin:8px 0 3px}.dnota{font-size:12px;color:var(--mu);margin:3px 0 0;line-height:1.35}
 .sug button{display:block;width:100%;text-align:left;padding:9px 12px;margin:4px 0 0;border:1px solid var(--li);border-radius:8px;background:#fff;font-size:15px;cursor:pointer}.sug:empty{display:none}
 .frm input,.frm textarea,.frm select{width:100%;padding:10px;border:1px solid var(--li);border-radius:10px;font-size:16px;font-family:inherit}
 .frm textarea{min-height:60px}
@@ -107,7 +107,10 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 <label>Nombre o empresa *</label><input id="fNom" autocomplete="name">
 <label>Teléfono (WhatsApp) *</label><input id="fTel" inputmode="tel" autocomplete="tel" placeholder="Ej: 387 4123456">
 <label>Email</label><input id="fMail" inputmode="email" autocomplete="email">
-<label>CUIT o DNI (para la factura)</label><input id="fCuit" inputmode="numeric">
+<label>CUIT o DNI *</label><input id="fCuit" inputmode="numeric" placeholder="Solo números, sin guiones">
+<div class="dnota">Lo pedimos para hacerte la factura. Si ya nos compraste, con tu CUIT o DNI te encontramos en nuestro sistema y no tenés que volver a dar tus datos.</div>
+<label>Condición frente al IVA *</label><select id="fIva"><option value="">Elegí…</option><option value="3">Consumidor final</option><option value="4">Monotributista</option><option value="1">Responsable inscripto</option><option value="2">Exento</option></select>
+<div class="dnota">Si no sabés, es «Consumidor final». Para las otras opciones hace falta el CUIT.</div>
 <label>¿Cómo lo recibís? *</label>
 <div class="seg"><button type="button" id="eR" onclick="setEnt('RETIRO')">Retiro en el local</button><button type="button" id="eE" onclick="setEnt('ENVIO')">Envío</button></div>
 <div id="envBox" style="display:none">
@@ -160,6 +163,9 @@ function mNom(m){return m==='GT RADIAL'?'GT Radial':m;}
 function logo(m){return LOGOK[m]?'<img src="logos/'+LOGOK[m]+'.png" alt="'+esc(m)+'">':'<b>'+esc(m)+'</b>';}
 function norm(s){return String(s).toUpperCase().replace(/[^A-Z0-9]/g,'');}
 function dig(s){return String(s).replace(/[^0-9]/g,'');}
+// CUIT: 11 números con el dígito verificador correcto (módulo 11). DNI: 7 u 8 números
+function cuitOk(d){if(!/^[0-9]{11}$/.test(d))return false;var m=[5,4,3,2,7,6,5,4,3,2],t=0,i;for(i=0;i<10;i++)t+=Number(d.charAt(i))*m[i];var v=11-t%11;if(v===11)v=0;return v!==10&&v===Number(d.charAt(10));}
+function docTipo(d){if(/^[0-9]{7,8}$/.test(d)&&Number(d)>=1000000)return 'DNI';if(cuitOk(d))return 'CUIT';return '';}
 function rpc(fn,args,cb){
   var x=new XMLHttpRequest();
   x.open('POST',SB+'/rest/v1/rpc/'+fn);
@@ -288,8 +294,8 @@ function sugLoc(){
   el.innerHTML=h||(LUG.locs.length?'<div class="note">No está en la lista: dejala escrita así.</div>':'');
 }
 function elegirLoc(b){$('fLoc').value=b.textContent;$('locSug').innerHTML='';}
-function cargarCli(){try{var c=JSON.parse(localStorage.getItem('vt_cli')||'null');if(!c)return;['fNom','fTel','fMail','fCuit','fDir','fLoc','fCp'].forEach(function(f){if(c[f]&&!$(f).value)$(f).value=c[f];});if(c.fProv)$('fProv').innerHTML='<option selected>'+esc(c.fProv)+'</option>';}catch(e){}}
-function guardarCli(){var c={};['fNom','fTel','fMail','fCuit','fDir','fLoc','fProv','fCp'].forEach(function(f){c[f]=$(f).value;});try{localStorage.setItem('vt_cli',JSON.stringify(c));}catch(e){}}
+function cargarCli(){try{var c=JSON.parse(localStorage.getItem('vt_cli')||'null');if(!c)return;['fNom','fTel','fMail','fCuit','fDir','fLoc','fCp'].forEach(function(f){if(c[f]&&!$(f).value)$(f).value=c[f];});if(c.fIva&&!$('fIva').value)$('fIva').value=c.fIva;if(c.fProv)$('fProv').innerHTML='<option selected>'+esc(c.fProv)+'</option>';}catch(e){}}
+function guardarCli(){var c={};['fNom','fTel','fMail','fCuit','fIva','fDir','fLoc','fProv','fCp'].forEach(function(f){c[f]=$(f).value;});try{localStorage.setItem('vt_cli',JSON.stringify(c));}catch(e){}}
 // Código del pedido armado en el celular: va en el WhatsApp y el sistema lo guarda con ese mismo código
 function uuid4(){
   var b=new Uint8Array(16),i,h='';
@@ -307,6 +313,10 @@ function confirmar(btn){
   if(!its.length){e.textContent='El pedido está vacío';return false;}
   if($('fNom').value.trim().length<3){e.textContent='Poné tu nombre o el de tu empresa';$('fNom').focus();return false;}
   if(dig($('fTel').value).length<8){e.textContent='Poné un teléfono con código de área';$('fTel').focus();return false;}
+  var dc=dig($('fCuit').value),td=docTipo(dc);
+  if(!td){e.textContent=dc.length===11?'El CUIT tiene un número mal: revisalo':'Poné tu CUIT (11 números) o tu DNI (7 u 8 números)';$('fCuit').focus();return false;}
+  if(!$('fIva').value){e.textContent='Elegí tu condición frente al IVA';$('fIva').focus();return false;}
+  if(td==='DNI'&&$('fIva').value!=='3'){e.textContent='Para esa condición frente al IVA poné el CUIT (11 números), no el DNI';$('fCuit').focus();return false;}
   if(!ENT){e.textContent='Elegí retiro en el local o envío';return false;}
   if(ENT==='ENVIO'&&(!$('fDir').value.trim()||!$('fLoc').value.trim())){e.textContent='Para el envío poné dirección y localidad';return false;}
   guardarCli();
@@ -314,10 +324,10 @@ function confirmar(btn){
   var t='Hola, te mando mi pedido de la tienda web:';
   for(var k2 in CAR){var a2=BYID[k2];if(a2)t+='\n• '+CAR[k2]+' x '+a2.me+' '+mNom(dis(a2).m)+' '+dis(a2).n+' — '+pesos(a2.p*CAR[k2]);}
   t+='\n'+(ENT==='ENVIO'?'Envío a '+$('fLoc').value.trim()+', '+$('fProv').value+'. Cubiertas: '+pesos(t0)+' + envío.':'Retiro en el local. Total: '+pesos(t0)+'.');
-  t+='\nNombre: '+$('fNom').value.trim()+'\nMi pedido: '+link;
+  t+='\nNombre: '+$('fNom').value.trim()+'\n'+td+': '+dc+'\nMi pedido: '+link;
   btn.href=waUrl(t);
   btn.setAttribute('data-env','1');btn.textContent='Guardando el pedido…';btn.style.opacity='.7';
-  var datos={nombre:$('fNom').value,telefono:$('fTel').value,mail:$('fMail').value,cuit:$('fCuit').value,entrega:ENT,
+  var datos={nombre:$('fNom').value,telefono:$('fTel').value,mail:$('fMail').value,cuit:$('fCuit').value,cond_iva:$('fIva').value,entrega:ENT,
     direccion:$('fDir').value,localidad:$('fLoc').value,provincia:$('fProv').value,cp:$('fCp').value,nota:$('fNota').value,items:its,token:tok};
   setTimeout(function(){
     rpc('vt_tienda_pedido_crear',{p:datos},function(err,r){
