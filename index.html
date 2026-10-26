@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "fb2be48e3198"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a97b483677ed"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -12063,6 +12063,8 @@ async function puPesajeCargar() { try { PU_.pes = await gsRun('gsPC_PesajeDia', 
 async function puPesaje() {
   await puPesajeCargar();
   var p = PU_.pes; if (!p) return toast('No se pudo leer el pesaje', 'r2');
+  PU_.pesExtra = PU_.pesExtra || [];
+  (p.OTROS || []).forEach(function(o) { if (PU_.pesExtra.indexOf(o.ID_INSUMO) !== -1) p.ITEMS.push(o); });
   var h = '<div class="mh"><span class="mt">⚖ Pesaje del día · ' + puEsc(p.HOY.split('-').reverse().join('/')) + '</span><button class="mc" onclick="closeModal();puCargar()">×</button></div><div class="mb2 pu-vent">';
   if (!p.ITEMS.length) h += '<div class="tdim">En esta estación no se usa ningún insumo que se pese.</div>';
   p.ITEMS.forEach(function(i, k) {
@@ -12091,6 +12093,8 @@ async function puPesaje() {
     }
     h += '</div>';
   });
+  var otr = (p.OTROS || []).filter(function(o) { return PU_.pesExtra.indexOf(o.ID_INSUMO) === -1; });
+  if (otr.length) h += '<div style="font-size:14px">¿Hoy usás en esta estación otro insumo que se pesa? ' + otr.map(function(o) { return '<button class="pu-chip" onclick="PU_.pesExtra.push(\'' + puEsc(o.ID_INSUMO) + '\');puPesaje()">+ ' + puEsc(o.NOMBRE) + '</button>'; }).join(' ') + '</div>';
   h += '<div class="tdim" style="font-size:13px">Lo que se fue (inicio − sobrante) se compara con lo cargado en las cubiertas. Si la diferencia pasa el ' + p.MARGEN + '%, la explica el encargado.</div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal();puCargar()">Cerrar</button></div>';
   closeModal(); showModal(h, 'md-lg'); PU_.pesDest = {};
