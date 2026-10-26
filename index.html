@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9c6e3ae81e31"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "930012ba0876"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -5012,579 +5012,218 @@ async function cedGuardar(id) {
 
 </script>
 <script>
-// ── VARIABLES GLOBALES ────────────────────────────────────────
-var _chequesData     = [];
-var _chequesClientes = [];
-var _chequesProvs    = [];
-var _chequesBancos   = [];
-var _chPage          = 1;
-var _chPageSize      = 20;
-var _chFiltros       = { estado:'', tipo:'', origen:'', texto:'' };
+// ── CHEQUES: todo pasa por el servidor (gsCHQ_*). Cada acción mueve caja / cuentas corrientes y se puede deshacer la última. ──
+var _CHQ = { CHEQUES: [], CAJAS: [], CLIENTES: [] };
+var _chPage = 1, _chPageSize = 25;
+var CHQ_EST_TXT = { EN_CARTERA: 'En cartera', DEPOSITADO: 'Depositado', ACREDITADO: 'Acreditado', RECHAZADO: 'Rechazado', ENDOSADO: 'Endosado', ENTREGADO: 'Entregado', DEBITADO: 'Debitado', ANULADO: 'Anulado' };
+var CHQ_EST_CLS = { EN_CARTERA: 'b-blue', DEPOSITADO: 'b-warn', ACREDITADO: 'b-green', RECHAZADO: 'b-red', ENDOSADO: 'b-purple', ENTREGADO: 'b-orange', DEBITADO: 'b-green', ANULADO: 'b-gray' };
+var CHQ_VINC_TXT = { COBRO: 'Cobro', ORDEN_PAGO: 'Orden de pago', CARGA_INICIAL: 'Carga inicial' };
+function chEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function chNum(v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; }
+function chBuscar(id) { for (var i = 0; i < _CHQ.CHEQUES.length; i++) if (String(_CHQ.CHEQUES[i].ID_CHEQUE) === String(id)) return _CHQ.CHEQUES[i]; return null; }
+function chEstadoBadge(e) { return '<span class="badge ' + (CHQ_EST_CLS[e] || 'b-gray') + '">' + chEsc(CHQ_EST_TXT[e] || e || '—') + '</span>'; }
+function chOrigenBadge(o) { return o === 'PROPIO' ? '<span class="badge b-green" style="font-size:9px">Propio</span>' : '<span class="badge b-orange" style="font-size:9px">Tercero</span>'; }
+function chTipoBadge(t) { return t === 'ECHEQ' ? '<span class="badge b-purple" style="font-size:9px">eCheq</span>' : '<span class="badge b-info" style="font-size:9px">Impreso</span>'; }
+function chHoyISO() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function chLimpiarCache() { if (typeof _mcDel === 'function') { ['cheques', 'movimientos_caja', 'cta_cte_clientes', 'cta_cte_proveedores'].forEach(function(s) { _mcDel(s); }); } }
 
-// ── RENDER PRINCIPAL ──────────────────────────────────────────
 async function renderCheques() {
   var el = $id('page-cheques');
   if (!el) return;
-
-  el.innerHTML = '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-money-check-alt" style="color:var(--accent)"></i> Gestión de Cheques</div>' +
-    '<div class="page-sub">CHEQUES RECIBIDOS Y EMITIDOS</div></div>' +
-    '<div style="display:flex;gap:8px">' +
-    '<button class="btn btn-p btn-sm" onclick="modalNuevoCheque()"><i class="fas fa-plus"></i> Nuevo Cheque</button>' +
-    '</div></div>' +
-    '<div class="content"><div class="al al-b tc" style="padding:30px"><i class="fas fa-sync-alt fa-spin"></i> Cargando...</div></div>';
-
+  el.innerHTML = chCabecera() + '<div class="content"><div class="al al-b tc" style="padding:30px"><i class="fas fa-sync-alt fa-spin"></i> Cargando...</div></div>';
   try {
-    var _stores = ['cheques','clientes','proveedores','m_bancos'];
-    var _b;
-    if (isGsMode()) {
-      _b = await gsRun('gsBatchLoad', _stores);
-    } else {
-      var _pa = await Promise.all(_stores.map(function(s){ return ADB.getAll(s); }));
-      _b = {}; _stores.forEach(function(s,i){ _b[s]=_pa[i]; });
-    }
-    _chequesData     = Array.isArray(_b['cheques'])     ? _b['cheques']     : [];
-    _chequesClientes = Array.isArray(_b['clientes'])     ? _b['clientes']     : [];
-    _chequesProvs    = Array.isArray(_b['proveedores'])  ? _b['proveedores']  : [];
-    _chequesBancos   = Array.isArray(_b['m_bancos'])     ? _b['m_bancos']     : [];
-
-    // Mapas para lookup rápido
-    window._chCliMap  = {}; _chequesClientes.forEach(function(c){ _chCliMap[c.ID_CLIENTE]  = c; });
-    window._chProvMap = {}; _chequesProvs.forEach(function(p){    _chProvMap[p.ID_PROVEEDOR] = p; });
-    window._chBanMap  = {}; _chequesBancos.forEach(function(b){   _chBanMap[b.ID_BANCO]     = b; });
-
-    _chPage = 1;
+    var r = await gsRun('gsCHQ_Datos');
+    if (!r || !r.ok) throw new Error((r && r.error) || 'sin datos');
+    _CHQ = r;
     renderChequesUI();
-  } catch(e) {
-    el.innerHTML = '<div class="content">' +
-      '<div class="al al-r mb3"><i class="fas fa-exclamation-triangle"></i> Error cargando el módulo: ' + e.message + '</div>' +
-      '<div class="al al-b"><i class="fas fa-info-circle"></i> Si es la primera vez que usás este módulo, ejecutá la función <b>setupCheques()</b> en el editor de Apps Script y volvé a cargar.</div>' +
-      '</div>';
+  } catch (e) {
+    el.innerHTML = chCabecera() + '<div class="content"><div class="al al-r"><i class="fas fa-exclamation-triangle"></i> Error cargando cheques: ' + chEsc(e.message || e) + '</div></div>';
   }
 }
-
+function chCabecera() {
+  return '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-money-check-alt" style="color:var(--accent)"></i> Cheques</div>' +
+    '<div class="page-sub">RECIBIDOS (ENTRAN POR COBRANZAS) Y PROPIOS (SALEN POR ÓRDENES DE PAGO)</div></div>' +
+    '<div style="display:flex;gap:8px"><button class="btn btn-s btn-sm" onclick="chModalCarga()"><i class="fas fa-plus"></i> Carga inicial</button></div></div>';
+}
 function renderChequesUI() {
   var el = $id('page-cheques');
   if (!el) return;
-
-  // KPIs
-  var hoy = Date.now();
-  var en7dias  = hoy + 7*24*60*60*1000;
-  var en15dias = hoy + 15*24*60*60*1000;
-  var en30dias = hoy + 30*24*60*60*1000;
-
-  var activos = _chequesData.filter(function(c){ return c.ACTIVO != 0; });
-  var enCartera    = activos.filter(function(c){ return c.ESTADO==='EN_CARTERA'; });
-  var depositados  = activos.filter(function(c){ return c.ESTADO==='DEPOSITADO'; });
-  var rechazados   = activos.filter(function(c){ return c.ESTADO==='RECHAZADO'; });
-  var proximos     = enCartera.filter(function(c){
-    var fa = c.FECHA_ACREDITACION;
-    return fa && fa >= hoy && fa <= en7dias;
-  });
-
-  var totalCartera = enCartera.reduce(function(s,c){ return s+(c.IMPORTE||0); },0);
-  var totalDepositado = depositados.reduce(function(s,c){ return s+(c.IMPORTE||0); },0);
-  var totalRechazado = rechazados.reduce(function(s,c){ return s+(c.IMPORTE||0); },0);
-
-  el.innerHTML =
-    '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-money-check-alt" style="color:var(--accent)"></i> Gestión de Cheques</div>' +
-    '<div class="page-sub">CHEQUES RECIBIDOS Y EMITIDOS</div></div>' +
-    '<div style="display:flex;gap:8px">' +
-    '<button class="btn btn-p btn-sm" onclick="modalNuevoCheque()"><i class="fas fa-plus"></i> Nuevo Cheque</button>' +
-    '</div></div>' +
-    '<div class="content">' +
-
-    // KPIs
+  var hoy = Date.now(), en7 = hoy + 7 * 86400000;
+  var act = _CHQ.CHEQUES.filter(function(c) { return c.ACTIVO !== 0 && c.ESTADO !== 'ANULADO'; });
+  function suma(arr) { return arr.reduce(function(s, c) { return s + chNum(c.IMPORTE); }, 0); }
+  var cart = act.filter(function(c) { return c.ESTADO === 'EN_CARTERA'; });
+  var dep = act.filter(function(c) { return c.ESTADO === 'DEPOSITADO'; });
+  var rech = act.filter(function(c) { return c.ESTADO === 'RECHAZADO'; });
+  var prop = act.filter(function(c) { return c.ESTADO === 'ENTREGADO'; });
+  var prox = cart.filter(function(c) { return c.FECHA_ACREDITACION && c.FECHA_ACREDITACION <= en7; });
+  var propProx = prop.filter(function(c) { return c.FECHA_ACREDITACION && c.FECHA_ACREDITACION <= en7; });
+  function stat(t, v, sub, col, cls) { return '<div class="stat" style="border-top:3px solid var(--' + col + ')"><div class="stat-label">' + t + '</div><div class="stat-val ' + cls + '">' + v + '</div><div class="stat-sub">' + sub + '</div></div>'; }
+  function cant(n) { return n + (n === 1 ? ' cheque' : ' cheques'); }
+  el.innerHTML = chCabecera() + '<div class="content">' +
     '<div class="g4 mb4">' +
-    '<div class="stat" style="border-top:3px solid var(--accent)">' +
-    '<div class="stat-label">En Cartera</div>' +
-    '<div class="stat-val sv-blue">' + fmt(totalCartera) + '</div>' +
-    '<div class="stat-sub">' + enCartera.length + ' cheques</div></div>' +
-    '<div class="stat" style="border-top:3px solid var(--warn)">' +
-    '<div class="stat-label">Depositados</div>' +
-    '<div class="stat-val sv-warn">' + fmt(totalDepositado) + '</div>' +
-    '<div class="stat-sub">' + depositados.length + ' cheques</div></div>' +
-    '<div class="stat" style="border-top:3px solid var(--danger)">' +
-    '<div class="stat-label">Rechazados</div>' +
-    '<div class="stat-val sv-red">' + fmt(totalRechazado) + '</div>' +
-    '<div class="stat-sub">' + rechazados.length + ' cheques</div></div>' +
-    '<div class="stat" style="border-top:3px solid var(--purple)">' +
-    '<div class="stat-label">Vencen en 7 días</div>' +
-    '<div class="stat-val sv-purple">' + proximos.length + '</div>' +
-    '<div class="stat-sub">cheques próximos</div></div>' +
+    stat('En cartera', fmt(suma(cart)), cant(cart.length), 'accent', 'sv-blue') +
+    stat('Depositados (a acreditar)', fmt(suma(dep)), cant(dep.length), 'warn', 'sv-warn') +
+    stat('Propios a debitar', fmt(suma(prop)), cant(prop.length), 'purple', 'sv-purple') +
+    stat('Rechazados', fmt(suma(rech)), cant(rech.length), 'danger', 'sv-red') +
     '</div>' +
-
-    // Alertas rechazados
-    (rechazados.length > 0 ?
-      '<div class="al al-r mb4"><i class="fas fa-exclamation-triangle"></i> <strong>' + rechazados.length + ' cheque(s) rechazado(s)</strong> pendientes de Nota de Débito. <button class="btn btn-d btn-sm" style="margin-left:12px" onclick="chFiltrarEstado(\'RECHAZADO\')">Ver rechazados</button></div>'
-    : '') +
-
-    // Alertas próximos
-    (proximos.length > 0 ?
-      '<div class="al al-w mb4"><i class="fas fa-clock"></i> <strong>' + proximos.length + ' cheque(s)</strong> acreditan en los próximos 7 días.</div>'
-    : '') +
-
-    // Filtros
+    (prox.length ? '<div class="al al-w mb3"><i class="fas fa-clock"></i> ' + cant(prox.length) + ' en cartera ' + (prox.length === 1 ? 'se puede' : 'se pueden') + ' cobrar en los próximos 7 días (o ya vencidos): ' + fmt(suma(prox)) + '</div>' : '') +
+    (propProx.length ? '<div class="al al-r mb3"><i class="fas fa-university"></i> ' + cant(propProx.length) + ' propios se debitan en los próximos 7 días: ' + fmt(suma(propProx)) + ' — tiene que haber fondos.</div>' : '') +
     '<div class="card mb4"><div class="fbar">' +
-    '<input id="ch-buscar" class="fi" style="width:220px" placeholder="Buscar por nro, titular, banco..." oninput="chAplicarFiltros()"/>' +
-    '<select id="ch-fil-estado" class="fs" style="width:160px" onchange="chAplicarFiltros()">' +
-    '<option value="">Todos los estados</option>' +
-    '<option value="EN_CARTERA">En Cartera</option>' +
-    '<option value="DEPOSITADO">Depositado</option>' +
-    '<option value="ACREDITADO">Acreditado</option>' +
-    '<option value="RECHAZADO">Rechazado</option>' +
-    '<option value="ENDOSADO">Endosado</option>' +
-    '<option value="ANULADO">Anulado</option>' +
-    '</select>' +
-    '<select id="ch-fil-tipo" class="fs" style="width:140px" onchange="chAplicarFiltros()">' +
-    '<option value="">Todos los tipos</option>' +
-    '<option value="IMPRESO">Impreso</option>' +
-    '<option value="ECHEQ">eCheq</option>' +
-    '</select>' +
-    '<select id="ch-fil-origen" class="fs" style="width:150px" onchange="chAplicarFiltros()">' +
-    '<option value="">Propio y Tercero</option>' +
-    '<option value="PROPIO">Propios</option>' +
-    '<option value="TERCERO">De Terceros</option>' +
-    '</select>' +
+    '<input id="ch-buscar" class="fi" style="width:220px" placeholder="Buscar nro, titular, banco, cliente..." oninput="_chPage=1;chAplicarFiltros()"/>' +
+    '<select id="ch-fil-estado" class="fs" style="width:160px" onchange="_chPage=1;chAplicarFiltros()"><option value="">Vigentes</option><option value="*">Todos</option>' +
+    Object.keys(CHQ_EST_TXT).map(function(k) { return '<option value="' + k + '">' + CHQ_EST_TXT[k] + '</option>'; }).join('') + '</select>' +
+    '<select id="ch-fil-origen" class="fs" style="width:150px" onchange="_chPage=1;chAplicarFiltros()"><option value="">Propios y terceros</option><option value="TERCERO">De terceros</option><option value="PROPIO">Propios</option></select>' +
     '<button class="btn btn-s btn-sm" onclick="chLimpiarFiltros()"><i class="fas fa-times"></i> Limpiar</button>' +
-    '</div>' +
-    '<div class="tw"><table id="tbl-cheques"><thead><tr>' +
-    '<th>Nro. Cheque</th><th>Tipo</th><th>Origen</th><th>Banco</th><th>Titular / CUIT</th>' +
-    '<th>Cliente / Proveedor</th><th>F. Emisión</th><th>F. Acreditación</th>' +
-    '<th class="tr">Importe</th><th>Estado</th><th></th>' +
-    '</tr></thead><tbody id="ch-tbody"><tr><td colspan="11" class="tc tdim" style="padding:16px">Cargando...</td></tr></tbody>' +
-    '</table></div>' +
-    '<div id="ch-pag" style="padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"></div>' +
-    '</div></div>';
-
+    '</div><div class="tw"><table id="tbl-cheques"><thead><tr>' +
+    '<th>Nro.</th><th>Origen</th><th>Banco</th><th>Titular</th><th>Cliente / Proveedor</th><th>Cobro / pago</th><th class="tr">Importe</th><th>Estado</th><th></th>' +
+    '</tr></thead><tbody id="ch-tbody"></tbody></table></div>' +
+    '<div id="ch-pag" style="padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"></div></div></div>';
   chAplicarFiltros();
 }
-
-function chFiltrarEstado(estado) {
-  var sel = $id('ch-fil-estado');
-  if (sel) sel.value = estado;
-  chAplicarFiltros();
-}
-
-function chLimpiarFiltros() {
-  var ids = ['ch-buscar','ch-fil-estado','ch-fil-tipo','ch-fil-origen'];
-  ids.forEach(function(id){ var el=$id(id); if(el) el.value=''; });
-  chAplicarFiltros();
-}
-
-function chAplicarFiltros() {
-  var txt    = (($id('ch-buscar')||{}).value||'').toLowerCase();
-  var estado = ($id('ch-fil-estado')||{}).value||'';
-  var tipo   = ($id('ch-fil-tipo')||{}).value||'';
-  var origen = ($id('ch-fil-origen')||{}).value||'';
-
-  var activos = _chequesData.filter(function(c){ return c.ACTIVO != 0; });
-  var filtrado = activos.filter(function(c){
-    if (estado && c.ESTADO !== estado) return false;
-    if (tipo   && c.TIPO_CHEQUE !== tipo) return false;
-    if (origen && c.TIPO_ORIGEN !== origen) return false;
-    if (txt) {
-      var haystack = ((c.NRO_CHEQUE||'') + ' ' + (c.TITULAR||'') + ' ' + (c.NOMBRE_BANCO||'') + ' ' + (c.CUIT_EMISOR||'')).toLowerCase();
-      if (haystack.indexOf(txt) === -1) return false;
-    }
+function chLimpiarFiltros() { ['ch-buscar', 'ch-fil-estado', 'ch-fil-origen'].forEach(function(i) { var e = $id(i); if (e) e.value = ''; }); _chPage = 1; chAplicarFiltros(); }
+function chFiltrados() {
+  var txt = ($v('ch-buscar') || '').toLowerCase(), est = $v('ch-fil-estado') || '', ori = $v('ch-fil-origen') || '';
+  var fin = { ACREDITADO: 1, DEBITADO: 1, ANULADO: 1 };
+  return _CHQ.CHEQUES.filter(function(c) {
+    if (est === '' && fin[c.ESTADO]) return false;
+    if (est && est !== '*' && c.ESTADO !== est) return false;
+    if (ori && c.TIPO_ORIGEN !== ori) return false;
+    if (txt) { var h = [c.NRO_CHEQUE, c.TITULAR, c.NOMBRE_BANCO, c.CUIT_EMISOR, c.CLIENTE, c.PROVEEDOR].join(' ').toLowerCase(); if (h.indexOf(txt) === -1) return false; }
     return true;
   });
-
-  // Ordenar por fecha acreditación desc
-  filtrado.sort(function(a,b){ return (b.FECHA_ACREDITACION||0) - (a.FECHA_ACREDITACION||0); });
-
-  // Paginación
-  var total = filtrado.length;
-  var pages = Math.ceil(total/_chPageSize) || 1;
-  if (_chPage > pages) _chPage = 1;
-  var desde = (_chPage-1)*_chPageSize;
-  var pag   = filtrado.slice(desde, desde+_chPageSize);
-
+}
+function chBotones(c) {
+  var b = [], id = chEsc(c.ID_CHEQUE);
+  function btn(cls, fn, ic, tit) { b.push('<button class="btn btn-xs ' + cls + '" onclick="' + fn + '(\'' + id + '\')" title="' + tit + '"><i class="fas fa-' + ic + '"></i></button>'); }
+  btn('btn-info', 'chVerDetalle', 'eye', 'Ver');
+  if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'EN_CARTERA') { btn('btn-w', 'chModalDepositar', 'university', 'Depositar'); btn('btn-g', 'chModalVentanilla', 'money-bill', 'Cobrado por ventanilla'); }
+  if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'DEPOSITADO') { btn('btn-g', 'chModalAcreditar', 'check', 'Acreditado'); btn('btn-d', 'chModalRechazar', 'times', 'Rechazado'); }
+  if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'ENDOSADO') btn('btn-d', 'chModalRechazar', 'times', 'Rechazado por el proveedor');
+  if (c.TIPO_ORIGEN === 'PROPIO' && c.ESTADO === 'ENTREGADO') { btn('btn-g', 'chModalDebitar', 'check', 'Debitado del banco'); btn('btn-d', 'chModalRechazar', 'times', 'Rechazado'); }
+  if (c.PUEDE_DESHACER && c.PUEDE_DESHACER !== 'Carga inicial') btn('btn-s', 'chModalDeshacer', 'undo', 'Deshacer: ' + c.PUEDE_DESHACER);
+  if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'EN_CARTERA' && c.VINCULO !== 'COBRO' && c.VINCULO !== 'ORDEN_PAGO') btn('btn-s', 'chModalAnular', 'ban', 'Anular');
+  return b.join(' ');
+}
+function chAplicarFiltros() {
   var tbody = $id('ch-tbody');
   if (!tbody) return;
-
-  if (!pag.length) {
-    tbody.innerHTML = '<tr><td colspan="11" class="tc tdim" style="padding:20px">Sin cheques con esos filtros.</td></tr>';
-  } else {
-    tbody.innerHTML = pag.map(function(c){
-      var cli  = c.ID_CLIENTE  ? (_chCliMap[c.ID_CLIENTE]  || {}) : null;
-      var prov = c.ID_PROVEEDOR? (_chProvMap[c.ID_PROVEEDOR]|| {}) : null;
-      var vinculo = cli  ? ((cli.APELLIDO||'') + ' ' + (cli.NOMBRE||'')) :
-                   prov ? (prov.PROVEEDOR||'') : '—';
-      var estadoBadge = chEstadoBadge(c.ESTADO);
-      var hoy = Date.now();
-      var fa  = c.FECHA_ACREDITACION;
-      var alertRow = '';
-      if (c.ESTADO==='EN_CARTERA' && fa && fa <= hoy + 7*24*60*60*1000) {
-        alertRow = ' style="background:#fffbeb"';
-      }
-      if (c.ESTADO==='RECHAZADO') alertRow = ' style="background:#fef2f2"';
-      return '<tr'+alertRow+'>' +
-        '<td class="mono" style="font-weight:600">' + (c.NRO_CHEQUE||'—') + '</td>' +
-        '<td>' + chTipoBadge(c.TIPO_CHEQUE) + '</td>' +
-        '<td>' + chOrigenBadge(c.TIPO_ORIGEN) + '</td>' +
-        '<td style="font-size:12px">' + (c.NOMBRE_BANCO||'—') + '</td>' +
-        '<td style="font-size:11px"><div style="font-weight:600">' + (c.TITULAR||'—') + '</div>' +
-        '<div style="color:var(--dim)">' + (c.CUIT_EMISOR||'') + '</div></td>' +
-        '<td style="font-size:12px">' + vinculo + '</td>' +
-        '<td class="mono" style="font-size:12px">' + (fa ? fmtD(c.FECHA_EMISION) : '—') + '</td>' +
-        '<td class="mono" style="font-size:12px">' + (c.FECHA_ACREDITACION ? fmtD(c.FECHA_ACREDITACION) : '—') + '</td>' +
-        '<td class="mono tr" style="font-weight:700;color:var(--success)">' + fmt(c.IMPORTE||0) + '</td>' +
-        '<td>' + estadoBadge + '</td>' +
-        '<td style="white-space:nowrap">' +
-        '<button class="btn btn-xs btn-info" onclick="chVerDetalle(\'' + c.ID_CHEQUE + '\')" title="Ver"><i class="fas fa-eye"></i></button> ' +
-        (c.ESTADO==='EN_CARTERA'  ? '<button class="btn btn-xs btn-w" onclick="chCambiarEstado(\'' + c.ID_CHEQUE + '\',\'DEPOSITADO\')" title="Depositar"><i class="fas fa-university"></i></button> ' : '') +
-        (c.ESTADO==='EN_CARTERA'  ? '<button class="btn btn-xs btn-purple" onclick="chModalEndosar(\'' + c.ID_CHEQUE + '\')" title="Endosar"><i class="fas fa-exchange-alt"></i></button> ' : '') +
-        (c.ESTADO==='DEPOSITADO'  ? '<button class="btn btn-xs btn-g" onclick="chCambiarEstado(\'' + c.ID_CHEQUE + '\',\'ACREDITADO\')" title="Acreditado"><i class="fas fa-check"></i></button> ' : '') +
-        (c.ESTADO==='DEPOSITADO'  ? '<button class="btn btn-xs btn-d" onclick="chModalRechazar(\'' + c.ID_CHEQUE + '\')" title="Rechazado"><i class="fas fa-times"></i></button> ' : '') +
-        (!['ACREDITADO','ANULADO'].includes(c.ESTADO) ? '<button class="btn btn-xs btn-s" onclick="chAnular(\'' + c.ID_CHEQUE + '\')" title="Anular"><i class="fas fa-ban"></i></button>' : '') +
-        '</td></tr>';
-    }).join('');
-  }
-
-  // Paginación
-  var pagEl = $id('ch-pag');
-  if (pagEl) {
-    pagEl.innerHTML = '<span style="font-size:12px;color:var(--dim)">' + total + ' registros</span>' +
-      (pages > 1 ?
-        '<button class="btn btn-s btn-xs" onclick="_chPage=Math.max(1,_chPage-1);chAplicarFiltros()" ' + (_chPage<=1?'disabled':'') + '>‹ Ant</button>' +
-        '<span style="font-size:12px">Pág ' + _chPage + ' / ' + pages + '</span>' +
-        '<button class="btn btn-s btn-xs" onclick="_chPage=Math.min('+pages+',_chPage+1);chAplicarFiltros()" ' + (_chPage>=pages?'disabled':'') + '>Sig ›</button>'
-      : '');
-  }
-}
-
-function chEstadoBadge(estado) {
-  var map = {
-    'EN_CARTERA': '<span class="badge b-blue">En Cartera</span>',
-    'DEPOSITADO':  '<span class="badge b-warn">Depositado</span>',
-    'ACREDITADO':  '<span class="badge b-green">Acreditado</span>',
-    'RECHAZADO':   '<span class="badge b-red">Rechazado</span>',
-    'ENDOSADO':    '<span class="badge b-purple">Endosado</span>',
-    'ANULADO':     '<span class="badge b-gray">Anulado</span>'
-  };
-  return map[estado] || '<span class="badge b-gray">' + (estado||'—') + '</span>';
-}
-
-function chTipoBadge(tipo) {
-  if (tipo==='ECHEQ') return '<span class="badge b-purple" style="font-size:9px">eCheq</span>';
-  return '<span class="badge b-info" style="font-size:9px">Impreso</span>';
-}
-
-function chOrigenBadge(origen) {
-  if (origen==='PROPIO') return '<span class="badge b-green" style="font-size:9px">Propio</span>';
-  return '<span class="badge b-orange" style="font-size:9px">Tercero</span>';
-}
-
-// ── NUEVO CHEQUE ──────────────────────────────────────────────
-function modalNuevoCheque(id) {
-  var d = id ? _chequesData.find(function(c){ return String(c.ID_CHEQUE)===String(id); }) : null;
-  var v = function(k,def){ return d && d[k]!=null ? d[k] : (def!=null?def:''); };
-
-  var cliOpts = _chequesClientes.map(function(c){
-    return '<option value="'+c.ID_CLIENTE+'"'+(String(v('ID_CLIENTE'))===String(c.ID_CLIENTE)?' selected':'')+'>'+c.APELLIDO+' '+c.NOMBRE+'</option>';
+  var lista = chFiltrados(), total = lista.length, pages = Math.ceil(total / _chPageSize) || 1;
+  if (_chPage > pages) _chPage = 1;
+  var pag = lista.slice((_chPage - 1) * _chPageSize, _chPage * _chPageSize), hoy = Date.now();
+  if (!pag.length) tbody.innerHTML = '<tr><td colspan="9" class="tc tdim" style="padding:20px">Sin cheques con esos filtros.</td></tr>';
+  else tbody.innerHTML = pag.map(function(c) {
+    var st = '';
+    if (c.ESTADO === 'RECHAZADO') st = ' style="background:#fef2f2"';
+    else if ((c.ESTADO === 'EN_CARTERA' || c.ESTADO === 'ENTREGADO') && c.FECHA_ACREDITACION && c.FECHA_ACREDITACION <= hoy + 7 * 86400000) st = ' style="background:#fffbeb"';
+    var quien = c.TIPO_ORIGEN === 'PROPIO' ? c.PROVEEDOR : (c.CLIENTE + (c.ESTADO === 'ENDOSADO' && c.PROVEEDOR ? ' → ' + c.PROVEEDOR : ''));
+    return '<tr' + st + '><td class="mono" style="font-weight:600">' + chEsc(c.NRO_CHEQUE) + ' ' + chTipoBadge(c.TIPO_CHEQUE) + '</td>' +
+      '<td>' + chOrigenBadge(c.TIPO_ORIGEN) + '</td><td style="font-size:12px">' + chEsc(c.NOMBRE_BANCO || '—') + '</td>' +
+      '<td style="font-size:12px">' + chEsc(c.TITULAR || '—') + '</td><td style="font-size:12px">' + chEsc(quien || '—') + '</td>' +
+      '<td class="mono" style="font-size:12px">' + fmtD(c.FECHA_ACREDITACION) + '</td>' +
+      '<td class="mono tr" style="font-weight:700">' + fmt(c.IMPORTE) + '</td><td>' + chEstadoBadge(c.ESTADO) + '</td>' +
+      '<td style="white-space:nowrap">' + chBotones(c) + '</td></tr>';
   }).join('');
-  var provOpts = _chequesProvs.map(function(p){
-    return '<option value="'+p.ID_PROVEEDOR+'"'+(String(v('ID_PROVEEDOR'))===String(p.ID_PROVEEDOR)?' selected':'')+'>'+p.PROVEEDOR+'</option>';
-  }).join('');
-
-  var hoy = fechaISO(new Date());
-
-  showModal(
-    (d ? 'Editar Cheque #'+d.NRO_CHEQUE : 'Nuevo Cheque'),
-    '<div class="fr mb3">' +
-    '<div class="fg"><label class="fl">Tipo *</label>' +
-    '<select id="ch-tipo" class="fs" onchange="chOnTipoChange()">' +
-    '<option value="IMPRESO"'+(v('TIPO_CHEQUE','IMPRESO')==='IMPRESO'?' selected':'')+'>Impreso</option>' +
-    '<option value="ECHEQ"'+(v('TIPO_CHEQUE')==='ECHEQ'?' selected':'')+'>eCheq</option>' +
-    '</select></div>' +
-    '<div class="fg"><label class="fl">Origen *</label>' +
-    '<select id="ch-origen" class="fs" onchange="chOnOrigenChange()">' +
-    '<option value="TERCERO"'+(v('TIPO_ORIGEN','TERCERO')==='TERCERO'?' selected':'')+'>Tercero (recibido)</option>' +
-    '<option value="PROPIO"'+(v('TIPO_ORIGEN')==='PROPIO'?' selected':'')+'>Propio (emitido)</option>' +
-    '</select></div>' +
-    '</div>' +
-    '<div class="fr mb3">' +
-    '<div class="fg"><label class="fl">Nro. Cheque *</label><input id="ch-nro" class="fi" value="'+v('NRO_CHEQUE')+'" placeholder="000001"/></div>' +
-    '<div class="fg"><label class="fl">Banco *</label><input id="ch-banco" class="fi" value="'+v('NOMBRE_BANCO')+'" placeholder="Ej: Banco Nación"/></div>' +
-    '</div>' +
-    '<div class="fr mb3">' +
-    '<div class="fg"><label class="fl">Titular *</label><input id="ch-titular" class="fi" value="'+v('TITULAR')+'" placeholder="Nombre del titular"/></div>' +
-    '<div class="fg"><label class="fl">CUIT Emisor</label><input id="ch-cuit" class="fi" value="'+v('CUIT_EMISOR')+'" placeholder="20-12345678-9"/></div>' +
-    '</div>' +
-    '<div class="fg mb3"><label class="fl">Nombre Emisor</label><input id="ch-emisor" class="fi" value="'+v('NOMBRE_EMISOR')+'" placeholder="Razón social o nombre"/></div>' +
-    '<div class="fr mb3">' +
-    '<div class="fg"><label class="fl">Fecha Emisión *</label><input id="ch-femision" class="fi" type="date" value="'+(v('FECHA_EMISION') ? fechaISO(v('FECHA_EMISION')) : hoy)+'"/></div>' +
-    '<div class="fg"><label class="fl">Fecha Acreditación *</label><input id="ch-facred" class="fi" type="date" value="'+(v('FECHA_ACREDITACION') ? fechaISO(v('FECHA_ACREDITACION')) : '')+'"/></div>' +
-    '</div>' +
-    '<div class="fr mb3">' +
-    '<div class="fg"><label class="fl">Importe *</label><input id="ch-importe" class="fi" type="number" min="0" step="0.01" value="'+v('IMPORTE',0)+'"/></div>' +
-    '<div class="fg"><label class="fl">Moneda</label>' +
-    '<select id="ch-moneda" class="fs"><option value="ARS"'+(v('MONEDA','ARS')==='ARS'?' selected':'')+'>ARS — Pesos</option><option value="USD"'+(v('MONEDA')==='USD'?' selected':'')+'>USD — Dólares</option></select>' +
-    '</div></div>' +
-    '<div id="ch-vinculo-cli" class="fg mb3"><label class="fl">Cliente que lo entregó</label>' +
-    '<select id="ch-cliente" class="fs"><option value="">— Sin cliente —</option>'+cliOpts+'</select></div>' +
-    '<div id="ch-vinculo-prov" class="fg mb3" style="display:none"><label class="fl">Proveedor al que se entrega</label>' +
-    '<select id="ch-proveedor" class="fs"><option value="">— Sin proveedor —</option>'+provOpts+'</select></div>' +
-    '<div class="fr mb3">' +
-    '<div class="fg"><label class="fl">Vínculo</label>' +
-    '<select id="ch-vinculo" class="fs"><option value="PAGO_GENERAL">Pago general</option><option value="VENTA">Venta</option><option value="COMPRA">Compra</option></select></div>' +
-    '<div class="fg"><label class="fl">ID Vínculo</label><input id="ch-id-vinculo" class="fi" value="'+v('ID_VINCULO')+'" placeholder="ID de la venta o compra"/></div>' +
-    '</div>' +
-    '<div class="fg"><label class="fl">Observaciones</label><textarea id="ch-obs" class="fta" rows="2">'+v('OBSERVACIONES')+'</textarea></div>',
-    '<button class="btn btn-s" onclick="closeModal()">Cancelar</button>' +
-    '<button class="btn btn-p" onclick="chGuardar(\''+(d?d.ID_CHEQUE:'')+'\')"><i class="fas fa-save"></i> Guardar</button>'
-  );
-
-  setTimeout(function(){ chOnOrigenChange(); }, 50);
+  var pe = $id('ch-pag');
+  if (pe) pe.innerHTML = '<span style="font-size:12px;color:var(--dim)">' + total + (total === 1 ? ' cheque' : ' cheques') + '</span>' +
+    (pages > 1 ? '<button class="btn btn-s btn-xs" onclick="_chPage=Math.max(1,_chPage-1);chAplicarFiltros()" ' + (_chPage <= 1 ? 'disabled' : '') + '>‹ Ant</button><span style="font-size:12px">Pág ' + _chPage + ' / ' + pages + '</span>' +
+      '<button class="btn btn-s btn-xs" onclick="_chPage=Math.min(' + pages + ',_chPage+1);chAplicarFiltros()" ' + (_chPage >= pages ? 'disabled' : '') + '>Sig ›</button>' : '');
 }
 
-function chOnOrigenChange() {
-  var origen = ($id('ch-origen')||{}).value||'TERCERO';
-  var vc = $id('ch-vinculo-cli');
-  var vp = $id('ch-vinculo-prov');
-  if (origen === 'PROPIO') {
-    if (vc) vc.style.display = 'none';
-    if (vp) vp.style.display = 'block';
-  } else {
-    if (vc) vc.style.display = 'block';
-    if (vp) vp.style.display = 'none';
-  }
+// ── Modales de acción ──
+function chResumen(c) {
+  return '<div class="al al-b mb3" style="font-size:13px"><b>Cheque ' + chEsc(c.NRO_CHEQUE) + '</b> · ' + chEsc(c.NOMBRE_BANCO) + ' · ' + chEsc(c.TITULAR || '') +
+    '<br>Importe <b>' + fmt(c.IMPORTE) + '</b> · fecha de cobro ' + fmtD(c.FECHA_ACREDITACION) + ' · ' + chEstadoBadge(c.ESTADO) + '</div>';
 }
-
-function chOnTipoChange() { /* reservado para lógica futura */ }
-
-async function chGuardar(idExistente) {
-  var nro     = ($id('ch-nro')||{}).value.trim();
-  var banco   = ($id('ch-banco')||{}).value.trim();
-  var titular = ($id('ch-titular')||{}).value.trim();
-  var femision = ($id('ch-femision')||{}).value;
-  var facred   = ($id('ch-facred')||{}).value;
-  var importe  = parseFloat(($id('ch-importe')||{}).value)||0;
-
-  if (!nro)     { toast('Ingresá el número de cheque','r2'); return; }
-  if (!banco)   { toast('Ingresá el banco','r2'); return; }
-  if (!titular) { toast('Ingresá el titular','r2'); return; }
-  if (!femision){ toast('Ingresá la fecha de emisión','r2'); return; }
-  if (!facred)  { toast('Ingresá la fecha de acreditación','r2'); return; }
-  if (importe <= 0) { toast('Ingresá el importe','r2'); return; }
-
-  var origen = ($id('ch-origen')||{}).value||'TERCERO';
-  var id = idExistente || ('CH-' + Date.now());
-
-  var rec = {
-    ID_CHEQUE:          id,
-    TIPO_CHEQUE:        ($id('ch-tipo')||{}).value||'IMPRESO',
-    TIPO_ORIGEN:        origen,
-    NRO_CHEQUE:         nro,
-    NOMBRE_BANCO:       banco,
-    TITULAR:            titular,
-    CUIT_EMISOR:        ($id('ch-cuit')||{}).value.trim(),
-    NOMBRE_EMISOR:      ($id('ch-emisor')||{}).value.trim(),
-    FECHA_EMISION:      new Date(femision+'T12:00:00').getTime(),
-    FECHA_ACREDITACION: new Date(facred+'T12:00:00').getTime(),
-    IMPORTE:            importe,
-    MONEDA:             ($id('ch-moneda')||{}).value||'ARS',
-    ID_CLIENTE:         origen==='TERCERO' ? ($id('ch-cliente')||{}).value||'' : '',
-    ID_CLIENTE_ORIGEN:  origen==='TERCERO' ? ($id('ch-cliente')||{}).value||'' : '',
-    ID_PROVEEDOR:       origen==='PROPIO'  ? ($id('ch-proveedor')||{}).value||'' : '',
-    ID_PROVEEDOR_DESTINO: '',
-    VINCULO:            ($id('ch-vinculo')||{}).value||'PAGO_GENERAL',
-    ID_VINCULO:         ($id('ch-id-vinculo')||{}).value.trim(),
-    ESTADO:             idExistente ? (_chequesData.find(function(c){return c.ID_CHEQUE===idExistente;})||{}).ESTADO||'EN_CARTERA' : 'EN_CARTERA',
-    FECHA_ESTADO:       Date.now(),
-    FECHA_ENDOSO:       '',
-    MOTIVO_RECHAZO:     '',
-    OBSERVACIONES:      ($id('ch-obs')||{}).value||'',
-    ACTIVO:             1
-  };
-
-  try {
-    await ADB.put('cheques', rec);
-    closeModal();
-    toast((idExistente ? 'Cheque actualizado' : 'Cheque registrado') + ' ✓','g');
-    _chequesData = await ADB.getAll('cheques');
-    chAplicarFiltros();
-  } catch(e) {
-    toast('Error al guardar: ' + e.message,'r2');
-  }
+function chOptsCajas(sel) { return '<option value="">— Elegí —</option>' + _CHQ.CAJAS.map(function(k) { return '<option value="' + chEsc(k.ID_CAJA) + '"' + (String(sel) === String(k.ID_CAJA) ? ' selected' : '') + '>' + chEsc(k.CAJA_DESC) + '</option>'; }).join(''); }
+function chModal(titulo, c, cuerpo, accion, txtBtn, clsBtn) {
+  showModal('<div class="mh"><span class="mt">' + titulo + '</span><button class="mc" onclick="closeModal()">×</button></div>' +
+    '<div class="mb2">' + chResumen(c) + cuerpo + '</div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn ' + clsBtn + '" id="ch-ac-btn" onclick="chEjecutar(\'' + chEsc(c.ID_CHEQUE) + '\',\'' + accion + '\')">' + txtBtn + '</button></div>');
 }
-
-// ── CAMBIAR ESTADO ────────────────────────────────────────────
-async function chCambiarEstado(id, nuevoEstado) {
-  var cheque = _chequesData.find(function(c){ return String(c.ID_CHEQUE)===String(id); });
-  if (!cheque) return;
-
-  var labels = { DEPOSITADO:'¿Marcar como Depositado?', ACREDITADO:'¿Confirmar Acreditación del cheque?' };
-  if (!confirm(labels[nuevoEstado]||'¿Confirmar cambio de estado?')) return;
-
-  try {
-    cheque.ESTADO      = nuevoEstado;
-    cheque.FECHA_ESTADO = Date.now();
-    await ADB.put('cheques', cheque);
-    toast('Estado actualizado: ' + nuevoEstado + ' ✓','g');
-    _chequesData = await ADB.getAll('cheques');
-    chAplicarFiltros();
-  } catch(e) {
-    toast('Error: ' + e.message,'r2');
-  }
+function chCampoCaja(lbl, sel) { return '<div class="fg mb3"><label class="fl">' + lbl + ' *</label><select id="ch-ac-caja" class="fs">' + chOptsCajas(sel) + '</select></div>'; }
+function chCampoFecha() { return '<div class="fg mb3"><label class="fl">Fecha</label><input id="ch-ac-fecha" class="fi" type="date" value="' + chHoyISO() + '"></div>'; }
+function chModalDepositar(id) { var c = chBuscar(id); if (!c) return; chModal('Depositar cheque', c, chCampoCaja('Cuenta donde se deposita', '') + '<div class="al al-w" style="font-size:12px">La plata entra a la cuenta cuando marques el cheque como acreditado.</div>', 'DEPOSITAR', '<i class="fas fa-university"></i> Depositar', 'btn-w'); }
+function chModalVentanilla(id) { var c = chBuscar(id); if (!c) return; chModal('Cobrado por ventanilla', c, chCampoCaja('Caja donde entra el efectivo', '') + chCampoFecha(), 'ACREDITAR', '<i class="fas fa-money-bill"></i> Registrar cobro', 'btn-g'); }
+function chModalAcreditar(id) {
+  var c = chBuscar(id); if (!c) return;
+  var sel = ''; _CHQ.CAJAS.forEach(function(k) { if (k.CAJA_DESC === c.CAJA_DEPOSITO) sel = k.ID_CAJA; });
+  chModal('Cheque acreditado', c, chCampoCaja('Cuenta donde se acreditó', sel) + chCampoFecha(), 'ACREDITAR', '<i class="fas fa-check"></i> Acreditar', 'btn-g');
 }
-
-// ── RECHAZAR ─────────────────────────────────────────────────
+function chModalDebitar(id) { var c = chBuscar(id); if (!c) return; chModal('Cheque propio debitado', c, chCampoCaja('Cuenta de donde se debitó', '') + chCampoFecha(), 'DEBITAR', '<i class="fas fa-check"></i> Registrar débito', 'btn-g'); }
 function chModalRechazar(id) {
-  var cheque = _chequesData.find(function(c){ return String(c.ID_CHEQUE)===String(id); });
-  if (!cheque) return;
-  showModal(
-    'Rechazar Cheque #' + cheque.NRO_CHEQUE,
-    '<div class="al al-r mb3"><i class="fas fa-exclamation-triangle"></i> El cheque quedará como RECHAZADO y se generará un débito en la cuenta corriente del cliente.</div>' +
-    '<div class="fg"><label class="fl">Motivo del Rechazo *</label>' +
-    '<select id="ch-motivo-sel" class="fs" onchange="chOnMotivoChange()">' +
-    '<option value="">— Seleccioná un motivo —</option>' +
-    '<option value="Sin fondos suficientes">Sin fondos suficientes</option>' +
-    '<option value="Cuenta cerrada">Cuenta cerrada</option>' +
-    '<option value="Cheque vencido">Cheque vencido</option>' +
-    '<option value="Firma disconforme">Firma disconforme</option>' +
-    '<option value="Cheque adulterado">Cheque adulterado</option>' +
-    '<option value="Endoso irregular">Endoso irregular</option>' +
-    '<option value="Otro">Otro</option>' +
-    '</select></div>' +
-    '<div class="fg" id="ch-motivo-otro-wrap" style="display:none"><label class="fl">Especificá el motivo</label>' +
-    '<input id="ch-motivo-otro" class="fi" placeholder="Describí el motivo..."/></div>',
-    '<button class="btn btn-s" onclick="closeModal()">Cancelar</button>' +
-    '<button class="btn btn-d" onclick="chConfirmarRechazo(\'' + id + '\')"><i class="fas fa-times"></i> Confirmar Rechazo</button>'
-  );
+  var c = chBuscar(id); if (!c) return;
+  var ef = c.TIPO_ORIGEN === 'PROPIO' ? 'La deuda con ' + chEsc(c.PROVEEDOR || 'el proveedor') + ' vuelve a quedar pendiente.' :
+    (c.CLIENTE ? 'Se le carga la deuda a ' + chEsc(c.CLIENTE) + ' en su cuenta corriente.' : 'El cheque no tiene cliente vinculado: no se carga deuda a nadie.') +
+    (c.ESTADO === 'ENDOSADO' ? ' Y se le vuelve a deber a ' + chEsc(c.PROVEEDOR || 'el proveedor') + '.' : '');
+  chModal('Cheque rechazado', c, '<div class="al al-r mb3" style="font-size:12px">' + ef + '</div><div class="fg mb3"><label class="fl">Motivo *</label><input id="ch-ac-mot" class="fi" placeholder="Ej: sin fondos, firma"></div>' + chCampoFecha(), 'RECHAZAR', '<i class="fas fa-times"></i> Registrar rechazo', 'btn-d');
 }
-
-function chOnMotivoChange() {
-  var sel = ($id('ch-motivo-sel')||{}).value||'';
-  var wrap = $id('ch-motivo-otro-wrap');
-  if (wrap) wrap.style.display = sel==='Otro' ? 'block' : 'none';
-}
-
-async function chConfirmarRechazo(id) {
-  var motivo = ($id('ch-motivo-sel')||{}).value||'';
-  if (!motivo) { toast('Seleccioná un motivo','r2'); return; }
-  if (motivo==='Otro') motivo = ($id('ch-motivo-otro')||{}).value.trim();
-  if (!motivo) { toast('Ingresá el motivo','r2'); return; }
-
-  var cheque = _chequesData.find(function(c){ return String(c.ID_CHEQUE)===String(id); });
-  if (!cheque) return;
-
+function chModalAnular(id) { var c = chBuscar(id); if (!c) return; chModal('Anular cheque', c, '<div class="fg mb3"><label class="fl">Motivo *</label><input id="ch-ac-mot" class="fi" placeholder="Por qué se anula"></div>', 'ANULAR', '<i class="fas fa-ban"></i> Anular', 'btn-d'); }
+function chModalDeshacer(id) { var c = chBuscar(id); if (!c) return; chModal('Deshacer: ' + chEsc(c.PUEDE_DESHACER), c, '<div class="al al-w" style="font-size:12px">Se revierten los movimientos de caja y cuenta corriente de esa acción y el cheque vuelve al estado anterior.</div>', 'DESHACER', '<i class="fas fa-undo"></i> Deshacer', 'btn-w'); }
+async function chEjecutar(id, accion) {
+  var d = {};
+  if ($id('ch-ac-caja')) { d.ID_CAJA = $v('ch-ac-caja'); if (!d.ID_CAJA) { toast('Elegí la cuenta o caja', 'r2'); return; } }
+  if ($id('ch-ac-fecha')) d.FECHA = $v('ch-ac-fecha');
+  if ($id('ch-ac-mot')) { d.MOTIVO = ($v('ch-ac-mot') || '').trim(); if (!d.MOTIVO) { toast('Escribí el motivo', 'r2'); return; } }
+  var b = $id('ch-ac-btn'); if (b) b.disabled = true;
   try {
-    cheque.ESTADO         = 'RECHAZADO';
-    cheque.FECHA_ESTADO   = Date.now();
-    cheque.MOTIVO_RECHAZO = motivo;
-    await ADB.put('cheques', cheque);
-
-    // TODO Fase 4: agregar débito automático en CC del cliente
-    // Por ahora se registra el rechazo y se alerta
-
-    closeModal();
-    toast('Cheque rechazado. Revisá la cuenta corriente del cliente.','r2');
-    _chequesData = await ADB.getAll('cheques');
-    chAplicarFiltros();
-  } catch(e) {
-    toast('Error: ' + e.message,'r2');
-  }
+    var r = await gsRun('gsCHQ_Accion', id, accion, d);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); if (b) b.disabled = false; return; }
+    toast('Cheque ' + r.NRO_CHEQUE + ': ' + r.DETALLE + ' ✓', 'g');
+    chLimpiarCache(); closeModal(); renderCheques();
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; }
 }
 
-// ── ENDOSAR ──────────────────────────────────────────────────
-function chModalEndosar(id) {
-  var cheque = _chequesData.find(function(c){ return String(c.ID_CHEQUE)===String(id); });
-  if (!cheque) return;
-  var provOpts = _chequesProvs.map(function(p){
-    return '<option value="'+p.ID_PROVEEDOR+'">'+p.PROVEEDOR+'</option>';
-  }).join('');
-  showModal(
-    'Endosar Cheque #' + cheque.NRO_CHEQUE,
-    '<div class="al al-b mb3"><i class="fas fa-info-circle"></i> El cheque pasará a ENDOSADO y quedará vinculado al proveedor destino.</div>' +
-    '<div class="fg"><label class="fl">Proveedor destino *</label>' +
-    '<select id="ch-end-prov" class="fs"><option value="">— Seleccioná proveedor —</option>' + provOpts + '</select></div>' +
-    '<div class="fg"><label class="fl">Observaciones del endoso</label>' +
-    '<input id="ch-end-obs" class="fi" placeholder="Opcional..."/></div>',
-    '<button class="btn btn-s" onclick="closeModal()">Cancelar</button>' +
-    '<button class="btn btn-purple" onclick="chConfirmarEndoso(\'' + id + '\')"><i class="fas fa-exchange-alt"></i> Confirmar Endoso</button>'
-  );
-}
-
-async function chConfirmarEndoso(id) {
-  var provId = ($id('ch-end-prov')||{}).value||'';
-  if (!provId) { toast('Seleccioná un proveedor','r2'); return; }
-
-  var cheque = _chequesData.find(function(c){ return String(c.ID_CHEQUE)===String(id); });
-  if (!cheque) return;
-
+// ── Detalle con historial ──
+async function chVerDetalle(id) {
+  var c = chBuscar(id); if (!c) return;
+  function row(l, v) { return v === '' || v == null ? '' : '<div class="er-line er-neutral"><span style="color:var(--dim);font-size:12px">' + l + '</span><span style="font-size:13px">' + v + '</span></div>'; }
+  showModal('<div class="mh"><span class="mt">Cheque ' + chEsc(c.NRO_CHEQUE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div style="display:flex;gap:8px;margin-bottom:12px">' + chTipoBadge(c.TIPO_CHEQUE) + chOrigenBadge(c.TIPO_ORIGEN) + chEstadoBadge(c.ESTADO) + '</div>' +
+    row('Banco', chEsc(c.NOMBRE_BANCO)) + row('Titular', chEsc(c.TITULAR)) + row('CUIT', chEsc(c.CUIT_EMISOR)) +
+    row('Emisión', fmtD(c.FECHA_EMISION)) + row('Fecha de cobro', fmtD(c.FECHA_ACREDITACION)) + row('Importe', '<b>' + fmt(c.IMPORTE) + '</b>') +
+    row('Cliente', chEsc(c.CLIENTE)) + row(c.TIPO_ORIGEN === 'PROPIO' ? 'Proveedor' : 'Endosado a', chEsc(c.PROVEEDOR)) +
+    row('Origen', chEsc((CHQ_VINC_TXT[c.VINCULO] || c.VINCULO || '') + (c.ID_VINCULO ? ' #' + c.ID_VINCULO : ''))) + row('Cuenta', chEsc(c.CAJA_DEPOSITO)) +
+    (c.MOTIVO_RECHAZO ? '<div class="al al-r mt3">Motivo rechazo: ' + chEsc(c.MOTIVO_RECHAZO) + '</div>' : '') + row('Observaciones', chEsc(c.OBSERVACIONES)) +
+    '<div class="mt3" style="font-weight:600;font-size:13px">Historial</div><div id="ch-hist" class="tdim" style="font-size:12px">Cargando...</div>' +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
   try {
-    cheque.ESTADO               = 'ENDOSADO';
-    cheque.FECHA_ESTADO         = Date.now();
-    cheque.FECHA_ENDOSO         = Date.now();
-    cheque.ID_PROVEEDOR_DESTINO = provId;
-    cheque.ID_PROVEEDOR         = provId;
-    var obsEnd = ($id('ch-end-obs')||{}).value||'';
-    if (obsEnd) cheque.OBSERVACIONES = (cheque.OBSERVACIONES||'') + ' | Endoso: ' + obsEnd;
-    await ADB.put('cheques', cheque);
-    closeModal();
-    toast('Cheque endosado ✓','g');
-    _chequesData = await ADB.getAll('cheques');
-    chAplicarFiltros();
-  } catch(e) {
-    toast('Error: ' + e.message,'r2');
-  }
+    var r = await gsRun('gsCHQ_Historial', id), h = $id('ch-hist');
+    if (!h) return;
+    if (!r || !r.ok || !r.MOVS.length) { h.innerHTML = 'Sin movimientos registrados desde que se cargó en el sistema.'; return; }
+    h.innerHTML = '<table style="width:100%"><tbody>' + r.MOVS.map(function(m) {
+      return '<tr' + (m.REVERTIDO ? ' style="text-decoration:line-through;opacity:.6"' : '') + '><td class="mono">' + fmtD(m.FECHA) + '</td><td>' + chEsc(m.ACCION) + '</td><td>' + chEsc(m.DETALLE) + '</td><td class="tdim">' + chEsc(m.USUARIO) + '</td></tr>';
+    }).join('') + '</tbody></table>';
+  } catch (e) { var hh = $id('ch-hist'); if (hh) hh.innerHTML = 'No se pudo leer el historial'; }
 }
 
-// ── ANULAR ───────────────────────────────────────────────────
-async function chAnular(id) {
-  if (!confirm('¿Anular este cheque?')) return;
-  var cheque = _chequesData.find(function(c){ return String(c.ID_CHEQUE)===String(id); });
-  if (!cheque) return;
+// ── Carga inicial (cheques de terceros que ya estaban en cartera) ──
+function chModalCarga() {
+  var cli = '<option value="">— Sin cliente —</option>' + _CHQ.CLIENTES.map(function(c) { return '<option value="' + chEsc(c.ID_CLIENTE) + '">' + chEsc(c.NOMBRE) + '</option>'; }).join('');
+  showModal('<div class="mh"><span class="mt">Carga inicial de cheque de tercero</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="al al-w mb3" style="font-size:12px">Sólo para cheques que ya estaban en cartera antes de usar el sistema: no mueve caja ni cuentas corrientes. Los cheques que te dan ahora se cargan en Cobranzas; los propios en Órdenes de Pago.</div>' +
+    '<div class="fr mb3"><div class="fg"><label class="fl">Tipo</label><select id="chc-tipo" class="fs"><option value="IMPRESO">Impreso</option><option value="ECHEQ">eCheq</option></select></div>' +
+    '<div class="fg"><label class="fl">Nro. cheque *</label><input id="chc-nro" class="fi"></div></div>' +
+    '<div class="fr mb3"><div class="fg"><label class="fl">Banco *</label><input id="chc-banco" class="fi"></div><div class="fg"><label class="fl">Importe *</label><input id="chc-imp" class="fi" type="number" min="0" step="0.01"></div></div>' +
+    '<div class="fg mb3"><label class="fl">Cliente que lo entregó</label><select id="chc-cli" class="fs">' + cli + '</select></div>' +
+    '<div class="fr mb3"><div class="fg"><label class="fl">Titular</label><input id="chc-tit" class="fi" placeholder="Si se deja vacío, el cliente"></div><div class="fg"><label class="fl">CUIT</label><input id="chc-cuit" class="fi"></div></div>' +
+    '<div class="fr mb3"><div class="fg"><label class="fl">Emisión *</label><input id="chc-fe" class="fi" type="date" value="' + chHoyISO() + '"></div><div class="fg"><label class="fl">Fecha de cobro *</label><input id="chc-fa" class="fi" type="date"></div></div>' +
+    '<div class="fg"><label class="fl">Observaciones</label><input id="chc-obs" class="fi"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="chc-btn" onclick="chGuardarCarga()"><i class="fas fa-save"></i> Guardar</button></div>');
+}
+async function chGuardarCarga() {
+  var o = { TIPO_CHEQUE: $v('chc-tipo'), NRO_CHEQUE: ($v('chc-nro') || '').trim(), NOMBRE_BANCO: ($v('chc-banco') || '').trim(), IMPORTE: chNum($v('chc-imp')), ID_CLIENTE: $v('chc-cli'),
+    TITULAR: ($v('chc-tit') || '').trim(), CUIT_EMISOR: ($v('chc-cuit') || '').trim(), FECHA_EMISION: $v('chc-fe'), FECHA_ACREDITACION: $v('chc-fa'), OBSERVACIONES: ($v('chc-obs') || '').trim() };
+  if (!o.NRO_CHEQUE) { toast('Falta el número', 'r2'); return; }
+  if (!o.NOMBRE_BANCO) { toast('Falta el banco', 'r2'); return; }
+  if (!(o.IMPORTE > 0)) { toast('Falta el importe', 'r2'); return; }
+  if (!o.FECHA_ACREDITACION) { toast('Falta la fecha de cobro', 'r2'); return; }
+  var b = $id('chc-btn'); if (b) b.disabled = true;
   try {
-    cheque.ESTADO      = 'ANULADO';
-    cheque.FECHA_ESTADO = Date.now();
-    cheque.ACTIVO      = 0;
-    await ADB.put('cheques', cheque);
-    toast('Cheque anulado','g');
-    _chequesData = await ADB.getAll('cheques');
-    chAplicarFiltros();
-  } catch(e) {
-    toast('Error: ' + e.message,'r2');
-  }
-}
-
-// ── VER DETALLE ───────────────────────────────────────────────
-function chVerDetalle(id) {
-  var c = _chequesData.find(function(ch){ return String(ch.ID_CHEQUE)===String(id); });
-  if (!c) return;
-
-  var cli  = c.ID_CLIENTE   ? (_chCliMap[c.ID_CLIENTE]||{})   : null;
-  var prov = c.ID_PROVEEDOR ? (_chProvMap[c.ID_PROVEEDOR]||{}) : null;
-  var provDest = c.ID_PROVEEDOR_DESTINO ? (_chProvMap[c.ID_PROVEEDOR_DESTINO]||{}) : null;
-
-  function row(label, val) {
-    if (!val && val!==0) return '';
-    return '<div class="er-line er-neutral"><span style="color:var(--dim);font-size:12px">'+label+'</span><span class="mono" style="font-size:13px">'+val+'</span></div>';
-  }
-
-  showModal(
-    'Detalle Cheque #' + c.NRO_CHEQUE,
-    '<div>' +
-    '<div style="display:flex;gap:8px;margin-bottom:16px">' + chTipoBadge(c.TIPO_CHEQUE) + chOrigenBadge(c.TIPO_ORIGEN) + chEstadoBadge(c.ESTADO) + '</div>' +
-    row('Número', c.NRO_CHEQUE) +
-    row('Banco', c.NOMBRE_BANCO) +
-    row('Titular', c.TITULAR) +
-    row('CUIT Emisor', c.CUIT_EMISOR) +
-    row('Nombre Emisor', c.NOMBRE_EMISOR) +
-    row('Fecha Emisión', c.FECHA_EMISION ? fmtD(c.FECHA_EMISION) : '—') +
-    row('Fecha Acreditación', c.FECHA_ACREDITACION ? fmtD(c.FECHA_ACREDITACION) : '—') +
-    row('Importe', fmt(c.IMPORTE||0) + ' ' + (c.MONEDA||'ARS')) +
-    (cli  ? row('Cliente', (cli.APELLIDO||'') + ' ' + (cli.NOMBRE||'')) : '') +
-    (prov ? row('Proveedor', prov.PROVEEDOR||'') : '') +
-    (provDest ? row('Endosado a', provDest.PROVEEDOR||'') : '') +
-    (c.FECHA_ENDOSO ? row('Fecha Endoso', fmtD(c.FECHA_ENDOSO)) : '') +
-    (c.MOTIVO_RECHAZO ? '<div class="al al-r mt3">Motivo rechazo: ' + c.MOTIVO_RECHAZO + '</div>' : '') +
-    (c.OBSERVACIONES ? row('Observaciones', c.OBSERVACIONES) : '') +
-    '</div>',
-    '<button class="btn btn-s" onclick="closeModal()">Cerrar</button>' +
-    '<button class="btn btn-p btn-sm" onclick="closeModal();modalNuevoCheque(\'' + c.ID_CHEQUE + '\')"><i class="fas fa-edit"></i> Editar</button>'
-  );
+    var r = await gsRun('gsCHQ_Carga', o);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); if (b) b.disabled = false; return; }
+    toast('Cheque ' + r.NRO_CHEQUE + ' cargado ✓', 'g');
+    chLimpiarCache(); closeModal(); renderCheques();
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; }
 }
 </script>
 
