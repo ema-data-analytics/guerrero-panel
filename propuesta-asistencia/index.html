@@ -25,7 +25,7 @@ tr.tot td{font-weight:bold;background:#f8fafc}
 .big{font-size:26px;font-weight:bold;color:var(--az)}
 figure{margin:12px 0;background:#fff;border:1px solid var(--bd);border-radius:12px;overflow:hidden}figure img{width:100%;display:block}figcaption{padding:8px 12px;font-size:13.5px;color:var(--dim);border-top:1px solid var(--bd)}
 .calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
-.calc label{font-size:13px;color:var(--dim);display:grid;gap:4px}.calc input{font-size:18px;padding:8px 10px;border:2px solid #fca5a5;border-radius:10px;color:var(--r);font-weight:bold}
+.calc label{font-size:13px;color:var(--dim);display:flex;flex-direction:column;gap:4px}.calc label input{margin-top:auto}.calc input{font-size:18px;padding:8px 10px;border:2px solid #fca5a5;border-radius:10px;color:var(--r);font-weight:bold}
 .res{background:var(--az);color:#fff;border-radius:12px;padding:14px 16px;margin-top:10px}.res b{font-size:24px;color:#fde7d3}
 ul.ck{list-style:none;padding:0;margin:0}ul.ck li{padding:5px 0 5px 26px;position:relative;font-size:14.5px}ul.ck li:before{content:"✔";position:absolute;left:4px;color:var(--ok);font-weight:bold}
 ul.no li:before{content:"✖";color:var(--r)}
@@ -103,15 +103,15 @@ a{color:#1d4ed8}
 <div class="caja"><b>Recomendación:</b> comprar la <b>opción A</b> y usarla una semana. Si la lectura con la cámara resulta lenta (poca luz, tarjetas gastadas), recién ahí agregar el lector y el adaptador (<b>$148.325</b> más). Así no se gasta en algo que quizás no haga falta. <span class="est">La lectura con la cámara todavía no se probó en una tablet real</span>: es lo primero que se prueba al comprarla.</div>
 
 <h2>4. Cuánto se pierde hoy (calculadora)</h2>
-<div class="nota">No tenemos el dato real de cuánto tiempo se pierde hoy. Los valores en rojo son <b>ejemplos</b>: cambialos por los de la empresa y la cuenta se hace sola.</div>
+<div class="nota">No hay datos reales de cuánto tiempo se pierde hoy, por eso la calculadora viene <b>vacía</b>. Se completa con los datos de la empresa (cantidad de empleados, minutos que se pierden, días y costo de la hora) y la cuenta se hace sola.</div>
 <div class="caja">
 <div class="calc">
-<label>Empleados<input id="c-emp" type="number" value="10" min="1"></label>
-<label>Minutos perdidos por empleado por día (llegadas tarde, almuerzos largos, salidas antes)<input id="c-min" type="number" value="10" min="0"></label>
-<label>Días trabajados por mes<input id="c-dias" type="number" value="24" min="1"></label>
-<label>Costo de una hora de un empleado, con cargas ($)<input id="c-hora" type="number" value="7000" min="0"></label>
+<label>Empleados<input id="c-emp" type="number" min="1"></label>
+<label>Minutos perdidos por empleado por día (llegadas tarde, almuerzos largos, salidas antes)<input id="c-min" type="number" min="0"></label>
+<label>Días trabajados por mes<input id="c-dias" type="number" min="1"></label>
+<label>Costo de una hora de un empleado, con cargas ($)<input id="c-hora" type="number" min="0"></label>
 </div>
-<div class="res">Tiempo pagado y no trabajado por mes: <b id="r-h">—</b><br>Cuesta por mes: <b id="r-m">—</b> · por año: <b id="r-a">—</b><br>La opción A se paga sola en: <b id="r-p">—</b></div>
+<div class="res"><span id="r-falta">Completá los 4 datos para ver la cuenta.</span><span id="r-ok" style="display:none">Tiempo pagado y no trabajado por mes: <b id="r-h">—</b><br>Cuesta por mes: <b id="r-m">—</b> · por año: <b id="r-a">—</b><br>La opción A se paga sola en: <b id="r-p">—</b></span></div>
 </div>
 
 <h2>5. Lo que tienen que decidir los dueños</h2>
@@ -149,6 +149,7 @@ a{color:#1d4ed8}
 function fmt(n){ return '$' + Math.round(n).toLocaleString('es-AR'); }
 function calc(){
   var e=+document.getElementById('c-emp').value||0, m=+document.getElementById('c-min').value||0, d=+document.getElementById('c-dias').value||0, h=+document.getElementById('c-hora').value||0;
+  var ok=e>0&&m>0&&d>0&&h>0; document.getElementById('r-falta').style.display=ok?'none':''; document.getElementById('r-ok').style.display=ok?'':'none'; if(!ok) return;
   var horas=e*m*d/60, mes=horas*h, anio=mes*12;
   document.getElementById('r-h').textContent=horas.toLocaleString('es-AR',{maximumFractionDigits:1})+' horas';
   document.getElementById('r-m').textContent=fmt(mes); document.getElementById('r-a').textContent=fmt(anio);
