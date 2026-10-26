@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a483ecb6dd99"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "27f430e3ae5c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -12704,7 +12704,7 @@ function twCliTag(p) {
   else h = '<span class="tw-cl tw-c4">Sin CUIT/DNI</span>';
   if (c.INACTIVO) h += '<span class="tw-cl tw-c4">⛔ Inactivo</span>';
   if (c.SALDO > 0) h += '<span class="tw-cl tw-c4">💰 Debe ' + twPlata(c.SALDO) + '</span>';
-  if (c.ABIERTOS && c.ABIERTOS.length) h += '<span class="tw-cl tw-c2">📦 Otro pedido abierto</span>';
+  if (c.ABIERTOS && c.ABIERTOS.length && p.ESTADO !== 'ENTREGADO' && p.ESTADO !== 'CANCELADO') h += '<span class="tw-cl tw-c2">📦 Otro pedido abierto</span>';
   return h;
 }
 function twCliBloque(p) {
@@ -12730,7 +12730,7 @@ function twCliBloque(p) {
   if (c.VARIOS) h += '<div class="tw-av">⚠ Hay ' + c.VARIOS + ' clientes con ese mismo dato en Clientes; se muestra el primero. Revisalos en Maestros › Clientes.</div>';
   if (c.INACTIVO) h += '<div class="tw-av">⛔ Ese cliente está <b>inactivo</b> (dado de baja) en Clientes. Fijate por qué antes de aceptar el pedido.</div>';
   if (c.SALDO > 0) h += '<div class="tw-av">💰 Debe <b>' + twPlata(c.SALDO) + '</b> en cuenta corriente. Fijate antes de aceptar el pedido.</div>';
-  if (c.ABIERTOS && c.ABIERTOS.length) h += '<div class="tw-av">📦 Tiene ' + (c.ABIERTOS.length === 1 ? 'otro pedido sin terminar: ' : 'otros pedidos sin terminar: ') + '<b>' + twEsc(c.ABIERTOS.join(', ')) + '</b>. Fijate que no sea el mismo pedido repetido.</div>';
+  if (c.ABIERTOS && c.ABIERTOS.length && p.ESTADO !== 'ENTREGADO' && p.ESTADO !== 'CANCELADO') h += '<div class="tw-av">📦 Tiene ' + (c.ABIERTOS.length === 1 ? 'otro pedido sin terminar: ' : 'otros pedidos sin terminar: ') + '<b>' + twEsc(c.ABIERTOS.join(', ')) + '</b>. Fijate que no sea el mismo pedido repetido.</div>';
   if ((c.EST === 'VINCULADO' || c.EST === 'EXISTE') && c.DIFS && c.DIFS.length) {
     h += '<p style="margin-top:8px"><b>Datos distintos a los cargados.</b> No se cambia nada solo: si el dato del pedido es el correcto, tocá «Pasar al cliente».</p><table class="tw-dif"><tr><th>Dato</th><th>En el pedido</th><th>En Clientes</th><th></th></tr>';
     c.DIFS.forEach(function(x) {
