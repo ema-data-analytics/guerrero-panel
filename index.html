@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f9e420673482"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "76d358b9a5a6"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -6749,341 +6749,257 @@ async function cajaGuardarManual() {
 </script>
 
 <script>
+// ═════════ ÓRDENES DE PAGO (rehecho 26/10/2026) ═════════
+// Todo se graba en el servidor de una sola vez (gsOP_Grabar): facturas con pago parcial o total y varias formas de pago.
+var _OP = null;
+
+function opEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function opNum(v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; }
+function opR2(n) { return Math.round(n * 100) / 100; }
+function opProvNom(id) {
+  var p = (_OP && _OP.PROVEEDORES || []).filter(function(x) { return String(x.ID_PROVEEDOR) === String(id); })[0];
+  return p ? p.PROVEEDOR : String(id || '');
+}
+var OP_FORMA_TXT = { EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', CHEQUE_TERCERO: 'Cheque de tercero', CHEQUE_PROPIO: 'Cheque propio' };
+
 async function renderOrdenesPago() {
   var el = $id('page-ordenes-pago');
   if (!el) return;
-  var _stores = ['proveedores','ordenes_pago_enc','compras_enc','cajas','cheques'];
-  var _b;
-  if (isGsMode()) {
-    _b = await gsRun('gsBatchLoad', _stores);
-  } else {
-    var _pa = await Promise.all(_stores.map(function(s){ return ADB.getAll(s); }));
-    _b = {}; _stores.forEach(function(s,i){ _b[s]=_pa[i]; });
-  }
-  var provs   = _b['proveedores']||[];
-  var ops     = _b['ordenes_pago_enc']||[];
-  var compras = _b['compras_enc']||[];
-  var cajas   = _b['cajas']||[];
-  var cheques = _b['cheques']||[];
-  window._opProvs   = provs;
-  window._opCompras = compras;
-  window._opCajas   = cajas;
-  window._opCheques = cheques;
-  var pm = {}; provs.forEach(function(p){ pm[p.ID_PROVEEDOR]=p; });
-
-  var opsActivas = ops.filter(function(o){ return o.ESTADO!=='ANULADO'; });
-  var totalPagado = opsActivas.reduce(function(s,o){ return s+(o.TOTAL_OP||0); },0);
-  var compPend = compras.filter(function(c){
-    return c.ESTADO_COMPRA!=='ANULADA' && String(c.TIPO_COMP||'COMPRA').indexOf('NC')!==0 && (c.ESTADO_PAGO==='PENDIENTE'||c.ESTADO_PAGO==='PARCIAL'||!c.ESTADO_PAGO);
-  });
-  var totalDeuda = compPend.reduce(function(s,c){ return s+(c.SALDO_PAGO||c.TOTAL_COMPRA||0); },0);
+  el.innerHTML = '<div class="content"><div class="tdim tc" style="padding:30px">Cargando…</div></div>';
+  try { _OP = await gsRun('gsOP_Datos'); }
+  catch (e) { el.innerHTML = '<div class="content"><div class="al al-r">No se pudieron cargar las órdenes de pago: ' + opEsc(e.message || e) + '</div></div>'; return; }
+  var pend = _OP.PENDIENTES || [], ops = _OP.OPS || [];
+  var activas = ops.filter(function(o) { return o.ESTADO !== 'ANULADO'; });
+  var deuda = pend.reduce(function(s, c) { return s + c.SALDO; }, 0);
+  var pagado = activas.reduce(function(s, o) { return s + o.TOTAL_OP; }, 0);
+  var provsDeuda = {}; pend.forEach(function(c) { provsDeuda[c.ID_PROVEEDOR] = 1; });
 
   el.innerHTML =
-  '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-file-invoice-dollar" style="color:var(--accent)"></i> Órdenes de Pago</div>' +
-  '<div class="page-sub">PAGOS A PROVEEDORES</div></div>' +
-  '<button class="btn btn-p" onclick="opNueva()"><i class="fas fa-plus"></i> Nueva Orden de Pago</button></div>' +
-  '<div class="content">' +
-  '<div class="g3 mb4">' +
-  '<div class="stat" style="border-top:3px solid var(--danger)"><div class="stat-label">Deuda Total Proveedores</div><div class="stat-val sv-red">'+fmt(totalDeuda)+'</div><div class="stat-sub">'+compPend.length+' compras pendientes</div></div>' +
-  '<div class="stat" style="border-top:3px solid var(--success)"><div class="stat-label">Total Pagado</div><div class="stat-val sv-green">'+fmt(totalPagado)+'</div><div class="stat-sub">'+opsActivas.length+' órdenes de pago</div></div>' +
-  '<div class="stat" style="border-top:3px solid var(--warn)"><div class="stat-label">Proveedores con Deuda</div><div class="stat-val sv-warn">'+Object.keys(compPend.reduce(function(m,c){m[c.ID_PROVEEDOR]=1;return m;},{})).length+'</div><div class="stat-sub">proveedores a pagar</div></div>' +
-  '</div>' +
-
-  '<div class="card mb4"><div class="card-hd"><span class="card-title">Compras Pendientes de Pago</span>' +
-  '<span class="badge b-warn">'+compPend.length+'</span></div>' +
-  '<div class="tw"><table><thead><tr><th>Fecha</th><th>N° Factura</th><th>Proveedor</th><th class="tr">Total</th><th class="tr">Saldo</th><th>Estado</th><th></th></tr></thead><tbody>' +
-  (compPend.length===0?'<tr><td colspan="7" class="tc tdim" style="padding:16px">Sin compras pendientes.</td></tr>':
-  compPend.sort(function(a,b){return (a.FECHA_COMPRA||0)-(b.FECHA_COMPRA||0);}).map(function(c){
-    var p = pm[c.ID_PROVEEDOR];
-    var nomProv = p ? p.PROVEEDOR : c.ID_PROVEEDOR;
-    var saldo = c.SALDO_PAGO||c.TOTAL_COMPRA||0;
-    return '<tr>'+
-      '<td class="mono" style="font-size:12px">'+fmtD(c.FECHA_COMPRA)+'</td>'+
-      '<td class="mono" style="font-size:11px">'+(c.NRO_FACTURA||'—')+'</td>'+
-      '<td style="font-size:12px">'+nomProv+'</td>'+
-      '<td class="mono tr">'+fmt(c.TOTAL_COMPRA||0)+'</td>'+
-      '<td class="mono tr tred" style="font-weight:700">'+fmt(saldo)+'</td>'+
-      '<td><span class="badge '+(c.ESTADO_PAGO==='PARCIAL'?'b-warn':'b-red')+'" style="font-size:9px">'+(c.ESTADO_PAGO||'PENDIENTE')+'</span></td>'+
-      '<td><button class="btn btn-xs btn-p" onclick="opNuevaDesde(\''+c.ID_COMPRA_ENC+'\',\''+c.ID_PROVEEDOR+'\')"><i class="fas fa-dollar-sign"></i> Pagar</button></td>'+
-      '</tr>';
-  }).join('')) +
-  '</tbody></table></div></div>' +
-
-  '<div class="card"><div class="card-hd"><span class="card-title">Historial de Órdenes de Pago</span>' +
-  '<span class="badge b-blue" id="op-hist-cnt">...</span></div>' +
-  buildFiltroFechas('op','opRefreshHist()') +
-  '<div class="tw"><table><thead><tr><th>Fecha</th><th>N° OP</th><th>Proveedor</th><th class="tr">Total</th><th>Estado</th><th></th></tr></thead>' +
-  '<tbody id="op-hist-body"></tbody></table></div></div>' +
-  '</div>';
-
-  setTimeout(function(){ opRefreshHist(); }, 50);
+    '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-file-invoice-dollar" style="color:var(--accent)"></i> Órdenes de Pago</div>' +
+    '<div class="page-sub">PAGOS A PROVEEDORES</div></div>' +
+    '<button class="btn btn-p" onclick="opNueva()"><i class="fas fa-plus"></i> Nueva orden de pago</button></div>' +
+    '<div class="content">' +
+    '<div class="g3 mb4">' +
+    '<div class="stat" style="border-top:3px solid var(--danger)"><div class="stat-label">Deuda con proveedores</div><div class="stat-val sv-red">' + fmt(deuda) + '</div><div class="stat-sub">' + pend.length + ' factura' + (pend.length === 1 ? '' : 's') + ' por pagar</div></div>' +
+    '<div class="stat" style="border-top:3px solid var(--success)"><div class="stat-label">Total pagado</div><div class="stat-val sv-green">' + fmt(pagado) + '</div><div class="stat-sub">' + activas.length + ' orden' + (activas.length === 1 ? '' : 'es') + ' de pago</div></div>' +
+    '<div class="stat" style="border-top:3px solid var(--warn)"><div class="stat-label">Proveedores con deuda</div><div class="stat-val sv-warn">' + Object.keys(provsDeuda).length + '</div><div class="stat-sub">a pagar</div></div>' +
+    '</div>' +
+    '<div class="card mb4"><div class="card-hd"><span class="card-title">Facturas por pagar</span><span class="badge b-warn">' + pend.length + '</span></div>' +
+    '<div class="tw"><table><thead><tr><th>Fecha</th><th>N° factura</th><th>Proveedor</th><th class="tr">Total</th><th class="tr">Debe</th><th>Estado</th><th></th></tr></thead><tbody>' +
+    (pend.length === 0 ? '<tr><td colspan="7" class="tc tdim" style="padding:16px">No hay facturas por pagar.</td></tr>' :
+      pend.map(function(c) {
+        return '<tr><td class="mono" style="font-size:12px">' + fmtD(c.FECHA) + '</td><td class="mono" style="font-size:11px">' + opEsc(c.NRO_FACTURA) + '</td>' +
+          '<td style="font-size:12px">' + opEsc(opProvNom(c.ID_PROVEEDOR)) + '</td><td class="mono tr">' + fmt(c.TOTAL) + '</td>' +
+          '<td class="mono tr tred" style="font-weight:700">' + fmt(c.SALDO) + '</td>' +
+          '<td><span class="badge ' + (c.ESTADO_PAGO === 'PARCIAL' ? 'b-warn' : 'b-red') + '" style="font-size:9px">' + opEsc(c.ESTADO_PAGO || 'PENDIENTE') + '</span></td>' +
+          '<td><button class="btn btn-xs btn-p" onclick="opNuevaDesde(\'' + c.ID_COMPRA_ENC + '\',\'' + c.ID_PROVEEDOR + '\')"><i class="fas fa-dollar-sign"></i> Pagar</button></td></tr>';
+      }).join('')) +
+    '</tbody></table></div></div>' +
+    '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de pago</span><span class="badge b-blue" id="op-hist-cnt"></span></div>' +
+    buildFiltroFechas('op', 'opRefreshHist()') +
+    '<div class="tw"><table><thead><tr><th>Fecha</th><th>N° OP</th><th>Proveedor</th><th>Facturas</th><th>Forma de pago</th><th class="tr">Total</th><th>Estado</th><th></th></tr></thead>' +
+    '<tbody id="op-hist-body"></tbody></table></div></div>' +
+    '</div>';
+  opRefreshHist();
 }
 
-async function opRefreshHist() {
-  var tbody = $id('op-hist-body');
-  var cnt   = $id('op-hist-cnt');
-  if (!tbody) return;
-  var ops   = await ADB.getAll('ordenes_pago_enc');
-  var provs = window._opProvs||[];
-  var pm = {}; provs.forEach(function(p){ pm[p.ID_PROVEEDOR]=p; });
-  var desde = ($id('flt-desde-op')||{}).value||'';
-  var hasta = ($id('flt-hasta-op')||{}).value||'';
-  var fil = fechaFiltrar(ops,'FECHA',desde,hasta).sort(function(a,b){return (b.FECHA||0)-(a.FECHA||0);});
-  if (cnt) cnt.textContent = fil.length + ' órdenes';
-  if (!fil.length) { tbody.innerHTML='<tr><td colspan="6" class="tc tdim" style="padding:16px">Sin órdenes de pago.</td></tr>'; return; }
-  tbody.innerHTML = fil.map(function(o){
-    var p = pm[o.ID_PROVEEDOR];
-    var nomProv = p ? p.PROVEEDOR : o.ID_PROVEEDOR;
-    var anulado = o.ESTADO==='ANULADO';
-    return '<tr'+(anulado?' style="opacity:0.5;text-decoration:line-through"':'')+'>'+
-      '<td class="mono" style="font-size:12px">'+fmtD(o.FECHA)+'</td>'+
-      '<td class="mono" style="font-size:11px">'+(o.NRO_OP||o.ID_OP)+'</td>'+
-      '<td style="font-size:12px">'+nomProv+'</td>'+
-      '<td class="mono tr tred" style="font-weight:700">'+fmt(o.TOTAL_OP||0)+'</td>'+
-      '<td><span class="badge '+(anulado?'b-red':'b-green')+'" style="font-size:9px">'+(anulado?'ANULADO':'OK')+'</span></td>'+
-      '<td><button class="btn btn-xs btn-info" onclick="opVerDetalle(\''+o.ID_OP+'\')"><i class="fas fa-eye"></i></button></td>'+
-      '</tr>';
+function opRefreshHist() {
+  var tb = $id('op-hist-body'), cnt = $id('op-hist-cnt');
+  if (!tb || !_OP) return;
+  var desde = ($id('flt-desde-op') || {}).value || '', hasta = ($id('flt-hasta-op') || {}).value || '';
+  var fil = fechaFiltrar(_OP.OPS || [], 'FECHA', desde, hasta);
+  if (cnt) cnt.textContent = fil.length;
+  if (!fil.length) { tb.innerHTML = '<tr><td colspan="8" class="tc tdim" style="padding:16px">Sin órdenes de pago en esas fechas.</td></tr>'; return; }
+  tb.innerHTML = fil.map(function(o) {
+    var an = o.ESTADO === 'ANULADO';
+    return '<tr' + (an ? ' style="opacity:.55"' : '') + '><td class="mono" style="font-size:12px">' + fmtD(o.FECHA) + '</td><td class="mono" style="font-size:11px">' + opEsc(o.NRO_OP) + '</td>' +
+      '<td style="font-size:12px">' + opEsc(opProvNom(o.ID_PROVEEDOR)) + '</td>' +
+      '<td style="font-size:11px">' + o.DET.map(function(d) { return opEsc(d.NRO_COMP); }).join(', ') + '</td>' +
+      '<td style="font-size:11px">' + o.FORMAS.map(function(f) { return OP_FORMA_TXT[f.FORMA] || f.FORMA; }).join(' + ') + '</td>' +
+      '<td class="mono tr" style="font-weight:700">' + fmt(o.TOTAL_OP) + '</td>' +
+      '<td><span class="badge ' + (an ? 'b-red' : 'b-green') + '" style="font-size:9px">' + (an ? 'ANULADA' : 'PAGADA') + '</span></td>' +
+      '<td style="white-space:nowrap"><button class="btn btn-xs btn-info" onclick="opVerDetalle(\'' + o.ID_OP + '\')" title="Ver"><i class="fas fa-eye"></i></button>' +
+      (an ? '' : ' <button class="btn btn-xs btn-s" onclick="opAnularPedir(\'' + o.ID_OP + '\')" title="Anular"><i class="fas fa-ban"></i></button>') + '</td></tr>';
   }).join('');
 }
 
+// ── Nueva orden de pago ──
 function opNueva() { opAbrirModal(null, null); }
-function opNuevaDesde(idCompra, idProv) { opAbrirModal(idCompra, idProv); }
-
+function opNuevaDesde(idCompra, idProv) {
+  if (!_OP) { renderOrdenesPago().then(function() { opAbrirModal(idCompra, idProv); }); return; }
+  opAbrirModal(idCompra, idProv);
+}
+var _opFormas = [];
 function opAbrirModal(idCompra, idProv) {
-  var provs   = window._opProvs||[];
-  var compras = window._opCompras||[];
-  var cajas   = window._opCajas||[];
-  var cheques = window._opCheques||[];
-  var chequesP = cheques.filter(function(c){ return c.ESTADO==='EN_CARTERA' && c.TIPO_CHEQUE==='PROPIO'; });
-
-  var provOpts = provs.map(function(p){
-    return '<option value="'+p.ID_PROVEEDOR+'"'+(String(p.ID_PROVEEDOR)===String(idProv)?' selected':'')+'>'+p.PROVEEDOR+'</option>';
-  }).join('');
-  var cajaOpts = cajas.map(function(c){ return '<option value="'+c.ID_CAJA+'">'+c.CAJA_DESC+'</option>'; }).join('');
-  var chqOpts  = chequesP.map(function(ch){
-    return '<option value="'+ch.ID_CHEQUE+'">N°'+ch.NRO_CHEQUE+' — '+ch.BANCO+' — '+fmt(ch.IMPORTE)+'</option>';
-  }).join('');
-
+  _opFormas = [{ FORMA: 'EFECTIVO', IMPORTE: '', ID_CAJA: '', DETALLE: '', ID_CHEQUE: '', NRO_CHEQUE: '', ID_BANCO: '', FECHA_PAGO: '', TIPO_CHEQUE: 'IMPRESO' }];
+  var provOpts = (_OP.PROVEEDORES || []).map(function(p) { return '<option value="' + p.ID_PROVEEDOR + '"' + (String(p.ID_PROVEEDOR) === String(idProv) ? ' selected' : '') + '>' + opEsc(p.PROVEEDOR) + '</option>'; }).join('');
   showModal(
-    '<div class="mh"><span class="mt">Nueva Orden de Pago</span><button class="mc" onclick="closeModal()">×</button></div>'+
-    '<div class="mb2">'+
-    '<div class="fr mb3">'+
-    '<div class="fg"><label class="fl">Fecha *</label><input id="op-fecha" class="fi" type="date" value="'+fechaISO(new Date())+'"/></div>'+
-    '<div class="fg"><label class="fl">Proveedor *</label>'+
-    '<select id="op-prov" class="fs" onchange="opCargarPendientes()">'+
-    '<option value="">— Seleccionar —</option>'+provOpts+'</select></div>'+
-    '</div>'+
-    '<div class="fg mb3"><label class="fl">Compras a cancelar</label>'+
-    '<div id="op-pend-list" style="border:1.5px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto;padding:8px">'+
-    '<div class="tdim tc" style="padding:12px">Seleccioná un proveedor</div>'+
-    '</div></div>'+
-    '<div class="fg mb3"><label class="fl">Forma de Pago *</label>'+
-    '<select id="op-forma" class="fs" onchange="opOnFormaChange()">'+
-    '<option value="EFECTIVO">Efectivo</option>'+
-    '<option value="TRANSFERENCIA">Transferencia</option>'+
-    '<option value="CHEQUE_PROPIO">Cheque Propio</option>'+
-    '</select></div>'+
-    '<div id="op-cheque-wrap" class="hidden fg mb3"><label class="fl">Cheque Propio</label>'+
-    '<select id="op-cheque" class="fs">'+
-    (chqOpts?chqOpts:'<option value="">Sin cheques propios en cartera</option>')+
-    '</select></div>'+
-    '<div class="fg mb3"><label class="fl">Caja *</label>'+
-    '<select id="op-caja" class="fs"><option value="">— Seleccionar —</option>'+cajaOpts+'</select></div>'+
-    '<div class="fg mb3"><label class="fl">Observación</label>'+
-    '<input id="op-obs" class="fi" placeholder="Opcional..."/></div>'+
-    '<div style="background:var(--danger-light);padding:12px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">'+
-    '<span class="card-title">TOTAL A PAGAR</span>'+
-    '<span class="mono" style="font-size:22px;font-weight:700;color:var(--danger)" id="op-total-disp">$ 0,00</span>'+
-    '</div>'+
-    '</div>'+
-    '<div class="mf">'+
-    '<button class="btn btn-s" onclick="closeModal()">Cancelar</button>'+
-    '<button class="btn btn-p btn-xl" onclick="opGuardar()"><i class="fas fa-check"></i> Confirmar Pago</button>'+
-    '</div>',
-    'md-lg'
-  );
-
-  window._opSeleccionados = {};
-  if (idProv)   setTimeout(function(){ opCargarPendientes(); }, 100);
-  if (idCompra) setTimeout(function(){ opPreseleccionar(idCompra); }, 200);
+    '<div class="mh"><span class="mt">Nueva orden de pago</span><button class="mc" onclick="closeModal()">×</button></div>' +
+    '<div class="mb2">' +
+    '<div class="fr mb3"><div class="fg"><label class="fl">Fecha *</label><input id="op-fecha" class="fi" type="date" value="' + fechaISO(new Date()) + '"/></div>' +
+    '<div class="fg"><label class="fl">Proveedor *</label><select id="op-prov" class="fs" onchange="opCargarPendientes()"><option value="">— Elegir —</option>' + provOpts + '</select></div></div>' +
+    '<div class="sec-div">FACTURAS QUE SE PAGAN</div>' +
+    '<div id="op-pend-list" class="mb3" style="border:1.5px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;padding:6px"><div class="tdim tc" style="padding:12px">Elegí el proveedor</div></div>' +
+    '<div class="sec-div">CÓMO SE PAGA</div><div id="op-formas" class="mb2"></div>' +
+    '<button class="btn btn-s btn-sm mb3" onclick="opFormaAgregar()"><i class="fas fa-plus"></i> Agregar otra forma de pago</button>' +
+    '<div class="fg mb3"><label class="fl">Observación</label><input id="op-obs" class="fi" placeholder="Opcional"/></div>' +
+    '<div id="op-totales" style="background:var(--bg2,#f3f4f6);padding:12px;border-radius:8px"></div>' +
+    '</div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button>' +
+    '<button class="btn btn-p btn-xl" id="op-btn-ok" onclick="opGuardar()"><i class="fas fa-check"></i> Confirmar pago</button></div>',
+    'md-lg');
+  opCargarPendientes(idCompra);
+  opPintarFormas();
 }
-
-function opOnFormaChange() {
-  var forma = $v('op-forma');
-  var wrap  = $id('op-cheque-wrap');
-  if (wrap) wrap.className = forma==='CHEQUE_PROPIO' ? 'fg mb3' : 'hidden fg mb3';
-}
-
-function opCargarPendientes() {
-  var idProv = $v('op-prov');
-  var cont   = $id('op-pend-list');
+function opCargarPendientes(idCompra) {
+  var idProv = $v('op-prov'), cont = $id('op-pend-list');
   if (!cont) return;
-  if (!idProv) { cont.innerHTML='<div class="tdim tc" style="padding:12px">Seleccioná un proveedor</div>'; return; }
-  var compras = window._opCompras||[];
-  var pend = compras.filter(function(c){
-    return String(c.ID_PROVEEDOR)===String(idProv) &&
-      c.ESTADO_COMPRA!=='ANULADA' && String(c.TIPO_COMP||'COMPRA').indexOf('NC')!==0 &&
-      (c.ESTADO_PAGO==='PENDIENTE'||c.ESTADO_PAGO==='PARCIAL'||!c.ESTADO_PAGO);
-  });
-  if (!pend.length) { cont.innerHTML='<div class="tdim tc" style="padding:12px">Sin compras pendientes para este proveedor.</div>'; return; }
-  cont.innerHTML = pend.map(function(c){
-    var saldo = c.SALDO_PAGO||c.TOTAL_COMPRA||0;
-    return '<label style="display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid var(--border);cursor:pointer">'+
-      '<input type="checkbox" data-id="'+c.ID_COMPRA_ENC+'" data-importe="'+saldo+'" onchange="opCalcTotal()" style="accent-color:var(--accent)">'+
-      '<span style="flex:1;font-size:12px">'+(c.NRO_FACTURA||c.ID_COMPRA_ENC)+' <span class="tdim">'+fmtD(c.FECHA_COMPRA)+'</span></span>'+
-      '<span class="mono tred" style="font-weight:700">'+fmt(saldo)+'</span>'+
-      '</label>';
+  if (!idProv) { cont.innerHTML = '<div class="tdim tc" style="padding:12px">Elegí el proveedor</div>'; opTotales(); return; }
+  var pend = (_OP.PENDIENTES || []).filter(function(c) { return String(c.ID_PROVEEDOR) === String(idProv); });
+  if (!pend.length) { cont.innerHTML = '<div class="tdim tc" style="padding:12px">Este proveedor no tiene facturas por pagar.</div>'; opTotales(); return; }
+  cont.innerHTML = pend.map(function(c) {
+    var mar = idCompra ? String(c.ID_COMPRA_ENC) === String(idCompra) : false;
+    return '<div style="display:flex;align-items:center;gap:10px;padding:6px;border-bottom:1px solid var(--border)">' +
+      '<input type="checkbox" class="op-chk" data-id="' + c.ID_COMPRA_ENC + '" data-saldo="' + c.SALDO + '"' + (mar ? ' checked' : '') + ' onchange="opChk(this)" style="accent-color:var(--accent);width:18px;height:18px">' +
+      '<span style="flex:1;font-size:12px"><b>' + opEsc(c.NRO_FACTURA) + '</b> <span class="tdim">' + fmtD(c.FECHA) + ' · debe ' + fmt(c.SALDO) + '</span></span>' +
+      '<input type="number" step="0.01" min="0" class="fi op-imp" data-id="' + c.ID_COMPRA_ENC + '" style="width:140px;text-align:right" value="' + (mar ? c.SALDO : '') + '"' + (mar ? '' : ' disabled') + ' oninput="opTotales()" placeholder="importe">' +
+      '</div>';
   }).join('');
-  opCalcTotal();
+  opTotales();
 }
-
-function opPreseleccionar(idCompra) {
-  var checks = document.querySelectorAll('#op-pend-list input[type="checkbox"]');
-  checks.forEach(function(ch){ if(ch.dataset.id===String(idCompra)) ch.checked=true; });
-  opCalcTotal();
+function opChk(ch) {
+  var inp = document.querySelector('.op-imp[data-id="' + ch.dataset.id + '"]');
+  if (inp) { inp.disabled = !ch.checked; inp.value = ch.checked ? ch.dataset.saldo : ''; }
+  opTotales();
 }
-
-function opCalcTotal() {
-  var total = 0;
-  var checks = document.querySelectorAll('#op-pend-list input[type="checkbox"]:checked');
-  checks.forEach(function(ch){ total += parseFloat(ch.dataset.importe)||0; });
-  var el = $id('op-total-disp'); if(el) el.textContent = fmt(total);
-}
-
-async function opGuardar() {
-  var fecha  = $v('op-fecha');
-  var idProv = $v('op-prov');
-  var forma  = $v('op-forma');
-  var idCaja = $v('op-caja');
-  if (!fecha||!idProv||!idCaja) { toast('Completá fecha, proveedor y caja','r2'); return; }
-
-  var checks = document.querySelectorAll('#op-pend-list input[type="checkbox"]:checked');
-  if (!checks.length) { toast('Seleccioná al menos una compra a cancelar','r2'); return; }
-
-  var total = 0;
-  var selItems = [];
-  checks.forEach(function(ch){
-    var imp = parseFloat(ch.dataset.importe)||0;
-    total += imp;
-    selItems.push({ idCompra: ch.dataset.id, importe: imp });
+function opFormaAgregar() { opLeerFormas(); _opFormas.push({ FORMA: 'EFECTIVO', IMPORTE: '', ID_CAJA: '', DETALLE: '', ID_CHEQUE: '', NRO_CHEQUE: '', ID_BANCO: '', FECHA_PAGO: '', TIPO_CHEQUE: 'IMPRESO' }); opPintarFormas(); }
+function opFormaQuitar(i) { opLeerFormas(); _opFormas.splice(i, 1); if (!_opFormas.length) opFormaAgregar(); else opPintarFormas(); }
+function opFormaCambio(i) { opLeerFormas(); opPintarFormas(); }
+function opLeerFormas() {
+  _opFormas.forEach(function(f, i) {
+    var g = function(k) { var e = $id('opf-' + k + '-' + i); return e ? e.value : f[k]; };
+    f.FORMA = g('FORMA'); f.IMPORTE = g('IMPORTE'); f.ID_CAJA = g('ID_CAJA'); f.DETALLE = g('DETALLE'); f.ID_CHEQUE = g('ID_CHEQUE');
+    f.NRO_CHEQUE = g('NRO_CHEQUE'); f.ID_BANCO = g('ID_BANCO'); f.FECHA_PAGO = g('FECHA_PAGO'); f.TIPO_CHEQUE = g('TIPO_CHEQUE');
   });
-  if (total<=0) { toast('Total = 0','r2'); return; }
-
-  var idOP = await nextId('ordenes_pago_enc','ID_OP');
-  var nroOP = 'OP-'+String(idOP).padStart(6,'0');
-
-  try {
-    // Guardar encabezado
-    await ADB.put('ordenes_pago_enc', {
-      ID_OP:       idOP,
-      FECHA:       new Date(fecha+'T00:00:00').getTime(),
-      ID_PROVEEDOR:idProv,
-      NRO_OP:      nroOP,
-      TOTAL_OP:    total,
-      OBSERVACION: $v('op-obs'),
-      ESTADO:      'CONFIRMADO'
-    });
-
-    // Detalle y actualizar compras
-    for (var i=0; i<selItems.length; i++) {
-      var item = selItems[i];
-      var idDet = await nextId('ordenes_pago_det','ID_DET_OP');
-      await ADB.put('ordenes_pago_det', {
-        ID_DET_OP:        idDet,
-        ID_OP:            idOP,
-        ID_COMPRA_ENC:    item.idCompra,
-        IMPORTE_APLICADO: item.importe
-      });
-      // Actualizar estado de pago en la compra
-      var comp = await ADB.get('compras_enc', item.idCompra);
-      if (comp) {
-        comp.ESTADO_PAGO   = 'PAGADO';
-        comp.SALDO_PAGO    = 0;
-        await ADB.put('compras_enc', comp);
-        _mcDel('compras_enc');
+}
+function opPintarFormas() {
+  var cont = $id('op-formas');
+  if (!cont) return;
+  var usados = {}; _opFormas.forEach(function(f) { if (f.FORMA === 'CHEQUE_TERCERO' && f.ID_CHEQUE) usados[f.ID_CHEQUE] = (usados[f.ID_CHEQUE] || 0) + 1; });
+  cont.innerHTML = _opFormas.map(function(f, i) {
+    var sel = function(v) { return f.FORMA === v ? ' selected' : ''; };
+    var h = '<div style="border:1.5px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">' +
+      '<div class="fr"><div class="fg"><label class="fl">Forma</label><select id="opf-FORMA-' + i + '" class="fs" onchange="opFormaCambio(' + i + ')">' +
+      Object.keys(OP_FORMA_TXT).map(function(k) { return '<option value="' + k + '"' + sel(k) + '>' + OP_FORMA_TXT[k] + '</option>'; }).join('') + '</select></div>';
+    if (f.FORMA === 'CHEQUE_TERCERO') {
+      var chs = (_OP.CHEQUES || []);
+      h += '<div class="fg" style="flex:2"><label class="fl">Cheque en cartera</label><select id="opf-ID_CHEQUE-' + i + '" class="fs" onchange="opFormaCambio(' + i + ')"><option value="">' + (chs.length ? '— Elegir —' : 'No hay cheques de terceros en cartera') + '</option>' +
+        chs.map(function(c) { return '<option value="' + c.ID_CHEQUE + '"' + (String(f.ID_CHEQUE) === String(c.ID_CHEQUE) ? ' selected' : '') + '>N° ' + opEsc(c.NRO_CHEQUE) + ' · ' + opEsc(c.BANCO) + ' · ' + opEsc(c.EMISOR) + ' · cobro ' + fmtD(c.FECHA_ACREDITACION) + ' · ' + fmt(c.IMPORTE) + '</option>'; }).join('') + '</select></div>';
+      var ch = chs.filter(function(c) { return String(c.ID_CHEQUE) === String(f.ID_CHEQUE); })[0];
+      h += '<div class="fg"><label class="fl">Importe</label><div class="mono" style="padding:9px 0;font-weight:700">' + (ch ? fmt(ch.IMPORTE) : '—') + '</div></div>';
+      if (ch && usados[f.ID_CHEQUE] > 1) h += '<div class="al al-r" style="width:100%">Ese cheque está elegido dos veces.</div>';
+    } else {
+      h += '<div class="fg"><label class="fl">Importe</label><input id="opf-IMPORTE-' + i + '" type="number" step="0.01" min="0" class="fi" style="text-align:right" value="' + opEsc(f.IMPORTE) + '" oninput="opTotales()"></div>';
+      if (f.FORMA === 'CHEQUE_PROPIO') {
+        h += '</div><div class="fr"><div class="fg"><label class="fl">Tipo</label><select id="opf-TIPO_CHEQUE-' + i + '" class="fs"><option value="IMPRESO"' + (f.TIPO_CHEQUE !== 'ECHEQ' ? ' selected' : '') + '>Impreso</option><option value="ECHEQ"' + (f.TIPO_CHEQUE === 'ECHEQ' ? ' selected' : '') + '>eCheq</option></select></div>' +
+          '<div class="fg"><label class="fl">N° de cheque</label><input id="opf-NRO_CHEQUE-' + i + '" class="fi" value="' + opEsc(f.NRO_CHEQUE) + '"></div>' +
+          '<div class="fg"><label class="fl">Cuenta bancaria</label><select id="opf-ID_BANCO-' + i + '" class="fs"><option value="">' + ((_OP.BANCOS || []).length ? '— Elegir —' : 'Cargá la cuenta en Maestros › Bancos') + '</option>' +
+          (_OP.BANCOS || []).map(function(b) { return '<option value="' + b.ID_BANCO + '"' + (String(f.ID_BANCO) === String(b.ID_BANCO) ? ' selected' : '') + '>' + opEsc(b.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
+          '<div class="fg"><label class="fl">Fecha de pago</label><input id="opf-FECHA_PAGO-' + i + '" type="date" class="fi" value="' + opEsc(f.FECHA_PAGO) + '"></div>';
+      } else {
+        h += '<div class="fg"><label class="fl">Sale de la caja</label><select id="opf-ID_CAJA-' + i + '" class="fs"><option value="">— Elegir —</option>' +
+          (_OP.CAJAS || []).map(function(c) { return '<option value="' + c.ID_CAJA + '"' + (String(f.ID_CAJA) === String(c.ID_CAJA) ? ' selected' : '') + '>' + opEsc(c.CAJA_DESC) + '</option>'; }).join('') + '</select></div>' +
+          '<div class="fg"><label class="fl">Detalle</label><input id="opf-DETALLE-' + i + '" class="fi" value="' + opEsc(f.DETALLE) + '" placeholder="' + (f.FORMA === 'TRANSFERENCIA' ? 'N° de operación' : 'Opcional') + '"></div>';
       }
-      // Movimiento cta cte proveedor (DEBITO = pagamos)
-      var idCtcP = await nextId('cta_cte_proveedores','ID_MOV_CTP');
-      var movCtcP = {
-        ID_MOV_CTP:     idCtcP,
-        FECHA:          new Date(fecha+'T00:00:00').getTime(),
-        ID_PROVEEDOR:   idProv,
-        TIPO:           'DEBITO',
-        CONCEPTO:       'Pago OP '+nroOP,
-        ID_COMPROBANTE: idOP,
-        TIPO_COMP:      'ORDEN_PAGO',
-        NRO_COMP:       nroOP,
-        IMPORTE:        item.importe,
-        SALDO_ACUM:     0
-      };
-      if (isGsMode()) { await gsRun('gsMovCtaCteProv', movCtcP); }
-      else { await ADB.put('cta_cte_proveedores', movCtcP); }
     }
-
-    // Forma de pago
-    var idForma = await nextId('ordenes_pago_forma','ID_FORMA_OP');
-    var idCheque = forma==='CHEQUE_PROPIO' ? $v('op-cheque') : '';
-    await ADB.put('ordenes_pago_forma', {
-      ID_FORMA_OP: idForma, ID_OP: idOP,
-      FORMA_PAGO:  forma, ID_CHEQUE: idCheque, IMPORTE: total
-    });
-
-    // Si pagó con cheque propio, marcarlo como entregado
-    if (forma==='CHEQUE_PROPIO' && idCheque) {
-      var chq = await ADB.get('cheques', idCheque);
-      if (chq) { chq.ESTADO='ENTREGADO'; await ADB.put('cheques',chq); _mcDel('cheques'); }
-    }
-
-    // Movimiento de caja (EGRESO)
-    var idMov = await nextId('movimientos_caja','ID_MOV_CAJA');
-    var movCaja = {
-      ID_MOV_CAJA: idMov,
-      FECHA:       new Date(fecha+'T00:00:00').getTime(),
-      ID_CAJA:     idCaja, TIPO_MOV: 'EGRESO',
-      CONCEPTO:    'Pago a proveedor — '+nroOP+' — '+forma,
-      ORIGEN:      'ORDEN_PAGO', ID_ORIGEN: idOP,
-      IMPORTE:     total, SALDO_ACUM: 0
-    };
-    if (isGsMode()) { await gsRun('gsMovCaja', movCaja); }
-    else { await ADB.put('movimientos_caja', movCaja); }
-
-    _mcDel('ordenes_pago_enc'); _mcDel('ordenes_pago_det'); _mcDel('cta_cte_proveedores');
-    toast('Orden de Pago '+nroOP+' — '+fmt(total)+' ✓','g');
+    h += '</div><div style="text-align:right"><button class="btn btn-xs btn-s" onclick="opFormaQuitar(' + i + ')"><i class="fas fa-times"></i> Quitar</button></div></div>';
+    return h;
+  }).join('');
+  opTotales();
+}
+function opAplicaLeer() {
+  var r = [];
+  document.querySelectorAll('.op-chk:checked').forEach(function(ch) {
+    var inp = document.querySelector('.op-imp[data-id="' + ch.dataset.id + '"]');
+    r.push({ ID_COMPRA_ENC: ch.dataset.id, IMPORTE: opR2(opNum(inp && inp.value)), SALDO: opNum(ch.dataset.saldo) });
+  });
+  return r;
+}
+function opFormaImporte(f) {
+  if (f.FORMA === 'CHEQUE_TERCERO') { var c = (_OP.CHEQUES || []).filter(function(x) { return String(x.ID_CHEQUE) === String(f.ID_CHEQUE); })[0]; return c ? c.IMPORTE : 0; }
+  return opNum(f.IMPORTE);
+}
+function opTotales() {
+  var box = $id('op-totales');
+  if (!box) return;
+  opLeerFormas();
+  var ap = opAplicaLeer(), totAp = opR2(ap.reduce(function(s, a) { return s + a.IMPORTE; }, 0));
+  var totF = opR2(_opFormas.reduce(function(s, f) { return s + opFormaImporte(f); }, 0)), dif = opR2(totF - totAp);
+  var excede = ap.filter(function(a) { return a.IMPORTE > a.SALDO + 0.005; });
+  box.innerHTML = '<div class="flex jb"><span>Se paga de facturas</span><b class="mono">' + fmt(totAp) + '</b></div>' +
+    '<div class="flex jb"><span>Formas de pago</span><b class="mono">' + fmt(totF) + '</b></div>' +
+    (Math.abs(dif) > 0.01 ? '<div class="flex jb" style="color:var(--danger)"><span>Diferencia</span><b class="mono">' + fmt(dif) + '</b></div><div class="tdim" style="font-size:11px">Tienen que ser iguales para confirmar.</div>' : (totAp > 0 ? '<div style="color:var(--success);font-weight:700">✓ Cuadra</div>' : '')) +
+    (excede.length ? '<div style="color:var(--danger);font-size:12px">Hay importes mayores a lo que debe la factura.</div>' : '');
+}
+async function opGuardar() {
+  opLeerFormas();
+  var ap = opAplicaLeer();
+  if (!$v('op-prov')) { toast('Elegí el proveedor', 'r2'); return; }
+  if (!ap.length) { toast('Tildá al menos una factura', 'r2'); return; }
+  var btn = $id('op-btn-ok'); if (btn) { btn.disabled = true; btn.innerHTML = 'Grabando…'; }
+  try {
+    var r = await gsRun('gsOP_Grabar', { FECHA: $v('op-fecha'), ID_PROVEEDOR: $v('op-prov'), OBS: $v('op-obs'),
+      APLICA: ap.map(function(a) { return { ID_COMPRA_ENC: a.ID_COMPRA_ENC, IMPORTE: a.IMPORTE }; }),
+      FORMAS: _opFormas.map(function(f) { return { FORMA: f.FORMA, IMPORTE: opFormaImporte(f), ID_CAJA: f.ID_CAJA, DETALLE: f.DETALLE, ID_CHEQUE: f.ID_CHEQUE, NRO_CHEQUE: f.NRO_CHEQUE, ID_BANCO: f.ID_BANCO, FECHA_PAGO: f.FECHA_PAGO, TIPO_CHEQUE: f.TIPO_CHEQUE }; }) });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo grabar', 'r2'); if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Confirmar pago'; } return; }
+    toast('Orden de pago ' + r.NRO_OP + ' — ' + fmt(r.TOTAL) + ' ✓', 'g');
+    if (typeof _mcDel === 'function') { ['compras_enc', 'ordenes_pago_enc', 'ordenes_pago_det', 'ordenes_pago_forma', 'cta_cte_proveedores', 'movimientos_caja', 'cheques'].forEach(function(s) { _mcDel(s); }); }
     closeModal();
     renderOrdenesPago();
-  } catch(e) { toast('Error: '+e.message,'r2'); }
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Confirmar pago'; } }
 }
 
-async function opVerDetalle(idOP) {
+// ── Ver y anular ──
+function opBuscar(id) { return (_OP && _OP.OPS || []).filter(function(o) { return String(o.ID_OP) === String(id); })[0]; }
+function opVerDetalle(id) {
+  var o = opBuscar(id);
+  if (!o) { toast('No encontrada', 'r2'); return; }
+  var caja = function(idc) { var c = (_OP.CAJAS || []).filter(function(x) { return String(x.ID_CAJA) === String(idc); })[0]; return c ? c.CAJA_DESC : ''; };
+  showModal(
+    '<div class="mh"><span class="mt">Orden de pago ' + opEsc(o.NRO_OP) + (o.ESTADO === 'ANULADO' ? ' — ANULADA' : '') + '</span><button class="mc" onclick="closeModal()">×</button></div>' +
+    '<div class="mb2"><div class="fr mb3"><div><span class="tdim" style="font-size:11px">FECHA</span><div class="mono" style="font-weight:700">' + fmtD(o.FECHA) + '</div></div>' +
+    '<div><span class="tdim" style="font-size:11px">PROVEEDOR</span><div style="font-weight:700">' + opEsc(opProvNom(o.ID_PROVEEDOR)) + '</div></div>' +
+    '<div><span class="tdim" style="font-size:11px">CARGÓ</span><div>' + opEsc(o.USUARIO || '—') + '</div></div></div>' +
+    '<div class="sec-div">FACTURAS</div><div class="tw"><table style="font-size:12px"><thead><tr><th>N° factura</th><th class="tr">Pagado</th></tr></thead><tbody>' +
+    o.DET.map(function(d) { return '<tr><td class="mono">' + opEsc(d.NRO_COMP) + '</td><td class="mono tr" style="font-weight:700">' + fmt(d.IMPORTE) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+    '<div class="sec-div mt3">FORMA DE PAGO</div>' +
+    o.FORMAS.map(function(f) { return '<div class="flex jb" style="padding:5px 0;font-size:13px"><span>' + (OP_FORMA_TXT[f.FORMA] || f.FORMA) + (f.ID_CAJA ? ' · ' + opEsc(caja(f.ID_CAJA)) : '') + (f.DETALLE ? ' · ' + opEsc(f.DETALLE) : '') + '</span><span class="mono" style="font-weight:700">' + fmt(f.IMPORTE) + '</span></div>'; }).join('') +
+    '<div class="div"></div><div class="flex jb" style="font-size:16px;font-weight:700"><span>TOTAL</span><span class="mono">' + fmt(o.TOTAL_OP) + '</span></div>' +
+    (o.OBSERVACION ? '<div class="tdim mt2" style="font-size:12px">' + opEsc(o.OBSERVACION) + '</div>' : '') +
+    (o.ESTADO === 'ANULADO' ? '<div class="al al-r mt2">Anulada: ' + opEsc(o.MOTIVO_ANULACION) + '</div>' : '') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
+}
+function opAnularPedir(id) {
+  var o = opBuscar(id);
+  if (!o) return;
+  showModal(
+    '<div class="mh"><span class="mt">Anular ' + opEsc(o.NRO_OP) + '</span><button class="mc" onclick="closeModal()">×</button></div>' +
+    '<div class="mb2"><div class="al al-w mb3">La deuda de las facturas vuelve a quedar pendiente, el dinero vuelve a la caja, el cheque de tercero vuelve a cartera y el cheque propio queda anulado.</div>' +
+    '<div class="fg"><label class="fl">Motivo *</label><input id="op-an-mot" class="fi" placeholder="Por qué se anula"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-d" id="op-an-btn" onclick="opAnular(\'' + id + '\')"><i class="fas fa-ban"></i> Anular</button></div>');
+}
+async function opAnular(id) {
+  var mot = ($v('op-an-mot') || '').trim();
+  if (!mot) { toast('Escribí el motivo', 'r2'); return; }
+  var b = $id('op-an-btn'); if (b) b.disabled = true;
   try {
-    var op   = await ADB.get('ordenes_pago_enc', idOP);
-    if (!op) { toast('No encontrado','r2'); return; }
-    var allDets   = await ADB.getAll('ordenes_pago_det');
-    var allFormas = await ADB.getAll('ordenes_pago_forma');
-    var dets   = allDets.filter(function(d){ return String(d.ID_OP)===String(idOP); });
-    var formas = allFormas.filter(function(f){ return String(f.ID_OP)===String(idOP); });
-    var provs  = window._opProvs||[];
-    var pm = {}; provs.forEach(function(p){ pm[p.ID_PROVEEDOR]=p; });
-    var prov = pm[op.ID_PROVEEDOR];
-    showModal(
-      '<div class="mh"><span class="mt">Orden de Pago '+( op.NRO_OP||idOP)+'</span><button class="mc" onclick="closeModal()">×</button></div>'+
-      '<div class="mb2">'+
-      '<div class="fr mb3">'+
-      '<div><span class="tdim" style="font-size:11px">FECHA</span><div class="mono" style="font-weight:700">'+fmtD(op.FECHA)+'</div></div>'+
-      '<div><span class="tdim" style="font-size:11px">PROVEEDOR</span><div style="font-weight:700">'+(prov?prov.PROVEEDOR:op.ID_PROVEEDOR)+'</div></div>'+
-      '</div>'+
-      '<div class="sec-div">COMPRAS CANCELADAS</div>'+
-      '<div class="tw"><table style="font-size:12px"><thead><tr><th>N° Factura</th><th class="tr">Importe</th></tr></thead><tbody>'+
-      dets.map(function(d){ return '<tr><td class="mono">'+(d.NRO_COMP||d.ID_COMPRA_ENC)+'</td><td class="mono tr tred" style="font-weight:700">'+fmt(d.IMPORTE_APLICADO||0)+'</td></tr>'; }).join('')+
-      '</tbody></table></div>'+
-      '<div class="sec-div mt3">FORMA DE PAGO</div>'+
-      formas.map(function(f){ return '<div class="flex jb" style="padding:6px 0"><span>'+f.FORMA_PAGO+'</span><span class="mono tred" style="font-weight:700">'+fmt(f.IMPORTE||0)+'</span></div>'; }).join('')+
-      '<div class="div"></div>'+
-      '<div class="flex jb" style="font-size:16px;font-weight:700"><span>TOTAL PAGADO</span><span class="mono tred">'+fmt(op.TOTAL_OP||0)+'</span></div>'+
-      '</div>'+
-      '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>'
-    );
-  } catch(e) { toast('Error: '+e.message,'r2'); }
+    var r = await gsRun('gsOP_Anular', id, mot);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo anular', 'r2'); if (b) b.disabled = false; return; }
+    toast(r.NRO_OP + ' anulada ✓', 'g');
+    if (typeof _mcDel === 'function') { ['compras_enc', 'ordenes_pago_enc', 'cta_cte_proveedores', 'movimientos_caja', 'cheques'].forEach(function(s) { _mcDel(s); }); }
+    closeModal();
+    renderOrdenesPago();
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; }
 }
 </script>
 
@@ -7109,11 +7025,11 @@ async function renderCtaCteProveedores() {
   var saldos = {};
   movs.forEach(function(m){
     if (!saldos[m.ID_PROVEEDOR]) saldos[m.ID_PROVEEDOR]=0;
-    if (m.TIPO==='CREDITO') saldos[m.ID_PROVEEDOR] += (m.IMPORTE||0); // debemos
-    if (m.TIPO==='DEBITO')  saldos[m.ID_PROVEEDOR] -= (m.IMPORTE||0); // pagamos
+    if (m.TIPO==='CREDITO') saldos[m.ID_PROVEEDOR] += (parseFloat(m.IMPORTE)||0); // debemos
+    if (m.TIPO==='DEBITO')  saldos[m.ID_PROVEEDOR] -= (parseFloat(m.IMPORTE)||0); // pagamos
   });
 
-  var provConDeuda = provs.filter(function(p){ return saldos[p.ID_PROVEEDOR]&&saldos[p.ID_PROVEEDOR]>0; });
+  var provConDeuda = provs.filter(function(p){ return saldos[p.ID_PROVEEDOR]&&saldos[p.ID_PROVEEDOR]>0.005; });
   var totalDeuda   = provConDeuda.reduce(function(s,p){ return s+(saldos[p.ID_PROVEEDOR]||0); },0);
   var provOpts = '<option value="">Todos los proveedores</option>'+
     provs.map(function(p){ return '<option value="'+p.ID_PROVEEDOR+'">'+p.PROVEEDOR+'</option>'; }).join('');
@@ -7149,7 +7065,7 @@ async function renderCtaCteProveedores() {
   buildFiltroFechas('ctp','ctpRefresh()')+
   '<select id="ctp-prov" class="fs" style="max-width:220px" onchange="ctpRefresh()">'+provOpts+'</select>'+
   '</div>'+
-  '<div class="tw"><table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Tipo</th><th>Concepto</th><th>Comp.</th><th class="tr">Importe</th></tr></thead>'+
+  '<div class="tw"><table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Tipo</th><th>Concepto</th><th>Comp.</th><th class="tr">Importe</th><th class="tr" id="ctp-th-saldo">Saldo</th></tr></thead>'+
   '<tbody id="ctp-body"></tbody></table></div></div>'+
   '</div>';
 
@@ -7168,9 +7084,18 @@ function ctpRefresh() {
   var filProv = ($id('ctp-prov')||{}).value||'';
   var fil = fechaFiltrar(movs,'FECHA',desde,hasta);
   if (filProv) fil = fil.filter(function(m){ return String(m.ID_PROVEEDOR)===String(filProv); });
-  fil = fil.sort(function(a,b){ return (b.FECHA||0)-(a.FECHA||0); });
+  // Saldo acumulado: solo con un proveedor elegido (se calcula con todos sus movimientos, en orden)
+  var acum = {};
+  if (filProv) {
+    var s0 = 0;
+    movs.filter(function(m){ return String(m.ID_PROVEEDOR)===String(filProv); })
+      .sort(function(a,b){ return ((a.FECHA||0)-(b.FECHA||0)) || ((parseFloat(a.ID_MOV_CTP)||0)-(parseFloat(b.ID_MOV_CTP)||0)); })
+      .forEach(function(m){ s0 += (m.TIPO==='CREDITO'?1:-1)*(parseFloat(m.IMPORTE)||0); acum[m.ID_MOV_CTP] = Math.round(s0*100)/100; });
+  }
+  var th = $id('ctp-th-saldo'); if (th) th.style.display = filProv ? '' : 'none';
+  fil = fil.sort(function(a,b){ return ((b.FECHA||0)-(a.FECHA||0)) || ((parseFloat(b.ID_MOV_CTP)||0)-(parseFloat(a.ID_MOV_CTP)||0)); });
   if (cnt) cnt.textContent = fil.length;
-  if (!fil.length) { tbody.innerHTML='<tr><td colspan="6" class="tc tdim" style="padding:16px">Sin movimientos.</td></tr>'; return; }
+  if (!fil.length) { tbody.innerHTML='<tr><td colspan="7" class="tc tdim" style="padding:16px">Sin movimientos.</td></tr>'; return; }
   tbody.innerHTML = fil.map(function(m){
     var p = pm[m.ID_PROVEEDOR];
     var nom = p ? p.PROVEEDOR : m.ID_PROVEEDOR;
@@ -7181,7 +7106,8 @@ function ctpRefresh() {
       '<td><span class="badge '+(esCredito?'b-red':'b-green')+'" style="font-size:9px">'+m.TIPO+'</span></td>'+
       '<td style="font-size:12px">'+(m.CONCEPTO||'—')+'</td>'+
       '<td class="mono" style="font-size:11px">'+(m.NRO_COMP||'—')+'</td>'+
-      '<td class="mono tr '+(esCredito?'tred':'tgreen')+'" style="font-weight:700">'+(esCredito?'+':'-')+fmt(m.IMPORTE||0)+'</td>'+
+      '<td class="mono tr '+(esCredito?'tred':'tgreen')+'" style="font-weight:700">'+(esCredito?'+':'-')+fmt(parseFloat(m.IMPORTE)||0)+'</td>'+
+      (filProv ? '<td class="mono tr" style="font-weight:700">'+fmt(acum[m.ID_MOV_CTP]||0)+'</td>' : '')+
       '</tr>';
   }).join('');
 }
