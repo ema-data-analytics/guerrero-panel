@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Control de asistencia — Propuesta</title>
+<style>
+:root{--az:#14213D;--na:#E8792B;--tx:#1f2937;--dim:#6b7280;--bd:#e5e7eb;--bg:#f6f7f9;--ok:#166534;--okb:#dcfce7;--r:#b91c1c}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--tx);background:var(--bg);line-height:1.55}
+header{background:var(--az);color:#fff;padding:20px 16px}header .in{max-width:1000px;margin:0 auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+header img{height:54px;background:#fff;border-radius:8px;padding:3px 6px}header h1{margin:0;font-size:24px}header p{margin:3px 0 0;color:#c9d3e6;font-size:14px}
+main{max-width:1000px;margin:0 auto;padding:16px}
+h2{font-size:20px;margin:30px 0 10px;color:var(--az);border-bottom:3px solid var(--na);display:inline-block;padding-bottom:2px}
+h3{font-size:16px;margin:16px 0 6px;color:var(--az)}
+.caja{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin:10px 0}
+.nota{background:#fff6ee;border-left:5px solid var(--na);padding:10px 14px;border-radius:0 10px 10px 0;margin:10px 0;font-size:14.5px}
+.est{color:var(--r);font-weight:bold}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.paso{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin:8px 0}
+.paso b.n{flex:0 0 34px;height:34px;border-radius:50%;background:var(--na);color:#fff;display:grid;place-items:center;font-size:16px}
+.paso div{font-size:14.5px}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:14px}th{background:#eef1f6;text-align:left;padding:8px;font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:.03em}td{padding:8px;border-top:1px solid var(--bd);vertical-align:top}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr.tot td{font-weight:bold;background:#f8fafc}
+.tw{overflow-x:auto}
+.op{border:2px solid var(--bd);border-radius:14px;background:#fff;padding:14px 16px}.op.rec{border-color:var(--na);box-shadow:0 0 0 3px #fde7d3}
+.op h3{margin-top:0}.tag{display:inline-block;background:var(--na);color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;font-weight:bold;margin-left:6px}
+.big{font-size:26px;font-weight:bold;color:var(--az)}
+figure{margin:12px 0;background:#fff;border:1px solid var(--bd);border-radius:12px;overflow:hidden}figure img{width:100%;display:block}figcaption{padding:8px 12px;font-size:13.5px;color:var(--dim);border-top:1px solid var(--bd)}
+.calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.calc label{font-size:13px;color:var(--dim);display:grid;gap:4px}.calc input{font-size:18px;padding:8px 10px;border:2px solid #fca5a5;border-radius:10px;color:var(--r);font-weight:bold}
+.res{background:var(--az);color:#fff;border-radius:12px;padding:14px 16px;margin-top:10px}.res b{font-size:24px;color:#fde7d3}
+ul.ck{list-style:none;padding:0;margin:0}ul.ck li{padding:5px 0 5px 26px;position:relative;font-size:14.5px}ul.ck li:before{content:"✔";position:absolute;left:4px;color:var(--ok);font-weight:bold}
+ul.no li:before{content:"✖";color:var(--r)}
+footer{max-width:1000px;margin:0 auto;padding:16px;color:var(--dim);font-size:12.5px}
+a{color:#1d4ed8}
+@media print{header,.res{-webkit-print-color-adjust:exact;print-color-adjust:exact}figure,.op,.paso,table{break-inside:avoid}}
+</style></head><body>
+<header><div class="in"><img src="../logo_vulcan.jpg" alt="Vulcan Tread"><div><h1>Control de asistencia del personal</h1><p>Propuesta para Vulcan Tread · 26/10/2026 · EMA Data Analytics · BORRADOR para decidir</p></div></div></header>
+<main>
+
+<div class="nota"><b>En una línea:</b> una tablet en la entrada y una tarjeta por empleado. Cada uno pasa su tarjeta al entrar, al salir a comer, al volver y al irse. El sistema registra la hora del servidor (no se puede adelantar ni atrasar), saca una foto en ese momento y arma solo el resumen del mes: faltas, llegadas tarde, horas, horas extra y certificados. <b>El sistema ya está hecho y probado</b>; lo que falta es comprar el equipo y que los dueños definan sus reglas. Lo que figura en <span class="est">rojo</span> es estimado o ejemplo.</div>
+
+<h2>1. Qué problema resuelve</h2>
+<div class="grid2">
+<div class="caja"><h3>Hoy, sin control</h3><ul class="ck no">
+<li>No hay registro firme de a qué hora entra y sale cada uno.</li>
+<li>Las llegadas tarde y las faltas se recuerdan «de memoria».</li>
+<li>Las horas extra se pagan por lo que se dice, no por lo que se registra.</li>
+<li>Los certificados llegan por WhatsApp y se pierden.</li>
+<li>Si hay un reclamo o un juicio por horas extra, la empresa no tiene planillas para mostrar.</li>
+</ul></div>
+<div class="caja"><h3>Con el sistema</h3><ul class="ck">
+<li>Cada marca con hora del servidor y foto: nadie marca por otro.</li>
+<li>Al abrir el sistema aparece quién falta y quién llegó tarde.</li>
+<li>Resumen del mes automático, listo para liquidar sueldos.</li>
+<li>Horas extra calculadas con las reglas de la empresa y aprobadas por la oficina.</li>
+<li>Certificados con foto, aprobados o rechazados, con historial.</li>
+<li>Registro guardado y ordenado, que sirve como respaldo ante un reclamo.</li>
+</ul></div>
+</div>
+<div class="nota"><b>Por qué conviene tenerlo (no solo para controlar):</b> en un juicio por horas extra, si el empleador no muestra los registros de horario, la justicia suele darle la razón al trabajador. La reforma laboral de 2026 creó el <b>banco de horas</b>, que exige un registro confiable de lo trabajado. Y el premio por asistencia del convenio del caucho se calcula por faltas y llegadas tarde: sin registro, no hay forma justa de liquidarlo.</div>
+
+<h2>2. Cómo funciona, paso a paso</h2>
+<div class="paso"><b class="n">1</b><div><b>Tarjeta personal.</b> Cada empleado recibe una tarjeta con su nombre y un código QR (se imprime desde el sistema). Si la pierde, la oficina hace una nueva y la vieja deja de andar.</div></div>
+<div class="paso"><b class="n">2</b><div><b>Marca en la entrada.</b> Pasa la tarjeta por la tablet. El sistema decide solo si es entrada o salida, le muestra un cartel grande («Buen día, Pedro · ENTRADA 07:28») y saca una foto. Si la pasa dos veces seguidas, no la cuenta de nuevo.</div></div>
+<div class="paso"><b class="n">3</b><div><b>Almuerzo.</b> La pasa al salir a comer («volvé a las 13:30») y al volver («almuerzo de 58 min»). Si se pasa del tiempo, queda anotado.</div></div>
+<div class="paso"><b class="n">4</b><div><b>Certificado o aviso.</b> En la misma tablet toca «Presentar certificado», pasa su tarjeta y saca una foto del papel. Llega a la oficina como pendiente. También se puede cargar desde la oficina si llegó por WhatsApp.</div></div>
+<div class="paso"><b class="n">5</b><div><b>Oficina.</b> Ve quién falta hoy, aprueba certificados y horas extra, corrige con motivo si alguien no pudo marcar (queda quién lo hizo) y ve el resumen del mes por empleado.</div></div>
+<div class="paso"><b class="n">6</b><div><b>Reglas de la empresa.</b> Horario, tolerancia, sábado, almuerzo, cómo se cuentan las horas extra, premios y sanciones sugeridas: todo se cambia en pantalla, sin tocar el sistema.</div></div>
+
+<h3>Así se ve (capturas del sistema funcionando, con empleados de prueba)</h3>
+<div class="grid2">
+<figure><img src="img/kiosco.jpg" alt="Pantalla de la tablet"><figcaption>La tablet en la entrada: reloj grande, «Acercá tu tarjeta» y botón para certificados.</figcaption></figure>
+<figure><img src="img/kiosco_res.jpg" alt="Cartel al marcar"><figcaption>Lo que ve el empleado al marcar (ejemplo: volvió tarde del almuerzo).</figcaption></figure>
+</div>
+<figure><img src="img/hoy.jpg" alt="Hoy"><figcaption>Oficina, pestaña «Hoy»: quién está adentro, quién llegó tarde, quién falta, quién tiene certificado o está suspendido.</figcaption></figure>
+<figure><img src="img/mes.jpg" alt="Resumen del mes"><figcaption>Resumen del mes: días trabajados, faltas, tardanzas, almuerzos, horas y horas extra; y el detalle día por día de cada empleado.</figcaption></figure>
+<figure><img src="img/extras.jpg" alt="Horas extra"><figcaption>Horas extra: se calculan solas (al 50% y al 100%) y la oficina decide si se pagan.</figcaption></figure>
+<div>
+<figure><img src="img/sanciones.jpg" alt="Sanciones"><figcaption>Sanciones: el sistema sugiere según las reglas de la empresa; la oficina decide, imprime la nota y registra cuándo se firmó.</figcaption></figure>
+<figure><img src="img/reglas.jpg" alt="Reglas"><figcaption>Reglas: todo configurable (horario, almuerzo, horas extra, premios, sanciones, feriados).</figcaption></figure>
+</div>
+<figure><img src="img/tarjetas.jpg" alt="Tarjetas"><figcaption>Tarjetas con QR listas para imprimir y la hoja de consentimiento para la foto.</figcaption></figure>
+
+<h2>3. Qué hay que comprar</h2>
+<div class="grid2">
+<div class="op rec"><h3>Opción A — solo tablet<span class="tag">Recomendada para empezar</span></h3>
+<p style="margin:4px 0 8px;font-size:14.5px">La cámara frontal de la tablet lee el QR de la tarjeta y saca la foto. No hace falta nada más.</p>
+<div class="big">$434.389</div><div style="font-size:13px;color:var(--dim)">tablet + soporte de pared · precios del 26/10/2026</div></div>
+<div class="op"><h3>Opción B — tablet + lector USB</h3>
+<p style="margin:4px 0 8px;font-size:14.5px">Un lector de códigos lee la tarjeta más rápido, aunque haya poca luz. La cámara de la tablet sigue sacando la foto. Necesita un adaptador para que la tablet cargue con el lector enchufado.</p>
+<div class="big">$582.714</div><div style="font-size:13px;color:var(--dim)">opción A + lector + adaptador</div></div>
+</div>
+<div class="tw" style="margin-top:12px"><table>
+<tr><th>Equipo</th><th>Para qué</th><th class="n">Precio</th><th>Dónde (consultado el 26/10/2026)</th><th>Opción</th></tr>
+<tr><td>Tablet Samsung Galaxy Tab A11 8,7" 4 GB / 64 GB, WiFi</td><td>Pantalla de fichaje, cámara para el QR y la foto</td><td class="n">$319.999</td><td><a href="https://www.fravega.com/p/tablet-samsung-galaxy-tab-a11-8-7-4gb-64gb-90hz-android-15-color-gris-oscuro-22625262/" target="_blank" rel="noopener">Frávega (vende Electro World)</a> · lista $399.999</td><td>A y B</td></tr>
+<tr><td>Soporte de pared para tablet, aluminio, ajustable</td><td>Fijarla en la entrada a la altura justa</td><td class="n">$114.390</td><td><a href="https://www.fravega.com/p/lucrave-soporte-pared-tablet-aluminio-ajustable-23015082/" target="_blank" rel="noopener">Frávega (Lucrave, vende Glic)</a></td><td>A y B</td></tr>
+<tr><td>Lector de códigos 2D USB (lee QR, también en pantallas)</td><td>Leer la tarjeta más rápido</td><td class="n">$49.000</td><td>insidesystem.com.ar (Global BS-COM-2DUSB, garantía 12 meses, quedaba 1)</td><td>B</td></tr>
+<tr><td>Adaptador USB-C con carga (hub Nisuta NSUH04CC, PD 100 W)</td><td>Que la tablet cargue con el lector enchufado</td><td class="n">$99.325</td><td><a href="https://www.fravega.com/p/hub-usb-c-3-1-de-4-puertos-incluyendo-pd-port-de-100w-nisuta-nsuh04cc-20279327/" target="_blank" rel="noopener">Frávega (vende Nisuta)</a></td><td>B</td></tr>
+<tr><td>Impresión y plastificado de 10 tarjetas</td><td>Tarjetas de los empleados</td><td class="n est">a cotizar</td><td>Imprenta o librería de Salta. El sistema las arma listas para imprimir.</td><td>A y B</td></tr>
+<tr class="tot"><td colspan="2">Total opción A</td><td class="n">$434.389</td><td colspan="2">+ tarjetas</td></tr>
+<tr class="tot"><td colspan="2">Total opción B</td><td class="n">$582.714</td><td colspan="2">+ tarjetas</td></tr>
+</table></div>
+<div class="nota"><b>Otros lectores encontrados:</b> Nictom LCB2600 fijo 2D USB a $99.999 en <a href="https://www.fravega.com/p/lector-codigo-de-barras-comercial-2d-usb-nictom-lcb2600-21923647/" target="_blank" rel="noopener">Frávega</a>, y un escáner 1D/2D USB a $45.013 en todomicro.com.ar. <b>Ya hay WiFi en la entrada.</b> <span class="est">Falta confirmar que haya un enchufe cerca.</span> <span class="est">A probar antes de comprar la opción B:</span> que esa tablet reconozca el lector y cargue a la vez por el adaptador.</div>
+<div class="caja"><b>Recomendación:</b> comprar la <b>opción A</b> y usarla una semana. Si la lectura con la cámara resulta lenta (poca luz, tarjetas gastadas), recién ahí agregar el lector y el adaptador (<b>$148.325</b> más). Así no se gasta en algo que quizás no haga falta. <span class="est">La lectura con la cámara todavía no se probó en una tablet real</span>: es lo primero que se prueba al comprarla.</div>
+
+<h2>4. Cuánto se pierde hoy (calculadora)</h2>
+<div class="nota">No tenemos el dato real de cuánto tiempo se pierde hoy. Los valores en rojo son <b>ejemplos</b>: cambialos por los de la empresa y la cuenta se hace sola.</div>
+<div class="caja">
+<div class="calc">
+<label>Empleados<input id="c-emp" type="number" value="10" min="1"></label>
+<label>Minutos perdidos por empleado por día (llegadas tarde, almuerzos largos, salidas antes)<input id="c-min" type="number" value="10" min="0"></label>
+<label>Días trabajados por mes<input id="c-dias" type="number" value="24" min="1"></label>
+<label>Costo de una hora de un empleado, con cargas ($)<input id="c-hora" type="number" value="7000" min="0"></label>
+</div>
+<div class="res">Tiempo pagado y no trabajado por mes: <b id="r-h">—</b><br>Cuesta por mes: <b id="r-m">—</b> · por año: <b id="r-a">—</b><br>La opción A se paga sola en: <b id="r-p">—</b></div>
+</div>
+
+<h2>5. Lo que tienen que decidir los dueños</h2>
+<div class="tw"><table>
+<tr><th>Regla</th><th>Cargado hoy</th><th>Estado</th></tr>
+<tr><td>Horario lunes a viernes</td><td>7:30 a 17:30</td><td>Confirmado</td></tr>
+<tr><td>Sábado</td><td>7:30 a 12:00</td><td class="est">Supuesto (medio día)</td></tr>
+<tr><td>Tolerancia para llegar</td><td>10 minutos</td><td>Confirmado (10 a 15)</td></tr>
+<tr><td>Almuerzo</td><td>60 min, se marca al salir y al volver</td><td>Confirmado (1 hora); horario 11:30 a 14:30 <span class="est">supuesto</span></td></tr>
+<tr><td>Horas extra</td><td>Desde 30 min, en bloques de 30, las aprueba la oficina</td><td class="est">Ejemplo</td></tr>
+<tr><td>Premio por asistencia</td><td>Escala del convenio del caucho (CCT 231/75)</td><td class="est">Verificar con el texto del convenio y cargar el monto</td></tr>
+<tr><td>Sanciones sugeridas</td><td>3 tardanzas → apercibimiento; 5 → 1 día de suspensión…</td><td class="est">Ejemplo</td></tr>
+</table></div>
+
+<h2>6. Lo legal (resumen, a revisar con el abogado laboral)</h2>
+<div class="caja"><ul class="ck">
+<li><b>Foto al marcar:</b> aviso por escrito y consentimiento firmado de cada empleado (Ley 25.326 de datos personales). La hoja ya sale impresa del sistema. No se usa reconocimiento facial.</li>
+<li><b>Llegadas tarde:</b> no se pueden cobrar multas (art. 67 LCT). El sistema muestra el tiempo no trabajado, no una multa.</li>
+<li><b>Sanciones:</b> por escrito, proporcionales; el empleado tiene 30 días para cuestionarlas; las suspensiones no pueden pasar de 30 días en el año. El sistema controla el tope y el plazo.</li>
+<li><b>Certificados médicos:</b> con la reforma de 2026 deben ser digitales (plataforma registrada). La foto en la tablet sirve para recibirlo y dejar constancia.</li>
+<li><b>Horas extra:</b> 50% día común, 100% sábado después de las 13, domingos y feriados; tope 30 h por mes y 200 por año. El sistema avisa al llegar.</li>
+</ul></div>
+
+<h2>7. Cómo se pone en marcha</h2>
+<div class="paso"><b class="n">1</b><div>Comprar la tablet y el soporte (opción A) e instalarlos en la entrada, cerca de un enchufe.</div></div>
+<div class="paso"><b class="n">2</b><div>Crear el usuario propio de la tablet (solo puede fichar) y dejarla abierta en la pantalla de fichaje.</div></div>
+<div class="paso"><b class="n">3</b><div>Cargar los datos reales de los empleados, imprimir las tarjetas y firmar el consentimiento de la foto.</div></div>
+<div class="paso"><b class="n">4</b><div>Los dueños confirman las reglas: sábado, horas extra, premio y sanciones.</div></div>
+<div class="paso"><b class="n">5</b><div><b>Una semana de prueba en paralelo</b> con el control actual, para corregir lo que haga falta antes de usarlo para sueldos.</div></div>
+<div class="paso"><b class="n">6</b><div>Arranque: desde el día elegido, las faltas se cuentan desde esa fecha (se configura).</div></div>
+
+</main>
+<footer>Fuentes: precios consultados el 26/10/2026 en los sitios indicados (pueden cambiar). Marco legal: Ley de Contrato de Trabajo (arts. 67, 84, 201, 208-210, 218-220), CCT 231/75, Ley 25.326 y Res. AAIP 4/2019, Ley 27.802 (2026), según el relevamiento del 26/10/2026 (no reemplaza el asesoramiento de un abogado laboral). Capturas: sistema de pruebas con empleados de prueba. Preparado por EMA Data Analytics.</footer>
+<script>
+function fmt(n){ return '$' + Math.round(n).toLocaleString('es-AR'); }
+function calc(){
+  var e=+document.getElementById('c-emp').value||0, m=+document.getElementById('c-min').value||0, d=+document.getElementById('c-dias').value||0, h=+document.getElementById('c-hora').value||0;
+  var horas=e*m*d/60, mes=horas*h, anio=mes*12;
+  document.getElementById('r-h').textContent=horas.toLocaleString('es-AR',{maximumFractionDigits:1})+' horas';
+  document.getElementById('r-m').textContent=fmt(mes); document.getElementById('r-a').textContent=fmt(anio);
+  document.getElementById('r-p').textContent= mes>0 ? (434389/mes).toLocaleString('es-AR',{maximumFractionDigits:1})+' meses' : '—';
+}
+['c-emp','c-min','c-dias','c-hora'].forEach(function(id){ document.getElementById(id).addEventListener('input',calc); });
+calc();
+</script>
+</body></html>
