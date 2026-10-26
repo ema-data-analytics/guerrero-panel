@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7fa1f74fb212"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "3d7844e48338"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -12872,8 +12872,7 @@ async function twAjustesGuardar() {
 .cb-r{background:#fee2e2;color:#991b1b}.cb-y{background:#fef9c3;color:#854d0e}.cb-g{background:#dcfce7;color:#166534}.cb-n{background:#eef0f3;color:#4b5563}
 .cb-caja{background:#fff6ee;border-left:4px solid #E8792B;padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:13px;color:#1f2937;line-height:1.45}
 .cb-fila{border:1px solid var(--border);border-radius:12px;background:var(--surface,#fff);margin-bottom:8px;overflow:hidden}
-.cb-cab{display:grid;grid-template-columns:8px minmax(150px,2.2fr) 1fr 1.2fr 1fr 1.3fr;gap:10px;align-items:center;padding:10px 12px 10px 0;cursor:pointer}
-.cb-cab .cb-bar{align-self:stretch;border-radius:0 4px 4px 0}
+.cb-cab{display:grid;grid-template-columns:minmax(150px,2.2fr) 1fr 1.2fr 1fr 1.3fr;gap:10px;align-items:center;padding:10px 12px;cursor:pointer}
 .cb-nom b{font-size:14px}.cb-nom small{display:block;color:var(--dim);font-size:11px}
 .cb-k{font-size:11px;color:var(--dim)}.cb-v{font-size:15px;font-weight:700}
 .cb-f{display:inline-block;border-radius:6px;padding:0 6px;font-size:10px;font-weight:800;letter-spacing:.03em}
@@ -12886,7 +12885,7 @@ async function twAjustesGuardar() {
 .cb-form input{font-size:14px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)}
 .cb-par{border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin:8px 0;background:var(--surface,#fff)}
 .cb-par .cb-form label{min-width:170px}
-@media (max-width:700px){.cb-cab{grid-template-columns:8px 1fr 1fr;row-gap:6px}.cb-cab .cb-nom{grid-column:2 / 4}}
+@media (max-width:700px){.cb-cab{grid-template-columns:1fr 1fr;row-gap:6px}.cb-cab .cb-nom{grid-column:1 / 3}}
 .cb-av li{margin:4px 0}
 </style>
 <script>
@@ -12928,11 +12927,11 @@ function cbPintar() {
   if (!d.filas.length) h += '<div class="al">No hay insumos con consumo para calcular.</div>';
   d.filas.forEach(function(f) {
     var col = { r: '#dc2626', y: '#eab308', g: '#16a34a', n: '#9ca3af' }[f.NIVEL], ab = CB_.abierto === f.ID_INSUMO, id = cbEsc(f.ID_INSUMO);
-    h += '<div class="cb-fila" id="cb-f-' + id + '"><div class="cb-cab" onclick="cbAbrir(\'' + id + '\')"><div class="cb-bar" style="background:' + col + '"></div>' +
+    h += '<div class="cb-fila" id="cb-f-' + id + '" style="border-left:6px solid ' + col + '"><div class="cb-cab" onclick="cbAbrir(\'' + id + '\')">' +
       '<div class="cb-nom"><b>' + cbEsc(f.NOMBRE) + '</b><small>' + id + (f.RUBRO ? ' · ' + cbEsc(f.RUBRO) : '') + '</small></div>' +
       '<div><div class="cb-k">Stock</div><div class="cb-v">' + cbN(f.STOCK) + ' ' + cbEsc(f.UNIDAD) + '</div></div>' +
       '<div><div class="cb-k">Gasto por día ' + cbFuente(f) + '</div><div class="cb-v' + (f.FUENTE === 'ESTIMADO' ? ' cb-est' : '') + '">' + (f.CONSUMO_DIA ? cbN(f.CONSUMO_DIA) + ' ' + cbEsc(f.UNIDAD) : '—') + '</div></div>' +
-      '<div><div class="cb-k">Quedan</div><div class="cb-v" style="color:' + col + '">' + (f.DIAS === null ? (f.STOCK <= 0 ? 'SIN STOCK' : '—') : f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's')) + '</div></div>' +
+      '<div><div class="cb-k">Quedan</div><div class="cb-v" style="color:' + col + '">' + (f.STOCK <= 0 ? 'SIN STOCK' : (f.DIAS === null ? '—' : f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's'))) + '</div></div>' +
       '<div><div class="cb-k">Pedir antes del</div><div class="cb-v">' + (f.PEDIR_ANTES ? (f.NIVEL === 'r' ? '<span style="color:#dc2626">¡YA!</span>' : cbFecha(f.PEDIR_ANTES, true)) : '—') + '</div></div></div>' +
       (ab ? cbDetalle(f) : '') + '</div>';
   });
@@ -12970,7 +12969,7 @@ function cbDetalle(f) {
   var id = cbEsc(f.ID_INSUMO), ad = cbAdmin(), dis = ad ? '' : ' disabled', h = '<div class="cb-det">';
   if (f.FUENTE) h += '<div><b>De dónde sale el gasto por día:</b> ' + cbEsc(f.DETALLE) + '.</div>';
   else h += '<div>No hay consumo para calcular: no está en las recetas de base ni tuvo salidas. Si se usa, cargá cuánto se gasta por día.</div>';
-  if (f.DIAS !== null) h += '<div style="margin-top:4px">Con ' + cbN(f.STOCK) + ' ' + cbEsc(f.UNIDAD) + ' alcanza para <b>' + cbN(f.DIAS_TRABAJO) + ' días de trabajo</b>: se acaba el <b>' + cbFecha(f.SE_ACABA, true) + '</b>. El proveedor tarda <b>' + f.DEMORA + ' días</b>' + (f.DEMORA_PROPIA ? '' : ' <span class="cb-est">(supuesto)</span>') + ', así que hay que pedirlo antes del <b>' + cbFecha(f.PEDIR_ANTES, true) + '</b>.</div>';
+  if (f.DIAS !== null) h += '<div style="margin-top:4px">Con ' + cbN(f.STOCK) + ' ' + cbEsc(f.UNIDAD) + ' alcanza para <b>' + cbN(f.DIAS_TRABAJO) + ' días de trabajo</b>: se acaba el <b>' + cbFecha(f.SE_ACABA, true) + '</b>. El proveedor tarda <b>' + f.DEMORA + ' días</b>' + (f.DEMORA_PROPIA ? '' : ' <span class="cb-est">(supuesto)</span>') + (f.NIVEL === 'r' ? ': <b style="color:#dc2626">ya no llega a tiempo, pedilo YA</b>.' : ', así que hay que pedirlo antes del <b>' + cbFecha(f.PEDIR_ANTES, true) + '</b>.') + '</div>';
   if (f.STOCK_MINIMO) h += '<div class="cb-k" style="margin-top:4px">Stock mínimo cargado en Maestros: ' + cbN(f.STOCK_MINIMO) + ' ' + cbEsc(f.UNIDAD) + '</div>';
   h += '<div class="cb-form"><label>Días que tarda el proveedor<input id="cb-dem-' + id + '" inputmode="decimal" value="' + (f.DEMORA_PROPIA ? cbEsc(f.DEMORA) : '') + '" placeholder="' + CB_.d.PARAM.DEMORA + ' (general)"' + dis + '></label>' +
     '<label>Gasto por día (si lo saben)<input id="cb-con-' + id + '" inputmode="decimal" value="' + (f.CONSUMO_CARGADO ? cbN(f.CONSUMO_CARGADO) : '') + '" placeholder="vacío = lo calcula el sistema"' + dis + '></label>' +
@@ -13023,7 +13022,7 @@ async function cobAvisoInicio() {
     if (!r || !r.ok || !(r.rojas + r.amarillas) || !SES || SES.token !== tk) return;
     var li = r.filas.map(function(f) {
       return '<li><b style="color:' + (f.NIVEL === 'r' ? '#dc2626' : '#a16207') + '">' + (f.NIVEL === 'r' ? '🔴 ' : '🟡 ') + cbEsc(f.NOMBRE) + '</b>: ' +
-        (f.DIAS === null ? 'sin stock' : 'quedan ' + f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's') + ' (se acaba el ' + cbFecha(f.SE_ACABA, true) + ')') +
+        (f.STOCK <= 0 ? '<b>sin stock</b>' : f.DIAS === null ? 'sin dato de consumo' : 'quedan ' + f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's') + ' (se acaba el ' + cbFecha(f.SE_ACABA, true) + ')') +
         (f.NIVEL === 'r' ? ' · <b>pedir YA</b>' : ' · pedir antes del ' + cbFecha(f.PEDIR_ANTES, true)) + (f.FUENTE === 'ESTIMADO' ? ' <span class="cb-f cb-fE">ESTIMADO</span>' : '') + '</li>';
     }).join('');
     showModal('<div class="mh"><span class="mt">⚠ Insumos por acabarse</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 cb-av" style="font-size:14px">' +
