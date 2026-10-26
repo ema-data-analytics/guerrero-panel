@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "28754bcb611b"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "1ad53b336c08"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10009,13 +10009,13 @@ function pcPintar() {
   var nNuevos = (d.cascos || []).filter(function(k) { return k.ESTADO === 'NUEVO'; }).length;
   var nDev = d.cubiertas.filter(function(c) { return c.ESTADO === 'RECHAZADA' && !c.FECHA_DEVOLUCION; }).length;
   if (PC_.tab === 'armar' || PC_.tab === 'ots') PC_.tab = 'os';
-  var tabs = [['cascos', '1 · Carga de cascos'], ['otrab', '2 · Órdenes de trabajo' + (nNuevos ? ' (' + nNuevos + ' cascos sin orden)' : '')], ['os', '3 · Órdenes de servicio (' + abiertas + ' en línea' + (n('EN_ESPERA') ? ' · ' + n('EN_ESPERA') + ' esperando' : '') + ')'],
+  var tabs = [['cascos', '1 · Carga de cascos'], ['otrab', '2 · Órdenes de trabajo' + (nNuevos ? ' (' + nNuevos + ' cascos sin orden)' : '')], ['os', '3 · Órdenes de servicio (' + abiertas + ' en línea' + (n('EN_ESPERA') ? ' · ' + n('EN_ESPERA') + ' esperando' : '') + ')'], ['entregas', '4 · Entregas (remitos)'],
     ['rech', 'Rechazadas' + (nDev ? ' (' + nDev + ' a devolver)' : '')], ['costos', 'Costos'], ['herramental', 'Herramental (inner/envelope)'], ['equipos', 'Herramientas y consumibles'], ['alarmas', '⚠ Alarmas'], ['hist', 'Historial'], ['config', 'Configuración'], ['pesaje', '⚖ Pesaje cojín y flux']];
   el.innerHTML = '<div class="page-hd"><div><div class="page-title">Producción por cubierta</div><div class="page-sub">Cada cubierta con su marca grabada: recepción, carga de autoclave, estaciones, insumos reales y costo.</div></div>' +
     '<div class="flex gap2 no-print"><input class="fi" id="pc-marca-q" placeholder="Buscar marca..." style="width:170px"/><button class="btn btn-s" onclick="pcHistorial($v(\'pc-marca-q\'))"><i class="fas fa-search"></i> Vida de la cubierta</button><button class="btn btn-p" onclick="pcAyuda(pcAyudaClave())">❓ Ayuda</button></div></div>' +
     '<div class="tabs mb3">' + tabs.map(function(t) { return '<div class="tab' + (PC_.tab === t[0] ? ' active' : '') + '" onclick="PC_.tab=\'' + t[0] + '\';pcPintar()">' + t[1] + '</div>'; }).join('') + '</div><div id="pc-body"></div>';
   $id('pc-marca-q').addEventListener('keydown', function(e) { if (e.key === 'Enter') pcHistorial(this.value); });
-  ({ recepcion: pcRecepcion, cascos: pcCascos, otrab: pcOTrab, rech: pcRechazadas, armar: pcOS, ots: pcOS, os: pcOS, costos: pcCostos, herramental: pcHerramental, equipos: pcEquipos, alarmas: pcAlarmas, hist: pcHist, config: pcConfig, pesaje: pcPesaje })[PC_.tab]();
+  ({ recepcion: pcRecepcion, cascos: pcCascos, otrab: pcOTrab, rech: pcRechazadas, armar: pcOS, ots: pcOS, os: pcOS, entregas: pcEntregas, costos: pcCostos, herramental: pcHerramental, equipos: pcEquipos, alarmas: pcAlarmas, hist: pcHist, config: pcConfig, pesaje: pcPesaje })[PC_.tab]();
 }
 
 // ================================================================
@@ -10392,7 +10392,7 @@ function pcRechazadas() {
   var cl = Object.keys(porCli).filter(function(k) { return porCli[k].r || porCli[k].c; }).sort(function(a, b) { return porCli[b].r - porCli[a].r || a.localeCompare(b); });
   var h = '<div class="card mb3"><div class="card-hd"><span class="card-title">Por cliente: cuántas no son aptas para precurado</span></div><div class="tw"><table style="font-size:12px" id="pc-r-cli"><thead><tr><th>Cliente</th><th class="tr">Cascos cargados</th><th class="tr">No aptas</th><th class="tr">% no aptas</th><th class="tr">A devolver</th></tr></thead><tbody>' +
     (cl.length ? cl.map(function(k) { var x = porCli[k]; return '<tr><td><b>' + pcEsc(k) + '</b></td><td class="tr mono">' + x.c + '</td><td class="tr mono">' + x.r + '</td><td class="tr mono">' + (x.c ? Math.round(x.r * 100 / x.c) + '%' : '—') + '</td><td class="tr">' + (x.dv ? '<span class="badge b-orange">' + x.dv + '</span>' : '0') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="tc tdim" style="padding:16px">Sin datos todavía.</td></tr>') + '</tbody></table></div></div>';
-  h += '<div class="card"><div class="card-hd"><span class="card-title">Cubiertas no aptas (' + rs.length + ')</span>' + (pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" id="pc-r-dev" onclick="pcDevolver()"><i class="fas fa-truck"></i> Marcar devueltas al cliente</button>' : '') + '</div>' +
+  h += '<div class="card"><div class="card-hd"><span class="card-title">Cubiertas no aptas (' + rs.length + ')</span>' + (pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" id="pc-r-dev" onclick="pcDevolver()"><i class="fas fa-file-alt"></i> Remito de devolución</button>' : '') + '</div>' +
     '<div class="tw"><table style="font-size:12px" id="pc-r-t"><thead><tr><th style="width:30px"></th><th>Fecha</th><th>Cliente</th><th>N° interno</th><th>DOT</th><th>Marca grabada</th><th>Tipo</th><th>Medida</th><th>Trabajo</th><th>Motivo</th><th>Estado</th></tr></thead><tbody>' +
     (rs.length ? rs.map(function(c) { return '<tr><td>' + (c.FECHA_DEVOLUCION ? '' : '<input type="checkbox" class="pc-r-on" data-id="' + c.ID_CUB + '"' + (PC_.dsel[c.ID_CUB] ? ' checked' : '') + '/>') + '</td><td>' + fmtD(+c.FECHA_RECHAZO || +c.FECHA_ESTADO) + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcEsc(c.DOT || '') + '</td><td class="mono"><b>' + pcEsc(c.MARCA) + '</b></td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + '</td>' +
       '<td style="max-width:240px">' + pcEsc(c.MOTIVO_RECHAZO || '') + '</td><td>' + (c.FECHA_DEVOLUCION ? '<span class="badge b-green">Devuelta ' + fmtD(+c.FECHA_DEVOLUCION) + '</span>' : '<span class="badge b-orange">A devolver</span>') + '</td></tr>'; }).join('') : '<tr><td colspan="11" class="tc tdim" style="padding:16px">No hay cubiertas rechazadas.</td></tr>') + '</tbody></table></div></div>';
@@ -10401,8 +10401,11 @@ function pcRechazadas() {
 }
 async function pcDevolver() {
   var ids = Object.keys(PC_.dsel); if (!ids.length) { toast('Tildá las que se devuelven', 'r2'); return; }
-  var r = await gsRun('gsPC_Devolver', ids, ''); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
-  PC_.dsel = {}; toast(r.N + ' devueltas al cliente ✓', 'g'); pcRecargar();
+  var b = $id('pc-r-dev'); if (b) b.disabled = true;
+  try {
+    var r = await gsRun('gsPC_RemitoDevolucion', ids, ''); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    PC_.dsel = {}; toast('Remito ' + r.NROS.join(', ') + ' ✓ · imprimilo: el QR es para cargar la foto firmada', 'g'); await pcRecargar(); pcRemitosLista(r.REMITOS);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
 }
 
 // ── Recepción ──
@@ -10978,22 +10981,79 @@ async function pcCerrarOT() { var id = PC_.ot.ot.ID_OT, r = await gsRun('gsPC_Ce
 async function pcRemitos(idOt) { var r = await gsRun('gsPC_Remitos', idOt); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } if (!(r.REMITOS || []).length) { toast('Esta orden no tiene remitos', 'r2'); return; } pcRemitosLista(r.REMITOS); }
 function pcRemitosLista(rs) {
   window.PC_REM = rs;
-  showModal('<div class="mh"><span class="mt">Remitos de entrega</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><table><thead><tr><th>Remito</th><th>Cliente</th><th class="tr">Terminadas</th><th class="tr">Devueltas sin trabajo</th><th></th></tr></thead><tbody>' +
-    rs.map(function(x, i) { return '<tr><td class="mono"><b>' + pcEsc(x.NRO) + '</b></td><td>' + pcEsc(x.CLIENTE) + '</td><td class="tr">' + x.N_TERMINADAS + '</td><td class="tr">' + x.N_DEVUELTAS + '</td><td><button class="btn btn-p btn-sm" onclick="pcImpRemito(' + i + ')"><i class="fas fa-print"></i> Imprimir</button></td></tr>'; }).join('') +
-    '</tbody></table></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
+  showModal('<div class="mh"><span class="mt">Remitos de entrega</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="tw">' + pcRemTabla(rs) + '</div>' +
+    '<div class="tdim" style="font-size:12px;margin-top:8px">Imprimí el remito: el cliente firma y el chofer escanea el QR con el celular y saca la foto. Ahí queda "Entregado".</div></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
 }
-function pcImpRemito(i) {
+// Rechazadas del cliente que todavía no se devolvieron (para sumarlas al remito)
+function pcRechSinDev(idCli) { return (PC_.d.cubiertas || []).filter(function(c) { return c.ESTADO === 'RECHAZADA' && !c.FECHA_DEVOLUCION && String(c.ID_CLIENTE) === String(idCli); }); }
+function pcRemEstado(x) {
+  return x.ESTADO === 'ENTREGADO' ? '<span class="badge b-green">✓ Entregado ' + fmtD(x.FECHA_ENTREGA) + '</span>' : '<span class="badge b-orange">Falta la foto firmada</span>';
+}
+function pcRemTabla(rs) {
+  return '<table style="font-size:12px" id="pc-rem-t"><thead><tr><th>Remito</th><th>Fecha</th><th>Cliente</th><th>Orden de servicio</th><th class="tr">Terminadas</th><th class="tr">Devueltas</th><th>Estado</th><th></th></tr></thead><tbody>' +
+    (rs.length ? rs.map(function(x, i) {
+      var pend = x.ESTADO !== 'ENTREGADO' ? pcRechSinDev(x.ID_CLIENTE) : [];
+      return '<tr><td class="mono"><b>' + pcEsc(x.NRO) + '</b></td><td>' + fmtD(x.FECHA) + '</td><td>' + pcEsc(x.CLIENTE) + '</td><td class="mono">' + pcEsc(x.NRO_OT || 'devolución') + '</td><td class="tr">' + x.N_TERMINADAS + '</td><td class="tr">' + x.N_DEVUELTAS + '</td><td>' + pcRemEstado(x) + '</td>' +
+        '<td style="white-space:nowrap"><button class="btn btn-p btn-xs" onclick="pcImpRemito(' + i + ')"><i class="fas fa-print"></i> Imprimir</button> ' +
+        (pend.length ? '<button class="btn btn-w btn-xs" onclick="pcRemSumar(' + i + ')">+ Sumar ' + pend.length + (pend.length === 1 ? ' rechazada' : ' rechazadas') + '</button> ' : '') +
+        (x.FOTO_FIRMA ? '<button class="btn btn-s btn-xs" onclick="asVerImg(' + Number(x.FOTO_FIRMA) + ',\'Remito ' + pcEsc(x.NRO) + ' firmado\')">📷 Ver firmado</button>' : '<button class="btn btn-s btn-xs" onclick="pcRemFoto(' + i + ')">📷 Cargar foto</button>') + '</td></tr>';
+    }).join('') : '<tr><td colspan="8" class="tc tdim" style="padding:14px">No hay remitos.</td></tr>') + '</tbody></table>';
+}
+async function pcRemSumar(i) {
+  var x = window.PC_REM[i], pend = pcRechSinDev(x.ID_CLIENTE); if (!pend.length) return;
+  try {
+    var r = await gsRun('gsPC_RemitoSumarRech', x.ID_REMITO, pend.map(function(c) { return c.ID_CUB; }));
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast(r.N + (r.N === 1 ? ' rechazada sumada' : ' rechazadas sumadas') + ' al ' + x.NRO + ' ✓', 'g'); window.PC_REM[i] = r.REMITO; await pcRecargar(); pcRemRefrescar();
+  } catch (e) { toast(e.message, 'r2'); }
+}
+// Carga manual de la foto del remito firmado (si no se usó el QR)
+function pcRemFoto(i) {
+  var x = window.PC_REM[i];
+  var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.setAttribute('capture', 'environment');
+  inp.onchange = function() {
+    var f = inp.files && inp.files[0]; if (!f) return;
+    var rd = new FileReader(); rd.onload = function() { var im = new Image(); im.onload = async function() {
+      try {
+        var data = asComprimir(im, 1600, 0.72);
+        var up = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'REMITO', ref: x.NRO, data: data });
+        if (!up || !up.ok) { toast((up && up.error) || 'No se pudo subir la foto', 'r2'); return; }
+        var r = await gsRun('gsPC_RemitoFoto', x.ID_REMITO, up.id, '');
+        if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+        toast(x.NRO + ' entregado ✓', 'g'); x.ESTADO = 'ENTREGADO'; x.FOTO_FIRMA = up.id; x.FECHA_ENTREGA = Date.now(); pcRemRefrescar();
+      } catch (e) { toast(e.message, 'r2'); }
+    }; im.src = rd.result; }; rd.readAsDataURL(f);
+  };
+  inp.click();
+}
+function pcRemRefrescar() { var t = $id('pc-rem-t'); if (t) t.outerHTML = pcRemTabla(window.PC_REM); }
+function pcRemUrl(x) { return location.origin + location.pathname.replace(/[^\/]*$/, '') + 'firma/?t=' + encodeURIComponent(x.TOKEN_FIRMA || ''); }
+// 4 · Entregas: todos los remitos, primero los que no tienen la foto firmada
+async function pcEntregas() {
+  $id('pc-body').innerHTML = '<div class="tdim" style="padding:16px">Cargando remitos…</div>';
+  var r = await gsRun('gsPC_Remitos', '');
+  var rs = ((r && r.REMITOS) || []).slice().sort(function(a, b) { return (a.ESTADO === 'ENTREGADO' ? 1 : 0) - (b.ESTADO === 'ENTREGADO' ? 1 : 0) || b.FECHA - a.FECHA; });
+  window.PC_REM = rs;
+  var nP = rs.filter(function(x) { return x.ESTADO !== 'ENTREGADO'; }).length;
+  var nR = (PC_.d.cubiertas || []).filter(function(c) { return c.ESTADO === 'RECHAZADA' && !c.FECHA_DEVOLUCION; }).length;
+  $id('pc-body').innerHTML = (nR ? '<div class="al al-y mb3">Hay ' + nR + (nR === 1 ? ' cubierta rechazada' : ' cubiertas rechazadas') + ' sin devolver: sumalas a un remito de abajo o hacé el remito de devolución en "Rechazadas".</div>' : '') +
+    '<div class="card"><div class="card-hd"><span class="card-title">Remitos (' + rs.length + ') · ' + nP + ' sin la foto firmada</span><span class="tdim" style="font-size:12px">El remito queda "Entregado" cuando se carga la foto firmada (QR del remito o botón 📷)</span></div><div class="tw">' + pcRemTabla(rs) + '</div></div>';
+}
+}
+async function pcImpRemito(i) {
   var x = window.PC_REM[i]; if (!x) return;
+  var qr = ''; try { if (x.TOKEN_FIRMA) { await asLibQR(); qr = asQRsvg(pcRemUrl(x), 130); } } catch (eq) { qr = ''; }
   var ter = x.ITEMS.filter(function(t) { return t.RESULTADO === 'TERMINADA'; }), dev = x.ITEMS.filter(function(t) { return t.RESULTADO !== 'TERMINADA'; });
   var nInt = {}; (PC_.d.cubiertas || []).forEach(function(c) { nInt[String(c.ID_CUB)] = c.ID_CASCO; });
   var fila = function(t, k) { return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(t.MARCA) + '</b>' + (nInt[String(t.ID_CUB)] ? '<div style="font-size:9px;color:#444">N° int. ' + pcEsc(nInt[String(t.ID_CUB)]) + '</div>' : '') + '</td><td>' + pcEsc(t.DOT) + '</td><td>' + pcEsc(t.MEDIDA) + '</td><td>' + pcEsc(t.FABRICANTE) + '</td><td>' + pcEsc(t.TRABAJO) + (t.REPROCESO ? ' (con corrección)' : '') + pcCambioTrab(t.ID_CUB) + pcParcheRemito(t.ID_CUB) + '</td><td>' + pcEsc(t.OTRAB) + (t.BOLETA ? ' · boleta ' + pcEsc(t.BOLETA) : '') + '</td>' + (t.RESULTADO === 'TERMINADA' ? '' : '<td>' + pcEsc(t.MOTIVO) + '</td>') + '<td class="ck">☐</td></tr>'; };
   var h = pcEncImp('REMITO DE ENTREGA', x.NRO) +
-    '<div class="dat"><div><b>Cliente</b>' + pcEsc(x.CLIENTE) + '</div><div><b>Fecha</b>' + fmtD(x.FECHA) + '</div><div><b>Orden de servicio</b>' + pcEsc(x.NRO_OT) + '</div><div><b>Cubiertas</b>' + x.ITEMS.length + '</div>' +
+    '<div class="dat"><div><b>Cliente</b>' + pcEsc(x.CLIENTE) + '</div><div><b>Fecha</b>' + fmtD(x.FECHA) + '</div><div><b>Orden de servicio</b>' + pcEsc(x.NRO_OT || 'Devolución sin trabajo') + '</div><div><b>Cubiertas</b>' + x.ITEMS.length + '</div>' +
     (x.CUIT ? '<div><b>CUIT</b>' + pcEsc(x.CUIT) + '</div>' : '') + (x.DIRECCION ? '<div><b>Dirección</b>' + pcEsc(x.DIRECCION) + '</div>' : '') + (x.TELEFONO ? '<div><b>Teléfono</b>' + pcEsc(x.TELEFONO) + '</div>' : '') + '</div>' +
     (ter.length ? '<h2>Cubiertas terminadas (' + ter.length + ')</h2><table><thead><tr><th>#</th><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Marca casco</th><th>Trabajo</th><th>Orden de trabajo</th><th class="ck">Recibe</th></tr></thead><tbody>' + ter.map(fila).join('') + '</tbody></table>' : '') +
     (dev.length ? '<h2>Cubiertas que se devuelven sin trabajo (' + dev.length + ')</h2><table><thead><tr><th>#</th><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Marca casco</th><th>Trabajo pedido</th><th>Orden de trabajo</th><th>Motivo</th><th class="ck">Recibe</th></tr></thead><tbody>' + dev.map(fila).join('') + '</tbody></table>' : '') +
     '<div class="nota">Documento interno de entrega de cubiertas del cliente. No válido como factura.</div>' +
-    '<div class="firmas"><div>Entregó (Vulcan Tread)</div><div>Recibió conforme (cliente) · Aclaración y DNI</div></div>';
+    '<div class="firmas"><div>Entregó (Vulcan Tread)</div><div>Recibió conforme (cliente) · Aclaración y DNI</div></div>' +
+    (qr ? '<div style="display:flex;gap:12px;align-items:center;margin-top:18px;border:1px dashed #999;border-radius:8px;padding:8px;page-break-inside:avoid"><div style="width:110px;height:110px">' + qr + '</div><div style="font-size:11px"><b>Al entregar:</b> con el remito firmado, escaneá este código con el celular y sacale una foto. Queda cargado en el sistema.</div></div>' : '');
   pcImprimir('Remito ' + x.NRO + ' ' + x.CLIENTE, h);
 }
 async function pcAnularOT() { var m = prompt('Motivo de la anulación de la OT:'); if (m === null) return; var r = await gsRun('gsPC_AnularOT', PC_.ot.ot.ID_OT, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT anulada: las cubiertas volvieron a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }

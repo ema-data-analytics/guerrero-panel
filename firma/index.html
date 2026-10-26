@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remito firmado · Vulcan Tread</title>
+<style>
+:root { --bg: #f3f4f6; --card: #fff; --tx: #111827; --dim: #6b7280; --ok: #15803d; --err: #b91c1c; --acc: #1d4ed8; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: var(--bg); color: var(--tx); }
+.w { max-width: 480px; margin: 0 auto; padding: 16px; }
+.c { background: var(--card); border-radius: 14px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+h1 { font-size: 20px; margin: 0 0 4px; }
+.dim { color: var(--dim); font-size: 14px; }
+.dat { margin: 14px 0; font-size: 16px; line-height: 1.5; }
+.big { display: block; width: 100%; font-size: 20px; font-weight: 700; padding: 18px; border: 0; border-radius: 12px; background: var(--acc); color: #fff; margin-top: 12px; cursor: pointer; }
+.big.s { background: #e5e7eb; color: var(--tx); }
+.big:disabled { opacity: .5; }
+img.pv { width: 100%; border-radius: 10px; margin-top: 12px; border: 1px solid #ddd; }
+.ok { color: var(--ok); font-size: 22px; font-weight: 700; text-align: center; margin: 18px 0 6px; }
+.err { color: var(--err); font-size: 16px; margin-top: 12px; }
+.logo { font-weight: 700; color: var(--acc); margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="w">
+  <div class="logo">VULCAN TREAD NEUMÁTICOS</div>
+  <div class="c" id="caja"><div class="dim">Cargando el remito…</div></div>
+</div>
+<script>
+// Página pública del QR del remito: solo sirve para cargar la foto del remito firmado de ESE remito, una sola vez.
+var SB = { url: 'https://igxdgivroxmbuolsdagk.supabase.co', key: 'sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G' };
+var TOK = (new URLSearchParams(location.search)).get('t') || '';
+var FOTO = '';
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function rpc(fn, args) {
+  return fetch(SB.url + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: SB.key, Authorization: 'Bearer ' + SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify(args) })
+    .then(function(r) { return r.json(); });
+}
+function comprimir(img, maxLado, calidad) {
+  var w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, maxLado / Math.max(w, h));
+  var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  var d = c.toDataURL('image/jpeg', calidad);
+  if (d.length > 590000 && calidad > 0.4) return comprimir(img, maxLado * 0.8, calidad - 0.1);
+  return d;
+}
+function pintar(r) {
+  if (!r || !r.ok) { $('caja').innerHTML = '<h1>No se encontró el remito</h1><div class="err">' + esc((r && r.error) || 'El código no es válido.') + '</div>'; return; }
+  var cab = '<h1>Remito ' + esc(r.nro) + '</h1><div class="dat"><b>' + esc(r.cliente) + '</b><br>' + esc(r.n) + (r.n == 1 ? ' cubierta' : ' cubiertas') + '</div>';
+  if (r.entregado) { $('caja').innerHTML = cab + '<div class="ok">✓ Ya está entregado</div><div class="dim" style="text-align:center">La foto del remito firmado ya se cargó.</div>'; return; }
+  $('caja').innerHTML = cab +
+    '<div class="dim">Sacale una foto al remito <b>firmado por el cliente</b>, que se lea bien la firma.</div>' +
+    '<input type="file" id="f" accept="image/*" capture="environment" style="display:none">' +
+    '<button class="big" id="b-foto">📷 Sacar la foto</button><img class="pv" id="pv" style="display:none">' +
+    '<button class="big" id="b-env" style="display:none">✓ Enviar</button><div id="msg"></div>';
+  $('b-foto').onclick = function() { $('f').click(); };
+  $('f').onchange = function() {
+    var f = this.files && this.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function() { var im = new Image(); im.onload = function() { FOTO = comprimir(im, 1600, 0.72); $('pv').src = FOTO; $('pv').style.display = ''; $('b-env').style.display = ''; $('b-foto').textContent = '📷 Sacar otra'; $('b-foto').className = 'big s'; }; im.src = rd.result; };
+    rd.readAsDataURL(f);
+  };
+  $('b-env').onclick = function() {
+    if (!FOTO) return;
+    var b = this; b.disabled = true; b.textContent = 'Enviando…';
+    rpc('vt_rem_firma', { tokr: TOK, data: FOTO }).then(function(x) {
+      if (x && x.ok) { $('caja').innerHTML = cab + '<div class="ok">✓ Listo, quedó cargado</div><div class="dim" style="text-align:center">El remito ' + esc(r.nro) + ' figura como entregado.</div>'; return; }
+      b.disabled = false; b.textContent = '✓ Enviar'; $('msg').innerHTML = '<div class="err">' + esc((x && (x.error || x.message)) || 'No se pudo enviar') + '</div>';
+    }, function() { b.disabled = false; b.textContent = '✓ Enviar'; $('msg').innerHTML = '<div class="err">Sin conexión. Probá de nuevo.</div>'; });
+  };
+}
+if (!TOK) pintar({ ok: false, error: 'Falta el código del remito. Escaneá el QR del remito impreso.' });
+else rpc('vt_rem_info', { tokr: TOK }).then(pintar, function() { pintar({ ok: false, error: 'Sin conexión. Probá de nuevo.' }); });
+</script>
+</body>
+</html>
