@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "b7b13b9d9573"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "428be29007a0"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10998,6 +10998,7 @@ async function pcProrratear() {
 .pu-cub{background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px 16px;text-align:left;display:grid;gap:6px;cursor:pointer;color:var(--text)}
 .pu-cub .m{font:700 26px/1 var(--mono)}
 .pu-cub .d{color:var(--dim);font-size:14px}
+.pu-fd{font-size:19px;font-weight:800;color:var(--text);line-height:1.2}.pu-fd .dot{background:#fff3cd;border-radius:6px;padding:1px 6px;font-family:var(--mono)}
 .pu-cub.aca{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
 .pu-cub.hecha{opacity:.55}
 .pu-tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;width:max-content}
@@ -11209,7 +11210,7 @@ function puPintarPanel() {
   var c = puCubD(PU_.pan.cub); if (!c) return puVolver();
   var hechas = (c.ESTACIONES_HECHAS || []).map(String), sig = c.SIGUIENTE ? String(c.SIGUIENTE.ID_ESTACION) : '';
   // Todo en una sola pantalla: cubierta, dónde está, las 10 estaciones (2 filas de 5) y el botón para entrar
-  var h = '<div class="pu-panel-hd"><div style="min-width:0"><div class="m">' + puEsc(c.MARCA) + '</div><div class="tdim" style="font-size:13px">' + puEsc(c.TIPO + ' ' + c.MEDIDA + ' · ' + c.NRO_OT) + '</div></div>' +
+  var h = '<div class="pu-panel-hd"><div style="min-width:0"><div class="m">' + puEsc(c.MARCA) + '</div>' + puFabDot(c) + '<div class="tdim" style="font-size:13px">' + puEsc(c.TIPO + ' ' + c.MEDIDA + ' · ' + c.NRO_OT) + '</div></div>' +
     '<button class="pu-btn pu-back" onclick="puVolver()">← Otra cubierta</button></div>';
   h += '<div class="pu-aca-txt" style="color:' + (sig ? 'var(--accent)' : 'var(--success)') + '">' +
     (sig ? 'ESTÁS ACÁ: ' + puEsc(c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE) : '✓ PASÓ POR LAS 10 ESTACIONES') + '</div>';
@@ -11244,6 +11245,8 @@ function puElegirOS(ots, ids) {
     }).join('') + '</div>';
 }
 // ── 1. Lista de cubiertas ──
+// Marca de fábrica y DOT bien visibles (lo pidió la planta)
+function puFabDot(c) { if (!c || (!c.FABRICANTE && !c.DOT)) return ''; return '<span class="pu-fd">' + puEsc(c.FABRICANTE || '') + (c.DOT ? ' <span class="dot">DOT ' + puEsc(c.DOT) + '</span>' : '') + '</span>'; }
 function puLista() {
   var wrap = document.querySelector('#page-puesto-estacion .pu-wrap'); if (wrap) wrap.classList.remove('pu-enficha');
   puPie(false);
@@ -11269,7 +11272,7 @@ function puLista() {
       var tag = c.SIGUIENTE ? '<span class="pu-tag aca">→ Está en: ' + puEsc(c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE) + '</span>' : '<span class="pu-tag ok">✓ Pasó por todas: lista para terminar</span>';
       if (c.PASADA > 1) tag += '<span class="pu-tag sup">↻ Corrección</span>';
       if (c.REPROCESO) tag += '<span class="pu-tag sup">Viene de reproceso</span>';
-      return '<button class="pu-cub aca" onclick="' + (c.AUTOCLAVE ? 'puAutoclave(' + c.ID_OT + ')' : 'puPanel(' + c.ID_OT + ',' + c.ID_CUB + ')') + '"><span class="m">' + puEsc(c.MARCA) + '</span>' +
+      return '<button class="pu-cub aca" onclick="' + (c.AUTOCLAVE ? 'puAutoclave(' + c.ID_OT + ')' : 'puPanel(' + c.ID_OT + ',' + c.ID_CUB + ')') + '"><span class="m">' + puEsc(c.MARCA) + '</span>' + puFabDot(c) +
         '<span class="d">' + puEsc(c.TIPO + ' ' + c.MEDIDA + ' · ' + c.TRABAJO) + '</span><span class="d">' + puEsc(c.CLIENTE || '') + ' · ' + puEsc(c.NRO_OT) + '</span>' + tag + puMapa(c, true) + '</button>';
     }).join('') + '</div>';
     $id('pu-body').innerHTML = h;
@@ -11284,7 +11287,7 @@ function puLista() {
     else if (c.LE_TOCA) tag = '<span class="pu-tag aca">→ Le toca acá · registrá tiempo y resultado</span>';
     else if (c.PENDIENTES) tag = '<span class="pu-tag esp">Le faltan ' + c.PENDIENTES + ' insumos en otras estaciones</span>';
     else tag = '<span class="pu-tag esp">Sin insumos para cargar acá</span>';
-    return '<button class="pu-cub ' + cls + '" onclick="' + (c.BLOQUEADA ? 'toast(\'Primero tiene que pasar por ' + puEsc(c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE) + '\',\'r2\')' : 'puAbrir(' + c.ID_OT + ',' + c.ID_CUB + ')') + '"><span class="m">' + puEsc(c.MARCA) + '</span>' +
+    return '<button class="pu-cub ' + cls + '" onclick="' + (c.BLOQUEADA ? 'toast(\'Primero tiene que pasar por ' + puEsc(c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE) + '\',\'r2\')' : 'puAbrir(' + c.ID_OT + ',' + c.ID_CUB + ')') + '"><span class="m">' + puEsc(c.MARCA) + '</span>' + puFabDot(c) +
       '<span class="d">' + puEsc(c.TIPO + ' ' + c.MEDIDA + ' · ' + c.TRABAJO) + '</span><span class="d">' + puEsc(c.CLIENTE || '') + ' · ' + puEsc(c.NRO_OT) + '</span>' + tag +
       (c.ROL === 'SUPLENTE' ? '<span class="pu-tag sup">Suplente</span>' : '') + '</button>';
   }).join('') + '</div>';
@@ -11456,7 +11459,7 @@ function puFicha() {
   var mapa = puMapa(puCubD(c.ID_CUB));
   if (mapa && puTodas()) { PU_.pan = { ot: f.ot.ID_OT, cub: c.ID_CUB }; mapa = '<div onclick="puPanel(' + f.ot.ID_OT + ',' + c.ID_CUB + ')" style="cursor:pointer" title="Ver el panel de estaciones">' + mapa + '</div>'; }
   var h = (mapa ? mapa : '') + (puTodas() ? '<div class="pu-h" style="color:var(--accent)">Estás en: ' + puEsc(puNomEst(puE())) + '</div>' : '') +
-    '<div class="pu-ficha"><div><div class="m">' + puEsc(c.MARCA) + '</div><div class="d">' + puEsc(c.TIPO + ' ' + c.MEDIDA + ' · ' + c.TRABAJO + ' · ' + (c.CLIENTE || '')) + ' · ' + puEsc(f.ot.NRO_OT) + '</div></div>';
+    '<div class="pu-ficha"><div><div class="m">' + puEsc(c.MARCA) + '</div>' + puFabDot(c) + '<div class="d">' + puEsc(c.TIPO + ' ' + c.MEDIDA + ' · ' + c.TRABAJO + ' · ' + (c.CLIENTE || '')) + ' · ' + puEsc(f.ot.NRO_OT) + '</div></div>';
   if (f.registro) {
     h += '<button class="pu-btn pu-back" onclick="puVolver()">← Otra cubierta</button></div>';
     var rg = f.registro;
