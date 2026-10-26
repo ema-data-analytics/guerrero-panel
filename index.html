@@ -12065,7 +12065,10 @@ async function puPesaje() {
   var p = PU_.pes; if (!p) return toast('No se pudo leer el pesaje', 'r2');
   PU_.pesExtra = PU_.pesExtra || [];
   (p.OTROS || []).forEach(function(o) { if (PU_.pesExtra.indexOf(o.ID_INSUMO) !== -1) p.ITEMS.push(o); });
-  var h = '<div class="mh"><span class="mt">⚖ Pesaje del día · ' + puEsc(p.HOY.split('-').reverse().join('/')) + '</span><button class="mc" onclick="closeModal();puCargar()">×</button></div><div class="mb2 pu-vent">';
+  var emps = ((PU_.d && PU_.d.empleados) || []).map(function(e) { return e.NOMBRE; });
+  if (PU_.pesOper === undefined) PU_.pesOper = PU_.operF || PU_.oper || '';
+  var h = '<div class="mh"><span class="mt">⚖ Pesaje del día · ' + puEsc(p.HOY.split('-').reverse().join('/')) + '</span><button class="mc" onclick="closeModal();puCargar()">×</button></div><div class="mb2 pu-vent">' +
+    (emps.length ? '<div><div style="font-weight:700;font-size:15px">¿Quién pesa?</div><div style="display:flex;flex-wrap:wrap;gap:6px">' + emps.map(function(n) { return '<button class="pu-chip' + (PU_.pesOper === n ? ' sel' : '') + '" data-n="' + puEsc(n) + '" onclick="PU_.pesOper=this.dataset.n;document.querySelectorAll(\'.pu-pes-op\').forEach(function(b){b.classList.toggle(\'sel\',b.dataset.n===PU_.pesOper)})" >' + puEsc(n) + '</button>'; }).join('').replace(/class="pu-chip/g, 'class="pu-pes-op pu-chip') + '</div></div>' : '');
   if (!p.ITEMS.length) h += '<div class="tdim">En esta estación no se usa ningún insumo que se pese.</div>';
   p.ITEMS.forEach(function(i, k) {
     var P = i.PES, u = puEsc(i.UNIDAD);
@@ -12100,7 +12103,7 @@ async function puPesaje() {
   closeModal(); showModal(h, 'md-lg'); PU_.pesDest = {};
 }
 function puPesDest(k, v) { PU_.pesDest[k] = v; var a = $id('pu-pes-dep-' + k), b = $id('pu-pes-que-' + k); if (a) a.classList.toggle('sel', v === 'DEPOSITO'); if (b) b.classList.toggle('sel', v === 'QUEDA'); }
-function puPesOper(fn) { var emps = ((PU_.d && PU_.d.empleados) || []).map(function(e) { return e.NOMBRE; }); if (!emps.length) return fn(PU_.oper || 'SIN NOMBRE'); puElegir('¿Quién pesa?', emps, fn); }
+function puPesOper(fn) { var emps = ((PU_.d && PU_.d.empleados) || []).map(function(e) { return e.NOMBRE; }); if (!emps.length) return fn(PU_.oper || 'SIN NOMBRE'); if (!PU_.pesOper) return toast('Elegí arriba quién pesa', 'r2'); fn(PU_.pesOper); }
 function puPesIni(k) {
   var i = PU_.pes.ITEMS[k], v = $v('pu-pes-ini-' + k).trim();
   if (v === '' || isNaN(puN(v))) return toast('Poné el peso', 'r2');
