@@ -11499,8 +11499,8 @@ function puFilaHTML(r, k) {
       (PU_.d.herrObligatorio ? '' : '<button class="' + (r.sinNro ? 'sel' : '') + '" data-a="sinnro">Sin número</button>') + '</div>';
   } else {
     if (puSinStock(l) && !r.reemp) h += '<span style="color:var(--danger);font-weight:700">Sin stock en planta</span><button class="pu-btn pu-eq" data-a="otro">↺ Usé otro</button>';
-    if (puPesarCub(r)) h += '<div style="font-weight:700;font-size:15px">⚖ Se pesa en cada cubierta</div><div class="pu-qty"><input inputmode="decimal" data-a="pa" value="' + puEsc(r.pa) + '" placeholder="Antes" aria-label="Peso antes"><span>' + puEsc(l.UNIDAD) + '</span></div>' +
-      '<div class="pu-qty"><input inputmode="decimal" data-a="pz" value="' + puEsc(r.pz) + '" placeholder="Después" aria-label="Peso después"><span>' + puEsc(l.UNIDAD) + '</span></div>';
+    if (puPesarCub(r)) h += '<div style="font-weight:700;font-size:15px">⚖ Se pesa en cada cubierta</div><div class="pu-qty"><b style="font-size:15px;min-width:70px">Antes</b><input inputmode="decimal" data-a="pa" value="' + puEsc(r.pa) + '" placeholder="Antes" aria-label="Peso antes"><span>' + puEsc(l.UNIDAD) + '</span></div>' +
+      '<div class="pu-qty"><b style="font-size:15px;min-width:70px">Después</b><input inputmode="decimal" data-a="pz" value="' + puEsc(r.pz) + '" placeholder="Después" aria-label="Peso después"><span>' + puEsc(l.UNIDAD) + '</span></div>';
     else h += (l.CANTIDAD && !(puSinStock(l) && !r.reemp) ? '<button class="pu-btn pu-eq" data-a="igual">✓ Igual a receta</button>' : '') + '<div class="pu-qty"><input inputmode="decimal" data-a="real" value="' + puEsc(r.real) + '" placeholder="Medí" aria-label="Cantidad medida"><span>' + puEsc(l.UNIDAD) + '</span></div>';
   }
   h += '</div><div class="pu-est">';
