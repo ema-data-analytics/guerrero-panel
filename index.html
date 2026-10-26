@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "4f62214ba63b"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9c6e3ae81e31"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -3229,781 +3229,289 @@ async function sbMigrar() {
 </script>
 
 <script>
-var ventaItems = [];
-var _vtaClientes = [], _vtaAllProds = [], _vtaPrecioMap = {}, _vtaIvaMap = {};
+// ═════════ VENTAS (rehecho 26/10/2026) ═════════
+// Todo se graba en el servidor de una sola vez (gsVTA_Grabar). La numeración es interna hasta que se defina la factura electrónica.
+var _VTA = null, ventaItems = [], _vtaFormas = [];
+var VTA_TIPO_TXT = { FACTURA_A: 'Factura A', FACTURA_B: 'Factura B', PRESUPUESTO: 'Presupuesto', NC_A: 'NC A', NC_B: 'NC B', NC_INTERNA: 'NC interna' };
+var COB_FORMA_TXT = { EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', TARJETA: 'Tarjeta', CHEQUE_TERCERO: 'Cheque', RETENCION: 'Retención' };
+function vEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function vNum(v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; }
+function vR2(n) { return Math.round(n * 100) / 100; }
+function vtaCli(id) { return (_VTA && _VTA.CLIENTES || []).filter(function(c) { return String(c.ID_CLIENTE) === String(id); })[0]; }
+function vtaArt(id) { return (_VTA && _VTA.ARTICULOS || []).filter(function(a) { return String(a.ID) === String(id); })[0]; }
 
 async function renderVentas() {
-  ventaItems = [];
   var el = $id('page-ventas');
-  var _stores=['clientes','bd_articulos','lista_precios_enc','ventas_enc','cajas','metodo_pago','condiciones_iva','numeradores'];
-  var _b;
-  if(isGsMode()){
-    _b=await gsRun('gsBatchLoad',_stores);
-  } else {
-    var _pa=await Promise.all(_stores.map(function(s){return ADB.getAll(s);}));
-    _b={}; _stores.forEach(function(s,i){_b[s]=_pa[i];});
-  }
-  var clientes=_b['clientes']||[], productos=_b['bd_articulos']||[];
-  var listasEnc=_b['lista_precios_enc']||[], ventas=_b['ventas_enc']||[];
-  var _vtaCajas=_b['cajas']||[]; var _vtaMetodos=_b['metodo_pago']||[];
-  var _vtaCondIVA=_b['condiciones_iva']||[];
-  var _numeradores=_b['numeradores']||[];
-  window._vtaCajas=_vtaCajas; window._vtaMetodos=_vtaMetodos;
-  window._vtaNumeradores=_numeradores;
-  var ciMap={}; _vtaCondIVA.forEach(function(c){ciMap[c.ID_CONDICION_IVA]=c;});
-  window._vtaCiMap=ciMap;
-  _vtaClientes=clientes; _vtaAllProds=productos;
-  _vtaPrecioMap={}; _vtaIvaMap={};
-  productos.forEach(function(p){
-    _vtaPrecioMap[String(p.ID_ARTICULO)]=parseFloat(p.PRECIO_VENTA)||0;
-    _vtaIvaMap[String(p.ID_ARTICULO)]=p.IVA_ALICUOTA!==undefined?parseFloat(p.IVA_ALICUOTA):21;
-  });
-  var cajaOpts=_vtaCajas.map(function(c){return '<option value="'+c.ID_CAJA+'">'+c.CAJA_DESC+'</option>';}).join('');
-
+  if (!el) return;
+  el.innerHTML = '<div class="content"><div class="tdim tc" style="padding:30px">Cargando…</div></div>';
+  try { _VTA = await gsRun('gsVTA_Datos'); }
+  catch (e) { el.innerHTML = '<div class="content"><div class="al al-r">No se pudieron cargar las ventas: ' + vEsc(e.message || e) + '</div></div>'; return; }
+  ventaItems = [];
+  _vtaFormas = [];
   el.innerHTML =
-  '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-shopping-cart" style="color:var(--accent)"></i> Ventas</div>' +
-  '<div class="page-sub">FACTURACIÓN · VENTAS_ENC / VENTAS_DET</div></div></div>' +
-  '<div class="content"><div class="g2">' +
-  '<div>' +
-
-  // ── TIPO DE COMPROBANTE ──
-  '<div class="card mb4"><div class="card-hd"><span class="card-title">Tipo de Comprobante</span></div><div class="card-body">' +
-  '<div class="fr">' +
-  '<div class="fg"><label class="fl">Comprobante *</label>' +
-  '<select id="vta-tipo-comp" class="fs" onchange="vtaOnTipoCompChange()" style="font-weight:700">' +
-  '<option value="FACTURA_B">Factura B — Consumidor Final / Monotributo</option>' +
-  '<option value="FACTURA_A">Factura A — Responsable Inscripto</option>' +
-  '<option value="FACTURA_C">Factura C — Emisor Monotributista</option>' +
-  '<option value="PRESUPUESTO">Presupuesto (no va al IVA)</option>' +
-  '<option value="NC_B">Nota de Crédito B</option>' +
-  '<option value="NC_A">Nota de Crédito A</option>' +
-  '</select></div>' +
-  '<div class="fg"><label class="fl">N° Comprobante</label>' +
-  '<input id="vta-nro-comp" class="fi" readonly style="background:#f8faff;font-weight:700;font-family:var(--mono)" placeholder="Se genera al guardar"/>' +
-  '</div></div>' +
-  '<div id="vta-nc-origen-wrap" class="hidden">' +
-  '<div class="fg mt3"><label class="fl">Factura de Origen *</label>' +
-  '<select id="vta-nc-origen" class="fs"><option value="">— Seleccioná primero el cliente —</option></select></div>' +
-  '<div id="vta-nc-tipo-wrap" class="fr mt3">' +
-  '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="radio" name="vta-nc-tipo" value="dev" checked onchange="vtaNcTipoChange()"> Devolución de mercadería</label>' +
-  '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-left:20px"><input type="radio" name="vta-nc-tipo" value="imp" onchange="vtaNcTipoChange()"> Por importe</label>' +
-  '</div></div>' +
-  '</div></div>' +
-
-  // ── ENCABEZADO ──
-  '<div class="card mb4"><div class="card-hd"><span class="card-title">Encabezado</span></div><div class="card-body">' +
-  '<div class="fr mb3">' +
-  '<div class="fg"><label class="fl">Fecha *</label><input id="vta-fecha" class="fi" type="date" value="'+fechaISO(new Date())+'"/></div>' +
-  '<div class="fg"><label class="fl">Lista de Precios</label>' +
-  '<select id="vta-lista" class="fs" onchange="vtaOnListaChange()"><option value="">— Sin lista —</option>' +
-  listasEnc.filter(function(l){return l.ESTADO==='VIGENTE';}).map(function(l){return '<option value="'+l.ID_LISTA+'">'+l.NOMBRE_LISTA+'</option>';}).join('') +
-  '</select></div></div>' +
-  '<div class="fg"><label class="fl">Cliente *</label>' +
-  '<input id="vta-cli-buscar" class="fi" placeholder="Filtrar..." oninput="vtaFiltrarClientes()" style="margin-bottom:4px"/>' +
-  '<select id="vta-cliente" class="fs" onchange="vtaOnClienteChange()"><option value="">— Seleccionar —</option>' +
-  clientes.map(function(c){return '<option value="'+c.ID_CLIENTE+'" data-cond="'+(c.ID_CONDICION_IVA||3)+'">'+c.APELLIDO+' '+c.NOMBRE+'</option>';}).join('') +
-  '</select>' +
-  '<div id="vta-cliente-info" style="margin-top:6px;font-size:11px;color:var(--dim);min-height:18px"></div>' +
-  '</div></div></div>' +
-
-  // ── AGREGAR ÍTEM (se oculta para NC por importe) ──
-  '<div class="card mb4" id="vta-items-card"><div class="card-hd"><span class="card-title">Agregar Ítem</span></div><div class="card-body">' +
-  '<div class="fg mb3"><label class="fl">Tipo de Artículo *</label>' +
-  '<select id="vta-tipo-art" class="fs" onchange="vtaFiltrarPorTipo()">' +
-  '<option value="">— Seleccionar tipo —</option>' +
-  '<option value="RECAPADO">Cubierta Recapada</option>' +
-  '<option value="PRODUCTO">Cubierta Nueva / Producto</option>' +
-  '<option value="SERVICIO">Servicio</option>' +
-  '</select></div>' +
-  '<div class="fg"><label class="fl">Artículo *</label>' +
-  '<input id="vta-prod-buscar" class="fi" placeholder="Filtrar..." oninput="vtaFiltrarProds()" style="margin-bottom:4px"/>' +
-  '<select id="vta-prod" class="fs" onchange="vtaOnProdChange()">' +
-  '<option value="">— Seleccionar tipo primero —</option>' +
-  '</select></div>' +
-  '<div class="fr3">' +
-  '<div class="fg"><label class="fl">Cantidad</label><input id="vta-cant" class="fi" type="number" min="1" value="1" oninput="vtaCalcSubtotal()"/></div>' +
-  '<div class="fg"><label class="fl">Precio Neto s/IVA ($)</label><input id="vta-precio" class="fi" type="number" step="0.01" min="0" oninput="vtaCalcSubtotal()" placeholder="0.00"/></div>' +
-  '<div class="fg"><label class="fl">IVA %</label><select id="vta-iva-alic" class="fs" onchange="vtaCalcSubtotal()"><option value="21">21%</option><option value="10.5">10,5%</option><option value="27">27%</option><option value="2.5">2,5%</option><option value="0">0%</option></select></div>' +
-  '<div class="fg"><label class="fl">Subtotal c/IVA</label><input id="vta-sub" class="fi" readonly style="background:#f0fdf4;font-weight:700"/></div>' +
-  '</div>' +
-  '<div class="g3 mb3" style="background:var(--success-light);padding:10px;border-radius:8px;font-size:12px">' +
-  '<div><span style="color:var(--dim)">Neto:</span> <span id="vta-neto-calc" class="mono" style="font-weight:700">$ 0,00</span></div>' +
-  '<div><span style="color:var(--dim)">IVA:</span> <span id="vta-iva-calc" class="mono" style="font-weight:700;color:var(--success)">$ 0,00</span></div>' +
-  '<div><span style="color:var(--dim)">Total:</span> <span id="vta-total-calc" class="mono" style="font-weight:700">$ 0,00</span></div>' +
-  '</div>' +
-  '<button class="btn btn-p" onclick="vtaAgregarItem()" style="width:100%"><i class="fas fa-plus"></i> Agregar</button>' +
-  '</div></div>' +
-
-  // ── NC POR IMPORTE (se muestra solo para ese tipo) ──
-  '<div class="card mb4 hidden" id="vta-nc-imp-card"><div class="card-hd"><span class="card-title">Nota de Crédito — Por Importe</span></div><div class="card-body">' +
-  '<div class="fg"><label class="fl">Descripción / Concepto *</label><input id="vta-nc-concepto" class="fi" placeholder="Ej: Descuento por devolución parcial"/></div>' +
-  '<div class="fg"><label class="fl">Importe NC ($)</label><input id="vta-nc-importe" class="fi" type="number" step="0.01" min="0" placeholder="0.00" oninput="vtaNcCalcImporte()"/></div>' +
-  '<div style="background:var(--danger-light);padding:10px;border-radius:8px;font-size:12px;margin-top:8px">' +
-  '<span style="color:var(--dim)">Total NC:</span> <span id="vta-nc-total" class="mono" style="font-weight:700;color:var(--danger)">$ 0,00</span>' +
-  '</div></div></div>' +
-
-  // ── LISTA DE ÍTEMS ──
-  '<div class="card mb4"><div class="card-hd"><span class="card-title">Ítems</span><span class="badge b-blue" id="vta-count">0</span></div>' +
-  '<div id="vta-items-list"><div class="tdim tc" style="padding:20px">Sin ítems.</div></div>' +
-  '<div class="card-hd" style="border-top:1px solid var(--border)"><span class="card-title">Total</span>' +
-  '<span class="mono" style="font-size:20px;color:var(--success)" id="vta-total">$ 0,00</span></div>' +
-  '</div>' +
-
-  // ── COBRO ──
-  '<div class="card mb4"><div class="card-hd"><span class="card-title">Cobro</span></div><div class="card-body">' +
-  '<div class="fr mb3">' +
-  '<div class="fg"><label class="fl">Forma de Cobro *</label>' +
-  '<select id="vta-forma-cobro" class="fs" onchange="vtaOnFormaCobroChange()">' +
-  '<option value="CONTADO_EFECTIVO">Contado — Efectivo</option>' +
-  '<option value="CONTADO_TRANSFERENCIA">Contado — Transferencia</option>' +
-  '<option value="CONTADO_CHEQUE">Contado — Cheque</option>' +
-  '<option value="CTA_CTE">Cuenta Corriente (queda pendiente)</option>' +
-  '<option value="MIXTO">Mixto (parte ahora + resto cta cte)</option>' +
-  '</select></div>' +
-  '<div class="fg"><label class="fl">Caja</label>' +
-  '<select id="vta-caja" class="fs"><option value="">— Seleccionar —</option>'+cajaOpts+'</select></div>' +
-  '</div>' +
-  '<div class="fg mb3"><label class="fl">Tipo de Entrega *</label>' +
-  '<select id="vta-tipo-entrega" class="fs">' +
-  '<option value="MOSTRADOR">Mostrador — descuenta stock ahora</option>' +
-  '<option value="REMITO">Con Remito — descuenta stock al entregar</option>' +
-  '</select>' +
-  '<div id="vta-entrega-info" style="margin-top:6px;font-size:11px"></div>' +
-  '</div>' +
-  '<div id="vta-cobro-contado-wrap">' +
-  '<div class="al al-g" style="font-size:12px"><i class="fas fa-check-circle"></i> Se registra el cobro total en caja al guardar.</div>' +
-  '</div>' +
-  '<div id="vta-cobro-cheque-wrap" class="hidden">' +
-  '<div class="fg"><label class="fl">Cheque de cartera</label>' +
-  '<select id="vta-cheque-sel" class="fs"><option value="">— Sin cheque seleccionado —</option></select></div>' +
-  '</div>' +
-  '<div id="vta-cobro-mixto-wrap" class="hidden">' +
-  '<div class="fr">' +
-  '<div class="fg"><label class="fl">Cobro ahora ($)</label><input id="vta-cobro-ahora" class="fi" type="number" step="0.01" min="0" placeholder="0.00" oninput="vtaCalcSaldo()"/></div>' +
-  '<div class="fg"><label class="fl">Saldo cta cte</label><input id="vta-cobro-saldo" class="fi" readonly style="background:#fef2f2;color:var(--danger);font-weight:700"/></div>' +
-  '</div></div>' +
-  '<div id="vta-cobro-ctacte-wrap" class="hidden">' +
-  '<div class="al al-w" style="font-size:12px"><i class="fas fa-user-clock"></i> El total queda pendiente en la cuenta corriente del cliente.</div>' +
-  '</div>' +
-  '</div></div>' +
-
-  // ── BOTÓN GUARDAR ──
-  '<div class="card mb4"><div class="card-body">' +
-  '<button class="btn btn-g btn-xl" onclick="vtaGuardar()" style="width:100%;justify-content:center"><i class="fas fa-save"></i> Guardar Comprobante</button>' +
-  '</div></div>' +
-
-  '</div>' + // fin columna izquierda
-
-  // ── HISTORIAL ──
-  '<div class="card"><div class="card-hd"><span class="card-title">Historial de Ventas</span>' +
-  '<span class="badge b-blue" id="vta-hist-cnt">...</span></div>' +
-  buildFiltroFechas('ventas','vtaRefreshHist()') +
-  '<div class="tw"><table id="tbl-ventas"><thead><tr><th>Fecha</th><th>N° Comp.</th><th>Tipo</th><th>Cliente</th><th>Total</th><th>Cobro</th><th>Estado</th><th></th></tr></thead>' +
-  '<tbody id="vta-hist-body"><tr><td colspan="8" class="tc tdim" style="padding:16px"><i class="fas fa-sync-alt fa-spin"></i> Cargando...</td></tr></tbody>' +
-  '</table></div></div>' +
-
-  '</div></div>';
-
-  setTimeout(function(){vtaRefreshHist(); vtaCargarChequesCartera();},50);
+    '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-shopping-cart" style="color:var(--accent)"></i> Ventas</div>' +
+    '<div class="page-sub">FACTURAS, PRESUPUESTOS Y NOTAS DE CRÉDITO · PUNTO DE VENTA ' + vEsc(_VTA.PUNTO_VENTA) + ' (numeración interna hasta la factura electrónica)</div></div></div>' +
+    '<div class="content"><div class="g2"><div>' +
+    '<div class="card mb4"><div class="card-hd"><span class="card-title">Comprobante</span></div><div class="card-body">' +
+    '<div class="fr"><div class="fg"><label class="fl">Tipo *</label><select id="vta-tipo" class="fs" onchange="vtaTipoCambio()" style="font-weight:700">' +
+    '<option value="FACTURA">Factura (A o B según el cliente)</option><option value="PRESUPUESTO">Presupuesto (no va al IVA)</option><option value="NC">Nota de crédito</option></select></div>' +
+    '<div class="fg"><label class="fl">Fecha *</label><input id="vta-fecha" class="fi" type="date" value="' + fechaISO(new Date()) + '"/></div></div>' +
+    '<div class="fg"><label class="fl">Cliente *</label><input id="vta-cli-buscar" class="fi" placeholder="Buscar por nombre o CUIT…" oninput="vtaFiltrarClientes()" style="margin-bottom:4px"/>' +
+    '<select id="vta-cliente" class="fs" onchange="vtaClienteCambio()"><option value="">— Elegir —</option></select>' +
+    '<div id="vta-cliente-info" style="margin-top:6px;font-size:12px;min-height:18px"></div></div>' +
+    '<div id="vta-nc-wrap" class="hidden"><div class="fg"><label class="fl">Venta a la que se le hace la NC *</label><select id="vta-nc-origen" class="fs"><option value="">— Elegí primero el cliente —</option></select></div>' +
+    '<div class="fr"><label style="display:flex;gap:6px;align-items:center"><input type="radio" name="vta-nc-tipo" value="DEVOLUCION" checked onchange="vtaTipoCambio()"> Devolución de mercadería (vuelve el stock)</label>' +
+    '<label style="display:flex;gap:6px;align-items:center"><input type="radio" name="vta-nc-tipo" value="IMPORTE" onchange="vtaTipoCambio()"> Por importe</label></div></div>' +
+    '</div></div>' +
+    '<div class="card mb4" id="vta-items-card"><div class="card-hd"><span class="card-title">Agregar renglón</span></div><div class="card-body">' +
+    '<div class="fr"><div class="fg"><label class="fl">Qué</label><select id="vta-it-tipo" class="fs" onchange="vtaItTipo()"><option value="ARTICULO">Artículo (cubierta, producto, recapado)</option><option value="SERVICIO">Servicio (texto libre)</option></select></div></div>' +
+    '<div id="vta-it-art"><input id="vta-prod-buscar" class="fi" placeholder="Buscar artículo…" oninput="vtaFiltrarProds()" style="margin-bottom:4px"/>' +
+    '<select id="vta-prod" class="fs" onchange="vtaProdCambio()"><option value="">— Elegir —</option></select></div>' +
+    '<div id="vta-it-serv" class="hidden"><input id="vta-serv" class="fi" placeholder="Ej: Armado y balanceo"/></div>' +
+    '<div class="fr3 mt2"><div class="fg"><label class="fl">Cantidad</label><input id="vta-cant" class="fi" type="number" min="1" value="1"/></div>' +
+    '<div class="fg"><label class="fl">Precio neto s/IVA</label><input id="vta-precio" class="fi" type="number" step="0.01" min="0"/></div>' +
+    '<div class="fg"><label class="fl">Desc. %</label><input id="vta-dto" class="fi" type="number" step="0.01" min="0" value="0"/></div>' +
+    '<div class="fg"><label class="fl">IVA %</label><select id="vta-iva" class="fs"><option value="21">21</option><option value="10.5">10,5</option><option value="27">27</option><option value="0">0</option></select></div></div>' +
+    '<div id="vta-stock-info" class="tdim" style="font-size:11px;min-height:16px"></div>' +
+    '<button class="btn btn-p" onclick="vtaAgregarItem()" style="width:100%"><i class="fas fa-plus"></i> Agregar</button></div></div>' +
+    '<div class="card mb4 hidden" id="vta-ncimp-card"><div class="card-hd"><span class="card-title">Nota de crédito por importe</span></div><div class="card-body">' +
+    '<div class="fg"><label class="fl">Concepto *</label><input id="vta-nc-concepto" class="fi" placeholder="Ej: Bonificación"/></div>' +
+    '<div class="fr"><div class="fg"><label class="fl">Importe total con IVA *</label><input id="vta-nc-importe" class="fi" type="number" step="0.01" min="0" oninput="vtaTotales()"/></div>' +
+    '<div class="fg"><label class="fl">IVA %</label><select id="vta-nc-iva" class="fs"><option value="21">21</option><option value="10.5">10,5</option><option value="0">0</option></select></div></div></div></div>' +
+    '<div class="card mb4"><div class="card-hd"><span class="card-title">Renglones</span><span class="badge b-blue" id="vta-count">0</span></div>' +
+    '<div id="vta-items-list"><div class="tdim tc" style="padding:16px">Sin renglones.</div></div>' +
+    '<div class="card-hd" style="border-top:1px solid var(--border)"><span class="card-title">Total</span><span class="mono" style="font-size:20px;color:var(--success)" id="vta-total">$ 0,00</span></div></div>' +
+    '<div class="card mb4" id="vta-cobro-card"><div class="card-hd"><span class="card-title">Entrega y cobro</span></div><div class="card-body">' +
+    '<div class="fg"><label class="fl">Entrega</label><select id="vta-entrega" class="fs"><option value="MOSTRADOR">Mostrador — sale del stock ahora</option><option value="REMITO">Con remito — sale del stock al entregar</option></select></div>' +
+    '<div class="sec-div">COBRO AHORA (lo que no se cobra queda en la cuenta corriente)</div><div id="vta-formas"></div>' +
+    '<button class="btn btn-s btn-sm" onclick="vtaFormaAgregar()"><i class="fas fa-plus"></i> Agregar forma de cobro</button>' +
+    '<div id="vta-cobro-res" class="mt2" style="font-size:13px"></div></div></div>' +
+    '<div class="fg mb3"><label class="fl">Observaciones</label><input id="vta-obs" class="fi" placeholder="Opcional"/></div>' +
+    '<button class="btn btn-g btn-xl mb4" id="vta-btn-ok" onclick="vtaGuardar()" style="width:100%;justify-content:center"><i class="fas fa-save"></i> Guardar comprobante</button>' +
+    '</div>' +
+    '<div class="card"><div class="card-hd"><span class="card-title">Comprobantes</span><span class="badge b-blue" id="vta-hist-cnt"></span></div>' +
+    buildFiltroFechas('ventas', 'vtaRefreshHist()') +
+    '<div class="tw"><table><thead><tr><th>Fecha</th><th>N°</th><th>Tipo</th><th>Cliente</th><th class="tr">Total</th><th class="tr">Debe</th><th>Estado</th><th></th></tr></thead><tbody id="vta-hist-body"></tbody></table></div></div>' +
+    '</div></div>';
+  vtaFiltrarClientes(); vtaFiltrarProds(); vtaFormaAgregar(); vtaRenderItems(); vtaRefreshHist();
 }
 
-// ── TIPO COMPROBANTE ────────────────────────────────────────
-function vtaOnTipoCompChange() {
-  var tipo = $v('vta-tipo-comp');
-  var esNC = tipo==='NC_A' || tipo==='NC_B' || tipo==='NC_C';
-  var esNcImp = esNC; // se define según radio button
-  var ncOri = $id('vta-nc-origen-wrap');
-  if (ncOri) ncOri.className = esNC ? 'mt3' : 'hidden';
-  if (!esNC) {
-    var card = $id('vta-nc-imp-card');
-    var itemCard = $id('vta-items-card');
-    if (card) card.className = 'card mb4 hidden';
-    if (itemCard) itemCard.className = 'card mb4';
-  }
-  vtaOnClienteChange(); // refresca origen si hay cliente
-}
-
-function vtaNcTipoChange() {
-  var radios = document.querySelectorAll('input[name="vta-nc-tipo"]');
-  var tipo = 'dev';
-  radios.forEach(function(r){ if(r.checked) tipo=r.value; });
-  var ncImpCard = $id('vta-nc-imp-card');
-  var itemsCard = $id('vta-items-card');
-  if (tipo==='imp') {
-    if (ncImpCard) ncImpCard.className = 'card mb4';
-    if (itemsCard) itemsCard.className = 'card mb4 hidden';
-  } else {
-    if (ncImpCard) ncImpCard.className = 'card mb4 hidden';
-    if (itemsCard) itemsCard.className = 'card mb4';
-  }
-}
-
-function vtaNcCalcImporte() {
-  var imp = parseFloat(($id('vta-nc-importe')||{}).value)||0;
-  var el = $id('vta-nc-total'); if(el) el.textContent = fmt(imp);
-}
-
-// ── FORMA DE COBRO ─────────────────────────────────────────
-function vtaOnFormaCobroChange() {
-  var forma = $v('vta-forma-cobro');
-  var wCont  = $id('vta-cobro-contado-wrap');
-  var wCheq  = $id('vta-cobro-cheque-wrap');
-  var wMix   = $id('vta-cobro-mixto-wrap');
-  var wCtc   = $id('vta-cobro-ctacte-wrap');
-  if(wCont) wCont.className = (forma==='CONTADO_EFECTIVO'||forma==='CONTADO_TRANSFERENCIA') ? '' : 'hidden';
-  if(wCheq) wCheq.className = forma==='CONTADO_CHEQUE' ? '' : 'hidden';
-  if(wMix)  wMix.className  = forma==='MIXTO' ? '' : 'hidden';
-  if(wCtc)  wCtc.className  = forma==='CTA_CTE' ? '' : 'hidden';
-}
-
-function vtaCalcSaldo() {
-  var total = ventaItems.reduce(function(s,i){return s+i.SUBTOTAL;},0);
-  var ahora = parseFloat(($id('vta-cobro-ahora')||{}).value)||0;
-  var saldo = $id('vta-cobro-saldo');
-  if(saldo) saldo.value = fmt(Math.max(0,total-ahora));
-}
-
-async function vtaCargarChequesCartera() {
-  try {
-    var cheques = await ADB.getAll('cheques');
-    var enCartera = cheques.filter(function(c){ return c.ESTADO==='EN_CARTERA' && c.TIPO_CHEQUE==='TERCERO'; });
-    var sel = $id('vta-cheque-sel');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">— Sin cheque —</option>' +
-      enCartera.map(function(ch){
-        return '<option value="'+ch.ID_CHEQUE+'">N°'+ch.NRO_CHEQUE+' — '+ch.BANCO+' — '+fmt(ch.IMPORTE)+' — vence '+fmtD(ch.FECHA_ACREDITACION)+'</option>';
-      }).join('');
-  } catch(e) {}
-}
-
-// ── CLIENTE ────────────────────────────────────────────────
+// ── Cliente y tipo ──
 function vtaFiltrarClientes() {
-  var q=(($id('vta-cli-buscar')||{}).value||'').toLowerCase().trim();
-  var sel=$id('vta-cliente'); if(!sel) return;
-  var cur=sel.value;
-  var filtered=q?_vtaClientes.filter(function(c){return ((c.APELLIDO||'')+' '+(c.NOMBRE||'')).toLowerCase().indexOf(q)!==-1;}):_vtaClientes;
-  sel.innerHTML='<option value="">— Seleccionar —</option>'+
-    filtered.map(function(c){return '<option value="'+c.ID_CLIENTE+'" data-cond="'+(c.ID_CONDICION_IVA||3)+'"'+(String(cur)===String(c.ID_CLIENTE)?' selected':'')+'>'+c.APELLIDO+' '+c.NOMBRE+'</option>';}).join('');
-  vtaOnClienteChange();
+  var q = (($id('vta-cli-buscar') || {}).value || '').toLowerCase().trim(), sel = $id('vta-cliente');
+  if (!sel) return;
+  var cur = sel.value, l = (_VTA.CLIENTES || []).filter(function(c) { return !q || (c.NOMBRE + ' ' + c.CUIT).toLowerCase().indexOf(q) !== -1; }).slice(0, 300);
+  sel.innerHTML = '<option value="">— Elegir —</option>' + l.map(function(c) { return '<option value="' + c.ID_CLIENTE + '"' + (String(cur) === String(c.ID_CLIENTE) ? ' selected' : '') + '>' + vEsc(c.NOMBRE) + (c.CUIT ? ' · ' + vEsc(c.CUIT) : '') + '</option>'; }).join('');
+  vtaClienteCambio();
 }
-
-async function vtaOnClienteChange() {
-  var sel=$id('vta-cliente');
-  var info=$id('vta-cliente-info');
-  if(!sel||!info) return;
-  if(!sel.value){info.innerHTML='';return;}
-  var opt=sel.options[sel.selectedIndex];
-  var condId=parseInt(opt&&opt.dataset?opt.dataset.cond:3)||3;
-  var ciMap=window._vtaCiMap||{};
-  var ci=ciMap[condId];
-  if(!ci){info.innerHTML='<span style="color:var(--warn)">⚠ Condición IVA no definida</span>';return;}
-  var fact=ci.TIPOS_FACTURA||'B';
-  var disc=ci.DISCRIMINA?'discrimina IVA':'no discrimina IVA';
-  var color=ci.DISCRIMINA?'var(--accent)':'var(--success)';
-  info.innerHTML='<span style="color:'+color+';font-weight:600"><i class="fas fa-info-circle"></i> '+ci.NOMBRE+'</span> · Factura: <b>'+fact+'</b> · '+disc;
-
-  // Cargar facturas pendientes para NC
-  var tipoComp=$v('vta-tipo-comp');
-  var esNC=tipoComp==='NC_A'||tipoComp==='NC_B'||tipoComp==='NC_C';
-  if(esNC&&sel.value) {
-    try {
-      var pendientes;
-      if(isGsMode()){
-        var res=await gsRun('gsGetPendientesCliente',sel.value);
-        pendientes=(res&&res.pendientes)?res.pendientes:[];
-      } else {
-        var todas=await ADB.getAll('ventas_enc');
-        pendientes=todas.filter(function(v){
-          return String(v.CLIENTE)===String(sel.value)&&v.ESTADO!=='ANULADA'&&(v.ESTADO_COBRO==='PENDIENTE'||v.ESTADO_COBRO==='PARCIAL'||!v.ESTADO_COBRO);
-        });
-      }
-      var ncSel=$id('vta-nc-origen');
-      if(ncSel){
-        ncSel.innerHTML='<option value="">— Seleccioná la factura —</option>'+
-          pendientes.map(function(v){return '<option value="'+v.ID_VENTA+'">'+(v.NRO_COMP||v.ID_VENTA)+' — '+fmtD(v.FECHA)+' — '+fmt(v.TOTAL_VENTA)+'</option>';}).join('');
-      }
-    } catch(e){}
+function vtaClienteCambio() {
+  var c = vtaCli($v('vta-cliente')), info = $id('vta-cliente-info');
+  if (!info) return;
+  if (!c) { info.innerHTML = ''; } else {
+    var t = $v('vta-tipo');
+    info.innerHTML = '<b>' + vEsc(c.COND_NOMBRE || 'Sin condición de IVA') + '</b>' + (t === 'FACTURA' ? ' · corresponde <b>factura ' + c.LETRA + '</b>' : '') +
+      ' · debe <b>' + fmt((_VTA.VENTAS || []).filter(function(v) { return String(v.CLIENTE) === String(c.ID_CLIENTE) && v.ESTADO !== 'ANULADA'; }).reduce(function(s, v) { return s + v.SALDO; }, 0)) + '</b>';
+  }
+  var o = $id('vta-nc-origen');
+  if (o) {
+    var vs = c ? (_VTA.VENTAS || []).filter(function(v) { return String(v.CLIENTE) === String(c.ID_CLIENTE) && v.ESTADO !== 'ANULADA' && v.TIPO_COMP.indexOf('NC') !== 0; }) : [];
+    o.innerHTML = '<option value="">' + (c ? (vs.length ? '— Elegir —' : 'Este cliente no tiene ventas') : '— Elegí primero el cliente —') + '</option>' +
+      vs.map(function(v) { return '<option value="' + v.ID_VENTA + '">' + (VTA_TIPO_TXT[v.TIPO_COMP] || v.TIPO_COMP) + ' ' + vEsc(v.NRO_COMP) + ' · ' + fmtD(v.FECHA) + ' · ' + fmt(v.TOTAL) + '</option>'; }).join('');
   }
 }
+function vtaNcTipo() { var r = document.querySelector('input[name="vta-nc-tipo"]:checked'); return r ? r.value : 'DEVOLUCION'; }
+function vtaTipoCambio() {
+  var t = $v('vta-tipo'), nc = t === 'NC', imp = nc && vtaNcTipo() === 'IMPORTE';
+  $id('vta-nc-wrap').className = nc ? 'mt2' : 'hidden';
+  $id('vta-items-card').className = imp ? 'card mb4 hidden' : 'card mb4';
+  $id('vta-ncimp-card').className = imp ? 'card mb4' : 'card mb4 hidden';
+  $id('vta-cobro-card').className = nc ? 'card mb4 hidden' : 'card mb4';
+  if (nc) { var it = $id('vta-it-tipo'); it.value = 'ARTICULO'; vtaItTipo(); }
+  vtaClienteCambio(); vtaTotales();
+}
 
-// ── PRODUCTOS ───────────────────────────────────────────────
+// ── Renglones ──
+function vtaItTipo() { var s = $v('vta-it-tipo') === 'SERVICIO'; $id('vta-it-art').className = s ? 'hidden' : ''; $id('vta-it-serv').className = s ? '' : 'hidden'; }
 function vtaFiltrarProds() {
-  var q=(($id('vta-prod-buscar')||{}).value||'').toLowerCase().trim();
-  var sel=$id('vta-prod'); if(!sel) return;
-  var cur=sel.value;
-  var filtered=q?_vtaAllProds.filter(function(p){return (p.NOMBRE_ARTICULO||'').toLowerCase().indexOf(q)!==-1;}):_vtaAllProds;
-  sel.innerHTML='<option value="">— Seleccionar —</option>'+
-    filtered.map(function(p){var pr=parseFloat(p.PRECIO_VENTA)||0;return '<option value="'+p.ID_ARTICULO+'"'+(String(cur)===String(p.ID_ARTICULO)?' selected':'')+'>'+p.NOMBRE_ARTICULO+' ['+p.TIPO_ARTICULO+']'+(pr>0?' — '+fmt(pr):'')+'</option>';}).join('');
+  var q = (($id('vta-prod-buscar') || {}).value || '').toLowerCase().trim(), sel = $id('vta-prod');
+  if (!sel) return;
+  var l = (_VTA.ARTICULOS || []).filter(function(a) { return !q || a.NOMBRE.toLowerCase().indexOf(q) !== -1 || String(a.ID).toLowerCase() === q; }).slice(0, 300);
+  sel.innerHTML = '<option value="">— Elegir —</option>' + l.map(function(a) { return '<option value="' + vEsc(a.ID) + '">' + vEsc(a.NOMBRE) + ' [' + vEsc(a.TIPO) + ']' + (a.PRECIO > 0 ? ' — ' + fmt(a.PRECIO) : '') + '</option>'; }).join('');
 }
-
-async function vtaOnListaChange() {
-  var idLista=$v('vta-lista');
-  if(!idLista){_vtaPrecioMap={};_vtaAllProds.forEach(function(p){_vtaPrecioMap[String(p.ID_ARTICULO)]=parseFloat(p.PRECIO_VENTA)||0;});return;}
-  try {
-    var dets;
-    if(isGsMode()){dets=await gsRun('gsGetByIndex','lista_precios_det','ID_LISTA',idLista);}
-    else{dets=await ADB.getByIndex('lista_precios_det','idx_lista',idLista);}
-    var newMap={};
-    dets.forEach(function(d){ if(d.ACTIVO===0||d.ACTIVO==='0') return; newMap[String(d.CODIGO_PRODUCTO)]=parseFloat(d.PRECIO_UNITARIO)||0;});
-    _vtaPrecioMap=newMap;
-    toast('Lista de precios aplicada ✓','g');
-  } catch(e){toast('Error al cargar lista: '+e.message,'r2');}
+function vtaProdCambio() {
+  var a = vtaArt($v('vta-prod')), inf = $id('vta-stock-info');
+  if (!a) { if (inf) inf.textContent = ''; return; }
+  $id('vta-precio').value = a.PRECIO || '';
+  $id('vta-iva').value = String(a.IVA);
+  if (inf) inf.textContent = ['SERVICIO', 'RECAPADO'].indexOf(a.TIPO) !== -1 ? 'No lleva stock' : 'Stock: ' + a.STOCK;
 }
-
-function vtaOnProdChange() {
-  var sel=$id('vta-prod'); if(!sel||!sel.value) return;
-  var p=_vtaPrecioMap[String(sel.value)]||0;
-  var iv=_vtaIvaMap[String(sel.value)]!==undefined?_vtaIvaMap[String(sel.value)]:21;
-  var pi=$id('vta-precio'); if(pi) pi.value=p;
-  var ia=$id('vta-iva-alic');
-  if(ia){ia.value=iv;}
-  vtaCalcSubtotal();
-}
-
-function vtaCalcSubtotal() {
-  var cant=parseFloat(($id('vta-cant')||{}).value)||0;
-  var neto=parseFloat(($id('vta-precio')||{}).value)||0;
-  var alic=parseFloat(($id('vta-iva-alic')||{}).value)||21;
-  var iva=neto*(alic/100);
-  var precio=neto+iva;
-  var si=$id('vta-sub'); if(si) si.value=(cant*precio).toFixed(2);
-  var ne=$id('vta-neto-calc'); if(ne) ne.textContent=fmt(cant*neto);
-  var ie=$id('vta-iva-calc'); if(ie) ie.textContent=fmt(cant*iva);
-  var te=$id('vta-total-calc'); if(te) te.textContent=fmt(cant*precio);
-}
-
-// ── ÍTEMS ───────────────────────────────────────────────────
-function vtaRenderItems() {
-  var total=ventaItems.reduce(function(s,i){return s+i.SUBTOTAL;},0);
-  var cnt=$id('vta-count'); if(cnt) cnt.textContent=ventaItems.length;
-  var tot=$id('vta-total'); if(tot) tot.textContent=fmt(total);
-  var el=$id('vta-items-list'); if(!el) return;
-  if(!ventaItems.length){el.innerHTML='<div class="tdim tc" style="padding:20px">Sin ítems.</div>';vtaCalcSaldo();return;}
-  el.innerHTML='<div class="tw"><table style="font-size:12px"><thead><tr><th>Producto</th><th class="tr">Cant.</th><th class="tr">P.Neto</th><th class="tc">IVA%</th><th class="tr">IVA $</th><th class="tr">P.c/IVA</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody>'+
-    ventaItems.map(function(it,idx){
-      var pnetoUnit=it.CANTIDAD>0?(it.PRECIO_NETO/it.CANTIDAD):0;
-      return '<tr><td style="font-size:11px">'+(it._NOMBRE||it.ID_ARTICULO)+'</td>'+
-        '<td class="mono tr">'+it.CANTIDAD+'</td>'+
-        '<td class="mono tr">'+fmt(pnetoUnit)+'</td>'+
-        '<td class="mono tc"><span class="badge b-green" style="font-size:9px">'+(it.IVA_ALICUOTA||21)+'%</span></td>'+
-        '<td class="mono tr" style="color:var(--success)">'+fmt(it.IVA_MONTO||0)+'</td>'+
-        '<td class="mono tr">'+fmt(it.PRECIO_COBRADO)+'</td>'+
-        '<td class="mono tr tgreen" style="font-weight:700">'+fmt(it.SUBTOTAL)+'</td>'+
-        '<td><button class="btn btn-xs btn-d" onclick="vtaRemoverItem('+idx+')"><i class="fas fa-times"></i></button></td></tr>';
-    }).join('')+'</tbody></table></div>';
-  vtaCalcSaldo();
-}
-
-function vtaRemoverItem(idx){ventaItems.splice(idx,1);vtaRenderItems();}
-
-function vtaFiltrarPorTipo() {
-  var tipo = ($id('vta-tipo-art')||{}).value || '';
-  var sel = $id('vta-prod'); if (!sel) return;
-  var filtrados = tipo ? _vtaAllProds.filter(function(p){ return p.TIPO_ARTICULO === tipo; }) : _vtaAllProds;
-  sel.innerHTML = '<option value="">— Seleccionar —</option>' +
-    filtrados.map(function(p){
-      var pr = parseFloat(p.PRECIO_VENTA)||0;
-      return '<option value="'+p.ID_ARTICULO+'">'+p.NOMBRE_ARTICULO+(pr>0?' — '+fmt(pr):'')+'</option>';
-    }).join('');
-  var buscar = $id('vta-prod-buscar'); if (buscar) buscar.value = '';
-}
-
-async function vtaAgregarItem() {
-  var prodId=$id('vta-prod')?$id('vta-prod').value:'';
-  if(!prodId){toast('Seleccioná artículo','r2');return;}
-  var cant=parseFloat(($id('vta-cant')||{}).value)||1;
-  var neto=parseFloat(($id('vta-precio')||{}).value)||0;
-  if(neto<=0){toast('Ingresá el precio neto','r2');return;}
-  var alic=parseFloat(($id('vta-iva-alic')||{}).value)||21;
-  var ivaUnit=neto*(alic/100);
-  var precioCIVA=neto+ivaUnit;
-  var prodSel=$id('vta-prod');
-  var nombre=prodSel&&prodSel.selectedOptions[0]?prodSel.selectedOptions[0].textContent.replace(/ — \$[\d,\.]+$/,'').trim():prodId;
-  ventaItems.push({
-    ID_DET_VENTA: await nextId('ventas_det','ID_DET_VENTA'),
-    ID_ARTICULO: prodId,
-    CANTIDAD: cant,
-    PRECIO_COBRADO: Math.round(precioCIVA*100)/100,
-    SUBTOTAL: Math.round(cant*precioCIVA*100)/100,
-    IVA_ALICUOTA: alic,
-    PRECIO_NETO: Math.round(cant*neto*100)/100,
-    IVA_MONTO: Math.round(cant*ivaUnit*100)/100,
-    _NOMBRE: nombre
-  });
+function vtaAgregarItem() {
+  var tipo = $v('vta-it-tipo'), cant = vNum($v('vta-cant')), neto = vNum($v('vta-precio')), dto = vNum($v('vta-dto')), iva = vNum($v('vta-iva'));
+  if (!(cant > 0)) { toast('Cantidad no válida', 'r2'); return; }
+  if (!(neto > 0)) { toast('Ingresá el precio neto', 'r2'); return; }
+  var r = { TIPO: tipo, CANT: cant, NETO: neto, DTO: dto, IVA: iva };
+  if (tipo === 'ARTICULO') { var a = vtaArt($v('vta-prod')); if (!a) { toast('Elegí el artículo', 'r2'); return; } r.ID = a.ID; r.NOMBRE = a.NOMBRE; }
+  else { r.NOMBRE = ($v('vta-serv') || '').trim(); if (!r.NOMBRE) { toast('Escribí el servicio', 'r2'); return; } }
+  ventaItems.push(r);
+  $id('vta-cant').value = '1'; $id('vta-precio').value = ''; $id('vta-dto').value = '0'; $id('vta-prod').value = ''; $id('vta-serv').value = ''; $id('vta-stock-info').textContent = '';
   vtaRenderItems();
-  var ps=$id('vta-prod'); if(ps) ps.value='';
-  var cs=$id('vta-cant'); if(cs) cs.value='1';
-  var pi=$id('vta-precio'); if(pi) pi.value='';
-  var si=$id('vta-sub'); if(si) si.value='';
-  var ne=$id('vta-neto-calc'); if(ne) ne.textContent=fmt(0);
-  var ie=$id('vta-iva-calc'); if(ie) ie.textContent=fmt(0);
-  var te=$id('vta-total-calc'); if(te) te.textContent=fmt(0);
+}
+function vtaLinea(r) { var nu = vR2(r.NETO * (1 - r.DTO / 100)), iu = vR2(nu * r.IVA / 100); return { neto: vR2(nu * r.CANT), iva: vR2(iu * r.CANT), sub: vR2((nu + iu) * r.CANT) }; }
+function vtaQuitar(i) { ventaItems.splice(i, 1); vtaRenderItems(); }
+function vtaRenderItems() {
+  var el = $id('vta-items-list');
+  if (!el) return;
+  $id('vta-count').textContent = ventaItems.length;
+  el.innerHTML = !ventaItems.length ? '<div class="tdim tc" style="padding:16px">Sin renglones.</div>' :
+    '<div class="tw"><table style="font-size:12px"><thead><tr><th>Detalle</th><th class="tr">Cant.</th><th class="tr">Neto u.</th><th class="tr">Desc.</th><th class="tc">IVA</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody>' +
+    ventaItems.map(function(r, i) { var l = vtaLinea(r); return '<tr><td>' + vEsc(r.NOMBRE) + '</td><td class="mono tr">' + r.CANT + '</td><td class="mono tr">' + fmt(r.NETO) + '</td><td class="mono tr">' + (r.DTO ? r.DTO + '%' : '') + '</td><td class="tc">' + r.IVA + '%</td><td class="mono tr" style="font-weight:700">' + fmt(l.sub) + '</td><td><button class="btn btn-xs btn-d" onclick="vtaQuitar(' + i + ')"><i class="fas fa-times"></i></button></td></tr>'; }).join('') + '</tbody></table></div>';
+  vtaTotales();
+}
+function vtaTotal() {
+  if ($v('vta-tipo') === 'NC' && vtaNcTipo() === 'IMPORTE') return vR2(vNum($v('vta-nc-importe')));
+  return vR2(ventaItems.reduce(function(s, r) { return s + vtaLinea(r).sub; }, 0));
 }
 
-// ── GUARDAR ─────────────────────────────────────────────────
-async function vtaGuardar() {
-  var fecha=$id('vta-fecha')?$id('vta-fecha').value:'';
-  var cliente=$id('vta-cliente')?$id('vta-cliente').value:'';
-  if(!fecha||!cliente){toast('Fecha y Cliente obligatorios','r2');return;}
+// ── Formas de cobro ──
+function vtaFormaAgregar() { vtaLeerFormas(); _vtaFormas.push({ FORMA: 'EFECTIVO', IMPORTE: '', ID_CAJA: '', DETALLE: '', NRO_CHEQUE: '', BANCO: '', EMISOR: '', CUIT_EMISOR: '', FECHA_COBRO: '', TIPO_CHEQUE: 'IMPRESO' }); vtaPintarFormas(); }
+function vtaFormaQuitar(i) { vtaLeerFormas(); _vtaFormas.splice(i, 1); vtaPintarFormas(); }
+function vtaLeerFormas() { cobLeerFormas(_vtaFormas, 'vf'); }
+function vtaPintarFormas() { cobPintarFormas(_vtaFormas, 'vf', 'vta-formas', 'vtaFormaQuitar', 'vtaFormaRepintar', 'vtaTotales', _VTA.CAJAS); vtaTotales(); }
+function vtaFormaRepintar() { vtaLeerFormas(); vtaPintarFormas(); }
+function vtaTotales() {
+  var tot = vtaTotal(), t = $id('vta-total'); if (t) t.textContent = fmt(tot);
+  var res = $id('vta-cobro-res'); if (!res) return;
+  vtaLeerFormas();
+  var cob = vR2(_vtaFormas.reduce(function(s, f) { return s + vNum(f.IMPORTE); }, 0));
+  res.innerHTML = cob > tot + 0.01 ? '<span style="color:var(--danger)">Se cobra ' + fmt(cob) + ' y el total es ' + fmt(tot) + '</span>' :
+    'Se cobra ahora <b>' + fmt(cob) + '</b> · queda en cuenta corriente <b>' + fmt(vR2(tot - cob)) + '</b>';
+}
 
-  var tipoComp=$v('vta-tipo-comp');
-  var esNC=tipoComp==='NC_A'||tipoComp==='NC_B'||tipoComp==='NC_C';
-
-  // Validar NC
-  var radios=document.querySelectorAll('input[name="vta-nc-tipo"]');
-  var ncTipo='dev';
-  radios.forEach(function(r){if(r.checked) ncTipo=r.value;});
-
-  var total=0;
-  if(esNC&&ncTipo==='imp'){
-    total=parseFloat(($id('vta-nc-importe')||{}).value)||0;
-    if(total<=0){toast('Ingresá el importe de la NC','r2');return;}
-  } else {
-    if(!ventaItems.length){toast('Sin artículos','r2');return;}
-    total=ventaItems.reduce(function(s,i){return s+i.SUBTOTAL;},0);
-    if(total<=0){toast('Total = 0','r2');return;}
-  }
-
-  // Cond IVA del cliente
-  var selCli=$id('vta-cliente');
-  var optCli=selCli?selCli.options[selCli.selectedIndex]:null;
-  var condId=parseInt(optCli&&optCli.dataset?optCli.dataset.cond:3)||3;
-  var ciMap=window._vtaCiMap||{};
-  var ci=ciMap[condId]||{};
-  var tipoFact=(ci.TIPOS_FACTURA||'B').split(',')[0];
-
-  // Obtener numeración
-  var nroComp='SN';
-  try {
-    if(isGsMode()){
-      var nroRes=await gsRun('gsGetNextNroComp',tipoComp,$v('vta-pto-venta')||'00001');
-      if(nroRes&&nroRes.ok) nroComp=nroRes.nroFormateado;
-    } else {
-      // Modo local: simular numeración
-      var nums=await ADB.getAll('numeradores');
-      var numReg=nums.find(function(n){return n.TIPO_COMP===tipoComp;});
-      if(numReg){numReg.ULTIMO_NRO=(numReg.ULTIMO_NRO||0)+1;await ADB.put('numeradores',numReg);nroComp='00001-'+String(numReg.ULTIMO_NRO).padStart(8,'0');}
-    }
-  } catch(e){console.error('Error numeración:',e);}
-
-  // Totales discriminados
-  var totalNeto=0,totalIVA=0;
-  ventaItems.forEach(function(it){
-    var al=it.IVA_ALICUOTA||21;
-    var neto=it.PRECIO_NETO!=null?it.PRECIO_NETO:it.SUBTOTAL/(1+al/100);
-    totalNeto+=neto;
-    totalIVA+=(it.IVA_MONTO!=null?it.IVA_MONTO:(it.SUBTOTAL-neto));
+// Formas de cobro compartidas con Cobranzas
+function cobLeerFormas(arr, p) {
+  arr.forEach(function(f, i) {
+    ['FORMA', 'IMPORTE', 'ID_CAJA', 'DETALLE', 'NRO_CHEQUE', 'BANCO', 'EMISOR', 'CUIT_EMISOR', 'FECHA_COBRO', 'TIPO_CHEQUE'].forEach(function(k) { var e = $id(p + '-' + k + '-' + i); if (e) f[k] = e.value; });
   });
+}
+function cobPintarFormas(arr, p, cont, fQuitar, fRepintar, fTot, cajas) {
+  var el = $id(cont);
+  if (!el) return;
+  el.innerHTML = arr.map(function(f, i) {
+    var id = function(k) { return p + '-' + k + '-' + i; };
+    var h = '<div style="border:1.5px solid var(--border);border-radius:8px;padding:8px;margin-bottom:6px"><div class="fr">' +
+      '<div class="fg"><label class="fl">Forma</label><select id="' + id('FORMA') + '" class="fs" onchange="' + fRepintar + '()">' +
+      Object.keys(COB_FORMA_TXT).map(function(k) { return '<option value="' + k + '"' + (f.FORMA === k ? ' selected' : '') + '>' + COB_FORMA_TXT[k] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="fg"><label class="fl">Importe</label><input id="' + id('IMPORTE') + '" type="number" step="0.01" min="0" class="fi" style="text-align:right" value="' + vEsc(f.IMPORTE) + '" oninput="' + fTot + '()"></div>';
+    if (f.FORMA === 'CHEQUE_TERCERO') {
+      h += '</div><div class="fr"><div class="fg"><label class="fl">Tipo</label><select id="' + id('TIPO_CHEQUE') + '" class="fs"><option value="IMPRESO"' + (f.TIPO_CHEQUE !== 'ECHEQ' ? ' selected' : '') + '>Impreso</option><option value="ECHEQ"' + (f.TIPO_CHEQUE === 'ECHEQ' ? ' selected' : '') + '>eCheq</option></select></div>' +
+        '<div class="fg"><label class="fl">N° *</label><input id="' + id('NRO_CHEQUE') + '" class="fi" value="' + vEsc(f.NRO_CHEQUE) + '"></div>' +
+        '<div class="fg"><label class="fl">Banco *</label><input id="' + id('BANCO') + '" class="fi" value="' + vEsc(f.BANCO) + '"></div>' +
+        '<div class="fg"><label class="fl">Fecha de cobro *</label><input id="' + id('FECHA_COBRO') + '" type="date" class="fi" value="' + vEsc(f.FECHA_COBRO) + '"></div></div>' +
+        '<div class="fr"><div class="fg"><label class="fl">Librador (si no es el cliente)</label><input id="' + id('EMISOR') + '" class="fi" value="' + vEsc(f.EMISOR) + '"></div>' +
+        '<div class="fg"><label class="fl">CUIT librador</label><input id="' + id('CUIT_EMISOR') + '" class="fi" value="' + vEsc(f.CUIT_EMISOR) + '"></div>';
+    } else if (f.FORMA === 'RETENCION') {
+      h += '<div class="fg" style="flex:2"><label class="fl">Retención y N° de certificado *</label><input id="' + id('DETALLE') + '" class="fi" value="' + vEsc(f.DETALLE) + '" placeholder="Ej: IIBB Salta cert. 1234"></div>';
+    } else {
+      h += '<div class="fg"><label class="fl">Entra en la caja</label><select id="' + id('ID_CAJA') + '" class="fs"><option value="">— Elegir —</option>' +
+        (cajas || []).map(function(c) { return '<option value="' + c.ID_CAJA + '"' + (String(f.ID_CAJA) === String(c.ID_CAJA) ? ' selected' : '') + '>' + vEsc(c.CAJA_DESC) + '</option>'; }).join('') + '</select></div>' +
+        '<div class="fg"><label class="fl">Detalle</label><input id="' + id('DETALLE') + '" class="fi" value="' + vEsc(f.DETALLE) + '" placeholder="' + (f.FORMA === 'EFECTIVO' ? 'Opcional' : 'N° de operación') + '"></div>';
+    }
+    return h + '</div><div style="text-align:right"><button class="btn btn-xs btn-s" onclick="' + fQuitar + '(' + i + ')"><i class="fas fa-times"></i> Quitar</button></div></div>';
+  }).join('');
+}
+function cobFormasEnviar(arr) {
+  return arr.filter(function(f) { return vNum(f.IMPORTE) > 0; }).map(function(f) {
+    return { FORMA: f.FORMA, IMPORTE: vR2(vNum(f.IMPORTE)), ID_CAJA: f.ID_CAJA, DETALLE: f.DETALLE, NRO_CHEQUE: f.NRO_CHEQUE, BANCO: f.BANCO, EMISOR: f.EMISOR, CUIT_EMISOR: f.CUIT_EMISOR, FECHA_COBRO: f.FECHA_COBRO, TIPO_CHEQUE: f.TIPO_CHEQUE };
+  });
+}
 
-  // Forma de cobro
-  var formaCobro=$v('vta-forma-cobro');
-  var idCaja=$v('vta-caja');
-  var tipoEntrega=$v('vta-tipo-entrega')||'MOSTRADOR';
-  var cobroAhora=formaCobro==='MIXTO'?(parseFloat(($id('vta-cobro-ahora')||{}).value)||0):
-    (formaCobro==='CTA_CTE'?0:total);
-  var saldoPend=total-cobroAhora;
-  var estadoCobro=cobroAhora>=total?'COBRADO':(cobroAhora>0?'PARCIAL':'PENDIENTE');
-
-  var idVenta=await nextId('ventas_enc','ID_VENTA');
-  var idCompOrigen=$v('vta-nc-origen')||'';
-
-  // Presupuesto no va al IVA
-  var esPresupuesto=tipoComp==='PRESUPUESTO';
-
-  var enc={
-    ID_VENTA: idVenta,
-    FECHA: new Date(fecha+'T00:00:00').getTime(),
-    CLIENTE: cliente,
-    ID_CONDICION_IVA: condId,
-    TIPO_COMP: tipoComp,
-    NRO_COMP: nroComp,
-    PUNTO_VENTA: '00001',
-    ID_COMP_ORIGEN: idCompOrigen,
-    TIPO_FACTURA: tipoFact,
-    NETO_VENTA: Math.round(totalNeto*100)/100,
-    IVA_VENTA: Math.round(totalIVA*100)/100,
-    TOTAL_VENTA: total,
-    ESTADO_COBRO: estadoCobro,
-    SALDO_PENDIENTE: Math.round(saldoPend*100)/100,
-    ESTADO: 'CONFIRMADA',
-    VA_AL_IVA: esPresupuesto?0:1,
-    TIPO_ENTREGA: tipoEntrega,
-    ESTADO_ENTREGA: tipoEntrega==='MOSTRADOR'?'ENTREGADO':'PENDIENTE'
-  };
-
+// ── Guardar ──
+async function vtaGuardar() {
+  var c = vtaCli($v('vta-cliente'));
+  if (!c) { toast('Elegí el cliente', 'r2'); return; }
+  var t = $v('vta-tipo'), d = { FECHA: $v('vta-fecha'), ID_CLIENTE: c.ID_CLIENTE, OBS: $v('vta-obs') };
+  if (t === 'NC') {
+    d.TIPO_COMP = 'NC'; d.ID_COMP_ORIGEN = $v('vta-nc-origen'); d.NC_TIPO = vtaNcTipo();
+    if (!d.ID_COMP_ORIGEN) { toast('Elegí la venta de la NC', 'r2'); return; }
+    if (d.NC_TIPO === 'IMPORTE') { d.NC_IMPORTE = vNum($v('vta-nc-importe')); d.NC_IVA = $v('vta-nc-iva'); d.NC_CONCEPTO = $v('vta-nc-concepto'); }
+  } else {
+    d.TIPO_COMP = t === 'PRESUPUESTO' ? 'PRESUPUESTO' : 'FACTURA_' + c.LETRA;
+    d.TIPO_ENTREGA = $v('vta-entrega');
+    vtaLeerFormas(); d.FORMAS = cobFormasEnviar(_vtaFormas);
+  }
+  if (!(t === 'NC' && d.NC_TIPO === 'IMPORTE')) {
+    if (!ventaItems.length) { toast('Agregá al menos un renglón', 'r2'); return; }
+    d.ITEMS = ventaItems.map(function(r) { return { TIPO: r.TIPO, ID: r.ID || '', NOMBRE: r.NOMBRE, CANT: r.CANT, NETO: r.NETO, DTO: r.DTO, IVA: r.IVA }; });
+  }
+  var b = $id('vta-btn-ok'); if (b) { b.disabled = true; b.innerHTML = 'Grabando…'; }
   try {
-    await ADB.put('ventas_enc',enc);
-
-    // Guardar ítems
-    if(!(esNC&&ncTipo==='imp')){
-      for(var i=0;i<ventaItems.length;i++){
-        var itv=ventaItems[i];
-        var alicV=itv.IVA_ALICUOTA||21;
-        var netoV=itv.PRECIO_NETO!=null?itv.PRECIO_NETO:Math.round(itv.SUBTOTAL/(1+alicV/100)*100)/100;
-        var ivaV=itv.IVA_MONTO!=null?itv.IVA_MONTO:Math.round((itv.SUBTOTAL-netoV)*100)/100;
-        await ADB.put('ventas_det',{
-          ID_DET_VENTA:itv.ID_DET_VENTA,ID_VENTA:idVenta,
-          CODIGO_PRODUCTO:String(itv.ID_ARTICULO),CANTIDAD:itv.CANTIDAD,
-          PRECIO_COBRADO:itv.PRECIO_COBRADO,SUBTOTAL:itv.SUBTOTAL,
-          PRECIO_NETO:netoV,IVA_ALICUOTA:alicV,IVA_MONTO:ivaV,_NOMBRE:itv._NOMBRE
-        });
-
-        // Si es MOSTRADOR → descontar stock automáticamente
-        if(tipoEntrega==='MOSTRADOR'){
-          if(isGsMode()){
-            await gsRun('gsMoverStock',itv.ID_ARTICULO,itv.CANTIDAD,'SALIDA','VENTA_MOSTRADOR',idVenta,nroComp);
-          } else {
-            var artS=await ADB.get('bd_articulos',itv.ID_ARTICULO);
-            if(artS){
-              var stA=parseFloat(artS.STOCK)||0;
-              artS.STOCK=Math.max(0,stA-itv.CANTIDAD);
-              await ADB.put('bd_articulos',artS);
-              await ADB.put('stock_movimientos',{
-                ID_STOCK_MOV:await nextId('stock_movimientos','ID_STOCK_MOV'),
-                FECHA:new Date(fecha+'T00:00:00').getTime(),
-                ID_ARTICULO:itv.ID_ARTICULO,NOMBRE_ARTICULO:itv._NOMBRE||itv.ID_ARTICULO,
-                TIPO_MOV:'SALIDA',CANTIDAD:itv.CANTIDAD,
-                STOCK_ANTES:stA,STOCK_DESPUES:artS.STOCK,
-                ORIGEN:'VENTA_MOSTRADOR',ID_ORIGEN:idVenta,NRO_REMITO:nroComp
-              });
-              _mcDel('bd_articulos');
-            }
-          }
-        }
-      }
-    }
-
-    // Movimiento en caja (si hay cobro ahora)
-    if(cobroAhora>0&&idCaja){
-      var idMovCaja=await nextId('movimientos_caja','ID_MOV_CAJA');
-      var movCajaData={
-        ID_MOV_CAJA:idMovCaja,FECHA:new Date(fecha+'T00:00:00').getTime(),
-        ID_CAJA:idCaja,TIPO_MOV:'INGRESO',
-        CONCEPTO:'Cobro '+tipoComp+' '+nroComp,
-        ORIGEN:'VENTA',ID_ORIGEN:idVenta,IMPORTE:cobroAhora,SALDO_ACUM:0
-      };
-      if(isGsMode()){await gsRun('gsMovCaja',movCajaData);}
-      else{await ADB.put('movimientos_caja',movCajaData);}
-
-      // Si pagó con cheque, actualizar estado del cheque
-      if(formaCobro==='CONTADO_CHEQUE'){
-        var chequeId=$v('vta-cheque-sel');
-        if(chequeId){
-          var chq=await ADB.get('cheques',chequeId);
-          if(chq){chq.ESTADO='DEPOSITADO';await ADB.put('cheques',chq);}
-        }
-      }
-    }
-
-    // Movimiento en cta cte (si queda saldo pendiente)
-    if(saldoPend>0){
-      var idMovCtc=await nextId('cta_cte_clientes','ID_MOV_CTC');
-      var movCtcData={
-        ID_MOV_CTC:idMovCtc,FECHA:new Date(fecha+'T00:00:00').getTime(),
-        ID_CLIENTE:cliente,TIPO:'DEBITO',
-        CONCEPTO:tipoComp+' '+nroComp,
-        ID_COMPROBANTE:idVenta,TIPO_COMP:tipoComp,NRO_COMP:nroComp,
-        IMPORTE:saldoPend,SALDO_ACUM:0
-      };
-      if(isGsMode()){await gsRun('gsMovCtaCte',movCtcData);}
-      else{await ADB.put('cta_cte_clientes',movCtcData);}
-    }
-
-    toast(tipoComp+' '+nroComp+' — '+fmt(total)+' ✓','g');
-    ventaItems=[];
+    var r = await gsRun('gsVTA_Grabar', d);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo grabar', 'r2'); if (b) { b.disabled = false; b.innerHTML = '<i class="fas fa-save"></i> Guardar comprobante'; } return; }
+    toast((VTA_TIPO_TXT[r.TIPO_COMP] || r.TIPO_COMP) + ' ' + r.NRO_COMP + ' — ' + fmt(r.TOTAL) + (r.COBRO ? ' · cobro ' + r.COBRO.NRO_COBRO : '') + ' ✓', 'g');
+    if (typeof _mcDel === 'function') ['ventas_enc', 'ventas_det', 'cta_cte_clientes', 'cobros_enc', 'movimientos_caja', 'cheques', 'bd_articulos'].forEach(function(s) { _mcDel(s); });
     renderVentas();
-  } catch(e){toast('Error: '+e.message,'r2');}
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) { b.disabled = false; b.innerHTML = '<i class="fas fa-save"></i> Guardar comprobante'; } }
 }
 
-// ── ANULAR ─────────────────────────────────────────────────
-async function vtaAnular(id) {
-  var v = await ADB.get('ventas_enc', String(id));
-  if (!v) { toast('No encontrado', 'r2'); return; }
-  var tipoLabel = (v.TIPO_COMP || 'Comprobante') + ' ' + (v.NRO_COMP || id);
-  var msg = 'Anular ' + tipoLabel + '?\n\nSe revertiran:\n- Stock (si fue entrega en mostrador)\n- Cuenta corriente cliente (si quedo saldo)\n- Caja (si hubo cobro registrado)';
-  if (!confirm(msg)) return;
-  try {
-    // 1. Revertir stock (solo si fue MOSTRADOR)
-    if (v.TIPO_ENTREGA === 'MOSTRADOR') {
-      var dets;
-      if (isGsMode()) {
-        dets = await gsRun('gsGetByIndex', 'ventas_det', 'ID_VENTA', String(id));
-      } else {
-        dets = await ADB.getByIndex('ventas_det', 'idx_venta', String(id));
-      }
-      dets = dets || [];
-      for (var i = 0; i < dets.length; i++) {
-        var det = dets[i];
-        var artId = det.CODIGO_PRODUCTO;
-        var cant = parseFloat(det.CANTIDAD) || 0;
-        if (!artId || cant <= 0) continue;
-        if (isGsMode()) {
-          await gsRun('gsMoverStock', artId, cant, 'ENTRADA', 'ANULACION_VENTA', id, 'ANUL-' + String(v.NRO_COMP || id));
-        } else {
-          var art = await ADB.get('bd_articulos', artId);
-          if (art) {
-            var stA = parseFloat(art.STOCK) || 0;
-            art.STOCK = stA + cant;
-            await ADB.put('bd_articulos', art);
-            await ADB.put('stock_movimientos', {
-              ID_STOCK_MOV: await nextId('stock_movimientos', 'ID_STOCK_MOV'),
-              FECHA: Date.now(),
-              ID_ARTICULO: artId,
-              NOMBRE_ARTICULO: det._NOMBRE || artId,
-              TIPO_MOV: 'ENTRADA',
-              CANTIDAD: cant,
-              STOCK_ANTES: stA,
-              STOCK_DESPUES: art.STOCK,
-              ORIGEN: 'ANULACION_VENTA',
-              ID_ORIGEN: id,
-              NRO_REMITO: 'ANUL-' + String(v.NRO_COMP || id)
-            });
-            _mcDel('bd_articulos');
-          }
-        }
-      }
-    }
-    // 2. Revertir cta cte cliente (si quedo saldo pendiente)
-    var saldoPend = parseFloat(v.SALDO_PENDIENTE) || 0;
-    if (saldoPend > 0 && v.CLIENTE) {
-      try {
-        var idMovCtc = await nextId('cta_cte_clientes', 'ID_MOV_CTC');
-        var movCtcAnul = {
-          ID_MOV_CTC: idMovCtc,
-          FECHA: Date.now(),
-          ID_CLIENTE: v.CLIENTE,
-          TIPO: 'CREDITO',
-          CONCEPTO: 'Anulacion ' + tipoLabel,
-          ID_COMPROBANTE: id,
-          TIPO_COMP: 'ANULACION',
-          NRO_COMP: String(v.NRO_COMP || id),
-          IMPORTE: saldoPend,
-          SALDO_ACUM: 0
-        };
-        if (isGsMode()) { await gsRun('gsMovCtaCte', movCtcAnul); }
-        else { await ADB.put('cta_cte_clientes', movCtcAnul); }
-        _mcDel('cta_cte_clientes');
-      } catch (eCtc) { console.error('Error revertir cta cte cliente:', eCtc); }
-    }
-    // 3. Revertir caja — buscar movimiento original por ID_ORIGEN
-    var totalVenta = parseFloat(v.TOTAL_VENTA) || 0;
-    var cobradoAhora = totalVenta - saldoPend;
-    if (cobradoAhora > 0) {
-      try {
-        var movsCaja;
-        if (isGsMode()) {
-          movsCaja = await gsRun('gsGetByIndex', 'movimientos_caja', 'ID_ORIGEN', String(id));
-          movsCaja = movsCaja || [];
-        } else {
-          movsCaja = await ADB.getAll('movimientos_caja');
-        }
-        var movOriginal = null;
-        for (var j = 0; j < movsCaja.length; j++) {
-          if (String(movsCaja[j].ID_ORIGEN) === String(id) && movsCaja[j].ORIGEN === 'VENTA') {
-            movOriginal = movsCaja[j];
-            break;
-          }
-        }
-        var idCajaRev = movOriginal ? movOriginal.ID_CAJA : null;
-        var idMovCaja = await nextId('movimientos_caja', 'ID_MOV_CAJA');
-        var movCajaAnul = {
-          ID_MOV_CAJA: idMovCaja,
-          FECHA: Date.now(),
-          ID_CAJA: idCajaRev,
-          TIPO_MOV: 'EGRESO',
-          CONCEPTO: 'Anulacion ' + tipoLabel,
-          ORIGEN: 'ANULACION_VENTA',
-          ID_ORIGEN: id,
-          IMPORTE: cobradoAhora,
-          SALDO_ACUM: 0
-        };
-        if (isGsMode()) { await gsRun('gsMovCaja', movCajaAnul); }
-        else { await ADB.put('movimientos_caja', movCajaAnul); }
-        _mcDel('movimientos_caja');
-      } catch (eCaja) { console.error('Error revertir caja:', eCaja); }
-    }
-    // 4. Marcar ANULADA
-    v.ESTADO = 'ANULADA';
-    await ADB.put('ventas_enc', v);
-    _mcDel('ventas_enc');
-    toast(tipoLabel + ' — anulado y revertido OK', 'g');
-    vtaRefreshHist();
-  } catch (e) { toast('Error: ' + e.message, 'r2'); }
+// ── Historial, ver y anular ──
+function vtaRefreshHist() {
+  var tb = $id('vta-hist-body'), cnt = $id('vta-hist-cnt');
+  if (!tb || !_VTA) return;
+  var q = (($id('flt-buscar-ventas') || {}).value || '').toLowerCase();
+  var fil = fechaFiltrar(_VTA.VENTAS || [], 'FECHA', ($id('flt-desde-ventas') || {}).value || '', ($id('flt-hasta-ventas') || {}).value || '')
+    .filter(function(v) { var c = vtaCli(v.CLIENTE); return !q || ((c ? c.NOMBRE : '') + ' ' + v.NRO_COMP).toLowerCase().indexOf(q) !== -1; });
+  if (cnt) cnt.textContent = fil.length;
+  tb.innerHTML = !fil.length ? '<tr><td colspan="8" class="tc tdim" style="padding:16px">Sin comprobantes en esas fechas.</td></tr>' : fil.slice(0, 300).map(function(v) {
+    var an = v.ESTADO === 'ANULADA', c = vtaCli(v.CLIENTE), nc = v.TIPO_COMP.indexOf('NC') === 0;
+    return '<tr' + (an ? ' style="opacity:.55"' : '') + '><td class="mono" style="font-size:12px">' + fmtD(v.FECHA) + '</td><td class="mono" style="font-size:11px">' + vEsc(v.NRO_COMP) + '</td>' +
+      '<td><span class="badge ' + (nc ? 'b-warn' : v.TIPO_COMP === 'PRESUPUESTO' ? 'b-gray' : 'b-blue') + '" style="font-size:9px">' + (VTA_TIPO_TXT[v.TIPO_COMP] || v.TIPO_COMP) + '</span></td>' +
+      '<td style="font-size:12px">' + vEsc(c ? c.NOMBRE : v.CLIENTE) + '</td><td class="mono tr" style="font-weight:700">' + (nc ? '-' : '') + fmt(v.TOTAL) + '</td>' +
+      '<td class="mono tr">' + (nc || an ? '' : fmt(v.SALDO)) + '</td>' +
+      '<td><span class="badge ' + (an ? 'b-red' : nc ? 'b-gray' : v.ESTADO_COBRO === 'COBRADO' ? 'b-green' : v.ESTADO_COBRO === 'PARCIAL' ? 'b-warn' : 'b-red') + '" style="font-size:9px">' + (an ? 'ANULADA' : nc ? 'NC' : v.ESTADO_COBRO) + '</span></td>' +
+      '<td style="white-space:nowrap"><button class="btn btn-xs btn-info" onclick="vtaVerDetalle(\'' + v.ID_VENTA + '\')"><i class="fas fa-eye"></i></button>' +
+      (an ? '' : ' <button class="btn btn-xs btn-s" onclick="vtaAnularPedir(\'' + v.ID_VENTA + '\')" title="Anular"><i class="fas fa-ban"></i></button>') + '</td></tr>';
+  }).join('');
 }
-
-// ── VER DETALLE ─────────────────────────────────────────────
 async function vtaVerDetalle(id) {
   try {
-    var v=await ADB.get('ventas_enc',String(id));
-    if(!v){toast('No encontrado','r2');return;}
-    var dets;
-    if(isGsMode()){dets=await gsRun('gsGetByIndex','ventas_det','ID_VENTA',String(id));}
-    else{dets=await ADB.getByIndex('ventas_det','idx_venta',String(id));}
-    var cli=await ADB.get('clientes',String(v.CLIENTE));
-    var nomCli=cli?(cli.APELLIDO+' '+cli.NOMBRE):v.CLIENTE;
-    showModal(
-      '<div class="mh"><span class="mt">'+(v.TIPO_COMP||'Venta')+' '+( v.NRO_COMP||'')+'</span><button class="mc" onclick="closeModal()">×</button></div>'+
-      '<div class="mb2">'+
-      '<div class="fr mb3">'+
-      '<div><span class="tdim" style="font-size:11px">FECHA</span><div class="mono" style="font-weight:700">'+fmtD(v.FECHA)+'</div></div>'+
-      '<div><span class="tdim" style="font-size:11px">CLIENTE</span><div style="font-weight:700">'+nomCli+'</div></div>'+
-      '<div><span class="tdim" style="font-size:11px">ESTADO COBRO</span><div><span class="badge '+(v.ESTADO_COBRO==='COBRADO'?'b-green':v.ESTADO_COBRO==='PARCIAL'?'b-warn':'b-red')+'">'+( v.ESTADO_COBRO||'—')+'</span></div></div>'+
-      '</div>'+
-      '<div class="tw"><table style="font-size:12px"><thead><tr><th>Producto</th><th class="tr">Cant.</th><th class="tr">P.Neto</th><th class="tr">IVA</th><th class="tr">Subtotal</th></tr></thead><tbody>'+
-      (dets||[]).map(function(d){return '<tr><td>'+(d._NOMBRE||d.CODIGO_PRODUCTO)+'</td><td class="mono tr">'+d.CANTIDAD+'</td><td class="mono tr">'+fmt(d.PRECIO_NETO||0)+'</td><td class="mono tr">'+fmt(d.IVA_MONTO||0)+'</td><td class="mono tr tgreen" style="font-weight:700">'+fmt(d.SUBTOTAL)+'</td></tr>';}).join('')+
-      '</tbody></table></div>'+
-      '<div class="div"></div>'+
-      '<div class="flex jb" style="padding:8px 0"><span class="tdim">Neto s/IVA:</span><span class="mono">'+fmt(v.NETO_VENTA||0)+'</span></div>'+
-      '<div class="flex jb" style="padding:8px 0"><span class="tdim">IVA:</span><span class="mono" style="color:var(--success)">'+fmt(v.IVA_VENTA||0)+'</span></div>'+
-      '<div class="flex jb" style="padding:8px 0;font-weight:700;font-size:15px"><span>TOTAL:</span><span class="mono tgreen">'+fmt(v.TOTAL_VENTA)+'</span></div>'+
-      (v.SALDO_PENDIENTE>0?'<div class="al al-w" style="font-size:12px;margin-top:8px">Saldo pendiente: '+fmt(v.SALDO_PENDIENTE)+'</div>':'')+
-      '</div>'+
-      '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>'
-    );
-  } catch(e){toast('Error: '+e.message,'r2');}
+    var r = await gsRun('gsVTA_Detalle', id);
+    if (!r || !r.ok) { toast((r && r.error) || 'No encontrado', 'r2'); return; }
+    var v = r.VENTA;
+    showModal('<div class="mh"><span class="mt">' + (VTA_TIPO_TXT[v.TIPO_COMP] || v.TIPO_COMP) + ' ' + vEsc(v.NRO_COMP) + (v.ESTADO === 'ANULADA' ? ' — ANULADA' : '') + '</span><button class="mc" onclick="closeModal()">×</button></div>' +
+      '<div class="mb2"><div class="fr mb3"><div><span class="tdim" style="font-size:11px">FECHA</span><div class="mono" style="font-weight:700">' + fmtD(v.FECHA) + '</div></div>' +
+      '<div><span class="tdim" style="font-size:11px">CLIENTE</span><div style="font-weight:700">' + vEsc(v.CLIENTE) + (v.CUIT ? ' · ' + vEsc(v.CUIT) : '') + '</div></div>' +
+      '<div><span class="tdim" style="font-size:11px">CARGÓ</span><div>' + vEsc(v.USUARIO || '—') + '</div></div></div>' +
+      (v.ORIGEN ? '<div class="mb2">Sobre <b>' + vEsc(v.ORIGEN) + '</b></div>' : '') +
+      '<div class="tw"><table style="font-size:12px"><thead><tr><th>Detalle</th><th class="tr">Cant.</th><th class="tr">Neto</th><th class="tr">IVA</th><th class="tr">Subtotal</th></tr></thead><tbody>' +
+      r.ITEMS.map(function(i) { return '<tr><td>' + vEsc(i.NOMBRE) + '</td><td class="mono tr">' + i.CANT + '</td><td class="mono tr">' + fmt(i.NETO) + '</td><td class="mono tr">' + fmt(i.IVA) + ' (' + i.IVA_AL + '%)</td><td class="mono tr" style="font-weight:700">' + fmt(i.SUB) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+      '<div class="flex jb mt2"><span class="tdim">Neto</span><span class="mono">' + fmt(v.NETO) + '</span></div><div class="flex jb"><span class="tdim">IVA</span><span class="mono">' + fmt(v.IVA) + '</span></div>' +
+      '<div class="flex jb" style="font-weight:700;font-size:15px"><span>TOTAL</span><span class="mono">' + fmt(v.TOTAL) + '</span></div>' +
+      (v.TIPO_COMP.indexOf('NC') !== 0 ? '<div class="flex jb"><span>Debe</span><span class="mono" style="font-weight:700">' + fmt(v.SALDO) + '</span></div>' : '') +
+      (r.COBROS.length ? '<div class="sec-div mt2">COBROS</div>' + r.COBROS.map(function(c) { return '<div class="flex jb" style="font-size:12px' + (c.ESTADO === 'ANULADO' ? ';opacity:.5' : '') + '"><span>' + vEsc(c.NRO) + ' · ' + fmtD(c.FECHA) + (c.ESTADO === 'ANULADO' ? ' (anulado)' : '') + '</span><span class="mono">' + fmt(c.IMPORTE) + '</span></div>'; }).join('') : '') +
+      (r.NCS.length ? '<div class="sec-div mt2">NOTAS DE CRÉDITO</div>' + r.NCS.map(function(n) { return '<div class="flex jb" style="font-size:12px' + (n.ESTADO === 'ANULADA' ? ';opacity:.5' : '') + '"><span>' + (VTA_TIPO_TXT[n.TIPO] || n.TIPO) + ' ' + vEsc(n.NRO) + (n.ESTADO === 'ANULADA' ? ' (anulada)' : '') + '</span><span class="mono">' + fmt(n.TOTAL) + '</span></div>'; }).join('') : '') +
+      (v.ESTADO === 'ANULADA' ? '<div class="al al-r mt2">Anulada: ' + vEsc(v.MOTIVO_ANULACION) + '</div>' : '') + (v.OBS ? '<div class="tdim mt2" style="font-size:12px">' + vEsc(v.OBS) + '</div>' : '') +
+      '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>', 'md-lg');
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); }
 }
-
-// ── HISTORIAL ───────────────────────────────────────────────
-async function vtaRefreshHist() {
-  var tbody=$id('vta-hist-body'); var cnt=$id('vta-hist-cnt');
-  if(!tbody) return;
-  var ventas=await ADB.getAll('ventas_enc');
-  var clientes=_vtaClientes.length?_vtaClientes:(await ADB.getAll('clientes'));
-  var cm={}; clientes.forEach(function(c){cm[c.ID_CLIENTE]=c;});
-  var todos=ventas.slice().sort(function(a,b){return (b.FECHA||0)-(a.FECHA||0);});
-  var desde=($id('flt-desde-ventas')||{}).value||'';
-  var hasta=($id('flt-hasta-ventas')||{}).value||'';
-  var buscar=($id('flt-buscar-ventas')||{}).value||'';
-  var fil=fechaFiltrar(todos,'FECHA',desde,hasta);
-  if(buscar){var bq=buscar.toLowerCase();fil=fil.filter(function(v){var c=cm[v.CLIENTE];return ((c?(c.APELLIDO+' '+c.NOMBRE):'')+(v.NRO_COMP||'')).toLowerCase().indexOf(bq)!==-1;});}
-  pagInit('ventas',fil,20);
-  if(cnt) cnt.textContent=fil.length+' registros';
-  window['_pagRender_ventas']=function(){
-    var pag=pagGet('ventas');
-    if(!pag.length){tbody.innerHTML='<tr><td colspan="8" class="tc tdim" style="padding:16px">Sin ventas en el periodo.</td></tr>';pagNav('ventas',tbody,window['_pagRender_ventas']);return;}
-    tbody.innerHTML=pag.map(function(v){
-      var an=v.ESTADO==='ANULADA';
-      var cli=cm[v.CLIENTE];
-      var nomCli=cli?(cli.APELLIDO+' '+cli.NOMBRE):(v.CLIENTE||'—');
-      var badgeTipo='b-blue';
-      if(v.TIPO_COMP==='PRESUPUESTO') badgeTipo='b-gray';
-      if(v.TIPO_COMP&&v.TIPO_COMP.indexOf('NC')===0) badgeTipo='b-warn';
-      return '<tr'+(an?' style="opacity:0.5;text-decoration:line-through"':'')+'>'+
-        '<td class="mono" style="font-size:12px">'+fmtD(v.FECHA)+'</td>'+
-        '<td class="mono" style="font-size:11px">'+(v.NRO_COMP||'—')+'</td>'+
-        '<td><span class="badge '+badgeTipo+'" style="font-size:9px">'+(v.TIPO_COMP||'—')+'</span></td>'+
-        '<td style="font-size:12px">'+nomCli+'</td>'+
-        '<td class="mono tr tgreen" style="font-weight:700">'+fmt(v.TOTAL_VENTA)+'</td>'+
-        '<td><span class="badge '+(v.ESTADO_COBRO==='COBRADO'?'b-green':v.ESTADO_COBRO==='PARCIAL'?'b-warn':'b-red')+'" style="font-size:9px">'+(v.ESTADO_COBRO||'PENDIENTE')+'</span></td>'+
-        '<td><span class="badge '+(an?'b-red':'b-green')+'" style="font-size:9px">'+(an?'ANULADA':'OK')+'</span></td>'+
-        '<td style="white-space:nowrap">'+
-        '<button class="btn btn-xs btn-info" onclick="vtaVerDetalle(\''+v.ID_VENTA+'\')" title="Ver"><i class="fas fa-eye"></i></button> '+
-        (an?'':'<button class="btn btn-xs btn-d" onclick="vtaAnular(\''+v.ID_VENTA+'\')" title="Anular"><i class="fas fa-ban"></i></button>')+
-        '</td></tr>';
-    }).join('');
-    pagNav('ventas',tbody,window['_pagRender_ventas']);
-  };
-  window['_pagRender_ventas']();
+function vtaAnularPedir(id) {
+  var v = (_VTA.VENTAS || []).filter(function(x) { return String(x.ID_VENTA) === String(id); })[0];
+  if (!v) return;
+  showModal('<div class="mh"><span class="mt">Anular ' + (VTA_TIPO_TXT[v.TIPO_COMP] || v.TIPO_COMP) + ' ' + vEsc(v.NRO_COMP) + '</span><button class="mc" onclick="closeModal()">×</button></div>' +
+    '<div class="mb2"><div class="al al-w mb3">Vuelve el stock, se revierte la cuenta corriente y, si se cobró en el momento, se anula ese cobro (el dinero sale de la caja y el cheque recibido queda anulado). No se puede si tiene NC o cobros posteriores vigentes.</div>' +
+    '<div class="fg"><label class="fl">Motivo *</label><input id="vta-an-mot" class="fi"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-d" id="vta-an-btn" onclick="vtaAnular(\'' + id + '\')"><i class="fas fa-ban"></i> Anular</button></div>');
+}
+async function vtaAnular(id) {
+  var m = ($v('vta-an-mot') || '').trim();
+  if (!m) { toast('Escribí el motivo', 'r2'); return; }
+  var b = $id('vta-an-btn'); if (b) b.disabled = true;
+  try {
+    var r = await gsRun('gsVTA_Anular', id, m);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo anular', 'r2'); if (b) b.disabled = false; return; }
+    toast(r.NRO_COMP + ' anulado ✓', 'g');
+    if (typeof _mcDel === 'function') ['ventas_enc', 'cta_cte_clientes', 'cobros_enc', 'movimientos_caja', 'cheques', 'bd_articulos'].forEach(function(s) { _mcDel(s); });
+    closeModal(); renderVentas();
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; }
 }
 </script>
 
@@ -6081,399 +5589,148 @@ function chVerDetalle(id) {
 </script>
 
 <script>
+// ═════════ COBRANZAS (rehecho 26/10/2026) ═════════
+// Cobro (recibo) de uno o varios comprobantes del cliente, parcial o total, con varias formas: efectivo, transferencia,
+// tarjeta (entran a la caja elegida), cheque (queda EN CARTERA) y retención. Todo se graba en el servidor (gsCOB_Grabar).
+var _COB = null, _cobFormas = [];
+function cobCli(id) { return (_COB && _COB.CLIENTES || []).filter(function(c) { return String(c.ID_CLIENTE) === String(id); })[0]; }
+function cobPend(v) { return v.ESTADO !== 'ANULADA' && v.TIPO_COMP.indexOf('NC') !== 0 && v.SALDO > 0.005; }
 async function renderCobranzas() {
   var el = $id('page-cobranzas');
   if (!el) return;
-  var _stores = ['clientes','cobros_enc','ventas_enc','cajas','cheques'];
-  var _b;
-  if (isGsMode()) {
-    _b = await gsRun('gsBatchLoad', _stores);
-  } else {
-    var _pa = await Promise.all(_stores.map(function(s){ return ADB.getAll(s); }));
-    _b = {}; _stores.forEach(function(s,i){ _b[s]=_pa[i]; });
-  }
-  var clientes = _b['clientes']||[];
-  var cobros   = _b['cobros_enc']||[];
-  var ventas   = _b['ventas_enc']||[];
-  var cajas    = _b['cajas']||[];
-  var cheques  = _b['cheques']||[];
-  window._cobrClientes = clientes;
-  window._cobrVentas   = ventas;
-  window._cobrCajas    = cajas;
-  window._cobrCheques  = cheques;
-  var cm = {}; clientes.forEach(function(c){ cm[c.ID_CLIENTE]=c; });
-  var cajaOpts = cajas.map(function(c){ return '<option value="'+c.ID_CAJA+'">'+c.CAJA_DESC+'</option>'; }).join('');
-  var chequesCartera = cheques.filter(function(c){ return c.ESTADO==='EN_CARTERA' && c.TIPO_CHEQUE==='TERCERO'; });
-  var cobrosSort = cobros.slice().sort(function(a,b){ return (b.FECHA||0)-(a.FECHA||0); });
-
+  el.innerHTML = '<div class="content"><div class="tdim tc" style="padding:30px">Cargando…</div></div>';
+  try { _COB = await gsRun('gsVTA_Datos'); }
+  catch (e) { el.innerHTML = '<div class="content"><div class="al al-r">No se pudieron cargar las cobranzas: ' + vEsc(e.message || e) + '</div></div>'; return; }
+  var pend = (_COB.VENTAS || []).filter(cobPend);
+  var act = (_COB.COBROS || []).filter(function(c) { return c.ESTADO !== 'ANULADO'; });
+  var deud = {}; pend.forEach(function(v) { deud[v.CLIENTE] = 1; });
   el.innerHTML =
-  '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-hand-holding-usd" style="color:var(--success)"></i> Cobranzas</div>' +
-  '<div class="page-sub">COBRO DE COMPROBANTES PENDIENTES</div></div>' +
-  '<button class="btn btn-g" onclick="cobrNuevo()"><i class="fas fa-plus"></i> Nueva Cobranza</button></div>' +
-  '<div class="content">' +
-  '<div class="g4 mb4">' +
-  '<div class="stat" style="border-top:3px solid var(--success)">' +
-  '<div class="stat-label">Total Cobrado</div>' +
-  '<div class="stat-val sv-green">'+fmt(cobrosSort.filter(function(c){return c.ESTADO!=='ANULADO';}).reduce(function(s,c){return s+(c.TOTAL_COBRO||0);},0))+'</div>' +
-  '<div class="stat-sub">'+cobrosSort.filter(function(c){return c.ESTADO!=='ANULADO';}).length+' cobranzas</div></div>' +
-  '<div class="stat" style="border-top:3px solid var(--warn)">' +
-  '<div class="stat-label">Pendiente Cobrar</div>' +
-  '<div class="stat-val sv-warn">'+fmt(ventas.filter(function(v){return v.ESTADO!=='ANULADA'&&(v.ESTADO_COBRO==='PENDIENTE'||v.ESTADO_COBRO==='PARCIAL');}).reduce(function(s,v){return s+(v.SALDO_PENDIENTE||v.TOTAL_VENTA||0);},0))+'</div>' +
-  '<div class="stat-sub">'+ventas.filter(function(v){return v.ESTADO!=='ANULADA'&&(v.ESTADO_COBRO==='PENDIENTE'||v.ESTADO_COBRO==='PARCIAL');}).length+' comprobantes</div></div>' +
-  '<div class="stat" style="border-top:3px solid var(--accent)">' +
-  '<div class="stat-label">Cheques en Cartera</div>' +
-  '<div class="stat-val sv-blue">'+fmt(chequesCartera.reduce(function(s,c){return s+(c.IMPORTE||0);},0))+'</div>' +
-  '<div class="stat-sub">'+chequesCartera.length+' cheques</div></div>' +
-  '<div class="stat" style="border-top:3px solid var(--dim)">' +
-  '<div class="stat-label">Clientes con Saldo</div>' +
-  '<div class="stat-val sv-red">'+Object.keys(ventas.filter(function(v){return v.ESTADO!=='ANULADA'&&(v.ESTADO_COBRO==='PENDIENTE'||v.ESTADO_COBRO==='PARCIAL');}).reduce(function(m,v){m[v.CLIENTE]=1;return m;},{})).length+'</div>' +
-  '<div class="stat-sub">clientes deudores</div></div>' +
-  '</div>' +
-  '<div class="card"><div class="card-hd"><span class="card-title">Comprobantes Pendientes de Cobro</span>' +
-  '<span class="badge b-warn" id="cobr-pend-cnt">...</span></div>' +
-  '<div class="fbar"><input id="cobr-buscar" class="fi" style="max-width:260px" placeholder="Buscar cliente..." oninput="cobrRefreshPend()"/>' +
-  '<select id="cobr-filtro-estado" class="fs" style="max-width:180px" onchange="cobrRefreshPend()">' +
-  '<option value="">Todos los estados</option><option value="PENDIENTE">Pendiente</option><option value="PARCIAL">Parcial</option>' +
-  '</select></div>' +
-  '<div class="tw"><table><thead><tr><th>Fecha</th><th>N° Comp.</th><th>Tipo</th><th>Cliente</th><th class="tr">Total</th><th class="tr">Saldo Pend.</th><th>Estado</th><th></th></tr></thead>' +
-  '<tbody id="cobr-pend-body"></tbody></table></div></div>' +
-  '<div class="card mt4"><div class="card-hd"><span class="card-title">Historial de Cobranzas</span>' +
-  '<span class="badge b-blue" id="cobr-hist-cnt">...</span></div>' +
-  buildFiltroFechas('cobr','cobrRefreshHist()') +
-  '<div class="tw"><table><thead><tr><th>Fecha</th><th>Cliente</th><th class="tr">Total Cobrado</th><th>Estado</th><th></th></tr></thead>' +
-  '<tbody id="cobr-hist-body"></tbody></table></div></div>' +
-  '</div>';
-
-  setTimeout(function(){ cobrRefreshPend(); cobrRefreshHist(); }, 50);
+    '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-hand-holding-usd" style="color:var(--success)"></i> Cobranzas</div>' +
+    '<div class="page-sub">COBRO DE COMPROBANTES PENDIENTES</div></div><button class="btn btn-g" onclick="cobrNuevo()"><i class="fas fa-plus"></i> Nuevo cobro</button></div>' +
+    '<div class="content"><div class="g3 mb4">' +
+    '<div class="stat" style="border-top:3px solid var(--warn)"><div class="stat-label">Por cobrar</div><div class="stat-val sv-warn">' + fmt(pend.reduce(function(s, v) { return s + v.SALDO; }, 0)) + '</div><div class="stat-sub">' + pend.length + ' comprobante' + (pend.length === 1 ? '' : 's') + '</div></div>' +
+    '<div class="stat" style="border-top:3px solid var(--success)"><div class="stat-label">Cobrado</div><div class="stat-val sv-green">' + fmt(act.reduce(function(s, c) { return s + c.TOTAL; }, 0)) + '</div><div class="stat-sub">' + act.length + ' cobro' + (act.length === 1 ? '' : 's') + '</div></div>' +
+    '<div class="stat" style="border-top:3px solid var(--danger)"><div class="stat-label">Clientes que deben</div><div class="stat-val sv-red">' + Object.keys(deud).length + '</div><div class="stat-sub">con saldo</div></div></div>' +
+    '<div class="card mb4"><div class="card-hd"><span class="card-title">Por cobrar</span><span class="badge b-warn">' + pend.length + '</span></div>' +
+    '<div class="fbar"><input id="cobr-buscar" class="fi" style="max-width:260px" placeholder="Buscar cliente…" oninput="cobrRefreshPend()"/></div>' +
+    '<div class="tw"><table><thead><tr><th>Fecha</th><th>N°</th><th>Tipo</th><th>Cliente</th><th class="tr">Total</th><th class="tr">Debe</th><th>Estado</th><th></th></tr></thead><tbody id="cobr-pend-body"></tbody></table></div></div>' +
+    '<div class="card"><div class="card-hd"><span class="card-title">Cobros</span><span class="badge b-blue" id="cobr-hist-cnt"></span></div>' + buildFiltroFechas('cobr', 'cobrRefreshHist()') +
+    '<div class="tw"><table><thead><tr><th>Fecha</th><th>Recibo</th><th>Cliente</th><th>Comprobantes</th><th>Formas</th><th class="tr">Total</th><th>Estado</th><th></th></tr></thead><tbody id="cobr-hist-body"></tbody></table></div></div></div>';
+  cobrRefreshPend(); cobrRefreshHist();
 }
-
 function cobrRefreshPend() {
-  var tbody = $id('cobr-pend-body');
-  var cnt   = $id('cobr-pend-cnt');
-  if (!tbody) return;
-  var ventas   = window._cobrVentas||[];
-  var clientes = window._cobrClientes||[];
-  var cm = {}; clientes.forEach(function(c){ cm[c.ID_CLIENTE]=c; });
-  var buscar  = (($id('cobr-buscar')||{}).value||'').toLowerCase();
-  var estado  = ($id('cobr-filtro-estado')||{}).value||'';
-  var pend = ventas.filter(function(v){
-    if (v.ESTADO==='ANULADA') return false;
-    if (!v.ESTADO_COBRO || (v.ESTADO_COBRO!=='PENDIENTE'&&v.ESTADO_COBRO!=='PARCIAL')) return false;
-    if (estado && v.ESTADO_COBRO!==estado) return false;
-    if (buscar) {
-      var c = cm[v.CLIENTE];
-      var nom = c ? (c.APELLIDO+' '+c.NOMBRE).toLowerCase() : '';
-      if (nom.indexOf(buscar)===-1) return false;
-    }
-    return true;
-  }).sort(function(a,b){ return (a.FECHA||0)-(b.FECHA||0); });
-
-  if (cnt) cnt.textContent = pend.length + ' pendientes';
-  if (!pend.length) { tbody.innerHTML='<tr><td colspan="8" class="tc tdim" style="padding:16px">Sin comprobantes pendientes.</td></tr>'; return; }
-
-  tbody.innerHTML = pend.map(function(v){
-    var c = cm[v.CLIENTE];
-    var nom = c ? c.APELLIDO+' '+c.NOMBRE : v.CLIENTE;
-    var saldo = v.SALDO_PENDIENTE||v.TOTAL_VENTA||0;
-    return '<tr>' +
-      '<td class="mono" style="font-size:12px">'+fmtD(v.FECHA)+'</td>' +
-      '<td class="mono" style="font-size:11px">'+(v.NRO_COMP||'—')+'</td>' +
-      '<td><span class="badge b-blue" style="font-size:9px">'+(v.TIPO_COMP||'—')+'</span></td>' +
-      '<td style="font-size:12px">'+nom+'</td>' +
-      '<td class="mono tr">'+fmt(v.TOTAL_VENTA||0)+'</td>' +
-      '<td class="mono tr tred" style="font-weight:700">'+fmt(saldo)+'</td>' +
-      '<td><span class="badge '+(v.ESTADO_COBRO==='PARCIAL'?'b-warn':'b-red')+'" style="font-size:9px">'+v.ESTADO_COBRO+'</span></td>' +
-      '<td><button class="btn btn-xs btn-g" onclick="cobrNuevoDesde(\''+v.ID_VENTA+'\',\''+v.CLIENTE+'\')"><i class="fas fa-dollar-sign"></i> Cobrar</button></td>' +
-      '</tr>';
+  var tb = $id('cobr-pend-body'); if (!tb) return;
+  var q = (($id('cobr-buscar') || {}).value || '').toLowerCase();
+  var pend = (_COB.VENTAS || []).filter(function(v) { var c = cobCli(v.CLIENTE); return cobPend(v) && (!q || (c ? c.NOMBRE : '').toLowerCase().indexOf(q) !== -1); })
+    .sort(function(a, b) { return a.FECHA - b.FECHA; });
+  tb.innerHTML = !pend.length ? '<tr><td colspan="8" class="tc tdim" style="padding:16px">Nada por cobrar.</td></tr>' : pend.map(function(v) {
+    var c = cobCli(v.CLIENTE);
+    return '<tr><td class="mono" style="font-size:12px">' + fmtD(v.FECHA) + '</td><td class="mono" style="font-size:11px">' + vEsc(v.NRO_COMP) + '</td><td><span class="badge b-blue" style="font-size:9px">' + (VTA_TIPO_TXT[v.TIPO_COMP] || v.TIPO_COMP) + '</span></td>' +
+      '<td style="font-size:12px">' + vEsc(c ? c.NOMBRE : v.CLIENTE) + '</td><td class="mono tr">' + fmt(v.TOTAL) + '</td><td class="mono tr tred" style="font-weight:700">' + fmt(v.SALDO) + '</td>' +
+      '<td><span class="badge ' + (v.ESTADO_COBRO === 'PARCIAL' ? 'b-warn' : 'b-red') + '" style="font-size:9px">' + vEsc(v.ESTADO_COBRO) + '</span></td>' +
+      '<td><button class="btn btn-xs btn-g" onclick="cobrNuevoDesde(\'' + v.ID_VENTA + '\',\'' + v.CLIENTE + '\')"><i class="fas fa-dollar-sign"></i> Cobrar</button></td></tr>';
   }).join('');
 }
-
-async function cobrRefreshHist() {
-  var tbody = $id('cobr-hist-body');
-  var cnt   = $id('cobr-hist-cnt');
-  if (!tbody) return;
-  var cobros   = await ADB.getAll('cobros_enc');
-  var clientes = window._cobrClientes||[];
-  var cm = {}; clientes.forEach(function(c){ cm[c.ID_CLIENTE]=c; });
-  var desde = ($id('flt-desde-cobr')||{}).value||'';
-  var hasta = ($id('flt-hasta-cobr')||{}).value||'';
-  var fil = fechaFiltrar(cobros,'FECHA',desde,hasta).sort(function(a,b){ return (b.FECHA||0)-(a.FECHA||0); });
-  if (cnt) cnt.textContent = fil.length + ' cobranzas';
-  if (!fil.length) { tbody.innerHTML='<tr><td colspan="5" class="tc tdim" style="padding:16px">Sin cobranzas en el periodo.</td></tr>'; return; }
-  tbody.innerHTML = fil.map(function(co){
-    var c = cm[co.ID_CLIENTE];
-    var nom = c ? c.APELLIDO+' '+c.NOMBRE : co.ID_CLIENTE;
-    var anulado = co.ESTADO==='ANULADO';
-    return '<tr'+(anulado?' style="opacity:0.5;text-decoration:line-through"':'')+'>'+
-      '<td class="mono" style="font-size:12px">'+fmtD(co.FECHA)+'</td>'+
-      '<td>'+nom+'</td>'+
-      '<td class="mono tr tgreen" style="font-weight:700">'+fmt(co.TOTAL_COBRO||0)+'</td>'+
-      '<td><span class="badge '+(anulado?'b-red':'b-green')+'" style="font-size:9px">'+(anulado?'ANULADO':'OK')+'</span></td>'+
-      '<td><button class="btn btn-xs btn-info" onclick="cobrVerDetalle(\''+co.ID_COBRO+'\')"><i class="fas fa-eye"></i></button></td>'+
-      '</tr>';
+function cobrRefreshHist() {
+  var tb = $id('cobr-hist-body'), cnt = $id('cobr-hist-cnt'); if (!tb) return;
+  var q = (($id('flt-buscar-cobr') || {}).value || '').toLowerCase();
+  var fil = fechaFiltrar(_COB.COBROS || [], 'FECHA', ($id('flt-desde-cobr') || {}).value || '', ($id('flt-hasta-cobr') || {}).value || '')
+    .filter(function(c) { var cl = cobCli(c.ID_CLIENTE); return !q || ((cl ? cl.NOMBRE : '') + ' ' + c.NRO_COBRO + ' ' + c.DET.map(function(d) { return d.NRO_COMP; }).join(' ')).toLowerCase().indexOf(q) !== -1; });
+  if (cnt) cnt.textContent = fil.length;
+  tb.innerHTML = !fil.length ? '<tr><td colspan="8" class="tc tdim" style="padding:16px">Sin cobros en esas fechas.</td></tr>' : fil.map(function(c) {
+    var an = c.ESTADO === 'ANULADO', cl = cobCli(c.ID_CLIENTE);
+    return '<tr' + (an ? ' style="opacity:.55"' : '') + '><td class="mono" style="font-size:12px">' + fmtD(c.FECHA) + '</td><td class="mono" style="font-size:11px">' + vEsc(c.NRO_COBRO) + '</td><td style="font-size:12px">' + vEsc(cl ? cl.NOMBRE : c.ID_CLIENTE) + '</td>' +
+      '<td style="font-size:11px">' + c.DET.map(function(d) { return vEsc(d.NRO_COMP); }).join(', ') + '</td><td style="font-size:11px">' + c.FORMAS.map(function(f) { return COB_FORMA_TXT[f.FORMA] || f.FORMA; }).join(' + ') + '</td>' +
+      '<td class="mono tr tgreen" style="font-weight:700">' + fmt(c.TOTAL) + '</td><td><span class="badge ' + (an ? 'b-red' : 'b-green') + '" style="font-size:9px">' + (an ? 'ANULADO' : 'OK') + '</span></td>' +
+      '<td style="white-space:nowrap"><button class="btn btn-xs btn-info" onclick="cobrVerDetalle(\'' + c.ID_COBRO + '\')"><i class="fas fa-eye"></i></button>' + (an ? '' : ' <button class="btn btn-xs btn-s" onclick="cobrAnularPedir(\'' + c.ID_COBRO + '\')" title="Anular"><i class="fas fa-ban"></i></button>') + '</td></tr>';
   }).join('');
 }
-
-function cobrNuevo() {
-  cobrAbrirModal(null, null);
+function cobrNuevo() { cobrAbrirModal(null, null); }
+function cobrNuevoDesde(idVenta, idCli) { cobrAbrirModal(idVenta, idCli); }
+function cobrFormaVacia() { return { FORMA: 'EFECTIVO', IMPORTE: '', ID_CAJA: '', DETALLE: '', NRO_CHEQUE: '', BANCO: '', EMISOR: '', CUIT_EMISOR: '', FECHA_COBRO: '', TIPO_CHEQUE: 'IMPRESO' }; }
+function cobrAbrirModal(idVenta, idCli) {
+  _cobFormas = [cobrFormaVacia()];
+  var deudores = {}; (_COB.VENTAS || []).forEach(function(v) { if (cobPend(v)) deudores[v.CLIENTE] = 1; });
+  var cl = (_COB.CLIENTES || []).filter(function(c) { return deudores[c.ID_CLIENTE]; });
+  showModal('<div class="mh"><span class="mt">Nuevo cobro</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="fr mb3"><div class="fg"><label class="fl">Fecha *</label><input id="cobr-fecha" class="fi" type="date" value="' + fechaISO(new Date()) + '"/></div>' +
+    '<div class="fg"><label class="fl">Cliente *</label><select id="cobr-cli" class="fs" onchange="cobrCargarPendientes()"><option value="">— Elegir —</option>' +
+    cl.map(function(c) { return '<option value="' + c.ID_CLIENTE + '"' + (String(c.ID_CLIENTE) === String(idCli) ? ' selected' : '') + '>' + vEsc(c.NOMBRE) + '</option>'; }).join('') + '</select></div></div>' +
+    '<div class="sec-div">COMPROBANTES QUE SE COBRAN</div><div id="cobr-pend-list" class="mb3" style="border:1.5px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;padding:6px"></div>' +
+    '<div class="sec-div">CÓMO PAGA</div><div id="cobr-formas"></div><button class="btn btn-s btn-sm mb3" onclick="cobrFormaAgregar()"><i class="fas fa-plus"></i> Agregar otra forma</button>' +
+    '<div class="fg mb3"><label class="fl">Observación</label><input id="cobr-obs" class="fi" placeholder="Opcional"/></div><div id="cobr-totales" style="background:var(--bg2,#f3f4f6);padding:12px;border-radius:8px"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-g btn-xl" id="cobr-btn-ok" onclick="cobrGuardar()"><i class="fas fa-check"></i> Confirmar cobro</button></div>', 'md-lg');
+  cobrCargarPendientes(idVenta); cobrPintarFormas();
 }
-
-function cobrNuevoDesde(idVenta, idCliente) {
-  cobrAbrirModal(idVenta, idCliente);
-}
-
-function cobrAbrirModal(idVenta, idCliente) {
-  var clientes = window._cobrClientes||[];
-  var ventas   = window._cobrVentas||[];
-  var cajas    = window._cobrCajas||[];
-  var cheques  = window._cobrCheques||[];
-  var chEquesCartera = cheques.filter(function(c){ return c.ESTADO==='EN_CARTERA'&&c.TIPO_CHEQUE==='TERCERO'; });
-
-  var cliOpts = clientes.map(function(c){
-    return '<option value="'+c.ID_CLIENTE+'"'+(String(c.ID_CLIENTE)===String(idCliente)?' selected':'')+'>'+c.APELLIDO+' '+c.NOMBRE+'</option>';
+function cobrCargarPendientes(idVenta) {
+  var id = $v('cobr-cli'), cont = $id('cobr-pend-list'); if (!cont) return;
+  if (!id) { cont.innerHTML = '<div class="tdim tc" style="padding:12px">Elegí el cliente</div>'; cobrTotales(); return; }
+  var p = (_COB.VENTAS || []).filter(function(v) { return String(v.CLIENTE) === String(id) && cobPend(v); }).sort(function(a, b) { return a.FECHA - b.FECHA; });
+  cont.innerHTML = !p.length ? '<div class="tdim tc" style="padding:12px">Este cliente no debe nada.</div>' : p.map(function(v) {
+    var m = idVenta && String(v.ID_VENTA) === String(idVenta);
+    return '<div style="display:flex;align-items:center;gap:10px;padding:6px;border-bottom:1px solid var(--border)"><input type="checkbox" class="cobr-chk" data-id="' + v.ID_VENTA + '" data-saldo="' + v.SALDO + '"' + (m ? ' checked' : '') + ' onchange="cobrChk(this)" style="width:18px;height:18px">' +
+      '<span style="flex:1;font-size:12px"><b>' + (VTA_TIPO_TXT[v.TIPO_COMP] || v.TIPO_COMP) + ' ' + vEsc(v.NRO_COMP) + '</b> <span class="tdim">' + fmtD(v.FECHA) + ' · debe ' + fmt(v.SALDO) + '</span></span>' +
+      '<input type="number" step="0.01" min="0" class="fi cobr-imp" data-id="' + v.ID_VENTA + '" style="width:140px;text-align:right" value="' + (m ? v.SALDO : '') + '"' + (m ? '' : ' disabled') + ' oninput="cobrTotales()"></div>';
   }).join('');
-  var cajaOpts = cajas.map(function(c){ return '<option value="'+c.ID_CAJA+'">'+c.CAJA_DESC+'</option>'; }).join('');
-  var chqOpts = chEquesCartera.map(function(ch){
-    return '<option value="'+ch.ID_CHEQUE+'">N°'+ch.NRO_CHEQUE+' — '+ch.BANCO+' — '+fmt(ch.IMPORTE)+'</option>';
-  }).join('');
-
-  showModal(
-    '<div class="mh"><span class="mt">Nueva Cobranza</span><button class="mc" onclick="closeModal()">×</button></div>'+
-    '<div class="mb2">'+
-    '<div class="fr mb3">'+
-    '<div class="fg"><label class="fl">Fecha *</label><input id="cobr-fecha" class="fi" type="date" value="'+fechaISO(new Date())+'"/></div>'+
-    '<div class="fg"><label class="fl">Cliente *</label>'+
-    '<select id="cobr-cli" class="fs" onchange="cobrCargarPendientes()">'+
-    '<option value="">— Seleccionar —</option>'+cliOpts+'</select></div>'+
-    '</div>'+
-    '<div class="fg mb3"><label class="fl">Comprobantes pendientes</label>'+
-    '<div id="cobr-pend-list" style="border:1.5px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto;padding:8px">'+
-    '<div class="tdim tc" style="padding:12px">Seleccioná un cliente</div>'+
-    '</div></div>'+
-    '<div class="fg mb3"><label class="fl">Forma de Pago *</label>'+
-    '<select id="cobr-forma" class="fs" onchange="cobrOnFormaChange()">'+
-    '<option value="EFECTIVO">Efectivo</option>'+
-    '<option value="TRANSFERENCIA">Transferencia</option>'+
-    '<option value="CHEQUE">Cheque de cartera</option>'+
-    '</select></div>'+
-    '<div id="cobr-cheque-wrap" class="hidden fg mb3"><label class="fl">Cheque</label>'+
-    '<select id="cobr-cheque" class="fs">'+
-    '<option value="">— Sin cheque —</option>'+chqOpts+'</select></div>'+
-    '<div class="fg mb3"><label class="fl">Caja *</label>'+
-    '<select id="cobr-caja" class="fs"><option value="">— Seleccionar —</option>'+cajaOpts+'</select></div>'+
-    '<div class="fg mb3"><label class="fl">Observación</label>'+
-    '<input id="cobr-obs" class="fi" placeholder="Opcional..."/></div>'+
-    '<div style="background:var(--success-light);padding:12px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">'+
-    '<span class="card-title">TOTAL A COBRAR</span>'+
-    '<span class="mono" style="font-size:22px;font-weight:700;color:var(--success)" id="cobr-total-disp">$ 0,00</span>'+
-    '</div>'+
-    '</div>'+
-    '<div class="mf">'+
-    '<button class="btn btn-s" onclick="closeModal()">Cancelar</button>'+
-    '<button class="btn btn-g btn-xl" onclick="cobrGuardar()"><i class="fas fa-check"></i> Confirmar Cobranza</button>'+
-    '</div>',
-    'md-lg'
-  );
-
-  window._cobrSeleccionados = {};
-  if (idCliente) { setTimeout(function(){ cobrCargarPendientes(); }, 100); }
-  if (idVenta)   { setTimeout(function(){ cobrPreseleccionar(idVenta); }, 200); }
+  cobrTotales();
 }
-
-function cobrOnFormaChange() {
-  var forma = $v('cobr-forma');
-  var wrap  = $id('cobr-cheque-wrap');
-  if (wrap) wrap.className = forma==='CHEQUE' ? 'fg mb3' : 'hidden fg mb3';
+function cobrChk(ch) { var i = document.querySelector('.cobr-imp[data-id="' + ch.dataset.id + '"]'); if (i) { i.disabled = !ch.checked; i.value = ch.checked ? ch.dataset.saldo : ''; } cobrTotales(); }
+function cobrFormaAgregar() { cobLeerFormas(_cobFormas, 'cf'); _cobFormas.push(cobrFormaVacia()); cobrPintarFormas(); }
+function cobrFormaQuitar(i) { cobLeerFormas(_cobFormas, 'cf'); _cobFormas.splice(i, 1); if (!_cobFormas.length) _cobFormas.push(cobrFormaVacia()); cobrPintarFormas(); }
+function cobrFormaRepintar() { cobLeerFormas(_cobFormas, 'cf'); cobrPintarFormas(); }
+function cobrPintarFormas() { cobPintarFormas(_cobFormas, 'cf', 'cobr-formas', 'cobrFormaQuitar', 'cobrFormaRepintar', 'cobrTotales', _COB.CAJAS); cobrTotales(); }
+function cobrAplica() { var r = []; document.querySelectorAll('.cobr-chk:checked').forEach(function(ch) { var i = document.querySelector('.cobr-imp[data-id="' + ch.dataset.id + '"]'); r.push({ ID_VENTA: ch.dataset.id, IMPORTE: vR2(vNum(i && i.value)), SALDO: vNum(ch.dataset.saldo) }); }); return r; }
+function cobrTotales() {
+  var box = $id('cobr-totales'); if (!box) return;
+  cobLeerFormas(_cobFormas, 'cf');
+  var ap = cobrAplica(), ta = vR2(ap.reduce(function(s, a) { return s + a.IMPORTE; }, 0)), tf = vR2(_cobFormas.reduce(function(s, f) { return s + vNum(f.IMPORTE); }, 0)), d = vR2(tf - ta);
+  box.innerHTML = '<div class="flex jb"><span>Se cobra de comprobantes</span><b class="mono">' + fmt(ta) + '</b></div><div class="flex jb"><span>Formas de cobro</span><b class="mono">' + fmt(tf) + '</b></div>' +
+    (Math.abs(d) > 0.01 ? '<div class="flex jb" style="color:var(--danger)"><span>Diferencia</span><b class="mono">' + fmt(d) + '</b></div>' : (ta > 0 ? '<div style="color:var(--success);font-weight:700">✓ Cuadra</div>' : '')) +
+    (ap.some(function(a) { return a.IMPORTE > a.SALDO + 0.005; }) ? '<div style="color:var(--danger);font-size:12px">Hay importes mayores a lo que debe el comprobante.</div>' : '');
 }
-
-async function cobrCargarPendientes() {
-  var idCli = $v('cobr-cli');
-  var cont  = $id('cobr-pend-list');
-  if (!cont) return;
-  if (!idCli) { cont.innerHTML='<div class="tdim tc" style="padding:12px">Seleccioná un cliente</div>'; return; }
-  var ventas = window._cobrVentas||[];
-  var pend = ventas.filter(function(v){
-    return String(v.CLIENTE)===String(idCli) && v.ESTADO!=='ANULADA' &&
-      (v.ESTADO_COBRO==='PENDIENTE'||v.ESTADO_COBRO==='PARCIAL'||!v.ESTADO_COBRO);
-  });
-  if (!pend.length) { cont.innerHTML='<div class="tdim tc" style="padding:12px">Sin comprobantes pendientes para este cliente.</div>'; return; }
-  cont.innerHTML = pend.map(function(v){
-    var saldo = v.SALDO_PENDIENTE||v.TOTAL_VENTA||0;
-    return '<label style="display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid var(--border);cursor:pointer">'+
-      '<input type="checkbox" data-id="'+v.ID_VENTA+'" data-importe="'+saldo+'" onchange="cobrCalcTotal()" style="accent-color:var(--success)">'+
-      '<span style="flex:1;font-size:12px">'+(v.NRO_COMP||v.ID_VENTA)+' <span class="tdim">'+fmtD(v.FECHA)+'</span></span>'+
-      '<span class="mono tred" style="font-weight:700">'+fmt(saldo)+'</span>'+
-      '</label>';
-  }).join('');
-  window._cobrSeleccionados = {};
-  cobrCalcTotal();
-}
-
-function cobrPreseleccionar(idVenta) {
-  var checks = document.querySelectorAll('#cobr-pend-list input[type="checkbox"]');
-  checks.forEach(function(ch){ if (ch.dataset.id===String(idVenta)) { ch.checked=true; } });
-  cobrCalcTotal();
-}
-
-function cobrCalcTotal() {
-  var total = 0;
-  var checks = document.querySelectorAll('#cobr-pend-list input[type="checkbox"]:checked');
-  checks.forEach(function(ch){ total += parseFloat(ch.dataset.importe)||0; });
-  var el = $id('cobr-total-disp'); if (el) el.textContent = fmt(total);
-}
-
 async function cobrGuardar() {
-  var fecha  = $v('cobr-fecha');
-  var idCli  = $v('cobr-cli');
-  var forma  = $v('cobr-forma');
-  var idCaja = $v('cobr-caja');
-  if (!fecha||!idCli||!idCaja) { toast('Completá fecha, cliente y caja','r2'); return; }
-
-  var checks = document.querySelectorAll('#cobr-pend-list input[type="checkbox"]:checked');
-  if (!checks.length) { toast('Seleccioná al menos un comprobante','r2'); return; }
-
-  var total = 0;
-  var selItems = [];
-  checks.forEach(function(ch){
-    var imp = parseFloat(ch.dataset.importe)||0;
-    total += imp;
-    selItems.push({ idVenta: ch.dataset.id, importe: imp });
-  });
-
-  if (total<=0) { toast('Total = 0','r2'); return; }
-
-  var idCobro = await nextId('cobros_enc','ID_COBRO');
-
+  var ap = cobrAplica();
+  if (!$v('cobr-cli')) { toast('Elegí el cliente', 'r2'); return; }
+  if (!ap.length) { toast('Tildá al menos un comprobante', 'r2'); return; }
+  cobLeerFormas(_cobFormas, 'cf');
+  var b = $id('cobr-btn-ok'); if (b) { b.disabled = true; b.innerHTML = 'Grabando…'; }
   try {
-    // Guardar encabezado
-    await ADB.put('cobros_enc', {
-      ID_COBRO:    idCobro,
-      FECHA:       new Date(fecha+'T00:00:00').getTime(),
-      ID_CLIENTE:  idCli,
-      TOTAL_COBRO: total,
-      OBSERVACION: $v('cobr-obs'),
-      ESTADO:      'CONFIRMADO'
-    });
-
-    // Guardar detalle y actualizar ventas
-    for (var i=0; i<selItems.length; i++) {
-      var item = selItems[i];
-      var idDet = await nextId('cobros_det','ID_DET_COBRO');
-      await ADB.put('cobros_det', {
-        ID_DET_COBRO:     idDet,
-        ID_COBRO:         idCobro,
-        ID_VENTA:         item.idVenta,
-        IMPORTE_APLICADO: item.importe
-      });
-      // Actualizar estado de cobro en la venta
-      var vta = await ADB.get('ventas_enc', item.idVenta);
-      if (vta) {
-        vta.ESTADO_COBRO    = 'COBRADO';
-        vta.SALDO_PENDIENTE = 0;
-        await ADB.put('ventas_enc', vta);
-        _mcDel('ventas_enc');
-        // Movimiento cta cte (crédito - cancela deuda)
-        var idCtc = await nextId('cta_cte_clientes','ID_MOV_CTC');
-        var movCtc = {
-          ID_MOV_CTC:     idCtc,
-          FECHA:          new Date(fecha+'T00:00:00').getTime(),
-          ID_CLIENTE:     idCli,
-          TIPO:           'CREDITO',
-          CONCEPTO:       'Cobranza de '+(vta.NRO_COMP||vta.ID_VENTA),
-          ID_COMPROBANTE: idCobro,
-          TIPO_COMP:      'COBRO',
-          NRO_COMP:       String(idCobro),
-          IMPORTE:        item.importe,
-          SALDO_ACUM:     0
-        };
-        if (isGsMode()) { await gsRun('gsMovCtaCte', movCtc); }
-        else { await ADB.put('cta_cte_clientes', movCtc); }
-      }
-    }
-
-    // Guardar forma de pago
-    var idPago = await nextId('cobros_pagos','ID_PAGO_COBRO');
-    var idCheque = forma==='CHEQUE' ? $v('cobr-cheque') : '';
-    await ADB.put('cobros_pagos', {
-      ID_PAGO_COBRO: idPago,
-      ID_COBRO:      idCobro,
-      FORMA_PAGO:    forma,
-      ID_CHEQUE:     idCheque,
-      IMPORTE:       total
-    });
-
-    // Si pagó con cheque, marcarlo como depositado
-    if (forma==='CHEQUE' && idCheque) {
-      var chq = await ADB.get('cheques', idCheque);
-      if (chq) { chq.ESTADO='DEPOSITADO'; await ADB.put('cheques', chq); _mcDel('cheques'); }
-    }
-
-    // Movimiento de caja
-    var idMov = await nextId('movimientos_caja','ID_MOV_CAJA');
-    var movCaja = {
-      ID_MOV_CAJA: idMov,
-      FECHA:       new Date(fecha+'T00:00:00').getTime(),
-      ID_CAJA:     idCaja,
-      TIPO_MOV:    'INGRESO',
-      CONCEPTO:    'Cobranza cliente — '+forma,
-      ORIGEN:      'COBRO',
-      ID_ORIGEN:   idCobro,
-      IMPORTE:     total,
-      SALDO_ACUM:  0
-    };
-    if (isGsMode()) { await gsRun('gsMovCaja', movCaja); }
-    else { await ADB.put('movimientos_caja', movCaja); }
-
-    _mcDel('cobros_enc'); _mcDel('cobros_det'); _mcDel('cobros_pagos');
-    toast('Cobranza registrada — '+fmt(total)+' ✓','g');
-    closeModal();
-    renderCobranzas();
-  } catch(e) { toast('Error: '+e.message,'r2'); }
+    var r = await gsRun('gsCOB_Grabar', { FECHA: $v('cobr-fecha'), ID_CLIENTE: $v('cobr-cli'), OBS: $v('cobr-obs'), APLICA: ap.map(function(a) { return { ID_VENTA: a.ID_VENTA, IMPORTE: a.IMPORTE }; }), FORMAS: cobFormasEnviar(_cobFormas) });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo grabar', 'r2'); if (b) { b.disabled = false; b.innerHTML = '<i class="fas fa-check"></i> Confirmar cobro'; } return; }
+    toast('Cobro ' + r.NRO_COBRO + ' — ' + fmt(r.TOTAL) + ' ✓', 'g');
+    if (typeof _mcDel === 'function') ['ventas_enc', 'cobros_enc', 'cta_cte_clientes', 'movimientos_caja', 'cheques'].forEach(function(s) { _mcDel(s); });
+    closeModal(); renderCobranzas();
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) { b.disabled = false; b.innerHTML = '<i class="fas fa-check"></i> Confirmar cobro'; } }
 }
-
-async function cobrVerDetalle(idCobro) {
+function cobrBuscar(id) { return (_COB.COBROS || []).filter(function(c) { return String(c.ID_COBRO) === String(id); })[0]; }
+function cobrVerDetalle(id) {
+  var c = cobrBuscar(id); if (!c) return;
+  var cl = cobCli(c.ID_CLIENTE), caja = function(i) { var x = (_COB.CAJAS || []).filter(function(k) { return String(k.ID_CAJA) === String(i); })[0]; return x ? x.CAJA_DESC : ''; };
+  showModal('<div class="mh"><span class="mt">Cobro ' + vEsc(c.NRO_COBRO) + (c.ESTADO === 'ANULADO' ? ' — ANULADO' : '') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="fr mb3"><div><span class="tdim" style="font-size:11px">FECHA</span><div class="mono" style="font-weight:700">' + fmtD(c.FECHA) + '</div></div><div><span class="tdim" style="font-size:11px">CLIENTE</span><div style="font-weight:700">' + vEsc(cl ? cl.NOMBRE : c.ID_CLIENTE) + '</div></div><div><span class="tdim" style="font-size:11px">CARGÓ</span><div>' + vEsc(c.USUARIO || '—') + '</div></div></div>' +
+    '<div class="sec-div">COMPROBANTES</div>' + c.DET.map(function(d) { return '<div class="flex jb" style="font-size:13px"><span>' + vEsc(d.NRO_COMP) + '</span><span class="mono">' + fmt(d.IMPORTE) + '</span></div>'; }).join('') +
+    '<div class="sec-div mt2">FORMAS</div>' + c.FORMAS.map(function(f) { return '<div class="flex jb" style="font-size:13px"><span>' + (COB_FORMA_TXT[f.FORMA] || f.FORMA) + (f.ID_CAJA ? ' · ' + vEsc(caja(f.ID_CAJA)) : '') + (f.DETALLE ? ' · ' + vEsc(f.DETALLE) : '') + '</span><span class="mono">' + fmt(f.IMPORTE) + '</span></div>'; }).join('') +
+    '<div class="div"></div><div class="flex jb" style="font-size:16px;font-weight:700"><span>TOTAL</span><span class="mono tgreen">' + fmt(c.TOTAL) + '</span></div>' +
+    (c.OBSERVACION ? '<div class="tdim mt2" style="font-size:12px">' + vEsc(c.OBSERVACION) + '</div>' : '') + (c.ESTADO === 'ANULADO' ? '<div class="al al-r mt2">Anulado: ' + vEsc(c.MOTIVO_ANULACION) + '</div>' : '') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
+}
+function cobrAnularPedir(id) {
+  var c = cobrBuscar(id); if (!c) return;
+  showModal('<div class="mh"><span class="mt">Anular ' + vEsc(c.NRO_COBRO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="al al-w mb3">Los comprobantes vuelven a quedar con deuda, el dinero sale de la caja y los cheques recibidos quedan anulados (si ya se depositaron o entregaron, no se puede).</div>' +
+    '<div class="fg"><label class="fl">Motivo *</label><input id="cobr-an-mot" class="fi"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-d" id="cobr-an-btn" onclick="cobrAnular(\'' + id + '\')"><i class="fas fa-ban"></i> Anular</button></div>');
+}
+async function cobrAnular(id) {
+  var m = ($v('cobr-an-mot') || '').trim(); if (!m) { toast('Escribí el motivo', 'r2'); return; }
+  var b = $id('cobr-an-btn'); if (b) b.disabled = true;
   try {
-    var co  = await ADB.get('cobros_enc', idCobro);
-    if (!co) { toast('No encontrado','r2'); return; }
-    var dets, pagos;
-    if (isGsMode()) {
-      dets  = await gsRun('gsGetByIndex','cobros_det','ID_COBRO',String(idCobro));
-      pagos = await gsRun('gsGetByIndex','cobros_pagos','ID_COBRO',String(idCobro));
-    } else {
-      var allDets  = await ADB.getAll('cobros_det');
-      var allPagos = await ADB.getAll('cobros_pagos');
-      dets  = allDets.filter(function(d){ return String(d.ID_COBRO)===String(idCobro); });
-      pagos = allPagos.filter(function(p){ return String(p.ID_COBRO)===String(idCobro); });
-    }
-    var clientes = window._cobrClientes||[];
-    var ventas   = window._cobrVentas||[];
-    var cm = {}; clientes.forEach(function(c){ cm[c.ID_CLIENTE]=c; });
-    var vm = {}; ventas.forEach(function(v){ vm[v.ID_VENTA]=v; });
-    var cli = cm[co.ID_CLIENTE];
-    var nomCli = cli ? cli.APELLIDO+' '+cli.NOMBRE : co.ID_CLIENTE;
-    showModal(
-      '<div class="mh"><span class="mt">Cobranza #'+idCobro+'</span><button class="mc" onclick="closeModal()">×</button></div>'+
-      '<div class="mb2">'+
-      '<div class="fr mb3"><div><span class="tdim" style="font-size:11px">FECHA</span><div class="mono" style="font-weight:700">'+fmtD(co.FECHA)+'</div></div>'+
-      '<div><span class="tdim" style="font-size:11px">CLIENTE</span><div style="font-weight:700">'+nomCli+'</div></div></div>'+
-      '<div class="sec-div">COMPROBANTES COBRADOS</div>'+
-      '<div class="tw"><table style="font-size:12px"><thead><tr><th>Comprobante</th><th>Fecha</th><th class="tr">Importe</th></tr></thead><tbody>'+
-      (dets||[]).map(function(d){
-        var v = vm[d.ID_VENTA];
-        return '<tr><td class="mono">'+(v?v.NRO_COMP||d.ID_VENTA:d.ID_VENTA)+'</td>'+
-          '<td>'+fmtD(v?v.FECHA:0)+'</td>'+
-          '<td class="mono tr tgreen" style="font-weight:700">'+fmt(d.IMPORTE_APLICADO||0)+'</td></tr>';
-      }).join('')+'</tbody></table></div>'+
-      '<div class="sec-div mt3">FORMA DE PAGO</div>'+
-      (pagos||[]).map(function(p){
-        return '<div class="flex jb" style="padding:6px 0"><span>'+p.FORMA_PAGO+'</span><span class="mono" style="font-weight:700">'+fmt(p.IMPORTE||0)+'</span></div>';
-      }).join('')+
-      '<div class="div"></div>'+
-      '<div class="flex jb" style="font-size:16px;font-weight:700"><span>TOTAL COBRADO</span><span class="mono tgreen">'+fmt(co.TOTAL_COBRO||0)+'</span></div>'+
-      '</div>'+
-      '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>'
-    );
-  } catch(e) { toast('Error: '+e.message,'r2'); }
+    var r = await gsRun('gsCOB_Anular', id, m);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo anular', 'r2'); if (b) b.disabled = false; return; }
+    toast(r.NRO_COBRO + ' anulado ✓', 'g');
+    if (typeof _mcDel === 'function') ['ventas_enc', 'cobros_enc', 'cta_cte_clientes', 'movimientos_caja', 'cheques'].forEach(function(s) { _mcDel(s); });
+    closeModal(); renderCobranzas();
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; }
 }
 
 async function renderCtaCteClientes() {
@@ -6497,11 +5754,12 @@ async function renderCtaCteClientes() {
   var saldos = {};
   movs.forEach(function(m){
     if (!saldos[m.ID_CLIENTE]) saldos[m.ID_CLIENTE] = 0;
-    if (m.TIPO==='DEBITO')  saldos[m.ID_CLIENTE] += (m.IMPORTE||0);
-    if (m.TIPO==='CREDITO') saldos[m.ID_CLIENTE] -= (m.IMPORTE||0);
+    if (m.TIPO==='DEBITO')  saldos[m.ID_CLIENTE] += (parseFloat(m.IMPORTE)||0);
+    if (m.TIPO==='CREDITO') saldos[m.ID_CLIENTE] -= (parseFloat(m.IMPORTE)||0);
   });
 
-  var cliConSaldo = Object.keys(saldos).filter(function(id){ return saldos[id]!==0; });
+  Object.keys(saldos).forEach(function(k){ saldos[k] = Math.round(saldos[k]*100)/100; });
+  var cliConSaldo = Object.keys(saldos).filter(function(id){ return Math.abs(saldos[id])>0.005; });
   var totalDeuda  = cliConSaldo.reduce(function(s,id){ return s+(saldos[id]>0?saldos[id]:0); },0);
 
   var cliOpts = '<option value="">Todos los clientes</option>' +
@@ -6542,7 +5800,7 @@ async function renderCtaCteClientes() {
   buildFiltroFechas('ctc','ctcRefresh()') +
   '<select id="ctc-cli" class="fs" style="max-width:220px" onchange="ctcRefresh()">'+cliOpts+'</select>' +
   '</div>' +
-  '<div class="tw"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Concepto</th><th>Comp.</th><th class="tr">Importe</th></tr></thead>' +
+  '<div class="tw"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Concepto</th><th>Comp.</th><th class="tr">Importe</th><th class="tr" id="ctc-th-saldo">Saldo</th></tr></thead>' +
   '<tbody id="ctc-body"></tbody></table></div></div>' +
   '</div>';
 
@@ -6561,9 +5819,17 @@ async function ctcRefresh() {
   var filCli = ($id('ctc-cli')||{}).value||'';
   var fil = fechaFiltrar(movs,'FECHA',desde,hasta);
   if (filCli) fil = fil.filter(function(m){ return String(m.ID_CLIENTE)===String(filCli); });
-  fil = fil.sort(function(a,b){ return (b.FECHA||0)-(a.FECHA||0); });
+  var acum = {};
+  if (filCli) {
+    var s0 = 0;
+    movs.filter(function(m){ return String(m.ID_CLIENTE)===String(filCli) && (m.TIPO==='DEBITO'||m.TIPO==='CREDITO'); })
+      .sort(function(a,b){ return ((a.FECHA||0)-(b.FECHA||0)) || ((parseFloat(a.ID_MOV_CTC)||0)-(parseFloat(b.ID_MOV_CTC)||0)); })
+      .forEach(function(m){ s0 += (m.TIPO==='DEBITO'?1:-1)*(parseFloat(m.IMPORTE)||0); acum[m.ID_MOV_CTC] = Math.round(s0*100)/100; });
+  }
+  var th = $id('ctc-th-saldo'); if (th) th.style.display = filCli ? '' : 'none';
+  fil = fil.filter(function(m){ return m.TIPO==='DEBITO'||m.TIPO==='CREDITO'; }).sort(function(a,b){ return ((b.FECHA||0)-(a.FECHA||0)) || ((parseFloat(b.ID_MOV_CTC)||0)-(parseFloat(a.ID_MOV_CTC)||0)); });
   if (cnt) cnt.textContent = fil.length;
-  if (!fil.length) { tbody.innerHTML='<tr><td colspan="6" class="tc tdim" style="padding:16px">Sin movimientos.</td></tr>'; return; }
+  if (!fil.length) { tbody.innerHTML='<tr><td colspan="7" class="tc tdim" style="padding:16px">Sin movimientos.</td></tr>'; return; }
   tbody.innerHTML = fil.map(function(m){
     var c = cm[m.ID_CLIENTE];
     var nom = c ? c.APELLIDO+' '+c.NOMBRE : m.ID_CLIENTE;
@@ -6574,7 +5840,8 @@ async function ctcRefresh() {
       '<td><span class="badge '+(esDebito?'b-red':'b-green')+'" style="font-size:9px">'+m.TIPO+'</span></td>'+
       '<td style="font-size:12px">'+(m.CONCEPTO||'—')+'</td>'+
       '<td class="mono" style="font-size:11px">'+(m.NRO_COMP||'—')+'</td>'+
-      '<td class="mono tr '+(esDebito?'tred':'tgreen')+'" style="font-weight:700">'+(esDebito?'+':'-')+fmt(m.IMPORTE||0)+'</td>'+
+      '<td class="mono tr '+(esDebito?'tred':'tgreen')+'" style="font-weight:700">'+(esDebito?'+':'-')+fmt(parseFloat(m.IMPORTE)||0)+'</td>'+
+      (filCli ? '<td class="mono tr" style="font-weight:700">'+fmt(acum[m.ID_MOV_CTC]||0)+'</td>' : '')+
       '</tr>';
   }).join('');
 }
@@ -6807,7 +6074,8 @@ function opRefreshHist() {
   var tb = $id('op-hist-body'), cnt = $id('op-hist-cnt');
   if (!tb || !_OP) return;
   var desde = ($id('flt-desde-op') || {}).value || '', hasta = ($id('flt-hasta-op') || {}).value || '';
-  var fil = fechaFiltrar(_OP.OPS || [], 'FECHA', desde, hasta);
+  var q = (($id('flt-buscar-op') || {}).value || '').toLowerCase();
+  var fil = fechaFiltrar(_OP.OPS || [], 'FECHA', desde, hasta).filter(function(o) { return !q || (opProvNom(o.ID_PROVEEDOR) + ' ' + o.NRO_OP + ' ' + o.DET.map(function(d) { return d.NRO_COMP; }).join(' ')).toLowerCase().indexOf(q) !== -1; });
   if (cnt) cnt.textContent = fil.length;
   if (!fil.length) { tb.innerHTML = '<tr><td colspan="8" class="tc tdim" style="padding:16px">Sin órdenes de pago en esas fechas.</td></tr>'; return; }
   tb.innerHTML = fil.map(function(o) {
