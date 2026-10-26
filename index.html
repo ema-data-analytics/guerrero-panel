@@ -10276,7 +10276,7 @@ function pcCasFilas() {
       '<td><input class="fi" data-i="' + i + '" data-k="DOT" value="' + pcEsc(f.DOT) + '" style="width:150px;text-transform:uppercase' + (f._AUTO ? ';color:var(--accent);font-style:italic' : '') + '" title="' + (f._AUTO ? 'Marca automática: si tiene DOT o marca, escribila encima' : '') + '"/></td>' +
       '<td><input class="fi" list="' + (f.TIPO ? pcMedKey(f.TIPO) : 'pc-medidas') + '" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" placeholder="' + (f.TIPO ? '' : 'Elegí el tipo') + '" style="width:140px"/></td>' +
       '<td><input class="fi" list="pc-fabricantes" data-i="' + i + '" data-k="MARCA_FAB" value="' + pcEsc(f.MARCA_FAB) + '" style="width:120px;text-transform:uppercase"/></td>' +
-      '<td><select class="fs" data-i="' + i + '" data-k="TRABAJO" style="min-width:150px">' + optT.replace('<option>' + pcEsc(f.TRABAJO) + '</option>', '<option selected>' + pcEsc(f.TRABAJO) + '</option>') + '</select></td>' +
+      '<td><select class="fs" data-i="' + i + '" data-k="TRABAJO" style="min-width:150px">' + (f.TIPO && f.MEDIDA ? pcTrabOpts(f.TIPO, f.MEDIDA, f.TRABAJO).replace('— elegí —', '— sin orden —') : optT.replace('<option>' + pcEsc(f.TRABAJO) + '</option>', '<option selected>' + pcEsc(f.TRABAJO) + '</option>')) + '</select></td>' +
       '<td><input class="fi" data-i="' + i + '" data-k="OBSERVACIONES" value="' + pcEsc(f.OBSERVACIONES) + '"/></td>' +
       '<td>' + (PC_.kf.length > 1 ? '<button class="btn btn-xs btn-d" onclick="PC_.kf.splice(' + i + ',1);pcCasFilas()">✕</button>' : '') + '</td></tr>';
   }).join('');
@@ -10300,6 +10300,8 @@ function pcCasAnt() {
 }
 async function pcCasGrabar() {
   var cli = pcCliId($v('pc-k-cli')); if (!cli) { toast('Elegí el cliente', 'r2'); return; }
+  var sinR = PC_.kf.filter(function(f) { return f.TRABAJO && !pcRecetaDe(f.TIPO, f.MEDIDA, f.TRABAJO, ''); });
+  if (sinR.length) { toast('DOT ' + sinR.map(function(f) { return f.DOT || '?'; }).join(', ') + ': ese trabajo no tiene receta para esa medida. Elegí uno de los de arriba de la lista (con receta)', 'r2'); return; }
   var b = $id('pc-k-ok'); b.disabled = true;
   try {
     var r = await gsRun('gsPC_CascosGuardar', { ID_CLIENTE: cli, FECHA: $v('pc-k-f'), NRO_MANUAL: $v('pc-k-man'), CASCOS: PC_.kf });
@@ -10348,11 +10350,11 @@ function pcOTrabItems() {
   if (!cli) { el.innerHTML = '<div class="tdim" style="padding:8px 0">Elegí el cliente y se descargan sus cascos nuevos.</div>'; return; }
   var ks = (d.cascos || []).filter(function(k) { return String(k.ID_CLIENTE) === String(cli) && k.ESTADO === 'NUEVO'; }).sort(function(a, b) { return a.ID_CASCO - b.ID_CASCO; });
   if (!ks.length) { el.innerHTML = '<div class="al al-y" style="margin-top:8px">Este cliente no tiene cascos nuevos. Primero cargalos en "1 · Carga de cascos".</div>'; return; }
-  var opt = function(v) { return '<option value="">— elegí —</option>' + d.trabajos.filter(function(x) { return x.ACTIVO != 0; }).map(function(x) { return '<option' + (x.TRABAJO === v ? ' selected' : '') + '>' + pcEsc(x.TRABAJO) + '</option>'; }).join(''); };
+  var opt = function(v, k) { return pcTrabOpts(k.TIPO, k.MEDIDA, v); };
   el.innerHTML = '<div class="tw"><table style="font-size:12px" id="pc-o-t"><thead><tr><th style="width:30px"></th><th>N° interno</th><th>DOT</th><th>Tipo</th><th>Medida</th><th>Marca</th><th>Trabajo *</th><th>Receta</th></tr></thead><tbody>' + ks.map(function(k) {
     var x = PC_.otr[k.ID_CASCO] || (PC_.otr[k.ID_CASCO] = { on: true, tr: 'RECAPADO' }), r = x.tr ? pcRecetaDe(k.TIPO, k.MEDIDA, x.tr, '') : null;
     return '<tr><td><input type="checkbox" class="pc-o-on" data-id="' + k.ID_CASCO + '"' + (x.on ? ' checked' : '') + '/></td><td class="mono"><b>' + k.ID_CASCO + '</b></td><td class="mono">' + pcEsc(k.DOT) + '</td><td>' + pcEsc(k.TIPO) + '</td><td class="mono">' + pcEsc(k.MEDIDA) + '</td><td>' + pcEsc(k.MARCA_FAB) + '</td>' +
-      '<td><select class="fs pc-o-tr" data-id="' + k.ID_CASCO + '" style="min-width:170px">' + opt(x.tr) + '</select></td><td>' + (x.tr ? (r ? '<span class="badge b-green">✓ receta ' + r.ID_RECETA + '</span>' : '<span class="badge b-red">sin receta</span>') : '') + '</td></tr>';
+      '<td><select class="fs pc-o-tr" data-id="' + k.ID_CASCO + '" style="min-width:170px">' + opt(x.tr, k) + '</select></td><td>' + (x.tr ? (r ? '<span class="badge b-green">✓ receta ' + r.ID_RECETA + '</span>' : '<span class="badge b-red">sin receta</span>') : '') + '</td></tr>';
   }).join('') + '</tbody></table></div>';
   document.querySelectorAll('.pc-o-on').forEach(function(c) { c.onchange = function() { PC_.otr[this.dataset.id].on = this.checked; }; });
   document.querySelectorAll('.pc-o-tr').forEach(function(c) { c.onchange = function() { PC_.otr[this.dataset.id].tr = this.value; pcOTrabItems(); }; });
@@ -10360,6 +10362,8 @@ function pcOTrabItems() {
 async function pcOTrabGrabar() {
   var cli = pcCliId($v('pc-o-cli')); if (!cli) { toast('Elegí el cliente', 'r2'); return; }
   var items = Object.keys(PC_.otr).filter(function(k) { return PC_.otr[k].on && (PC_.d.cascos || []).some(function(c) { return String(c.ID_CASCO) === k && String(c.ID_CLIENTE) === String(cli) && c.ESTADO === 'NUEVO'; }); }).map(function(k) { return { ID_CASCO: k, TRABAJO: PC_.otr[k].tr }; });
+  var sinR = items.filter(function(it) { var k = (PC_.d.cascos || []).filter(function(c) { return String(c.ID_CASCO) === String(it.ID_CASCO); })[0]; return !it.TRABAJO || !k || !pcRecetaDe(k.TIPO, k.MEDIDA, it.TRABAJO, ''); });
+  if (sinR.length) { toast('Casco ' + sinR.map(function(it) { return it.ID_CASCO; }).join(', ') + ': ese trabajo no tiene receta para esa medida. Elegí uno de la lista de arriba (con receta)', 'r2'); return; }
   var b = $id('pc-o-ok'); b.disabled = true;
   try {
     var r = await gsRun('gsPC_OTrabCrear', { ID_CLIENTE: cli, FECHA: $v('pc-o-f'), NRO_MANUAL: $v('pc-o-man'), OBSERVACIONES: $v('pc-o-obs'), ITEMS: items });
@@ -10606,6 +10610,34 @@ function pcVidaDet(i, os, d0) {
 }
 
 // ── Armar OT ──
+// Trabajos para un tipo y medida: arriba los que tienen receta (pueden entrar a la línea), abajo los que no
+function pcTrabOpts(tipo, medida, sel) {
+  var con = [], sin = [];
+  PC_.d.trabajos.filter(function(x) { return x.ACTIVO != 0; }).forEach(function(x) { (pcRecetaDe(tipo, medida, x.TRABAJO, '') ? con : sin).push(x.TRABAJO); });
+  var o = function(t) { return '<option value="' + pcEsc(t) + '"' + (t === sel ? ' selected' : '') + '>' + pcEsc(t) + '</option>'; };
+  return '<option value="">— elegí —</option><optgroup label="Con receta para ' + pcEsc(tipo + ' ' + medida) + '">' + con.map(o).join('') + '</optgroup>' +
+    (sin.length ? '<optgroup label="Sin receta para esta medida (no pueden entrar a la línea)">' + sin.map(o).join('') + '</optgroup>' : '');
+}
+// Cubierta en espera sin receta: cambiarle el trabajo desde la orden de servicio
+function pcArmTrab(id) {
+  var c = PC_.d.cubiertas.filter(function(x) { return String(x.ID_CUB) === String(id); })[0]; if (!c) return;
+  showModal('<div class="mh"><span class="mt">Cambiar trabajo · casco ' + pcEsc(c.ID_CASCO || c.ID_CUB) + ' · ' + pcEsc(c.CLIENTE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="al al-y mb2">' + pcEsc(c.TIPO + ' ' + c.MEDIDA) + ' · trabajo actual <b>' + pcEsc(c.TRABAJO) + '</b>: no tiene receta, por eso no puede entrar a la línea.</div>' +
+    '<div class="fg"><label class="fl">Trabajo</label><select class="fs" id="pc-at-tr">' + pcTrabOpts(c.TIPO, c.MEDIDA, '') + '</select></div>' +
+    '<label style="display:flex;gap:6px;align-items:center;font-size:13px;margin-top:6px"><input type="checkbox" id="pc-at-todas" checked/> Aplicar a todas las de la misma orden de trabajo con el mismo trabajo y medida sin receta</label>' +
+    '<button class="btn btn-p mt3" id="pc-at-ok" onclick="pcArmTrabOk(' + c.ID_CUB + ')"><i class="fas fa-save"></i> Guardar</button></div>');
+}
+async function pcArmTrabOk(id) {
+  var c = PC_.d.cubiertas.filter(function(x) { return String(x.ID_CUB) === String(id); })[0], tr = $v('pc-at-tr');
+  if (!tr) { toast('Elegí el trabajo', 'r2'); return; }
+  if (!pcRecetaDe(c.TIPO, c.MEDIDA, tr, '')) { toast('Ese trabajo tampoco tiene receta para ' + c.TIPO + ' ' + c.MEDIDA, 'r2'); return; }
+  var lst = $id('pc-at-todas').checked ? PC_.d.cubiertas.filter(function(x) { return x.ESTADO === 'EN_ESPERA' && !x.ID_RECETA && String(x.ID_OTRAB) === String(c.ID_OTRAB) && x.TRABAJO === c.TRABAJO && x.TIPO === c.TIPO && x.MEDIDA === c.MEDIDA; }) : [c];
+  var b = $id('pc-at-ok'); b.disabled = true; var ok = 0;
+  try {
+    for (var i = 0; i < lst.length; i++) { var r = await gsRun('gsPC_ActualizarCubierta', lst[i].ID_CUB, { TRABAJO: tr }); if (r && r.ok && r.ID_RECETA) ok++; else { toast((r && r.error) || 'No se pudo', 'r2'); break; } }
+    if (ok) { toast(ok + (ok === 1 ? ' cubierta pasó' : ' cubiertas pasaron') + ' a ' + tr + ' ✓ · ya se pueden tildar', 'g'); closeModal(); await pcRecargar(); }
+  } catch (e) { toast(e.message, 'r2'); } finally { b.disabled = false; }
+}
 function pcArmar() {
   var d = PC_.d, esp = d.cubiertas.filter(function(c) { return c.ESTADO === 'EN_ESPERA'; });
   PC_.rpVisto = PC_.rpVisto || {};
@@ -10634,7 +10666,7 @@ function pcArmar() {
         '<td><input type="checkbox" class="pc-ck" data-id="' + c.ID_CUB + '" data-v="TITULAR" style="width:18px;height:18px"' + (s === 'TITULAR' ? ' checked' : '') + dis + '/></td>' +
         '<td><input type="checkbox" class="pc-ck" data-id="' + c.ID_CUB + '" data-v="SUPLENTE"' + (s === 'SUPLENTE' ? ' checked' : '') + dis + '/></td>' +
         '<td>' + (c.MARCA ? '<b class="mono">' + pcEsc(c.MARCA) + '</b>' : '<input class="fi pc-mk" data-id="' + c.ID_CUB + '" value="' + pcEsc(PC_.mk[c.ID_CUB] || '') + '" placeholder="Grabada" style="width:110px;text-transform:uppercase"' + (c.ID_RECETA ? '' : ' disabled') + '/>') + '</td>' +
-        '<td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcEsc(c.DOT || '') + '</td><td>' + pcEsc(pcLineaDeTipo(c.TIPO)) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + (c.ID_RECETA ? '' : ' <span class="badge b-red">sin receta</span>') + (c.REPROCESO_PEND ? ' <span class="badge b-orange">reproceso de ' + pcEsc(pcNroOS(c.REPROCESO_PEND)) + ': solo autoclave, control y pintura</span>' : '') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + '</td><td class="mono">' + pcEsc(c.NRO_MANUAL || '') + '</td><td>' + fmtD(c.FECHA_RECEPCION) + '</td></tr>';
+        '<td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcEsc(c.DOT || '') + '</td><td>' + pcEsc(pcLineaDeTipo(c.TIPO)) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + (c.ID_RECETA ? '' : ' <span class="badge b-red">sin receta</span> <button class="btn btn-p btn-xs" onclick="event.stopPropagation();pcArmTrab(' + c.ID_CUB + ')">Cambiar trabajo</button>') + (c.REPROCESO_PEND ? ' <span class="badge b-orange">reproceso de ' + pcEsc(pcNroOS(c.REPROCESO_PEND)) + ': solo autoclave, control y pintura</span>' : '') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + '</td><td class="mono">' + pcEsc(c.NRO_MANUAL || '') + '</td><td>' + fmtD(c.FECHA_RECEPCION) + '</td></tr>';
     }).join('') + '</tbody></table>' + (esp.length ? '' : '<div class="tdim" style="padding:12px">No hay cubiertas en espera.</div>') + '</div>' +
     '<div class="fr mt3" style="border-top:1px solid var(--border);padding-top:12px"></div>' +
     '<div class="fr"><div class="fg" id="pc-tope-wrap" style="display:none"><label class="fl">Carga mezclada: tope</label><select class="fs" id="pc-tope">' + d.lineas.filter(function(l) { return l.ACTIVO != 0; }).map(function(l) { return '<option value="' + l.LINEA + '">' + l.LINEA + ' (' + l.CAPACIDAD + ' + ' + l.SUPLENTES + ')</option>'; }).join('') + '</select></div>' +
