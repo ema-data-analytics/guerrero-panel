@@ -342,6 +342,8 @@ function confirmar(btn){
   },50);
   return true;
 }
+// El aviso de error se borra apenas el cliente corrige algún dato
+$('frm').addEventListener('input',function(){$('err').textContent='';});$('frm').addEventListener('change',function(){$('err').textContent='';});
 chips();filtrar();cuenta();cargarVivo();
 </script>
 </body>
