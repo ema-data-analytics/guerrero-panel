@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "1ad53b336c08"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "6897e021c675"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10271,6 +10271,27 @@ function pcCascos() {
   $id('pc-k-cli').addEventListener('change', function() { var n = pcCliId(this.value); if (n === PC_.kcli) return; PC_.kcli = n; pcCasAnt(); pcCasFilas(); });
   pcCasFilas(); pcCasAnt();
 }
+// Alta rápida de medida o marca sin salir de la carga de cascos (queda en el maestro y elegida en el renglón)
+function pcAltaRapida(que, i) {
+  var f = PC_.kf[i] || {}, med = que === 'MEDIDA';
+  if (med && !f.TIPO) { toast('Elegí primero el tipo de cubierta del renglón', 'r2'); return; }
+  showModal('<div class="mh"><span class="mt">' + (med ? 'Medida nueva' : 'Marca nueva') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    (med ? '<div class="tdim mb2" style="font-size:12px">Tipo ' + pcEsc(f.TIPO) + ' · línea ' + pcEsc(pcLineaDeTipo(f.TIPO)) + '. Queda en el maestro de medidas.</div>' : '<div class="tdim mb2" style="font-size:12px">Marca de fábrica del casco. Queda en el maestro de marcas.</div>') +
+    '<div class="fg"><label class="fl">' + (med ? 'Medida' : 'Marca') + '</label><input class="fi" id="pc-ar-v" value="' + pcEsc(med ? f.MEDIDA || '' : f.MARCA_FAB || '') + '" style="text-transform:uppercase" placeholder="' + (med ? 'Ej.: 295/80R22.5' : 'Ej.: PIRELLI') + '"/></div>' +
+    '<button class="btn btn-p mt3" id="pc-ar-ok" onclick="pcAltaRapidaOk(\'' + que + '\',' + i + ')"><i class="fas fa-save"></i> Agregar y usar</button></div>');
+  setTimeout(function() { var e = $id('pc-ar-v'); if (e) e.focus(); }, 50);
+}
+async function pcAltaRapidaOk(que, i) {
+  var f = PC_.kf[i], v = String($v('pc-ar-v') || '').trim().toUpperCase(); if (!v) { toast('Escribí el valor', 'r2'); return; }
+  var b = $id('pc-ar-ok'); b.disabled = true;
+  try {
+    var r = await gsRun('gsPC_AltaRapida', que, v, que === 'MEDIDA' ? pcLineaDeTipo(f.TIPO) : '');
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    if (que === 'MEDIDA') { PC_.d.medidas = PC_.d.medidas || []; if (!PC_.d.medidas.some(function(m) { return m.MEDIDA === r.VALOR && m.LINEA === r.LINEA; })) PC_.d.medidas.push({ MEDIDA: r.VALOR, LINEA: r.LINEA }); f.MEDIDA = r.VALOR; }
+    else { PC_.d.marcas = PC_.d.marcas || []; if (PC_.d.marcas.indexOf(r.VALOR) === -1) { PC_.d.marcas.push(r.VALOR); PC_.d.marcas.sort(); } f.MARCA_FAB = r.VALOR; }
+    toast((r.YA ? 'Ya existía: ' : 'Agregada: ') + r.VALOR + ' ✓', 'g'); closeModal(); pcCascos();
+  } catch (e) { toast(e.message, 'r2'); } finally { b.disabled = false; }
+}
 function pcCasFilas() {
   pcCasAuto();
   var optT = '<option value="">— sin orden —</option>' + PC_.d.trabajos.filter(function(x) { return x.ACTIVO != 0; }).map(function(x) { return '<option>' + pcEsc(x.TRABAJO) + '</option>'; }).join('');
@@ -10278,15 +10299,15 @@ function pcCasFilas() {
   $id('pc-k-filas').innerHTML = PC_.kf.map(function(f, i) {
     return '<tr><td class="mono tc">' + (i + 1) + '</td><td class="tdim">automático</td><td><select class="fs" data-i="' + i + '" data-k="TIPO" style="min-width:115px">' + opt.replace('<option>' + pcEsc(f.TIPO) + '</option>', '<option selected>' + pcEsc(f.TIPO) + '</option>') + '</select></td>' +
       '<td><input class="fi" data-i="' + i + '" data-k="DOT" value="' + pcEsc(f.DOT) + '" style="width:150px;text-transform:uppercase' + (f._AUTO ? ';color:var(--accent);font-style:italic' : '') + '" title="' + (f._AUTO ? 'Marca automática: si tiene DOT o marca, escribila encima' : '') + '"/></td>' +
-      '<td><input class="fi" list="' + (f.TIPO ? pcMedKey(f.TIPO) : 'pc-medidas') + '" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" placeholder="' + (f.TIPO ? '' : 'Elegí el tipo') + '" style="width:140px"/></td>' +
-      '<td><input class="fi" list="pc-fabricantes" data-i="' + i + '" data-k="MARCA_FAB" value="' + pcEsc(f.MARCA_FAB) + '" style="width:120px;text-transform:uppercase"/></td>' +
+      '<td><input class="fi" list="' + (f.TIPO ? pcMedKey(f.TIPO) : 'pc-medidas') + '" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" placeholder="' + (f.TIPO ? '' : 'Elegí el tipo') + '" style="width:140px"/><button class="btn btn-s btn-xs" title="Medida nueva" onclick="pcAltaRapida(\'MEDIDA\',' + i + ')">＋</button></td>' +
+      '<td style="white-space:nowrap"><input class="fi" list="pc-fabricantes" data-i="' + i + '" data-k="MARCA_FAB" value="' + pcEsc(f.MARCA_FAB) + '" style="width:120px;text-transform:uppercase"/><button class="btn btn-s btn-xs" title="Marca nueva" onclick="pcAltaRapida(\'MARCA\',' + i + ')">＋</button></td>' +
       '<td><select class="fs" data-i="' + i + '" data-k="TRABAJO" style="min-width:150px">' + (f.TIPO && f.MEDIDA ? pcTrabOpts(f.TIPO, f.MEDIDA, f.TRABAJO).replace('— elegí —', '— sin orden —') : optT.replace('<option>' + pcEsc(f.TRABAJO) + '</option>', '<option selected>' + pcEsc(f.TRABAJO) + '</option>')) + '</select></td>' +
       '<td><input class="fi" data-i="' + i + '" data-k="OBSERVACIONES" value="' + pcEsc(f.OBSERVACIONES) + '"/></td>' +
       '<td>' + (PC_.kf.length > 1 ? '<button class="btn btn-xs btn-d" onclick="PC_.kf.splice(' + i + ',1);pcCasFilas()">✕</button>' : '') + '</td></tr>';
   }).join('');
   document.querySelectorAll('#pc-k-filas [data-i]').forEach(function(e) {
     var fija = function(el) { var f = PC_.kf[+el.dataset.i]; f[el.dataset.k] = el.value; if (el.dataset.k === 'DOT') { f._AUTO = false; el.style.color = ''; el.style.fontStyle = ''; } };
-    e.addEventListener('change', function() { fija(this); if (this.dataset.k === 'DOT' && !this.value.trim()) { PC_.kf[+this.dataset.i]._AUTO = true; pcCasFilas(); } if (this.dataset.k === 'TIPO') pcCasFilas(); });
+    e.addEventListener('change', function() { fija(this); if (this.dataset.k === 'DOT' && !this.value.trim()) { PC_.kf[+this.dataset.i]._AUTO = true; pcCasFilas(); } if (this.dataset.k === 'TIPO' || this.dataset.k === 'MEDIDA') pcCasFilas(); });
     e.addEventListener('input', function() { fija(this); });
   });
 }
@@ -10523,15 +10544,47 @@ async function pcHistorial(m) {
   PC_.vida = { r: r, det: {} };
   showModal('<div class="mh"><span class="mt">Vida de la cubierta ' + pcEsc(r.marca) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" id="pc-vida">' +
     (r.vidas.length ? r.vidas.map(function(v, k) { return '<div style="text-align:right;margin-bottom:4px"><button class="btn btn-p btn-sm" onclick="pcVidaImprimir(' + k + ')"><i class="fas fa-print"></i> Imprimir para el cliente</button></div>' + pcVidaCab(v) + '<div id="pc-vida-' + k + '" class="tdim" style="font-size:12px;margin:6px 0 14px">Cargando el detalle…</div>'; }).join('') : '<div class="tdim">No hay ninguna cubierta con esa marca.</div>') +
-    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>', 'md-lg');
+    '</div><div class="mf">' + (r.vidas.length ? '<button class="btn btn-p" onclick="pcVidaCompleta()">⤢ Ver todo en pantalla completa</button>' : '') + '<button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>', 'md-lg');
   for (var k = 0; k < r.vidas.length; k++) {
     var v = r.vidas[k], h = '';
     for (var j = 0; j < (v.OTS || []).length; j++) {
       try { var d = await gsRun('gsPC_OTDetalle', v.OTS[j].ID_OT); var it = (d.items || []).filter(function(x) { return String(x.ID_CUB) === String(v.ID_CUB); })[0];
         if (it) { h += pcVidaDet(it, v.OTS[j], d); var rm = null; try { rm = await gsRun('gsPC_Remitos', v.OTS[j].ID_OT); } catch (e2) {} PC_.vida.det[k] = PC_.vida.det[k] || []; PC_.vida.det[k].push({ it: it, os: v.OTS[j], auto: d.autoclave || [], espec: d.espec || null, rem: rm && rm.REMITOS || [] }); } } catch (e) { h += '<div class="al al-r">' + pcEsc(e.message) + '</div>'; }
     }
+    h += pcVidaEntrega(k, v);
     var el = $id('pc-vida-' + k); if (el) { el.className = ''; el.innerHTML = h || '<div class="tdim">Todavía no entró a la línea.</div>'; }
   }
+}
+// Entrega al cliente: remito, si ya se entregó y la foto firmada
+function pcVidaEntrega(k, v) {
+  var rem = null; (PC_.vida.det[k] || []).forEach(function(x) { (x.rem || []).forEach(function(r) { if ((r.ITEMS || []).some(function(t) { return String(t.ID_CUB) === String(v.ID_CUB); })) rem = r; }); });
+  if (!rem) return v.ESTADO === 'RECHAZADA' ? '<div class="al al-y mt3">No apta: todavía no figura en un remito de devolución.</div>' : '';
+  return '<div class="card mt3"><div class="card-body" style="font-size:13px"><b>Entrega al cliente</b> · remito <b class="mono">' + pcEsc(rem.NRO) + '</b> del ' + fmtD(rem.FECHA) + ' · ' +
+    (rem.ESTADO === 'ENTREGADO' ? '<span class="badge b-green">✓ Entregado ' + fmtD(rem.FECHA_ENTREGA) + '</span>' + (rem.FOTO_FIRMA ? ' <button class="btn btn-s btn-xs" onclick="asVerImg(' + Number(rem.FOTO_FIRMA) + ',\'Remito ' + pcEsc(rem.NRO) + ' firmado\')">📷 Ver remito firmado</button>' : '') : '<span class="badge b-orange">Falta la foto del remito firmado</span>') + '</div></div>';
+}
+// La vida de la cubierta en pantalla completa (lo mismo del modal, todo abierto y más grande)
+function pcVidaCompleta() {
+  var src = $id('pc-vida'); if (!src) return;
+  var md = src.closest('.md') || src.parentNode, tt = md && md.querySelector('.mt') ? md.querySelector('.mt').textContent : 'Vida de la cubierta';
+  var ov = document.createElement('div'); ov.id = 'pc-vida-full';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:2000;background:var(--bg,#f3f4f6);overflow:auto;padding:16px';
+  ov.innerHTML = '<div style="max-width:1200px;margin:0 auto"><div class="flex gap2 mb3" style="position:sticky;top:0;z-index:2;background:var(--bg,#f3f4f6);padding:6px 0;align-items:center;justify-content:space-between">' +
+    '<div style="font-size:18px;font-weight:700">' + pcEsc(tt) + '</div>' +
+    '<button class="btn btn-s" onclick="var x=$id(\'pc-vida-full\');if(x)x.remove()">✕ Cerrar pantalla completa</button></div><div class="card"><div class="card-body" id="pc-vida-full-b"></div></div></div>';
+  document.body.appendChild(ov);
+  var b = $id('pc-vida-full-b'); b.innerHTML = src.innerHTML;
+  b.querySelectorAll('[id]').forEach(function(e) { e.removeAttribute('id'); });
+}
+// Orden de trabajo (boleta del cliente) desde el Historial: sus cubiertas y dónde está cada una
+function pcOTrabVer(id) {
+  var d = PC_.d, o = (d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0]; if (!o) return;
+  var cs = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(id); }).sort(function(a, b) { return a.ID_CUB - b.ID_CUB; });
+  var et = { EN_ESPERA: ['b-orange', 'Esperando'], EN_OT: ['b-blue', 'En la línea'], TERMINADA: ['b-green', 'Terminada'], RECHAZADA: ['b-red', 'No apta'], ANULADA: ['b-gray', 'Anulada'] };
+  showModal('<div class="mh"><span class="mt">' + pcEsc(o.NRO) + ' · ' + pcEsc(o.CLIENTE) + (o.NRO_MANUAL ? ' · boleta ' + pcEsc(o.NRO_MANUAL) : '') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="tdim mb2" style="font-size:12px">' + fmtD(+o.FECHA) + ' · ' + pcEsc(o.ESTADO) + ' · parche ' + (o.PARCHE_INCLUIDO === 'SI' ? 'incluido' : 'se cobra') + (o.OBSERVACIONES ? ' · ' + pcEsc(o.OBSERVACIONES) : '') + '. Tocá una cubierta para ver toda su vida.</div>' +
+    '<div class="tw"><table style="font-size:12px"><thead><tr><th>N° int.</th><th>DOT</th><th>Medida</th><th>Marca</th><th>Trabajo</th><th>Marca grabada</th><th>Etapa</th><th></th></tr></thead><tbody>' +
+    (cs.length ? cs.map(function(c) { var e = et[c.ESTADO] || ['b-gray', c.ESTADO]; return '<tr style="cursor:pointer" onclick="closeModal();pcHistorial(\'CUB:' + c.ID_CUB + '\')"><td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcEsc(c.DOT) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + '</td><td class="mono">' + pcEsc(c.MARCA || '—') + '</td><td><span class="badge ' + e[0] + '">' + e[1] + '</span></td><td><button class="btn btn-s btn-xs">Ver</button></td></tr>'; }).join('') : '<tr><td colspan="8" class="tc tdim">Sin cubiertas.</td></tr>') +
+    '</tbody></table></div></div><div class="mf"><button class="btn btn-p" onclick="closeModal();pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-print"></i> Ver todo / imprimir la orden</button><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>', 'md-lg');
 }
 // ── Certificado de trazabilidad para el cliente: todo lo que se le hizo a la cubierta (sin costos ni precios) ──
 function pcVidaImprimir(k) {
@@ -10800,11 +10853,11 @@ function pcHist() {
     if (sub === 'cub') {
       var cs = d.cubiertas.filter(function(c) { var o = ots[String(c.ID_OTRAB)] || {}; return ok([c.CLIENTE, o.NRO, o.NRO_MANUAL, c.DOT, c.MARCA, c.MEDIDA, c.TRABAJO].join(' ')); }).sort(function(a, b) { return b.ID_CUB - a.ID_CUB; });
       r = '<div class="card"><div class="card-hd"><span class="card-title">Cubiertas (' + cs.length + ')</span></div><div class="tw"><table style="font-size:12px"><thead><tr><th>Recibida</th><th>OT</th><th>Boleta</th><th>Cliente</th><th>DOT</th><th>Tipo</th><th>Medida</th><th>Trabajo</th><th>Etapa</th><th>Marca grabada</th></tr></thead><tbody>' +
-        cs.slice(0, 300).map(function(c) { var o = ots[String(c.ID_OTRAB)] || {}, e = etapa(c); return '<tr><td>' + fmtD(c.FECHA_RECEPCION) + '</td><td class="mono">' + pcEsc(o.NRO || '') + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL || c.NRO_MANUAL || '') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(c.DOT) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + '</td><td><span class="badge ' + e[0] + '">' + e[1] + '</span></td><td class="mono">' + (c.MARCA ? '<a href="#" onclick="pcHistorial(\'' + pcEsc(c.MARCA) + '\');return false">' + pcEsc(c.MARCA) + '</a>' : '—') + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+        cs.slice(0, 300).map(function(c) { var o = ots[String(c.ID_OTRAB)] || {}, e = etapa(c); return '<tr style="cursor:pointer" title="Ver la vida de la cubierta" onclick="pcHistorial(\'CUB:' + c.ID_CUB + '\')"><td>' + fmtD(c.FECHA_RECEPCION) + '</td><td class="mono">' + pcEsc(o.NRO || '') + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL || c.NRO_MANUAL || '') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(c.DOT) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + '</td><td><span class="badge ' + e[0] + '">' + e[1] + '</span></td><td class="mono">' + (c.MARCA ? pcEsc(c.MARCA) : '—') + ' <button class="btn btn-s btn-xs" onclick="event.stopPropagation();pcHistorial(\'CUB:' + c.ID_CUB + '\')">Ver</button></td></tr>'; }).join('') + '</tbody></table></div></div>';
     } else if (sub === 'otr') {
       var lo = (d.ordTrabajo || []).filter(function(o) { return ok([o.NRO, o.CLIENTE, o.NRO_MANUAL].join(' ')); }).sort(function(a, b) { return b.ID_OTRAB - a.ID_OTRAB; });
       r = '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de trabajo (' + lo.length + ')</span></div><div class="tw"><table style="font-size:12px"><thead><tr><th>OT</th><th>Fecha</th><th>Cliente</th><th>Boleta</th><th class="tr">Cubiertas</th><th>Estado</th></tr></thead><tbody>' +
-        lo.slice(0, 300).map(function(o) { var n = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(o.ID_OTRAB) && c.ESTADO !== 'ANULADA'; }).length; return '<tr' + (o.ESTADO === 'ANULADA' ? ' style="opacity:.55"' : '') + '><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL) + '</td><td class="tr">' + n + '</td><td><span class="badge ' + (o.ESTADO === 'ANULADA' ? 'b-gray">Anulada' : 'b-blue">' + pcEsc(o.ESTADO === 'ABIERTA' ? 'Abierta' : o.ESTADO)) + '</span></td><td><button class="btn btn-s btn-xs" onclick="pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-print"></i></button></td></tr>'; }).join('') + '</tbody></table></div></div>';
+        lo.slice(0, 300).map(function(o) { var n = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(o.ID_OTRAB) && c.ESTADO !== 'ANULADA'; }).length; return '<tr' + (o.ESTADO === 'ANULADA' ? ' style="opacity:.55"' : '') + '><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL) + '</td><td class="tr">' + n + '</td><td><span class="badge ' + (o.ESTADO === 'ANULADA' ? 'b-gray">Anulada' : 'b-blue">' + pcEsc(o.ESTADO === 'ABIERTA' ? 'Abierta' : o.ESTADO)) + '</span></td><td style="white-space:nowrap"><button class="btn btn-p btn-xs" onclick="pcOTrabVer(' + o.ID_OTRAB + ')">Ver</button> <button class="btn btn-s btn-xs" onclick="pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-print"></i></button></td></tr>'; }).join('') + '</tbody></table></div></div>';
     } else {
       var os = d.ots.filter(function(o) { return ok([o.NRO_OT, o.LINEA, o.ESTADO].join(' ')); }).sort(function(a, b) { return b.ID_OT - a.ID_OT; });
       r = '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de servicio (' + os.length + ')</span></div><div class="tw"><table style="font-size:12px"><thead><tr><th>Orden</th><th>Fecha</th><th>Línea</th><th class="tr">Titulares</th><th class="tr">Terminadas</th><th>Estado</th><th></th></tr></thead><tbody>' +
@@ -11134,18 +11187,33 @@ async function pcHerramental() {
   var disp = function(id) { return r.piezas.filter(function(p) { return p.ID_INSUMO === id && p.ESTADO === 'DISPONIBLE'; }).length; };
   $id('pc-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">Alta de piezas</span></div><div class="card-body"><div class="tdim mb3" style="font-size:12px">Cada inner, envelope o llanta es una pieza con su código. En cada estación se elige qué pieza se usó: así se sabe cuántos usos lleva y en qué cubiertas estuvo.</div>' +
     '<div class="fr"><div class="fg"><label class="fl">Herramental</label><select class="fs" id="pch-ins">' + r.herramental.map(function(h) { return '<option value="' + pcEsc(h.ID_INSUMO) + '" data-usos="' + h.MAX_USOS + '">' + pcEsc(h.ID_INSUMO + ' — ' + h.NOMBRE) + ' (' + disp(h.ID_INSUMO) + ' disponibles)</option>'; }).join('') + '</select></div>' +
+    '<div class="fg" style="flex:2 1 260px"><label class="fl">Marcas vulcanizadas (una por renglón o separadas por coma)</label><textarea class="fi" id="pch-m" rows="2" placeholder="Ej.: V-101, V-102" style="text-transform:uppercase"></textarea><div class="tdim" style="font-size:11px">Si las escribís, se da de alta una pieza por marca y la marca es su código. Si las dejás vacías, se usa la cantidad.</div></div>' +
     '<div class="fg"><label class="fl">Cantidad de piezas</label><input class="fi" type="number" min="1" max="200" id="pch-n" value="1"/></div><div class="fg"><label class="fl">Usos máximos</label><input class="fi" type="number" min="0" id="pch-u" placeholder="del insumo"/></div>' +
     '<div class="fg"><label class="fl">&nbsp;</label><button class="btn btn-p" onclick="pcAltaPiezas()">Dar de alta</button></div></div></div></div>' +
-    '<div class="card"><div class="tw"><table style="font-size:12px" id="pc-tbl-piezas"><thead><tr><th>Pieza</th><th>Herramental</th><th class="tr">Usos</th><th>Estado</th><th>Últimos usos</th><th></th></tr></thead><tbody>' +
+    '<div class="card"><div class="tw"><table style="font-size:12px" id="pc-tbl-piezas"><thead><tr><th>Marca (código)</th><th>Herramental</th><th class="tr">Usos</th><th>Estado</th><th>Últimos usos</th><th></th></tr></thead><tbody>' +
     r.piezas.map(function(p) { return '<tr' + (p.ESTADO === 'BAJA' ? ' style="opacity:.55"' : '') + '><td class="mono"><b>' + pcEsc(p.CODIGO) + '</b></td><td>' + pcEsc(p.NOMBRE) + '</td><td class="tr">' + p.USOS + ' / ' + (p.MAX_USOS || '∞') + '</td><td>' + (p.ESTADO === 'DISPONIBLE' ? '<span class="badge b-green">disponible</span>' : '<span class="badge b-gray">baja</span>') + '</td>' +
       '<td style="font-size:11px">' + p.HISTORIAL.slice(-3).map(function(h) { return pcEsc(h.NRO_OT + ' ' + h.MARCA); }).join(' · ') + '</td>' +
-      '<td>' + (p.ESTADO === 'DISPONIBLE' ? (pcPuede('ANULAR') ? '<button class="btn btn-s btn-xs" onclick="pcBajaPieza(' + p.ID_PIEZA + ',false)">Dar de baja</button>' : '') : (pcPuede('ANULAR') ? '<button class="btn btn-s btn-xs" onclick="pcBajaPieza(' + p.ID_PIEZA + ',true)">Reactivar</button>' : '')) + '</td></tr>'; }).join('') +
+      '<td style="white-space:nowrap">' + (pcPuede('EDITAR') ? '<button class="btn btn-w btn-xs" onclick="pcPiezaMarca(' + p.ID_PIEZA + ')">Marca</button> ' : '') + (p.ESTADO === 'DISPONIBLE' ? (pcPuede('ANULAR') ? '<button class="btn btn-s btn-xs" onclick="pcBajaPieza(' + p.ID_PIEZA + ',false)">Dar de baja</button>' : '') : (pcPuede('ANULAR') ? '<button class="btn btn-s btn-xs" onclick="pcBajaPieza(' + p.ID_PIEZA + ',true)">Reactivar</button>' : '')) + '</td></tr>'; }).join('') +
     '</tbody></table>' + (r.piezas.length ? '' : '<div class="tdim" style="padding:12px">No hay piezas cargadas.</div>') + '</div></div>';
 }
 async function pcAltaPiezas() {
-  var r = await gsRun('gsPC_AltaPiezas', $v('pch-ins'), $v('pch-n'), $v('pch-u'), '');
+  var mks = String($v('pch-m') || '').split(/[\n,;]+/).map(function(x) { return x.trim(); }).filter(function(x) { return x; });
+  var r = await gsRun('gsPC_AltaPiezas', $v('pch-ins'), $v('pch-n'), $v('pch-u'), '', mks);
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   toast('Piezas: ' + r.codigos.join(', ') + ' ✓', 'g'); pcHerramental();
+}
+function pcPiezaMarca(id) {
+  var p = (PC_.piezas.piezas || []).filter(function(x) { return String(x.ID_PIEZA) === String(id); })[0]; if (!p) return;
+  showModal('<div class="mh"><span class="mt">Marca vulcanizada · ' + pcEsc(p.NOMBRE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="tdim mb2" style="font-size:12px">Código actual: <b class="mono">' + pcEsc(p.CODIGO) + '</b> · ' + p.USOS + ' usos. Escribí la marca que tiene vulcanizada la pieza: es la que se elige en la estación.</div>' +
+    '<div class="fg"><label class="fl">Marca</label><input class="fi" id="pcpm-m" value="' + pcEsc(/#\d+$/.test(p.CODIGO) ? '' : p.CODIGO) + '" style="text-transform:uppercase"/></div>' +
+    '<button class="btn btn-p mt3" id="pcpm-ok" onclick="pcPiezaMarcaOk(' + p.ID_PIEZA + ')"><i class="fas fa-save"></i> Guardar</button></div>');
+  setTimeout(function() { var e = $id('pcpm-m'); if (e) e.focus(); }, 50);
+}
+async function pcPiezaMarcaOk(id) {
+  var b = $id('pcpm-ok'); b.disabled = true;
+  try { var r = await gsRun('gsPC_PiezaMarca', id, $v('pcpm-m')); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Marca ' + r.CODIGO + ' ✓', 'g'); closeModal(); pcHerramental(); }
+  catch (e) { toast(e.message, 'r2'); } finally { b.disabled = false; }
 }
 async function pcBajaPieza(id, act) { var r = await gsRun('gsPC_BajaPieza', id, act, act ? 'reactivada' : 'baja manual'); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Listo ✓', 'g'); pcHerramental(); }
 
@@ -11734,8 +11802,11 @@ function puFilaHTML(r, k) {
     // Si no hay de la que dice la receta, se ofrecen las del mismo tipo (inner o envelope) que haya en planta
     if (!ps.length) { var fam = /INNER/i.test(l.NOMBRE + ' ' + l.ID_INSUMO) ? /INNER/i : (/ENVEL/i.test(l.NOMBRE + ' ' + l.ID_INSUMO) ? /ENVEL/i : null); if (fam) { ps = PU_.f.piezas.filter(function(p) { return fam.test(p.NOMBRE || '') && !puPiezaTomada(p.ID_PIEZA, r); }); otraPz = true; } }
     // Un botón por modelo (con cuántas hay); si ya eligió una pieza, queda esa marcada
-    if (otraPz) { var cnt = {}, uno = {}; ps.forEach(function(p) { cnt[p.ID_INSUMO] = (cnt[p.ID_INSUMO] || 0) + 1; if (!uno[p.ID_INSUMO] || String(p.ID_PIEZA) === String(r.pieza)) uno[p.ID_INSUMO] = p; }); ps = Object.keys(uno).map(function(k) { var p = uno[k]; return { ID_PIEZA: p.ID_PIEZA, ID_INSUMO: p.ID_INSUMO, NOMBRE: p.NOMBRE, CODIGO: p.CODIGO, USOS: p.USOS, MAX_USOS: p.MAX_USOS, HAY: cnt[k] }; }); }
-    h += '<div class="pu-pz">' + ps.map(function(p) { return '<button class="' + (String(r.pieza) === String(p.ID_PIEZA) ? 'sel' : '') + '" data-a="pieza" data-v="' + p.ID_PIEZA + '">' + puEsc(otraPz ? String(p.NOMBRE || p.CODIGO).replace(/^(INNERLOPE|ENVELOPE EXTERNO) MAE\s*/i, '') : String(p.CODIGO).replace(/^.*#/, '#')) + '<small>' + (otraPz ? 'hay ' + p.HAY + ' · ' : '') + p.USOS + ' de ' + (p.MAX_USOS || '∞') + ' usos</small></button>'; }).join('') +
+    if (false) { var cnt = {}, uno = {}; ps.forEach(function(p) { cnt[p.ID_INSUMO] = (cnt[p.ID_INSUMO] || 0) + 1; if (!uno[p.ID_INSUMO] || String(p.ID_PIEZA) === String(r.pieza)) uno[p.ID_INSUMO] = p; }); ps = Object.keys(uno).map(function(k) { var p = uno[k]; return { ID_PIEZA: p.ID_PIEZA, ID_INSUMO: p.ID_INSUMO, NOMBRE: p.NOMBRE, CODIGO: p.CODIGO, USOS: p.USOS, MAX_USOS: p.MAX_USOS, HAY: cnt[k] }; }); }
+    var fq = String(r.fpz || '').toUpperCase().trim(), psv = fq ? ps.filter(function(p) { return String(p.CODIGO).toUpperCase().indexOf(fq) !== -1 || String(r.pieza) === String(p.ID_PIEZA); }) : ps;
+    h += (ps.length > 6 ? '<div class="pu-qty" style="margin:4px 0"><input data-a="fpz" value="' + puEsc(r.fpz || '') + '" placeholder="Escribí la marca vulcanizada" aria-label="Buscar marca de la pieza" style="text-transform:uppercase"></div>' : '') +
+      '<div class="tdim" style="font-size:13px;margin:2px 0 4px">Tocá la marca vulcanizada de la pieza que usaste' + (otraPz ? ' (no hay del modelo de la receta: estas son del mismo tipo)' : '') + '</div>' +
+      '<div class="pu-pz">' + psv.map(function(p) { return '<button class="' + (String(r.pieza) === String(p.ID_PIEZA) ? 'sel' : '') + '" data-a="pieza" data-v="' + p.ID_PIEZA + '">' + puEsc(puCodVer(p)) + '<small>' + (otraPz ? puEsc(String(p.NOMBRE || '').replace(/^(INNERLOPE|ENVELOPE EXTERNO) MAE\s*/i, '')) + ' · ' : '') + p.USOS + ' de ' + (p.MAX_USOS || '∞') + ' usos</small></button>'; }).join('') + (psv.length ? '' : '<span class="tdim">Ninguna pieza con esa marca</span>') +
       (PU_.d.herrObligatorio ? '' : '<button class="' + (r.sinNro ? 'sel' : '') + '" data-a="sinnro">Sin número</button>') + '</div>';
   } else {
     if (puSinStock(l) && !r.reemp) h += '<span style="color:var(--danger);font-weight:700">Sin stock en planta</span><button class="pu-btn pu-eq" data-a="otro">↺ Usé otro</button>';
@@ -11756,6 +11827,8 @@ function puFilaHTML(r, k) {
   return h + '</div></div>';
 }
 function puPiezaTomada(id, fila) { return PU_.rows.some(function(r) { return r !== fila && String(r.pieza) === String(id); }); }
+// La marca vulcanizada completa; los códigos automáticos viejos (INSUMO#n) se muestran como #n
+function puCodVer(p) { var c = String(p.CODIGO || ''); return c.indexOf(String(p.ID_INSUMO) + '#') === 0 ? c.replace(/^.*#/, '#') : c; }
 function puCodPieza(id) { var p = PU_.f.piezas.filter(function(x) { return String(x.ID_PIEZA) === String(id); })[0]; return p ? p.CODIGO : id; }
 function puNomIns(id) { var x = (PU_.d.insumos || []).filter(function(i) { return i.ID_INSUMO === id; })[0]; return x ? x.NOMBRE_INSUMO : id; }
 
@@ -12037,7 +12110,7 @@ function puLinHTML(r, k) {
   var nombre = r.reemp && r.idReal ? puNomIns(r.idReal) : l.NOMBRE;
   var usado = '—', est;
   if (r.no) { usado = '—'; est = '<span class="badge b-gray">No se usó</span>'; }
-  else if (l.TIPO_LINEA === 'HERRAMENTAL') { if (res) usado = puEsc(r.sinNro ? 'Sin número' : String(puCodPieza(r.pieza)).replace(/^.*#/, '#')); est = res ? '<span class="badge b-green">✓ Listo</span>' : '<span class="badge b-red">Falta</span>'; }
+  else if (l.TIPO_LINEA === 'HERRAMENTAL') { if (res) usado = puEsc(r.sinNro ? 'Sin número' : (function() { var p0 = PU_.f.piezas.filter(function(x) { return String(x.ID_PIEZA) === String(r.pieza); })[0]; return p0 ? puCodVer(p0) : String(r.pieza); })()); est = res ? '<span class="badge b-green">✓ Listo</span>' : '<span class="badge b-red">Falta</span>'; }
   else if (r.ok) { usado = puF(puN(r.real)) + ' ' + puEsc(l.UNIDAD); est = res ? '<span class="badge b-green">✓ Listo</span>' : (puMedir(l) && !(puN(r.real) > 0) ? '<span class="badge b-red">Falta cantidad</span>' : '<span class="badge b-orange">Falta motivo</span>'); }
   else est = '<span class="badge b-red">Falta</span>';
   return '<tr class="pu-lin ' + cls + '" data-k="' + k + '" onclick="puAbrirFila(' + k + ')">' +
@@ -12067,6 +12140,10 @@ function puPintarFila(k) {
     if (a === 'pa' || a === 'pz') {
       e.addEventListener('change', function() { r[a] = e.value; if (puPesoOk(r)) { r.real = puF(Math.round((puN(r.pa) - puN(r.pz)) * 1000) / 1000); r.ok = true; } else { r.ok = false; if (r.pa !== '' && r.pz !== '' && puN(r.pz) > puN(r.pa)) toast('El peso de después no puede ser mayor que el de antes', 'r2'); } r.motivo = ''; setTimeout(function() { puFicha(); puPintarFila(k); }, 0); });
       e.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') { e.blur(); } });
+      return;
+    }
+    if (a === 'fpz') {
+      e.addEventListener('input', function() { r.fpz = e.value; var pos = e.selectionStart; puPintarFila(k); var i2 = $id('pu-mfila').querySelector('[data-a="fpz"]'); if (i2) { i2.focus(); i2.setSelectionRange(pos, pos); } });
       return;
     }
     if (a === 'real') {
