@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9b4f4cd3d1cb"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "29cf6078ac6a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -4251,6 +4251,41 @@ async function gaAnular(id) {
     closeModal(); gaCargar();
   } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; }
 }
+
+// ── Compartido por Impositivo, Sueldos, Transporte y Financiero ──
+async function admLlenarCajas(selId) {
+  var sel = $id(selId); if (!sel) return;
+  try {
+    var r = await gsRun('gsADM_Cajas');
+    sel.innerHTML = '<option value="">— Elegí —</option>' + ((r && r.CAJAS) || []).map(function(c) { return '<option value="' + gaEsc(c.ID_CAJA) + '">' + gaEsc(c.CAJA_DESC) + ' (' + fmt(c.SALDO) + ')</option>'; }).join('');
+  } catch (e) { sel.innerHTML = '<option value="">Error cargando cajas</option>'; }
+}
+function admAnularPedir(tipo, id, desc, importe, fnDespues) {
+  window._admDespues = fnDespues;
+  showModal('<div class="mh"><span class="mt">Anular</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="al al-w mb3" style="font-size:12px">' + gaEsc(desc) + ' · <b>' + fmt(importe) + '</b><br>La plata vuelve a la caja de donde salió.</div>' +
+    '<div class="fg"><label class="fl">Motivo *</label><input id="adm-an-mot" class="fi"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-d" id="adm-an-btn" onclick="admAnular(\'' + gaEsc(tipo) + '\',\'' + gaEsc(id) + '\')"><i class="fas fa-ban"></i> Anular</button></div>');
+}
+async function admAnular(tipo, id) {
+  var mot = ($v('adm-an-mot') || '').trim();
+  if (!mot) { toast('Escribí el motivo', 'r2'); return; }
+  var b = $id('adm-an-btn'); if (b) b.disabled = true;
+  try {
+    var r = tipo === 'GASTO' ? await gsRun('gsGAS_Anular', id, mot) : await gsRun('gsADM_Anular', tipo, id, mot);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo anular', 'r2'); if (b) b.disabled = false; return; }
+    toast('Anulado ✓', 'g');
+    if (typeof _mcDel === 'function') { ['movimientos_caja', 'carga_gastos', 'carga_impositivo', 'carga_sueldos', 'carga_transporte'].forEach(function(x) { _mcDel(x); }); }
+    closeModal();
+    if (typeof window._admDespues === 'function') window._admDespues();
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; }
+}
+async function admGrabar(tipo, rec) {
+  var r = await gsRun('gsADM_Grabar', tipo, rec);
+  if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo grabar');
+  if (typeof _mcDel === 'function') { ['movimientos_caja', 'carga_impositivo', 'carga_sueldos', 'carga_transporte'].forEach(function(x) { _mcDel(x); }); }
+  return r;
+}
 </script>
 
 <script>
@@ -4564,8 +4599,8 @@ function chBotones(c) {
   if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'ENDOSADO') btn('btn-d', 'chModalRechazar', 'times', 'Rechazado por el proveedor');
   if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'DESCONTADO') btn('btn-d', 'chModalRechazar', 'times', 'Rechazado (la financiera lo cobra)');
   if (c.TIPO_ORIGEN === 'PROPIO' && c.ESTADO === 'ENTREGADO') { btn('btn-g', 'chModalDebitar', 'check', 'Debitado del banco'); btn('btn-d', 'chModalRechazar', 'times', 'Rechazado'); }
-  if (c.PUEDE_DESHACER && c.PUEDE_DESHACER !== 'Carga inicial') btn('btn-s', 'chModalDeshacer', 'undo', 'Deshacer: ' + c.PUEDE_DESHACER);
-  if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'EN_CARTERA' && c.VINCULO !== 'COBRO' && c.VINCULO !== 'ORDEN_PAGO') btn('btn-s', 'chModalAnular', 'ban', 'Anular');
+  if (c.PUEDE_DESHACER) btn('btn-s', 'chModalDeshacer', 'undo', 'Deshacer: ' + c.PUEDE_DESHACER);
+  if (c.ANULABLE) btn('btn-s', 'chModalAnular', 'ban', 'Anular');
   return b.join(' ');
 }
 function chAplicarFiltros() {
@@ -15419,7 +15454,7 @@ async function renderCargaFinanciero() {
   window._gasBancos      = _b['m_bancos']||[];
 
   var cajas = _b['cajas']||[];
-  var cajasOpts = cajas.map(function(c){ return '<option value="'+c.ID_CAJA+'">'+c.NOMBRE_CAJA+'</option>'; }).join('');
+  var cajasOpts = '';
   var finOpts = (window._gasFinancieras).map(function(f){ return '<option value="'+f.ID_FINANCIERA+'">'+f.NOMBRE+'</option>'; }).join('');
   var banOpts = (window._gasBancos).map(function(b){ return '<option value="'+b.ID_BANCO+'">'+b.NOMBRE+'</option>'; }).join('');
 
@@ -15435,41 +15470,23 @@ async function renderCargaFinanciero() {
     '<div class="fg mb3"><label class="fl">Tipo de Operacion *</label>' +
     '<select id="fin-tipo" class="fs" onchange="finOnTipo(this.value)">' +
     '<option value="">-- Seleccionar --</option>' +
-    '<option value="FINANCIERO_FIN">Descuento de Cheque (Financiera)</option>' +
-    '<option value="FINANCIERO_BANCO">Operacion Bancaria</option>' +
+    '<option value="FINANCIERO_FIN">Descuento de Cheque (se hace en Cheques)</option>' +
+    '<option value="FINANCIERO_BANCO">Comisiones y gastos bancarios</option>' +
     '<option value="FINANCIERO_PRESTAMO">Cuota Prestamo</option>' +
     '</select></div>' +
 
     '<div class="fg mb3"><label class="fl">Fecha *</label><input id="fin-fecha" class="fi" type="date" value="'+hoy+'"/></div>' +
 
-    // Panel Financiera
-    '<div id="fin-panel-fin" style="display:none">' +
-    '<div class="fg mb3"><label class="fl">Unidad de Negocio</label>' +
-    '<select id="fin-unidad" class="fs">' +
-    '<option value="">-- General --</option>' +
-    '<option value="INSUMOS">Insumos</option>' +
-    '<option value="CUBIERTAS_NUEVAS">Cubiertas Nuevas</option>' +
-    '<option value="OTRO">Otro</option>' +
-    '</select></div>' +
-    '<div class="fr mb3">' +
-    '<div class="fg"><label class="fl">Financiera</label>' +
-    '<select id="fin-fin-id" class="fs"><option value="">-- Seleccionar --</option>'+finOpts+'</select>' +
-    '<input id="fin-fin-nueva" class="fi" placeholder="O escribi nueva financiera..." style="margin-top:4px"/></div>' +
-    '<div class="fg"><label class="fl">Importe Total Cheque ($) *</label>' +
-    '<input id="fin-importe" class="fi" type="number" min="0" step="0.01" value="0" oninput="finCalc()"/></div>' +
-    '</div>' +
-    '<div class="fg mb3"><label class="fl">Monto Recibido ($) *</label>' +
-    '<input id="fin-recibido" class="fi" type="number" min="0" step="0.01" value="0" oninput="finCalc()"/></div>' +
-    '<div id="fin-resultado-fin" style="background:var(--danger-light);border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px">' +
-    '<div style="color:var(--dim)">Completá ambos montos para ver el calculo.</div></div>' +
-    '</div>' +
+    // Panel Financiera: el descuento se hace desde Cheques
+    '<div id="fin-panel-fin" style="display:none"><div class="al al-b mb3" style="font-size:13px">El descuento de un cheque se carga en <b>Cheques → Descontar</b> sobre el cheque en cartera: entra lo recibido a la cuenta y la diferencia queda como gasto financiero.' +
+    '<div class="mt3"><button class="btn btn-p btn-sm" onclick="navTo(\'cheques\')"><i class="fas fa-money-check-alt"></i> Ir a Cheques</button></div></div></div>' +
 
     // Panel Banco
     '<div id="fin-panel-banco" style="display:none">' +
     '<div class="fr mb3">' +
     '<div class="fg"><label class="fl">Banco</label>' +
     '<select id="fin-ban-id" class="fs"><option value="">-- Seleccionar --</option>'+banOpts+'</select>' +
-    '<input id="fin-ban-nuevo" class="fi" placeholder="O escribi nuevo banco..." style="margin-top:4px"/></div>' +
+    '</div>' +
     '<div class="fg"><label class="fl">Tipo Operacion</label>' +
     '<select id="fin-ban-tipo" class="fs">' +
     '<option value="COMISION">Comision</option>' +
@@ -15479,13 +15496,10 @@ async function renderCargaFinanciero() {
     '</select></div>' +
     '</div>' +
     '<div class="fr mb3">' +
-    '<div class="fg"><label class="fl">Importe Total ($) *</label>' +
-    '<input id="fin-ban-total" class="fi" type="number" min="0" step="0.01" value="0" oninput="finCalcBanco()"/></div>' +
-    '<div class="fg"><label class="fl">Monto Acreditado ($)</label>' +
-    '<input id="fin-ban-acred" class="fi" type="number" min="0" step="0.01" value="0" oninput="finCalcBanco()"/></div>' +
+    '<div class="fg"><label class="fl">Importe que debitó el banco ($) *</label>' +
+    '<input id="fin-ban-total" class="fi" type="number" min="0" step="0.01" value="0"/></div>' +
     '</div>' +
-    '<div id="fin-resultado-banco" style="background:var(--danger-light);border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px">' +
-    '<div style="color:var(--dim)">Completa los montos.</div></div>' +
+
     '</div>' +
 
     // Panel Prestamo
@@ -15502,7 +15516,7 @@ async function renderCargaFinanciero() {
     '<div style="color:var(--dim)">Completa capital e intereses.</div></div>' +
     '</div>' +
 
-    '<div class="fg mb3"><label class="fl">Caja *</label><select id="fin-caja" class="fs"><option value="">-- Seleccionar --</option>'+cajasOpts+'</select></div>' +
+    '<div class="fg mb3"><label class="fl">Sale de *</label><select id="fin-caja" class="fs"><option value="">Cargando...</option></select></div>' +
     '<div class="fg mb3"><label class="fl">Descripcion / Referencia</label><input id="fin-desc" class="fi" placeholder="Observaciones..."/></div>' +
 
     '<button class="btn btn-p" style="width:100%;justify-content:center" id="btn-fin-guardar"><i class="fas fa-save"></i> Guardar Operacion</button>' +
@@ -15522,6 +15536,7 @@ async function renderCargaFinanciero() {
 
     '</div></div>';
 
+  admLlenarCajas('fin-caja');
   $id('btn-fin-guardar').addEventListener('click', finGuardar);
   await finRefreshHist();
 }
@@ -15571,142 +15586,54 @@ function finCalcPrestamo() {
 }
 
 async function finGuardar() {
-  var tipo = $v('fin-tipo');
-  var caja = $v('fin-caja');
+  var tipo = $v('fin-tipo'), caja = $v('fin-caja');
   if (!tipo) { toast('Seleccionar tipo de operacion', 'r2'); return; }
-  if (!caja) { toast('Seleccionar caja', 'r2'); return; }
-
-  var importe = 0, recibido = 0, retencion = 0, pct = 0;
-  var nombreEntidad = '';
-
-  if (tipo === 'FINANCIERO_FIN') {
-    importe = parseFloat(($id('fin-importe')||{}).value)||0;
-    recibido = parseFloat(($id('fin-recibido')||{}).value)||0;
-    if (importe <= 0 || recibido <= 0) { toast('Completar importe y monto recibido', 'r2'); return; }
-    retencion = importe - recibido;
-    pct = importe > 0 ? Math.round(retencion/importe*1000)/10 : 0;
-    var finId = $v('fin-fin-id');
-    var finNueva = $v('fin-fin-nueva');
-    nombreEntidad = finNueva || (window._gasFinancieras.find(function(f){ return String(f.ID_FINANCIERA)===String(finId); })||{}).NOMBRE || finId;
-  } else if (tipo === 'FINANCIERO_BANCO') {
-    importe = parseFloat(($id('fin-ban-total')||{}).value)||0;
-    if (importe <= 0) { toast('Completar importe', 'r2'); return; }
-    var banId = $v('fin-ban-id');
-    var banNuevo = $v('fin-ban-nuevo');
-    nombreEntidad = banNuevo || (window._gasBancos.find(function(b){ return String(b.ID_BANCO)===String(banId); })||{}).NOMBRE || banId;
-  } else if (tipo === 'FINANCIERO_PRESTAMO') {
-    var cap = parseFloat(($id('fin-prest-capital')||{}).value)||0;
-    var int = parseFloat(($id('fin-prest-int')||{}).value)||0;
-    importe = cap + int;
-    if (importe <= 0) { toast('Completar capital e intereses', 'r2'); return; }
-    nombreEntidad = $v('fin-prest-entidad');
+  if (tipo === 'FINANCIERO_FIN') { toast('El descuento de cheques se carga en Cheques → Descontar', 'r2'); return; }
+  if (!caja) { toast('Elegí de qué caja sale', 'r2'); return; }
+  var o = { FECHA: $v('fin-fecha'), TIPO: tipo, ID_CAJA: caja, DESCRIPCION: ($v('fin-desc') || '').trim(), D: {} };
+  if (tipo === 'FINANCIERO_BANCO') {
+    o.IMPORTE = parseFloat(($id('fin-ban-total')||{}).value)||0;
+    o.D = { ID_BANCO: $v('fin-ban-id'), TIPO_OP: $v('fin-ban-tipo') };
+    if (!o.D.ID_BANCO) { toast('Elegí el banco', 'r2'); return; }
+  } else {
+    var cap = parseFloat(($id('fin-prest-capital')||{}).value)||0, it = parseFloat(($id('fin-prest-int')||{}).value)||0;
+    o.IMPORTE = Math.round((cap + it) * 100) / 100;
+    o.D = { ENTIDAD: ($v('fin-prest-entidad') || '').trim(), CUOTA: $v('fin-prest-cuota'), CAPITAL: cap, INTERESES: it };
   }
-
+  if (!(o.IMPORTE > 0)) { toast('Completar el importe', 'r2'); return; }
+  var btn = $id('btn-fin-guardar'); if (btn) btn.disabled = true;
   try {
-    var id = await nextId('carga_gastos', 'ID_CARGA_GASTO');
-    var gasRec = {
-      ID_CARGA_GASTO: id,
-      FECHA_GASTO: new Date(($v('fin-fecha')||fechaISO(new Date()))+'T12:00:00').getTime(),
-      IMPORTE_GASTO: importe,
-      ID_CAJA: caja,
-      DESCRIPCION_GASTO: ($v('fin-desc')||nombreEntidad),
-      TIPO_GASTO: tipo,
-      SUBTIPO_GASTO: $v('fin-unidad')||'',
-      ESTADO_GASTO: 'ACTIVO'
-    };
-    if (isGsMode()) { await gsRun('gsPut', 'carga_gastos', gasRec); }
-    else { await ADB.put('carga_gastos', gasRec); }
-
-    // Detalle financiero
-    if (tipo === 'FINANCIERO_FIN') {
-      var idDetFin = await nextId('gasto_det_financiero', 'ID_DET_FIN');
-      var detRec = {
-        ID_DET_FIN: idDetFin,
-        ID_CARGA_GASTO: id,
-        SUBTIPO: 'FINANCIERA',
-        ID_ENTIDAD: $v('fin-fin-id'),
-        NOMBRE_ENTIDAD: nombreEntidad,
-        TOTAL_OP: importe,
-        MONTO_RECIBIDO: recibido,
-        RETENCION: retencion,
-        PCT_RETENCION: pct,
-        TIPO_OP: $v('fin-unidad')||'GENERAL',
-        CAPITAL: 0, INTERESES: 0, NRO_CUOTA: 0
-      };
-      if (isGsMode()) { await gsRun('gsPut', 'gasto_det_financiero', detRec); }
-      else { await ADB.put('gasto_det_financiero', detRec); }
-      _mcDel('gasto_det_financiero');
-    }
-
-    // Movimiento caja
-    var idMov = await nextId('movimientos_caja', 'ID_MOV_CAJA');
-    var movRec = {
-      ID_MOV_CAJA: idMov, FECHA: Date.now(),
-      ID_CAJA: caja, TIPO_MOV: 'EGRESO',
-      CONCEPTO: tipo + ' - ' + nombreEntidad,
-      ORIGEN: 'FINANCIERO', ID_ORIGEN: id, IMPORTE: importe, SALDO_ACUM: 0
-    };
-    if (isGsMode()) { await gsRun('gsPut', 'movimientos_caja', movRec); }
-    else { await ADB.put('movimientos_caja', movRec); }
-
-    _mcDel('carga_gastos'); _mcDel('movimientos_caja');
-    toast('Operacion financiera registrada OK', 'g');
-    $id('fin-tipo').value = ''; finOnTipo('');
-    $id('fin-desc').value = '';
+    var r = await gsRun('gsGAS_Grabar', o);
+    if (btn) btn.disabled = false;
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo grabar', 'r2'); return; }
+    if (typeof _mcDel === 'function') { _mcDel('carga_gastos'); _mcDel('movimientos_caja'); }
+    toast('Operación registrada ✓', 'g');
+    $id('fin-tipo').value = ''; finOnTipo(''); $id('fin-desc').value = '';
+    admLlenarCajas('fin-caja');
     await finRefreshHist();
-  } catch(e) { toast('Error: '+e.message, 'r2'); }
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (btn) btn.disabled = false; }
 }
 
 async function finRefreshHist() {
   var body = $id('fin-hist-body'); if (!body) return;
-  var desde = ($id('fin-hist-desde')||{}).value||'';
-  var hasta = ($id('fin-hist-hasta')||{}).value||'';
-  var dt = desde ? new Date(desde+'T00:00:00').getTime() : 0;
-  var ht = hasta ? new Date(hasta+'T23:59:59').getTime() : Infinity;
-
-  var gastos = await ADB.getAll('carga_gastos');
-  var finDets = await ADB.getAll('gasto_det_financiero');
-
-  var rows = gastos.filter(function(g) {
-    return g.FECHA_GASTO>=dt && g.FECHA_GASTO<=ht &&
-      g.ESTADO_GASTO!=='ANULADO' &&
-      (g.TIPO_GASTO||'').startsWith('FINANCIERO');
-  });
-  rows.sort(function(a,b){ return (b.FECHA_GASTO||0)-(a.FECHA_GASTO||0); });
-
-  if (!rows.length) { body.innerHTML='<div class="tdim tc" style="padding:20px">Sin registros</div>'; return; }
-
-  var total = rows.reduce(function(s,r){ return s+(r.IMPORTE_GASTO||0); },0);
-  var totalRet = 0;
-
-  body.innerHTML = '<div style="padding:10px 14px;background:var(--surface2);font-size:12px;display:flex;justify-content:space-between">' +
-    '<span class="tdim">'+rows.length+' operaciones</span>' +
-    '<span class="mono tred" style="font-weight:700">Total: '+fmt(total)+'</span>' +
-    '</div>' +
-    rows.map(function(g) {
-      var fin = finDets.find(function(f){ return String(f.ID_CARGA_GASTO)===String(g.ID_CARGA_GASTO); });
-      var etiqueta = g.TIPO_GASTO==='FINANCIERO_FIN'?'Descuento cheque':g.TIPO_GASTO==='FINANCIERO_BANCO'?'Op. bancaria':'Cuota prestamo';
-      var detHtml = '';
-      if (fin) {
-        totalRet += parseFloat(fin.RETENCION)||0;
-        detHtml = '<div style="font-size:11px;margin-top:3px;color:var(--dim)">' +
-          'Recibido: <b class="tgreen">'+fmt(fin.MONTO_RECIBIDO||0)+'</b> | ' +
-          'Retencion: <b class="tred">'+fmt(fin.RETENCION||0)+'</b> ('+fin.PCT_RETENCION+'%)' +
-          (fin.NOMBRE_ENTIDAD?' | '+fin.NOMBRE_ENTIDAD:'') +
-          '</div>';
-      }
-      return '<div style="padding:12px 14px;border-bottom:1px solid var(--border)">' +
-        '<div class="flex jb">' +
-        '<div><span class="badge b-purple">'+etiqueta+'</span>' +
-        (g.SUBTIPO_GASTO?'<span class="badge b-blue" style="margin-left:4px">'+g.SUBTIPO_GASTO+'</span>':'')+
-        '<span style="font-size:12px;margin-left:8px;color:var(--dim)">'+(g.DESCRIPCION_GASTO||'')+'</span></div>' +
-        '<span class="mono tred" style="font-weight:700">'+fmt(g.IMPORTE_GASTO||0)+'</span>' +
-        '</div>' +
-        '<div style="font-size:11px;color:var(--dim);margin-top:2px">'+fmtD(g.FECHA_GASTO)+'</div>' +
-        detHtml +
-        '</div>';
+  var r;
+  try { r = await gsRun('gsGAS_Datos', $v('fin-hist-desde'), $v('fin-hist-hasta')); } catch (e) { body.innerHTML = '<div class="al al-r">Error: ' + gaEsc(e.message || e) + '</div>'; return; }
+  var tipos = { 'Comisiones y gastos bancarios': 1, 'Cuota de préstamo': 1, 'Financiero': 1 };
+  var rows = ((r && r.GASTOS) || []).filter(function(g) { return g.ESTADO !== 'ANULADO' && (tipos[g.TIPO] || String(g.TIPO).indexOf('FINANCIERO') === 0); });
+  if (!rows.length) { body.innerHTML = '<div class="tdim tc" style="padding:20px">Sin registros</div>'; return; }
+  var total = rows.reduce(function(s, g) { return s + g.IMPORTE; }, 0);
+  window._finRows = rows;
+  body.innerHTML = '<div style="padding:10px 14px;background:var(--surface2);font-size:12px;display:flex;justify-content:space-between"><span class="tdim">' + rows.length + (rows.length === 1 ? ' operación' : ' operaciones') + '</span>' +
+    '<span class="mono tred" style="font-weight:700">Total: ' + fmt(total) + '</span></div>' +
+    rows.map(function(g, i) {
+      return '<div style="padding:12px 14px;border-bottom:1px solid var(--border)"><div class="flex jb"><div><span class="badge b-purple">' + gaEsc(g.TIPO) + '</span>' +
+        '<span style="font-size:12px;margin-left:8px;color:var(--dim)">' + gaEsc(g.DESCRIPCION) + '</span></div>' +
+        '<span><span class="mono tred" style="font-weight:700">' + fmt(g.IMPORTE) + '</span>' +
+        (g.ANULABLE ? ' <button class="btn btn-xs btn-s" title="Anular" onclick="finAnular(' + i + ')"><i class="fas fa-ban"></i></button>' : '') + '</span></div>' +
+        '<div style="font-size:11px;color:var(--dim);margin-top:2px">' + fmtD(g.FECHA) + (g.CAJA ? ' · ' + gaEsc(g.CAJA) : (g.SIN_CAJA ? ' · sin caja' : '')) + (g.DETALLE ? ' · ' + gaEsc(g.DETALLE) : '') + '</div></div>';
     }).join('');
 }
+function finAnular(i) { var g = (window._finRows || [])[i]; if (g) admAnularPedir('GASTO', g.ID, g.DESCRIPCION, g.IMPORTE, finRefreshHist); }
 </script>
 
 <script>
@@ -15725,7 +15652,7 @@ async function renderCargaTransporte() {
   var cajas = _b['cajas']||[];
   var provs = (_b['proveedores']||[]);
 
-  var cajasOpts = cajas.map(function(c){ return '<option value="'+c.ID_CAJA+'">'+c.NOMBRE_CAJA+'</option>'; }).join('');
+  var cajasOpts = '';
   var provsOpts = '<option value="">-- Seleccionar --</option>' + provs.map(function(p){ return '<option value="'+p.ID_PROVEEDOR+'">'+p.PROVEEDOR+'</option>'; }).join('');
 
   el.innerHTML = '<div class="page-hdr">' +
@@ -15760,7 +15687,7 @@ async function renderCargaTransporte() {
     '<div class="fg mb3"><label class="fl">Descripcion / Detalle</label><input id="tr-desc" class="fi" placeholder="Detalle del flete..."/></div>' +
     '<div class="fr mb3">' +
     '<div class="fg"><label class="fl">Importe Total ($) *</label><input id="tr-importe" class="fi" type="number" min="0" step="0.01" value="0"/></div>' +
-    '<div class="fg"><label class="fl">Caja *</label><select id="tr-caja" class="fs"><option value="">-- Seleccionar --</option>'+cajasOpts+'</select></div>' +
+    '<div class="fg"><label class="fl">Sale de *</label><select id="tr-caja" class="fs"><option value="">Cargando...</option></select></div>' +
     '</div>' +
     '<button class="btn btn-p" style="width:100%;justify-content:center" id="btn-tr-guardar"><i class="fas fa-save"></i> Guardar</button>' +
     '</div>' +
@@ -15780,6 +15707,7 @@ async function renderCargaTransporte() {
 
     '</div></div>';
 
+  admLlenarCajas('tr-caja');
   document.getElementById('btn-tr-guardar') && document.getElementById('btn-tr-guardar').addEventListener('click', trGuardar);
   await trRefreshHist();
 }
@@ -15797,44 +15725,17 @@ async function trGuardar() {
   if (importe <= 0) { toast('Ingresar importe', 'r2'); return; }
   if (!caja) { toast('Seleccionar caja', 'r2'); return; }
 
+  var btn = $id('btn-tr-guardar'); if (btn) btn.disabled = true;
   try {
-    var id = await nextId('carga_transporte', 'ID_TRANSPORTE');
-    var rec = {
-      ID_TRANSPORTE: id,
-      FECHA: new Date(($v('tr-fecha')||fechaISO(new Date()))+'T12:00:00').getTime(),
-      NRO_COMP: $v('tr-nro'),
-      UNIDAD_NEGOCIO: unidad,
-      ID_PROVEEDOR: $v('tr-proveedor'),
-      ORIGEN: $v('tr-origen'),
-      DESTINO: $v('tr-destino'),
-      DESCRIPCION: $v('tr-desc'),
-      IMPORTE: importe,
-      ID_CAJA: caja,
-      ESTADO: 'ACTIVO'
-    };
-
-    if (isGsMode()) { await gsRun('gsPut', 'carga_transporte', rec); }
-    else { await ADB.put('carga_transporte', rec); }
-    _mcDel('carga_transporte');
-
-    // Registrar en caja
-    var idMov = await nextId('movimientos_caja', 'ID_MOV_CAJA');
-    var movCaja = {
-      ID_MOV_CAJA: idMov, FECHA: Date.now(),
-      ID_CAJA: caja, TIPO_MOV: 'EGRESO',
-      CONCEPTO: 'Transporte '+unidad+' - '+($v('tr-desc')||$v('tr-origen')||''),
-      ORIGEN: 'TRANSPORTE', ID_ORIGEN: id, IMPORTE: importe, SALDO_ACUM: 0
-    };
-    if (isGsMode()) { await gsRun('gsPut', 'movimientos_caja', movCaja); }
-    else { await ADB.put('movimientos_caja', movCaja); }
-    _mcDel('movimientos_caja');
-
+    await admGrabar('TRANSPORTE', { FECHA: $v('tr-fecha'), NRO_COMP: $v('tr-nro'), UNIDAD_NEGOCIO: unidad, ID_PROVEEDOR: $v('tr-proveedor'), ORIGEN: $v('tr-origen'), DESTINO: $v('tr-destino'), DESCRIPCION: $v('tr-desc'), IMPORTE: importe, ID_CAJA: caja });
+    if (btn) btn.disabled = false;
+    admLlenarCajas('tr-caja');
     toast('Transporte registrado OK', 'g');
     $id('tr-unidad').value = ''; trOnUnidad('');
     ['tr-nro','tr-origen','tr-destino','tr-desc'].forEach(function(f){ var el=$id(f); if(el) el.value=''; });
     $id('tr-importe').value = 0;
     await trRefreshHist();
-  } catch(e) { toast('Error: '+e.message, 'r2'); }
+  } catch(e) { toast('Error: '+e.message, 'r2'); if (btn) btn.disabled = false; }
 }
 
 async function trRefreshHist() {
@@ -15860,7 +15761,7 @@ async function trRefreshHist() {
       '<span class="badge '+(colores[r.UNIDAD_NEGOCIO]||'b-gray')+'">'+r.UNIDAD_NEGOCIO+'</span>' +
       '<span style="font-size:12px;margin-left:8px;color:var(--dim)">'+(r.DESCRIPCION||r.ORIGEN||'')+'</span>' +
       '</div>' +
-      '<span class="mono tred" style="font-weight:700">'+fmt(r.IMPORTE||0)+'</span>' +
+      '<span><span class="mono tred" style="font-weight:700">'+fmt(r.IMPORTE||0)+'</span> <button class="btn btn-xs btn-s" title="Anular" onclick="admAnularPedir(\'TRANSPORTE\',\''+r.ID_TRANSPORTE+'\',\''+String('Transporte '+r.UNIDAD_NEGOCIO).replace(/'/g,'')+'\','+(r.IMPORTE||0)+',trRefreshHist)"><i class="fas fa-ban"></i></button></span>' +
       '</div>' +
       '<div style="font-size:11px;color:var(--dim);margin-top:3px">' +
       fmtD(r.FECHA) + (r.NRO_COMP?' | '+r.NRO_COMP:'') +
@@ -15880,8 +15781,7 @@ async function renderCargaImpositivo() {
   var hoy = fechaISO(new Date());
   var mesActual = fechaISO(new Date()).slice(0,7);
 
-  var cajas = await ADB.getAll('cajas');
-  var cajasOpts = '<option value="">-- Seleccionar --</option>' + cajas.map(function(c){ return '<option value="'+c.ID_CAJA+'">'+c.NOMBRE_CAJA+'</option>'; }).join('');
+  var cajasOpts = '<option value="">Cargando...</option>';
 
   el.innerHTML = '<div class="page-hdr">' +
     '<div><div class="page-title">Gastos Impositivos</div>' +
@@ -15935,7 +15835,7 @@ async function renderCargaImpositivo() {
     '</select></div>' +
     '</div>' +
 
-    '<div class="fg mb3"><label class="fl">Caja</label><select id="imp-caja" class="fs">'+cajasOpts+'</select></div>' +
+    '<div class="fg mb3"><label class="fl">Sale de *</label><select id="imp-caja" class="fs">'+cajasOpts+'</select></div>' +
     '<div class="fg mb3"><label class="fl">Observaciones</label><input id="imp-obs" class="fi" placeholder="Notas adicionales..."/></div>' +
 
     '<button class="btn btn-p" style="width:100%;justify-content:center" id="btn-imp-guardar"><i class="fas fa-save"></i> Guardar</button>' +
@@ -15959,6 +15859,7 @@ async function renderCargaImpositivo() {
 
     '</div></div>';
 
+  admLlenarCajas('imp-caja');
   $id('btn-imp-guardar').addEventListener('click', impGuardar);
   $id('imp-hist-desde').addEventListener('change', impRefreshHist);
   await impRefreshHist();
@@ -15983,45 +15884,19 @@ async function impGuardar() {
   if (!tipo) { toast('Seleccionar tipo de impuesto', 'r2'); return; }
   if (importe <= 0) { toast('Ingresar importe', 'r2'); return; }
 
+  if (!$v('imp-caja')) { toast('Elegí de qué caja sale', 'r2'); return; }
+  var btn = $id('btn-imp-guardar'); if (btn) btn.disabled = true;
   try {
-    var id = await nextId('carga_impositivo', 'ID_IMPOSITIVO');
-    var rec = {
-      ID_IMPOSITIVO: id,
-      FECHA: new Date(($v('imp-fecha')||fechaISO(new Date()))+'T12:00:00').getTime(),
-      TIPO: tipo,
-      PERIODO: $v('imp-periodo'),
-      NRO_DJ: $v('imp-nro-dj'),
-      ORGANISMO: $v('imp-cuit'),
-      IMPORTE: importe,
-      IVA_VENTAS: parseFloat(($id('imp-iva-ventas')||{}).value)||0,
-      IVA_COMPRAS: parseFloat(($id('imp-iva-compras')||{}).value)||0,
-      FORMA_PAGO: $v('imp-forma'),
-      ID_CAJA: $v('imp-caja'),
-      OBSERVACIONES: $v('imp-obs'),
-      ESTADO: 'ACTIVO'
-    };
-
-    if (isGsMode()) { await gsRun('gsPut', 'carga_impositivo', rec); }
-    else { await ADB.put('carga_impositivo', rec); }
-    _mcDel('carga_impositivo');
-
-    if ($v('imp-caja') && importe > 0) {
-      var idMov = await nextId('movimientos_caja', 'ID_MOV_CAJA');
-      await ADB.put('movimientos_caja', {
-        ID_MOV_CAJA: idMov, FECHA: Date.now(),
-        ID_CAJA: $v('imp-caja'), TIPO_MOV: 'EGRESO',
-        CONCEPTO: tipo + ' - Periodo ' + $v('imp-periodo'),
-        ORIGEN: 'IMPOSITIVO', ID_ORIGEN: id, IMPORTE: importe, SALDO_ACUM: 0
-      });
-      _mcDel('movimientos_caja');
-    }
-
+    await admGrabar('IMPOSITIVO', { FECHA: $v('imp-fecha'), TIPO: tipo, PERIODO: $v('imp-periodo'), NRO_DJ: $v('imp-nro-dj'), ORGANISMO: $v('imp-cuit'), IMPORTE: importe,
+      IVA_VENTAS: parseFloat(($id('imp-iva-ventas')||{}).value)||0, IVA_COMPRAS: parseFloat(($id('imp-iva-compras')||{}).value)||0, FORMA_PAGO: $v('imp-forma'), ID_CAJA: $v('imp-caja'), OBSERVACIONES: $v('imp-obs') });
+    if (btn) btn.disabled = false;
+    admLlenarCajas('imp-caja');
     toast('Pago impositivo registrado OK', 'g');
     $id('imp-tipo').value = ''; impOnTipo('');
     ['imp-nro-dj','imp-cuit','imp-obs'].forEach(function(f){ var el=$id(f); if(el) el.value=''; });
     $id('imp-importe').value = 0;
     await impRefreshHist();
-  } catch(e) { toast('Error: '+e.message, 'r2'); }
+  } catch(e) { toast('Error: '+e.message, 'r2'); if (btn) btn.disabled = false; }
 }
 
 async function impRefreshHist() {
@@ -16051,7 +15926,7 @@ async function impRefreshHist() {
         '<span style="font-size:12px;margin-left:8px">'+r.PERIODO+'</span>' +
         (r.NRO_DJ?'<span class="tdim" style="font-size:11px;margin-left:8px">'+r.NRO_DJ+'</span>':'')+
         '</div>' +
-        '<span class="mono tred" style="font-weight:700">'+fmt(r.IMPORTE||0)+'</span>' +
+        '<span><span class="mono tred" style="font-weight:700">'+fmt(r.IMPORTE||0)+'</span> <button class="btn btn-xs btn-s" title="Anular" onclick="admAnularPedir(\'IMPOSITIVO\',\''+r.ID_IMPOSITIVO+'\',\''+String(r.TIPO+' '+r.PERIODO).replace(/'/g,'')+'\','+(r.IMPORTE||0)+',impRefreshHist)"><i class="fas fa-ban"></i></button></span>' +
         '</div>' +
         '<div style="font-size:11px;color:var(--dim);margin-top:3px">' +
         fmtD(r.FECHA) + (r.ORGANISMO?' | '+r.ORGANISMO:'') + ' | '+r.FORMA_PAGO +
@@ -16166,7 +16041,7 @@ async function renderCargaSueldos() {
     '<option value="TRANSFERENCIA">Transferencia</option>' +
     '<option value="CHEQUE">Cheque</option>' +
     '</select></div>' +
-    '<div class="fg"><label class="fl">Caja</label>' +
+    '<div class="fg"><label class="fl">Sale de *</label>' +
     '<select id="su-caja" class="fs"><option value="">-- Seleccionar --</option></select></div>' +
     '</div>' +
 
@@ -16192,13 +16067,7 @@ async function renderCargaSueldos() {
     '</div></div>';
 
   // Cargar cajas
-  var cajas = await ADB.getAll('cajas');
-  var selCaja = $id('su-caja');
-  cajas.forEach(function(c) {
-    var o = document.createElement('option');
-    o.value = c.ID_CAJA; o.textContent = c.NOMBRE_CAJA;
-    selCaja.appendChild(o);
-  });
+  admLlenarCajas('su-caja');
 
   $id('btn-su-guardar').addEventListener('click', suGuardar);
   $id('su-hist-desde').addEventListener('change', suRefreshHist);
@@ -16310,54 +16179,14 @@ async function suGuardar() {
 
   if (bruto <= 0) { toast('Ingresar sueldo basico', 'r2'); return; }
 
+  if (!$v('su-caja')) { toast('Elegí de qué caja sale', 'r2'); return; }
+  var btn = $id('btn-su-guardar'); if (btn) btn.disabled = true;
   try {
-    var id = await nextId('carga_sueldos', 'ID_SUELDO');
-    var rec = {
-      ID_SUELDO:      id,
-      FECHA:          Date.now(),
-      FECHA_PAGO:     new Date(($v('su-fecha-pago')||fechaISO(new Date()))+'T12:00:00').getTime(),
-      ID_EMPLEADO:    empId,
-      PERIODO:        periodo,
-      CATEGORIA:      $v('su-categoria'),
-      BASICO:         basico,
-      ANTIGUEDAD:     antig,
-      HS_EXTRA:       hsExtra,
-      PRESENTISMO:    present,
-      ADICIONAL_PROD: adicProd,
-      OTROS_HAB:      otrosHab,
-      BRUTO:          bruto,
-      JUBILACION:     jubil,
-      OBRA_SOCIAL:    obraSoc,
-      ANSSAL:         anssal,
-      SINDICATO:      sindic,
-      OTROS_DED:      otrosDed,
-      DEDUCCIONES:    dedTotal,
-      NETO:           neto,
-      FORMA_PAGO:     $v('su-forma-pago'),
-      ID_CAJA:        $v('su-caja'),
-      OBSERVACIONES:  $v('su-obs'),
-      ESTADO:         'ACTIVO'
-    };
-
-    if (isGsMode()) { await gsRun('gsPut', 'carga_sueldos', rec); }
-    else { await ADB.put('carga_sueldos', rec); }
-    _mcDel('carga_sueldos');
-
-    // Registrar en caja
-    if ($v('su-caja') && neto > 0) {
-      var idMov = await nextId('movimientos_caja', 'ID_MOV_CAJA');
-      var emp = _suEmpleados.find(function(e){ return String(e.ID_EMPLEADO)===String(empId); });
-      var movCaja = {
-        ID_MOV_CAJA: idMov, FECHA: Date.now(),
-        ID_CAJA: $v('su-caja'), TIPO_MOV: 'EGRESO',
-        CONCEPTO: 'Sueldo ' + (emp ? emp.APELLIDO+' '+emp.NOMBRE : empId) + ' - ' + periodo,
-        ORIGEN: 'SUELDO', ID_ORIGEN: id, IMPORTE: neto, SALDO_ACUM: 0
-      };
-      if (isGsMode()) { await gsRun('gsPut', 'movimientos_caja', movCaja); }
-      else { await ADB.put('movimientos_caja', movCaja); }
-      _mcDel('movimientos_caja');
-    }
-
+    await admGrabar('SUELDO', { FECHA_PAGO: $v('su-fecha-pago') || fechaISO(new Date()), ID_EMPLEADO: empId, PERIODO: periodo, CATEGORIA: $v('su-categoria'),
+      BASICO: basico, ANTIGUEDAD: antig, HS_EXTRA: hsExtra, PRESENTISMO: present, ADICIONAL_PROD: adicProd, OTROS_HAB: otrosHab,
+      JUBILACION: jubil, OBRA_SOCIAL: obraSoc, ANSSAL: anssal, SINDICATO: sindic, OTROS_DED: otrosDed, FORMA_PAGO: $v('su-forma-pago'), ID_CAJA: $v('su-caja'), OBSERVACIONES: $v('su-obs') });
+    if (btn) btn.disabled = false;
+    admLlenarCajas('su-caja');
     toast('Liquidacion guardada OK', 'g');
     // Reset form
     $id('su-emp-id').value = '';
@@ -16367,7 +16196,7 @@ async function suGuardar() {
      'su-otros-hab','su-jubilacion','su-obra-social','su-anssal','su-sindicato','su-otros-ded'].forEach(function(id){ $id(id).value=0; });
     suCalcular();
     await suRefreshHist();
-  } catch(e) { toast('Error: '+e.message, 'r2'); }
+  } catch(e) { toast('Error: '+e.message, 'r2'); if (btn) btn.disabled = false; }
 }
 
 async function suRefreshHist() {
@@ -16399,7 +16228,7 @@ async function suRefreshHist() {
       '<span class="badge b-blue" style="margin-left:8px">'+s.PERIODO+'</span>' +
       (s.CATEGORIA?'<span class="badge b-gray" style="margin-left:4px">'+s.CATEGORIA+'</span>':'')+
       '</div>' +
-      '<span class="mono" style="font-weight:700;color:var(--success)">'+fmt(s.NETO||0)+'</span>' +
+      (s.ESTADO === 'ANULADO' ? '<span class="badge b-red">ANULADO</span>' : '<span><span class="mono" style="font-weight:700;color:var(--success)">'+fmt(s.NETO||0)+'</span> <button class="btn btn-xs btn-s" title="Anular" onclick="admAnularPedir(\'SUELDO\',\''+s.ID_SUELDO+'\',\''+String('Sueldo '+nombre+' '+s.PERIODO).replace(/'/g,'')+'\','+(s.NETO||0)+',suRefreshHist)"><i class="fas fa-ban"></i></button></span>') +
       '</div>' +
       '<div style="font-size:11px;color:var(--dim);margin-top:4px;display:flex;gap:16px">' +
       '<span>Bruto: <b>'+fmt(s.BRUTO||0)+'</b></span>' +
