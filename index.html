@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "3307a2dbe060"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "28754bcb611b"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -697,6 +697,8 @@ function tienePermiso(modulo, accion) {
 }
 
 function puedeVerPagina(page) {
+  // Las pantallas de la planta de recapado no se muestran a los usuarios de una sucursal sin planta (el servidor también lo frena)
+  if (SES && SES.planta === false && moduloDePagina(page) === 'PRODUCCION') return false;
   return tienePermiso(moduloDePagina(page), 'VER');
 }
 
@@ -756,13 +758,13 @@ async function doLogin() {
     errEl.style.display = 'block'; return;
   }
 
-  SES = { usuario: data.usuario, nombre: data.nombre, rol: data.rol, token: data.token, permisos: data.permisos };
+  SES = { usuario: data.usuario, nombre: data.nombre, rol: data.rol, token: data.token, permisos: data.permisos, suc: data.sucursal || 'TODAS', sucNombre: data.sucursalNombre || '', planta: data.planta !== false };
   document.getElementById('lp').value = '';
   errEl.style.display = 'none';
   document.getElementById('login-wrap').style.display = 'none';
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('sb-nm').textContent = SES.nombre;
-  document.getElementById('sb-rol').textContent = SES.rol;
+  document.getElementById('sb-rol').textContent = SES.rol + (SES.suc && SES.suc !== 'TODAS' ? ' · ' + (SES.sucNombre || SES.suc) : '');
   document.getElementById('sb-av').textContent = (SES.nombre || '?')[0];
   aplicarPermisosMenu();
   appInit();
@@ -16437,6 +16439,7 @@ var ACCIONES_PERM  = ['VER','AGREGAR','EDITAR','ANULAR','VER_PRECIOS'];
 var ACCIONES_LABEL = ['Ver','Agregar','Editar','Anular','Ver Precios'];
 
 // Normaliza usuario: acepta campos en mayúscula o minúscula
+function segSucNom(c) { if (!c || c === 'TODAS') return 'Todas'; var x = (window._segSucs || []).filter(function(y) { return y.CODIGO === c; })[0]; return x ? x.NOMBRE : c; }
 function segNorm(u) {
   if (!u) return {};
   return {
@@ -16444,6 +16447,7 @@ function segNorm(u) {
     NOMBRE:        u.NOMBRE        || u.nombre        || '',
     USUARIO:       u.USUARIO       || u.usuario       || '',
     ROL:           u.ROL           || u.rol           || '',
+    SUCURSAL:      u.SUCURSAL      || u.sucursal      || '',
     ACTIVO:        u.ACTIVO        !== undefined ? u.ACTIVO : (u.activo !== undefined ? u.activo : 1),
     ULTIMO_ACCESO: u.ULTIMO_ACCESO || u.ultimo_acceso || ''
   };
@@ -16482,6 +16486,7 @@ async function segCargarUsuarios() {
   if(!cont) return;
   cont.innerHTML = '<div class="tdim tc" style="padding:40px"><i class="fas fa-sync-alt fa-spin"></i> Cargando...</div>';
   try {
+    try { var rs = await gsRun('gsSUC_Lista'); window._segSucs = (rs && rs.SUCURSALES) || []; } catch (e0) { window._segSucs = window._segSucs || []; }
     var data = await gsRun('gsGetUsuarios');
     _segUsuarios = Array.isArray(data) ? data : [];
     segRenderUsuarios(_segUsuarios);
@@ -16505,7 +16510,7 @@ function segRenderUsuarios(lista) {
         '<div class="user-nombre">'+u.NOMBRE+'</div>' +
         '<div class="user-meta">'+
           '<span class="mono">@'+u.USUARIO+'</span> &mdash; '+
-          '<strong>'+u.ROL+'</strong> &mdash; '+
+          '<strong>'+u.ROL+'</strong> &mdash; '+'📍 '+segSucNom(u.SUCURSAL)+' &mdash; '+
           'Último acceso: '+(u.ULTIMO_ACCESO?fmtD(new Date(u.ULTIMO_ACCESO).getTime()):'-')+
         '</div>' +
       '</div>' +
@@ -16545,7 +16550,10 @@ function segEditarUsuario(id) {
 
 function segModalUsuario(u) {
   var titulo = u ? 'Editar usuario' : 'Nuevo usuario';
-  var roles = ['SUPER','ADMINISTRADOR','OPERADOR','FACTURACION'];
+  var roles = ['SUPER','ADMINISTRADOR','ENCARGADO_SUCURSAL','VENDEDOR','FACTURACION','OPERADOR'];
+  var sucs = (window._segSucs || []).map(function(x) { return x.CODIGO; });
+  var sucAct = u ? (u.SUCURSAL || 'PLANTA') : 'PLANTA';
+  var sucOpts = ['TODAS'].concat(sucs).map(function(c) { var x = (window._segSucs || []).filter(function(y) { return y.CODIGO === c; })[0]; return '<option value="' + c + '"' + (c === sucAct ? ' selected' : '') + '>' + (x ? x.NOMBRE : 'TODAS (solo SUPER y ADMINISTRADOR)') + '</option>'; }).join('');
   var roleOpts = roles.map(function(r){
     return '<option value="'+r+'"'+(u&&u.ROL===r?' selected':'')+'>'+r+'</option>';
   }).join('');
@@ -16561,6 +16569,8 @@ function segModalUsuario(u) {
     '<div class="fr mb3">'+
       '<div class="fg"><label class="fl">Rol *</label>'+
       '<select id="su-rol" class="fs">'+roleOpts+'</select></div>'+
+      '<div class="fg"><label class="fl">Sucursal *</label>'+
+      '<select id="su-suc" class="fs">'+sucOpts+'</select><div class="tdim" style="font-size:11px">Solo ve y carga lo de su sucursal</div></div>'+
       '<div class="fg"><label class="fl">'+(u?'Nueva contraseña (dejar vacío para no cambiar)':'Contraseña *')+'</label>'+
       '<input id="su-pass" class="fi" type="password" placeholder="'+(u?'Nueva contraseña...':'Contraseña')+'"/></div>'+
     '</div>'+
@@ -16577,10 +16587,11 @@ async function segGuardarUsuario(id) {
   var usuario = (document.getElementById('su-usuario')||{}).value||'';
   var rol = (document.getElementById('su-rol')||{}).value||'';
   var pass = (document.getElementById('su-pass')||{}).value||'';
+  var suc = (document.getElementById('su-suc')||{}).value||'';
   if(!nombre.trim()||!usuario.trim()) { toast('Completar nombre y usuario','r2'); return; }
   if(!id && !pass) { toast('Ingresar contraseña para nuevo usuario','r2'); return; }
   try {
-    var rec = { NOMBRE:nombre.trim().toUpperCase(), USUARIO:usuario.trim().toLowerCase(), ROL:rol, ACTIVO:1 };
+    var rec = { NOMBRE:nombre.trim().toUpperCase(), USUARIO:usuario.trim().toLowerCase(), ROL:rol, ACTIVO:1, SUCURSAL:suc };
     if(id) rec.ID_USUARIO = id;
     if(pass) rec.PASS_NUEVA = pass;
     var res = await gsRun('gsSaveUsuario', rec);
