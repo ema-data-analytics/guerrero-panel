@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "930012ba0876"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9b4f4cd3d1cb"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -4103,693 +4103,156 @@ async function compraAnular(id, btn) {
 </script>
 
 <script>
+// ── GASTOS VARIOS: se graban en el servidor (gsGAS_*). Cada gasto sale de una caja; anular devuelve la plata a la caja. ──
+var _GA = { GASTOS: [], CAJAS: [], TIPOS: [], EMPLEADOS: [], VEHICULOS: [], BANCOS: [] };
+function gaEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function gaNum(v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; }
+function gaR2(n) { return Math.round(n * 100) / 100; }
+function gaOpts(arr, vacio) { return '<option value="">' + (vacio || '— Elegí —') + '</option>' + arr.map(function(x) { return '<option value="' + gaEsc(x.ID) + '">' + gaEsc(x.NOMBRE) + '</option>'; }).join(''); }
 async function renderCargaGastos() {
   var el = $id('page-carga-gastos');
   if (!el) return;
-  var _stores=['cajas','m_tipo_gastos','concepto_gasto','m_financieras','m_bancos','m_empleados','vehiculos','carga_gastos','carga_gasto_detalle'];
-  var _b;
-  if(isGsMode()){
-    _b=await gsRun('gsBatchLoad',_stores);
-  } else {
-    var _pa=await Promise.all(_stores.map(function(s){return ADB.getAll(s);}));
-    _b={}; _stores.forEach(function(s,i){_b[s]=_pa[i];});
-  }
-  var cajas=_b['cajas']||[];
-  var tiposGasto=_b['m_tipo_gastos']||[];
-  var conceptos=_b['concepto_gasto']||[];
-  var financieras=_b['m_financieras']||[];
-  var bancos=_b['m_bancos']||[];
-  var empleados=_b['m_empleados']||[];
-  var vehiculos=_b['vehiculos']||[];
-  var _histAll=_b['carga_gastos']||[];
-  var _histDet=_b['carga_gasto_detalle']||[];
-  var histGastos= [];
-
-  var tiposOpts = tiposGasto.filter(function(t){return t.ACTIVO!==0&&t.ACTIVO!=='0';}).map(function(t){return '<option value="'+t.ID_TIPO_GASTO+'">'+t.NOMBRE_CATEGORIA+'</option>';}).join('');
-
-  el.innerHTML =
-    '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-receipt" style="color:var(--warn)"></i> Carga de Gastos</div>' +
-    '<div class="page-sub">REGISTRO DETALLADO POR TIPO</div></div></div>' +
-    '<div class="content"><div class="g2" style="align-items:start">' +
-    '<div>' +
-    '<div class="card mb4"><div class="card-hd"><span class="card-title">Datos del gasto</span></div><div class="card-body">' +
-    '<div class="fr mb3">' +
-    '<div class="fg"><label class="fl">Fecha *</label><input id="gas-fecha" class="fi" type="date" value="'+fechaISO(new Date())+'"/></div>' +
-    '<div class="fg"><label class="fl">Caja de Egreso</label>' +
-    '<select id="gas-caja" class="fs"><option value="">— Seleccionar —</option>' +
-    cajas.map(function(c){return '<option value="'+c.ID_CAJA+'">'+c.CAJA_DESC+'</option>';}).join('') +
-    '</select></div></div>' +
-    '<div class="fr mb3">' +
-    '<div class="fg"><label class="fl">Tipo de Gasto *</label>' +
-    '<select id="gas-tipo" class="fs" onchange="onGasTipoChange(this.value)"><option value="">— Seleccionar tipo —</option>' +
-    '<option value="FINANCIERO_FIN">Financiero — Descuento de cheque (Financiera)</option>' +
-    '<option value="FINANCIERO_BANCO">Financiero — Operación bancaria</option>' +
-    '<option value="FINANCIERO_PRESTAMO">Financiero — Cuota préstamo</option>' +
-    '<option value="PERSONAL">Personal — Sueldo / Jornal</option>' +
-    '<option value="IMPOSITIVO">Impositivo</option>' +
-    '<option value="OPERATIVO">Operativo (alquiler, servicios, etc.)</option>' +
-    '<option value="PRODUCCION">Insumos adicionales producción</option>' +
-    '<option value="ADMINISTRATIVO">Administrativo</option>' +
-    '<option value="OTRO">Otro</option>' +
-    '<option value="VIATICO">Viáticos</option>' +
-    '<option value="TRANSPORTE">Transporte</option>' +
-    '<option value="SERVICE">Service / Mantenimiento Vehículo</option>' +
-    tiposOpts +
-    '</select></div>' +
-    '<div class="fg"><label class="fl">Descripción</label><input id="gas-desc" class="fi" placeholder="Descripción del gasto"/></div>' +
-    '</div>' +
-    '</div></div>' +
-
-    '<div class="card mb4" id="gas-det-panel" style="display:none">' +
-    '<div class="card-hd"><span class="card-title" id="gas-det-titulo">Detalle</span></div>' +
-    '<div class="card-body" id="gas-det-body"></div>' +
-    '</div>' +
-
-    '<div class="card mb4" id="gas-service-panel" style="display:none">' +
-    '<div class="card-hd"><span class="card-title">Service / Mantenimiento Vehículo</span></div>' +
-    '<div class="card-body">' +
-    '<div class="fr mb3">' +
-    '<div class="fg"><label class="fl">Vehículo *</label>' +
-    '<select id="gas-serv-veh" class="fs"><option value="">Seleccionar vehículo</option>' +
-    (vehiculos||[]).map(function(v){ return '<option value="'+v.ID_VEHICULO+'">'+v.PATENTE+' — '+v.TIPO+'</option>'; }).join('') +
-    '</select></div>' +
-    '<div class="fg"><label class="fl">Tipo de service</label>' +
-    '<select id="gas-serv-tipo" class="fs">' +
-    '<option value="ACEITE">Cambio de aceite</option>' +
-    '<option value="NEUMATICOS">Neumáticos</option>' +
-    '<option value="FRENOS">Frenos</option>' +
-    '<option value="MECANICA">Mecánica general</option>' +
-    '<option value="ELECTRICIDAD">Electricidad</option>' +
-    '<option value="OTRO">Otro</option>' +
-    '</select></div></div>' +
-    '<div class="fg"><label class="fl">Detalle del service</label>' +
-    '<input id="gas-serv-detalle" class="fi" placeholder="Descripción del trabajo realizado..."/></div>' +
-    '</div></div>' +
-    '<div class="card mb4"><div class="card-hd"><span class="card-title">Importe</span></div><div class="card-body">' +
-    '<div class="fr" style="align-items:end">' +
-    '<div class="fg"><label class="fl">Importe Total ($) *</label><input id="gas-importe" class="fi" type="number" min="0" step="0.01" placeholder="0.00" oninput="onGasImporteChange()"/></div>' +
-    '<div id="gas-calculo" style="flex:1;padding:10px;background:var(--surface2);border-radius:8px;font-size:12px;min-height:60px"></div>' +
-    '</div>' +
-    '</div></div>' +
-
-    '<button class="btn btn-p btn-xl" style="width:100%;justify-content:center" onclick="confirmarGasto()">' +
-    '<i class="fas fa-check-circle"></i> Confirmar Gasto</button>' +
-    '</div>' +
-
-    '<div class="card">' +
-    '<div class="card-hd"><span class="card-title">Historial de Gastos</span>' +
-    '<span class="badge b-warn" id="gas-hist-cnt">...</span></div>' +
-    buildFiltroFechas('gastos','gasRefreshHist()') +
-    '<div class="tw"><table id="tbl-gastos"><thead><tr>' +
-    '<th>Fecha</th><th>Descripcion</th><th>Tipo</th><th class="tr">Importe</th><th class="tc">Estado</th><th></th>' +
-    '</tr></thead><tbody id="gas-hist-body">' +
-    '<tr><td colspan="6" class="tc tdim" style="padding:16px"><i class="fas fa-sync-alt fa-spin"></i> Cargando...</td></tr>' +
-    '</tbody></table></div></div>' +
+  var def = fechaDefecto30();
+  el.innerHTML = '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-receipt" style="color:var(--warn)"></i> Gastos varios</div>' +
+    '<div class="page-sub">CADA GASTO SALE DE UNA CAJA O CUENTA</div></div></div>' +
+    '<div class="content"><div class="g2" style="align-items:start"><div>' +
+    '<div class="card mb4"><div class="card-hd"><span class="card-title">Nuevo gasto</span></div><div class="card-body">' +
+    '<div class="fr mb3"><div class="fg"><label class="fl">Fecha *</label><input id="gas-fecha" class="fi" type="date" value="' + fechaISO(new Date()) + '"></div>' +
+    '<div class="fg"><label class="fl">Sale de *</label><select id="gas-caja" class="fs"><option value="">Cargando...</option></select></div></div>' +
+    '<div class="fg mb3"><label class="fl">Tipo de gasto *</label><select id="gas-tipo" class="fs" onchange="gaTipo()"><option value="">Cargando...</option></select></div>' +
+    '<div id="gas-det" class="mb3"></div>' +
+    '<div class="fr mb3"><div class="fg"><label class="fl">Importe que sale de la caja *</label><input id="gas-importe" class="fi" type="number" min="0" step="0.01" oninput="gaCalc()"></div>' +
+    '<div class="fg"><label class="fl">Descripción</label><input id="gas-desc" class="fi" placeholder="Si se deja vacío se arma sola"></div></div>' +
+    '<div id="gas-calc" class="mb3"></div>' +
+    '<div class="al al-b mb3" style="font-size:12px">El descuento de cheques se carga en <b>Cheques → Descontar</b>: ahí queda el costo como gasto financiero.</div>' +
+    '<button class="btn btn-p" id="gas-btn" style="width:100%;justify-content:center" onclick="gaGuardar()"><i class="fas fa-check-circle"></i> Registrar gasto</button>' +
+    '</div></div></div>' +
+    '<div class="card"><div class="card-hd"><span class="card-title">Gastos</span><span class="badge b-warn" id="gas-cnt">...</span></div>' +
+    '<div class="fbar" style="flex-wrap:wrap;gap:8px"><input id="gas-desde" type="date" class="fi" style="width:140px" value="' + def.desde + '" onchange="gaCargar()">' +
+    '<input id="gas-hasta" type="date" class="fi" style="width:140px" value="' + def.hasta + '" onchange="gaCargar()">' +
+    '<input id="gas-buscar" class="fi" style="width:180px" placeholder="Buscar..." oninput="gaPintar()"></div>' +
+    '<div class="tw"><table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Caja</th><th class="tr">Importe</th><th></th></tr></thead><tbody id="gas-body"></tbody><tfoot id="gas-pie"></tfoot></table></div></div>' +
     '</div></div>';
-
-  // Store data for use in handlers
-  window._gasFinancieras = financieras;
-  window._gasBancos      = bancos;
-  window._gasEmpleados   = empleados;
-  window._gasVehiculos   = vehiculos||[];
-  // Cargar historial completo
-  gasRefreshHist();
-  // Conectar select gas-tipo al panel service
-  var selGasTipo = document.getElementById('gas-tipo');
-  if(selGasTipo) {
-    selGasTipo.addEventListener('change', function() {
-      var sp = document.getElementById('gas-service-panel');
-      if(sp) sp.style.display = (this.value === 'SERVICE') ? '' : 'none';
-    });
-  }
+  await gaCargar(true);
 }
-
-async function gasRefreshHist() {
-  var tbody=$id('gas-hist-body'); var cnt=$id('gas-hist-cnt');
-  if(!tbody) return;
-  var todos=(await ADB.getAll('carga_gastos')).sort(function(a,b){return (b.FECHA_GASTO||0)-(a.FECHA_GASTO||0);});
-  var desde=($id('flt-desde-gastos')||{}).value||'';
-  var hasta=($id('flt-hasta-gastos')||{}).value||'';
-  var buscar=($id('flt-buscar-gastos')||{}).value||'';
-  var fil=fechaFiltrar(todos,'FECHA_GASTO',desde,hasta);
-  fil=filtrarTexto(fil,buscar);
-  pagInit('gastos',fil,50);
-  if(cnt) cnt.textContent=fil.length+' registros';
-  window['_pagRender_gastos']=function(){
-    var pag=pagGet('gastos');
-    if(!pag.length){tbody.innerHTML='<tr><td colspan="6" class="tc tdim" style="padding:16px">Sin gastos en el período.</td></tr>';pagNav('gastos',tbody,window['_pagRender_gastos']);return;}
-    tbody.innerHTML=pag.map(function(g){
-      var an=g.ESTADO_GASTO==='ANULADO';
-      return '<tr'+(an?' style="opacity:0.5;text-decoration:line-through"':'')+'>'+
-        '<td class="mono" style="font-size:12px">'+fmtD(g.FECHA_GASTO)+'</td>'+
-        '<td style="font-size:12px">'+(g.DESCRIPCION_GASTO||'—')+'</td>'+
-        '<td><span class="badge b-warn" style="font-size:9px">'+(g.TIPO_GASTO||'—')+'</span></td>'+
-        '<td class="mono tr tred">'+fmt(g.IMPORTE_GASTO||0)+'</td>'+
-        '<td class="tc"><span class="badge '+(an?'b-red':'b-green')+'" style="font-size:9px">'+(an?'ANULADO':'ACTIVO')+'</span></td>'+
-        '<td style="white-space:nowrap">'+
-        '<button class="btn btn-xs btn-s" onclick="gasVerDetalle(\''+g.ID_CARGA_GASTO+'\')" title="Ver"><i class="fas fa-eye"></i></button>'+
-        (an?'':' <button class="btn btn-xs btn-w" onclick="gasEditar(\''+g.ID_CARGA_GASTO+'\')" title="Editar"><i class="fas fa-pencil-alt"></i></button>')+
-        (an?'':' <button class="btn btn-xs btn-d" onclick="gasAnular(\''+g.ID_CARGA_GASTO+'\')" title="Anular"><i class="fas fa-ban"></i></button>')+
-        '</td></tr>';
-    }).join('');
-    pagNav('gastos',tbody,window['_pagRender_gastos']);
-  };
-  window['_pagRender_gastos']();
-}
-
-async function gasVerDetalle(id) {
-  var g = await ADB.get('carga_gastos', id);
-  if (!g) { toast('No encontrado','r2'); return; }
-  showModal(
-    '<div class="mh"><span class="mt">Detalle Gasto — '+fmtD(g.FECHA_GASTO)+'</span><button class="mc" onclick="closeModal()">×</button></div>' +
-    '<div class="mb2">' +
-    '<div class="g3 mb3" style="background:var(--surface2);padding:14px;border-radius:8px">' +
-    '<div><span class="tdim">Tipo:</span> <strong>'+(g.TIPO_GASTO||'—')+'</strong></div>' +
-    (g.SUBTIPO_GASTO ? '<div><span class="tdim">Subtipo:</span> <strong>'+g.SUBTIPO_GASTO+'</strong></div>' : '') +
-    '<div><span class="tdim">Fecha:</span> <strong>'+fmtD(g.FECHA_GASTO)+'</strong></div>' +
-    '<div><span class="tdim">Importe:</span> <strong class="tred">'+fmt(g.IMPORTE_GASTO||0)+'</strong></div>' +
-    '</div>' +
-    '<div class="fg"><label class="fl">Descripcion</label>' +
-    '<div class="fi" style="background:#f8faff;padding:10px">'+(g.DESCRIPCION_GASTO||'—')+'</div></div>' +
-    '<div class="fg mt3"><label class="fl">Estado</label>' +
-    '<div><span class="badge '+(g.ESTADO_GASTO==='ANULADO'?'b-red':'b-green')+'">'+(g.ESTADO_GASTO||'ACTIVO')+'</span></div></div>' +
-    '</div>' +
-    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>'
-  );
-}
-
-async function gasAnular(id) {
-  if (!confirm('¿Anular este gasto?')) return;
+async function gaCargar(primera) {
   try {
-    var todos = await ADB.getAll('carga_gastos');
-    var g = todos.find(function(x){ return String(x.ID_CARGA_GASTO)===String(id); });
-    if (!g) { toast('No encontrado','r2'); return; }
-    g.ESTADO_GASTO = 'ANULADO';
-    if (isGsMode()) {
-      await gsRun('gsPut','carga_gastos',g);
-    } else {
-      await DB.put('carga_gastos',g);
-    }
-    _mcDel('carga_gastos');
-    toast('Gasto anulado ✓','g');
-    gasRefreshHist();
-  } catch(e){ toast('Error: '+e.message,'r2'); }
+    var r = await gsRun('gsGAS_Datos', $v('gas-desde'), $v('gas-hasta'));
+    if (!r || !r.ok) throw new Error((r && r.error) || 'sin datos');
+    _GA = r;
+  } catch (e) { var b = $id('gas-body'); if (b) b.innerHTML = '<tr><td colspan="6"><div class="al al-r">Error cargando gastos: ' + gaEsc(e.message || e) + '</div></td></tr>'; return; }
+  var cj = $id('gas-caja');
+  if (cj) { var sel = cj.value; cj.innerHTML = '<option value="">— Elegí —</option>' + _GA.CAJAS.map(function(c) { return '<option value="' + gaEsc(c.ID_CAJA) + '"' + (String(sel) === String(c.ID_CAJA) ? ' selected' : '') + '>' + gaEsc(c.CAJA_DESC) + ' (' + fmt(c.SALDO) + ')</option>'; }).join(''); }
+  if (primera) { var tp = $id('gas-tipo'); if (tp) tp.innerHTML = gaOpts(_GA.TIPOS, '— Elegí el tipo —'); gaTipo(); }
+  gaPintar();
 }
-
-function onGasTipoChange(tipo) {
-  tipo = tipo || document.getElementById('gas-tipo').value;
-  var panel = document.getElementById('gas-det-panel');
-  var titulo = document.getElementById('gas-det-titulo');
-  var body   = document.getElementById('gas-det-body');
-  var spSrv  = document.getElementById('gas-service-panel');
-  if(spSrv) spSrv.style.display = (tipo === 'SERVICE') ? '' : 'none';
-  if (!tipo) return;
-  if (tipo === 'SERVICE') {
-    if(panel) panel.style.display = 'none';
-    return;
-  }
-  if (!panel) return;
-
-  panel.style.display = tipo ? '' : 'none';
-  // Mostrar/ocultar panel SERVICE fijo
-  var servPanel = $id('gas-service-panel');
-  if(servPanel) servPanel.style.display = (tipo === 'SERVICE') ? '' : 'none';
-  var fins = window._gasFinancieras || [];
-  var bcos = window._gasBancos      || [];
-  var emps = window._gasEmpleados   || [];
-
-  var html = '';
-
-  if (tipo === 'FINANCIERO_FIN') {
-    titulo.textContent = 'Detalle — Descuento de cheque (Financiera)';
-    html = '<div class="fr mb3">' +
-      '<div class="fg"><label class="fl">Financiera</label>' +
-      '<select id="gas-fin-id" class="fs"><option value="">— Seleccionar —</option>' +
-      fins.map(function(f){return '<option value="'+f.ID_FINANCIERA+'">'+f.NOMBRE+'</option>';}).join('') +
-      '</select>' +
-      '<input id="gas-fin-nueva" class="fi" placeholder="O escribí nueva financiera..." style="margin-top:4px"/></div>' +
-      '<div class="fg"><label class="fl">Monto recibido ($)</label>' +
-      '<input id="gas-fin-recibido" class="fi" type="number" min="0" step="0.01" placeholder="0.00" oninput="calcGasFinanciera()"/></div>' +
-      '</div>' +
-      '<div id="gas-fin-resultado" style="background:var(--danger-light);border-radius:8px;padding:10px;font-size:12px">' +
-      '<div style="color:var(--dim)">Completá el importe total y el monto recibido para ver el cálculo.</div></div>';
-  } else if (tipo === 'FINANCIERO_BANCO') {
-    titulo.textContent = 'Detalle — Operación bancaria';
-    html = '<div class="fr mb3">' +
-      '<div class="fg"><label class="fl">Banco</label>' +
-      '<select id="gas-banco-id" class="fs"><option value="">— Seleccionar —</option>' +
-      bcos.map(function(b){return '<option value="'+b.ID_BANCO+'">'+b.NOMBRE+'</option>';}).join('') +
-      '</select>' +
-      '<input id="gas-banco-nuevo" class="fi" placeholder="O escribí nuevo banco..." style="margin-top:4px"/></div>' +
-      '<div class="fg"><label class="fl">Tipo operación</label>' +
-      '<select id="gas-banco-tipo" class="fs"><option value="COMISION">Comisión</option><option value="MANTENIMIENTO">Mantenimiento cuenta</option><option value="TRANSFERENCIA">Costo transferencia</option><option value="OTRO">Otro</option></select></div>' +
-      '</div>' +
-      '<div class="fg mb3"><label class="fl">Monto acreditado ($)</label>' +
-      '<input id="gas-banco-acred" class="fi" type="number" min="0" step="0.01" placeholder="0.00" oninput="calcGasBanco()"/></div>' +
-      '<div id="gas-banco-resultado" style="background:var(--danger-light);border-radius:8px;padding:10px;font-size:12px">' +
-      '<div style="color:var(--dim)">Completá los montos para ver el cálculo.</div></div>';
-  } else if (tipo === 'FINANCIERO_PRESTAMO') {
-    titulo.textContent = 'Detalle — Cuota de préstamo';
-    html = '<div class="fr mb3">' +
-      '<div class="fg"><label class="fl">Entidad</label><input id="gas-prest-entidad" class="fi" placeholder="Nombre banco o entidad"/></div>' +
-      '<div class="fg"><label class="fl">N° Cuota</label><input id="gas-prest-cuota" class="fi" type="number" min="1" placeholder="1"/></div>' +
-      '</div>' +
-      '<div class="fr mb3">' +
-      '<div class="fg"><label class="fl">Capital ($)</label><input id="gas-prest-capital" class="fi" type="number" min="0" step="0.01" placeholder="0.00" oninput="calcGasPrestamo()"/></div>' +
-      '<div class="fg"><label class="fl">Intereses ($)</label><input id="gas-prest-intereses" class="fi" type="number" min="0" step="0.01" placeholder="0.00" oninput="calcGasPrestamo()"/></div>' +
-      '</div>' +
-      '<div id="gas-prest-resultado" style="background:var(--accent-light);border-radius:8px;padding:10px;font-size:12px">' +
-      '<div style="color:var(--dim)">Completá capital e intereses para ver el desglose.</div></div>';
-  } else if (tipo === 'PERSONAL') {
-    titulo.textContent = 'Detalle — Sueldo / Jornal';
-    html = '<div class="fr mb3">' +
-      '<div class="fg"><label class="fl">Empleado</label>' +
-      '<select id="gas-emp-id" class="fs"><option value="">— Seleccionar —</option>' +
-      emps.map(function(e){return '<option value="'+e.ID_EMPLEADO+'">'+e.NOMBRE+'</option>';}).join('') +
-      '</select>' +
-      '<input id="gas-emp-nuevo" class="fi" placeholder="O escribí nombre..." style="margin-top:4px"/></div>' +
-      '<div class="fg"><label class="fl">Período</label><input id="gas-emp-periodo" class="fi" placeholder="Ej: Mayo 2026"/></div>' +
-      '</div>' +
-      '<div class="fr mb3">' +
-      '<div class="fg"><label class="fl">Sueldo bruto ($)</label><input id="gas-emp-bruto" class="fi" type="number" min="0" step="0.01" placeholder="0.00" oninput="calcGasSueldo()"/></div>' +
-      '<div class="fg"><label class="fl">Deducciones ($)</label><input id="gas-emp-deduc" class="fi" type="number" min="0" step="0.01" placeholder="0.00" oninput="calcGasSueldo()"/></div>' +
-      '</div>' +
-      '<div id="gas-emp-resultado" style="background:var(--success-light);border-radius:8px;padding:10px;font-size:12px">' +
-      '<div style="color:var(--dim)">Completá los montos para ver el desglose.</div></div>';
-  } else if (tipo === 'IMPOSITIVO') {
-    titulo.textContent = 'Detalle — Gasto Impositivo';
-    html = '<div class="fr mb3">' +
-      '<div class="fg"><label class="fl">Impuesto</label>' +
-      '<select id="gas-imp-tipo" class="fs"><option value="IVA">IVA</option><option value="IIBB">Ingresos Brutos</option><option value="GANANCIAS">Ganancias</option><option value="MONOTRIBUTO">Monotributo</option><option value="BIENES_PER">Bienes Personales</option><option value="MUNICIPAL">Tasa municipal</option><option value="OTRO">Otro</option></select></div>' +
-      '<div class="fg"><label class="fl">Período</label><input id="gas-imp-periodo" class="fi" placeholder="Ej: Mayo 2026"/></div>' +
-      '</div>' +
-      '<div class="fg mb3"><label class="fl">Vencimiento</label><input id="gas-imp-venc" class="fi" type="date"/></div>';
-  } else if (tipo === 'SERVICE') {
-    titulo.textContent = '';
-    panel.style.display = 'none';
-    var spSrv = document.getElementById('gas-service-panel');
-    if(spSrv) spSrv.style.display = '';
-    html = '';
-  } else if (tipo === 'VIATICO') {
-    titulo.textContent = 'Viáticos';
-    var empOptsV = emps.map(function(e){ return '<option value="'+e.ID_EMPLEADO+'">'+e.APELLIDO+' '+e.NOMBRE+'</option>'; }).join('');
-    html = '<div class="fr mb3">'+
-      '<div class="fg"><label class="fl">Empleado *</label>'+
-      '<select id="gas-viat-emp" class="fs"><option value="">Seleccionar empleado</option>'+empOptsV+'</select></div>'+
-      '<div class="fg"><label class="fl">Fecha del viático</label>'+
-      '<input id="gas-viat-fecha" class="fi" type="date" value="'+fechaISO(new Date())+'"/></div></div>'+
-      '<div class="fg mb3"><label class="fl">Destino / Motivo</label>'+
-      '<input id="gas-viat-motivo" class="fi" placeholder="Ej: Viaje, visita cliente..."/></div>';
-  } else if (tipo === 'TRANSPORTE') {
-    titulo.textContent = 'Detalle — Transporte';
-    html = '<div class="fr mb3">' +
-      '<div class="fg"><label class="fl">Unidad de Negocio *</label>' +
-      '<select id="gas-transp-subtipo" class="fs">' +
-      '<option value="">— Seleccionar —</option>' +
-      '<option value="INSUMOS">Transporte de Insumos</option>' +
-      '<option value="CUBIERTAS_NUEVAS">Transporte de Cubiertas Nuevas</option>' +
-      '<option value="OTRO">Otro Transporte</option>' +
-      '</select></div>' +
-      '<div class="fg"><label class="fl">Proveedor / Transportista</label>' +
-      '<input id="gas-transp-prov" class="fi" placeholder="Nombre del transportista..."/></div>' +
-      '</div>' +
-      '<div class="fg mb3"><label class="fl">Detalle</label>' +
-      '<input id="gas-transp-detalle" class="fi" placeholder="Descripción del flete..."/></div>';
-  } else {
-    var _sel=$id('gas-tipo');
-    titulo.textContent=_sel&&_sel.selectedIndex>=0?_sel.options[_sel.selectedIndex].text:'Detalle adicional';
-    html='<div class="fg mb3"><label class="fl">Concepto / Detalle</label><input id="gas-otro-detalle" class="fi" placeholder="Detalle del gasto..."/></div>';
-  }
-
-  if (body) body.innerHTML = html;
-  onGasImporteChange();
+function gaTipo() {
+  var t = $v('gas-tipo'), el = $id('gas-det'); if (!el) return;
+  var h = '';
+  function campo(lbl, html) { return '<div class="fg"><label class="fl">' + lbl + '</label>' + html + '</div>'; }
+  if (t === 'FINANCIERO_BANCO') h = '<div class="fr">' + campo('Banco *', '<select id="gd-banco" class="fs">' + gaOpts(_GA.BANCOS) + '</select>') +
+    campo('Concepto', '<select id="gd-tipoop" class="fs"><option value="COMISION">Comisión</option><option value="MANTENIMIENTO">Mantenimiento de cuenta</option><option value="TRANSFERENCIA">Costo de transferencia</option><option value="IMPUESTO_DEBCRED">Impuesto débitos y créditos</option><option value="OTRO">Otro</option></select>') + '</div>';
+  else if (t === 'FINANCIERO_PRESTAMO') h = '<div class="fr mb3">' + campo('Entidad *', '<input id="gd-ent" class="fi">') + campo('N° cuota', '<input id="gd-cuota" class="fi" type="number" min="1">') + '</div>' +
+    '<div class="fr">' + campo('Capital *', '<input id="gd-cap" class="fi" type="number" min="0" step="0.01" oninput="gaPrest()">') + campo('Intereses *', '<input id="gd-int" class="fi" type="number" min="0" step="0.01" oninput="gaPrest()">') + '</div>';
+  else if (t === 'PERSONAL') h = '<div class="fr mb3">' + campo('Empleado *', '<select id="gd-emp" class="fs">' + gaOpts(_GA.EMPLEADOS) + '</select><input id="gd-empn" class="fi" style="margin-top:4px" placeholder="O escribí el nombre">') +
+    campo('Período', '<input id="gd-per" class="fi" placeholder="Ej: Octubre 2026">') + '</div>' +
+    '<div class="fr">' + campo('Bruto *', '<input id="gd-bruto" class="fi" type="number" min="0" step="0.01" oninput="gaSueldo()">') + campo('Deducciones', '<input id="gd-ded" class="fi" type="number" min="0" step="0.01" oninput="gaSueldo()">') + '</div>';
+  else if (t === 'IMPOSITIVO') h = '<div class="fr">' + campo('Impuesto *', '<select id="gd-imp" class="fs"><option value="">— Elegí —</option><option value="IVA">IVA</option><option value="IIBB">Ingresos Brutos</option><option value="GANANCIAS">Ganancias</option><option value="F931">Cargas sociales (F.931)</option><option value="MONOTRIBUTO">Monotributo</option><option value="MUNICIPAL">Tasa municipal</option><option value="OTRO">Otro</option></select>') +
+    campo('Período', '<input id="gd-per" class="fi" placeholder="Ej: 09/2026">') + campo('Vencimiento', '<input id="gd-venc" class="fi" type="date">') + '</div>';
+  else if (t === 'VIATICO') h = '<div class="fr">' + campo('Empleado *', '<select id="gd-emp" class="fs">' + gaOpts(_GA.EMPLEADOS) + '</select>') + campo('Destino / motivo', '<input id="gd-mot" class="fi">') + '</div>';
+  else if (t === 'TRANSPORTE') h = '<div class="fr mb3">' + campo('Unidad de negocio *', '<select id="gd-uni" class="fs"><option value="">— Elegí —</option><option value="INSUMOS">Transporte de insumos</option><option value="CUBIERTAS_NUEVAS">Transporte de cubiertas nuevas</option><option value="OTRO">Otro</option></select>') +
+    campo('Transportista', '<input id="gd-trans" class="fi">') + '</div>' + campo('Detalle', '<input id="gd-det" class="fi">');
+  else if (t === 'SERVICE') h = '<div class="fr mb3">' + campo('Vehículo *', '<select id="gd-veh" class="fs">' + gaOpts(_GA.VEHICULOS) + '</select>') +
+    campo('Tipo', '<select id="gd-serv" class="fs"><option value="ACEITE">Cambio de aceite</option><option value="NEUMATICOS">Neumáticos</option><option value="FRENOS">Frenos</option><option value="MECANICA">Mecánica general</option><option value="ELECTRICIDAD">Electricidad</option><option value="OTRO">Otro</option></select>') + '</div>' + campo('Detalle', '<input id="gd-det" class="fi">');
+  else if (t) h = campo('Detalle', '<input id="gd-det" class="fi">');
+  el.innerHTML = h;
+  gaCalc();
 }
-
-function onGasImporteChange() {
-  var tipo = $v('gas-tipo');
-  if (!tipo) return;
-  if (tipo === 'FINANCIERO_FIN') calcGasFinanciera();
-  else if (tipo === 'FINANCIERO_BANCO') calcGasBanco();
-  else if (tipo === 'FINANCIERO_PRESTAMO') calcGasPrestamo();
-  else if (tipo === 'PERSONAL') calcGasSueldo();
+function gaPrest() { var c = gaNum($v('gd-cap')), i = gaNum($v('gd-int')); if (c + i > 0) $id('gas-importe').value = gaR2(c + i).toFixed(2); gaCalc(); }
+function gaSueldo() { var b = gaNum($v('gd-bruto')), d = gaNum($v('gd-ded')); if (b > 0) $id('gas-importe').value = gaR2(b - d).toFixed(2); gaCalc(); }
+function gaCalc() {
+  var el = $id('gas-calc'); if (!el) return;
+  var t = $v('gas-tipo'), imp = gaNum($v('gas-importe')), txt = '';
+  if (t === 'PERSONAL') { var b = gaNum($v('gd-bruto')), d = gaNum($v('gd-ded')); if (b > 0) txt = 'Bruto ' + fmt(b) + ' − deducciones ' + fmt(d) + ' = <b>' + fmt(b - d) + '</b> a pagar' + (Math.abs(gaR2(b - d) - imp) > 0.005 ? ' <span class="tred">(no coincide con el importe)</span>' : ''); }
+  if (t === 'FINANCIERO_PRESTAMO') { var c = gaNum($v('gd-cap')), i = gaNum($v('gd-int')); if (c + i > 0) txt = 'Capital ' + fmt(c) + ' + intereses ' + fmt(i) + ' = <b>' + fmt(c + i) + '</b>' + (Math.abs(gaR2(c + i) - imp) > 0.005 ? ' <span class="tred">(no coincide con el importe)</span>' : ''); }
+  var cj = _GA.CAJAS.filter(function(x) { return String(x.ID_CAJA) === String($v('gas-caja')); })[0];
+  if (cj && imp > 0 && imp > cj.SALDO + 0.005) txt += (txt ? '<br>' : '') + '<span class="tred">' + gaEsc(cj.CAJA_DESC) + ' tiene ' + fmt(cj.SALDO) + ': no alcanza</span>';
+  el.innerHTML = txt ? '<div class="al al-b" style="font-size:12px">' + txt + '</div>' : '';
 }
-
-function calcGasFinanciera() {
-  var total    = parseFloat(($id('gas-importe')||{}).value)||0;
-  var recibido = parseFloat(($id('gas-fin-recibido')||{}).value)||0;
-  var retencion = total - recibido;
-  var pct = total > 0 ? Math.round(retencion/total*1000)/10 : 0;
-  var res = $id('gas-fin-resultado');
-  if (!res) return;
-  if (total <= 0 || recibido <= 0) { res.innerHTML='<div style="color:var(--dim)">Completá ambos montos.</div>'; return; }
-  res.innerHTML =
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px">' +
-    '<div style="text-align:center"><div style="color:var(--dim);font-size:10px">Total cheque</div><div class="mono" style="font-weight:700">'+fmt(total)+'</div></div>' +
-    '<div style="text-align:center"><div style="color:var(--success);font-size:10px">Recibís</div><div class="mono" style="font-weight:700;color:var(--success)">'+fmt(recibido)+'</div></div>' +
-    '<div style="text-align:center"><div style="color:var(--danger);font-size:10px">Retención financiera</div><div class="mono" style="font-weight:700;color:var(--danger)">'+fmt(retencion)+' ('+pct+'%)</div></div>' +
-    '</div>';
-  var calc = $id('gas-calculo');
-  if (calc) calc.innerHTML = '<span style="color:var(--danger);font-weight:700">Pérdida: '+fmt(retencion)+' ('+pct+'%)</span>';
+function gaDetalle(t) {
+  var d = {};
+  if (t === 'FINANCIERO_BANCO') { d.ID_BANCO = $v('gd-banco'); d.TIPO_OP = $v('gd-tipoop'); }
+  else if (t === 'FINANCIERO_PRESTAMO') { d.ENTIDAD = ($v('gd-ent') || '').trim(); d.CUOTA = $v('gd-cuota'); d.CAPITAL = gaNum($v('gd-cap')); d.INTERESES = gaNum($v('gd-int')); }
+  else if (t === 'PERSONAL') { d.ID_EMPLEADO = $v('gd-emp'); d.NOMBRE = ($v('gd-empn') || '').trim(); d.PERIODO = $v('gd-per'); d.BRUTO = gaNum($v('gd-bruto')); d.DEDUCCIONES = gaNum($v('gd-ded')); }
+  else if (t === 'IMPOSITIVO') { d.IMPUESTO = $v('gd-imp'); d.PERIODO = $v('gd-per'); d.VENCIMIENTO = $v('gd-venc'); }
+  else if (t === 'VIATICO') { d.ID_EMPLEADO = $v('gd-emp'); d.MOTIVO = $v('gd-mot'); }
+  else if (t === 'TRANSPORTE') { d.UNIDAD = $v('gd-uni'); d.TRANSPORTISTA = $v('gd-trans'); d.DETALLE = $v('gd-det'); }
+  else if (t === 'SERVICE') { d.ID_VEHICULO = $v('gd-veh'); d.TIPO_SERVICE = $v('gd-serv'); d.DETALLE = $v('gd-det'); }
+  else d.DETALLE = $v('gd-det');
+  return d;
 }
-
-function calcGasBanco() {
-  var total   = parseFloat(($id('gas-importe')||{}).value)||0;
-  var acred   = parseFloat(($id('gas-banco-acred')||{}).value)||0;
-  var costo   = total - acred;
-  var pct = total > 0 ? Math.round(costo/total*1000)/10 : 0;
-  var res = $id('gas-banco-resultado');
-  if (!res) return;
-  if (total <= 0) { res.innerHTML='<div style="color:var(--dim)">Completá el importe total.</div>'; return; }
-  res.innerHTML =
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px">' +
-    '<div style="text-align:center"><div style="color:var(--dim);font-size:10px">Total operación</div><div class="mono" style="font-weight:700">'+fmt(total)+'</div></div>' +
-    '<div style="text-align:center"><div style="color:var(--success);font-size:10px">Acreditado</div><div class="mono" style="font-weight:700;color:var(--success)">'+fmt(acred)+'</div></div>' +
-    '<div style="text-align:center"><div style="color:var(--danger);font-size:10px">Costo banco</div><div class="mono" style="font-weight:700;color:var(--danger)">'+fmt(costo)+' ('+pct+'%)</div></div>' +
-    '</div>';
-  var calc = $id('gas-calculo');
-  if (calc) calc.innerHTML = '<span style="color:var(--danger);font-weight:700">Costo banco: '+fmt(costo)+' ('+pct+'%)</span>';
-}
-
-function calcGasPrestamo() {
-  var capital   = parseFloat(($id('gas-prest-capital')||{}).value)||0;
-  var intereses = parseFloat(($id('gas-prest-intereses')||{}).value)||0;
-  var total     = capital + intereses;
-  var pct = total > 0 ? Math.round(intereses/total*1000)/10 : 0;
-  var res = $id('gas-prest-resultado');
-  if (!res) return;
-  res.innerHTML =
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px">' +
-    '<div style="text-align:center"><div style="color:var(--dim);font-size:10px">Capital</div><div class="mono" style="font-weight:700">'+fmt(capital)+'</div></div>' +
-    '<div style="text-align:center"><div style="color:var(--danger);font-size:10px">Intereses</div><div class="mono" style="font-weight:700;color:var(--danger)">'+fmt(intereses)+' ('+pct+'%)</div></div>' +
-    '<div style="text-align:center"><div style="color:var(--dim);font-size:10px">Cuota total</div><div class="mono" style="font-weight:700">'+fmt(total)+'</div></div>' +
-    '</div>';
-  if ($id('gas-importe')) $id('gas-importe').value = total > 0 ? total.toFixed(2) : '';
-  var calc = $id('gas-calculo');
-  if (calc && total > 0) calc.innerHTML = 'Cuota: '+fmt(total)+' (Cap: '+fmt(capital)+' + Int: '+fmt(intereses)+')';
-}
-
-function calcGasSueldo() {
-  var bruto  = parseFloat(($id('gas-emp-bruto')||{}).value)||0;
-  var deduc  = parseFloat(($id('gas-emp-deduc')||{}).value)||0;
-  var neto   = bruto - deduc;
-  var res = $id('gas-emp-resultado');
-  if (!res) return;
-  res.innerHTML =
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px">' +
-    '<div style="text-align:center"><div style="color:var(--dim);font-size:10px">Bruto</div><div class="mono" style="font-weight:700">'+fmt(bruto)+'</div></div>' +
-    '<div style="text-align:center"><div style="color:var(--danger);font-size:10px">Deducciones</div><div class="mono" style="font-weight:700;color:var(--danger)">'+fmt(deduc)+'</div></div>' +
-    '<div style="text-align:center"><div style="color:var(--success);font-size:10px">Neto a pagar</div><div class="mono" style="font-weight:700;color:var(--success)">'+fmt(neto)+'</div></div>' +
-    '</div>';
-  if ($id('gas-importe')) $id('gas-importe').value = bruto > 0 ? bruto.toFixed(2) : '';
-  var calc = $id('gas-calculo');
-  if (calc && bruto > 0) calc.innerHTML = 'Neto a pagar: <strong style="color:var(--success)">'+fmt(neto)+'</strong>';
-}
-
-async function confirmarGasto() {
-  var tipo    = $v('gas-tipo');      if (!tipo)    { toast('Seleccionar tipo de gasto','r2'); return; }
-  var importe = parseFloat(($id('gas-importe')||{}).value)||0;
-  if (importe <= 0) { toast('Ingresá el importe','r2'); return; }
-  var fecha   = $v('gas-fecha') || fechaISO(new Date());
-  var desc    = ($id('gas-desc')||{}).value || tipo;
-  var cajaId  = $v('gas-caja') || '';
-
+async function gaGuardar() {
+  var t = $v('gas-tipo'), o = { FECHA: $v('gas-fecha'), TIPO: t, ID_CAJA: $v('gas-caja'), IMPORTE: gaNum($v('gas-importe')), DESCRIPCION: ($v('gas-desc') || '').trim(), D: gaDetalle(t) };
+  if (!o.ID_CAJA) { toast('Elegí de qué caja sale', 'r2'); return; }
+  if (!t) { toast('Elegí el tipo de gasto', 'r2'); return; }
+  if (!(o.IMPORTE > 0)) { toast('Falta el importe', 'r2'); return; }
+  var b = $id('gas-btn'); if (b) b.disabled = true;
   try {
-    var idGasto = await nextId('carga_gastos','ID_CARGA_GASTO');
-    var subtipoGasto = '';
-    if (tipo === 'TRANSPORTE') {
-      subtipoGasto = $v('gas-transp-subtipo') || '';
-      if (!subtipoGasto) { toast('Seleccionar unidad de negocio de transporte', 'r2'); return; }
-    }
-    await ADB.put('carga_gastos', {
-      ID_CARGA_GASTO: idGasto,
-      FECHA_GASTO:    new Date(fecha+'T12:00:00').getTime(),
-      IMPORTE_GASTO:  importe,
-      ID_CAJA:        cajaId,
-      DESCRIPCION_GASTO: desc,
-      TIPO_GASTO: (tipo&&tipo.indexOf('GEN_')===0&&$id('gas-tipo')&&$id('gas-tipo').selectedIndex>=0?$id('gas-tipo').options[$id('gas-tipo').selectedIndex].text:tipo),
-      SUBTIPO_GASTO: subtipoGasto
-    });
-
-    // Save financial detail
-    if (tipo === 'FINANCIERO_FIN') {
-      var recibido  = parseFloat(($id('gas-fin-recibido')||{}).value)||0;
-      var finId     = $v('gas-fin-id') || ($id('gas-fin-nueva')||{}).value || '';
-      var retencion = importe - recibido;
-      var pct       = importe > 0 ? Math.round(retencion/importe*1000)/10 : 0;
-      await ADB.put('gasto_det_financiero', {
-        ID_DET_FIN: await nextId('gasto_det_financiero','ID_DET_FIN'),
-        ID_CARGA_GASTO: idGasto, SUBTIPO: 'FINANCIERA',
-        ID_ENTIDAD: finId, NOMBRE_ENTIDAD: ($id('gas-fin-nueva')||{}).value || finId,
-        TOTAL_OP: importe, MONTO_RECIBIDO: recibido,
-        RETENCION: retencion, PCT_RETENCION: pct
-      });
-      if (finId && ($id('gas-fin-nueva')||{}).value) {
-        var newFin = ($id('gas-fin-nueva')||{}).value.trim();
-        if (newFin) {
-          var exists = (window._gasFinancieras||[]).find(function(f){return f.NOMBRE.toLowerCase()===newFin.toLowerCase();});
-          if (!exists) { await ADB.put('m_financieras',{ID_FINANCIERA:await nextId('m_financieras','ID_FINANCIERA'),NOMBRE:newFin,ACTIVO:1}); }
-        }
-      }
-    } else if (tipo === 'FINANCIERO_BANCO') {
-      var acred    = parseFloat(($id('gas-banco-acred')||{}).value)||0;
-      var bancoId  = $v('gas-banco-id') || '';
-      var costo    = importe - acred;
-      var pct2     = importe > 0 ? Math.round(costo/importe*1000)/10 : 0;
-      await ADB.put('gasto_det_financiero', {
-        ID_DET_FIN: await nextId('gasto_det_financiero','ID_DET_FIN'),
-        ID_CARGA_GASTO: idGasto, SUBTIPO: 'BANCO',
-        ID_ENTIDAD: bancoId, NOMBRE_ENTIDAD: ($id('gas-banco-nuevo')||{}).value||bancoId,
-        TOTAL_OP: importe, MONTO_RECIBIDO: acred,
-        RETENCION: costo, PCT_RETENCION: pct2,
-        TIPO_OP: $v('gas-banco-tipo')||''
-      });
-    } else if (tipo === 'FINANCIERO_PRESTAMO') {
-      var capital   = parseFloat(($id('gas-prest-capital')||{}).value)||0;
-      var intereses = parseFloat(($id('gas-prest-intereses')||{}).value)||0;
-      await ADB.put('gasto_det_financiero', {
-        ID_DET_FIN: await nextId('gasto_det_financiero','ID_DET_FIN'),
-        ID_CARGA_GASTO: idGasto, SUBTIPO: 'PRESTAMO',
-        NOMBRE_ENTIDAD: ($id('gas-prest-entidad')||{}).value||'',
-        NRO_CUOTA: parseInt(($id('gas-prest-cuota')||{}).value)||1,
-        TOTAL_OP: importe, CAPITAL: capital, INTERESES: intereses,
-        PCT_RETENCION: importe>0?Math.round(intereses/importe*1000)/10:0
-      });
-    } else if (tipo === 'PERSONAL') {
-      var bruto2= parseFloat(($id('gas-emp-bruto')||{}).value)||0;
-      var deduc2= parseFloat(($id('gas-emp-deduc')||{}).value)||0;
-      var empId = $v('gas-emp-id') || '';
-      var empNombre = ($id('gas-emp-nuevo')||{}).value || empId;
-      await ADB.put('gasto_det_personal', {
-        ID_DET_PER: await nextId('gasto_det_personal','ID_DET_PER'),
-        ID_CARGA_GASTO: idGasto,
-        ID_EMPLEADO: empId, NOMBRE_EMPLEADO: empNombre,
-        PERIODO: ($id('gas-emp-periodo')||{}).value||'',
-        BRUTO: bruto2, DEDUCCIONES: deduc2, NETO: bruto2-deduc2
-      });
-    }
-
-    // Guardar detalle IMPOSITIVO
-    if (tipo === 'IMPOSITIVO') {
-      var impTipo   = $v('gas-imp-tipo') || '';
-      var impPer    = ($id('gas-imp-periodo')||{}).value || '';
-      var impVenc   = ($id('gas-imp-venc')||{}).value || '';
-      await ADB.put('gasto_det_financiero', {
-        ID_DET_FIN: await nextId('gasto_det_financiero','ID_DET_FIN'),
-        ID_CARGA_GASTO: idGasto, SUBTIPO: 'IMPOSITIVO',
-        NOMBRE_ENTIDAD: impTipo,
-        TOTAL_OP: importe,
-        PERIODO: impPer,
-        VENCIMIENTO: impVenc
-      });
-    }
-    // Guardar detalle VIATICO
-    if (tipo === 'VIATICO') {
-      var empVId  = $v('gas-viat-emp') || '';
-      var empVNom = empVId && window._gasEmpleados ? (window._gasEmpleados.find(function(e){return String(e.ID_EMPLEADO)===String(empVId);})||{}) : {};
-      var viatFecha  = ($id('gas-viat-fecha')||{}).value || fecha;
-      var viatMotivo = ($id('gas-viat-motivo')||{}).value || '';
-      await ADB.put('gasto_det_personal', {
-        ID_DET_PER: await nextId('gasto_det_personal','ID_DET_PER'),
-        ID_CARGA_GASTO: idGasto,
-        ID_EMPLEADO: empVId,
-        NOMBRE_EMPLEADO: (empVNom.APELLIDO||'') + ' ' + (empVNom.NOMBRE||''),
-        PERIODO: viatFecha,
-        BRUTO: importe, DEDUCCIONES: 0, NETO: importe,
-        DETALLE_VIATICO: viatMotivo, ES_VIATICO: 1
-      });
-    }
-    // Guardar detalle SERVICE
-    if (tipo === 'SERVICE') {
-      var vehId = $v('gas-serv-veh') || '';
-      var servTipo = $v('gas-serv-tipo') || '';
-      var servDet = ($id('gas-serv-detalle')||{}).value || '';
-      await ADB.put('gasto_det_personal', {
-        ID_DET_PER: await nextId('gasto_det_personal','ID_DET_PER'),
-        ID_CARGA_GASTO: idGasto,
-        ID_EMPLEADO: vehId,
-        NOMBRE_EMPLEADO: 'VEHICULO:'+vehId,
-        PERIODO: servTipo,
-        BRUTO: importe, DEDUCCIONES: 0, NETO: importe,
-        DETALLE_VIATICO: servDet, ES_VIATICO: 0
-      });
-    }
-    // Guardar detalle TRANSPORTE
-    if (tipo === 'TRANSPORTE') {
-      var transpProv   = ($id('gas-transp-prov')||{}).value || '';
-      var transpDetalle = ($id('gas-transp-detalle')||{}).value || '';
-      await ADB.put('gasto_det_financiero', {
-        ID_DET_FIN: await nextId('gasto_det_financiero','ID_DET_FIN'),
-        ID_CARGA_GASTO: idGasto,
-        SUBTIPO: 'TRANSPORTE',
-        ID_ENTIDAD: '',
-        NOMBRE_ENTIDAD: transpProv,
-        TOTAL_OP: importe,
-        MONTO_RECIBIDO: 0,
-        RETENCION: 0,
-        PCT_RETENCION: 0,
-        TIPO_OP: subtipoGasto,
-        CAPITAL: 0,
-        INTERESES: 0,
-        NRO_CUOTA: 0
-      });
-      await ADB.put('gasto_det_personal', {
-        ID_DET_PER: await nextId('gasto_det_personal','ID_DET_PER'),
-        ID_CARGA_GASTO: idGasto,
-        ID_EMPLEADO: '',
-        NOMBRE_EMPLEADO: transpProv,
-        PERIODO: subtipoGasto,
-        BRUTO: importe, DEDUCCIONES: 0, NETO: importe,
-        DETALLE_VIATICO: transpDetalle, ES_VIATICO: 0
-      });
-    }
-    toast('Gasto registrado: '+fmt(importe)+' ✓','g');
-    gasRefreshHist();
-    // Reset form
-    if($id('gas-tipo'))$id('gas-tipo').value='';
-    if($id('gas-importe'))$id('gas-importe').value='';
-    if($id('gas-desc'))$id('gas-desc').value='';
-    if($id('gas-det-panel'))$id('gas-det-panel').style.display='none';
-  } catch(e) {
-    toast('Error: '+e.message,'r2');
-  }
+    var r = await gsRun('gsGAS_Grabar', o);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo registrar', 'r2'); if (b) b.disabled = false; return; }
+    toast('Gasto #' + r.ID + ' registrado: ' + fmt(r.IMPORTE) + ' ✓', 'g');
+    if (typeof _mcDel === 'function') { _mcDel('carga_gastos'); _mcDel('movimientos_caja'); }
+    $id('gas-importe').value = ''; $id('gas-desc').value = ''; $id('gas-tipo').value = ''; gaTipo();
+    if (b) b.disabled = false;
+    gaCargar();
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; }
 }
-
-async function addItemGasto() {
-  const conceptoId = $v('ga-concepto'); if (!conceptoId) { toast('Seleccionar concepto','r2'); return; }
-  const importe = $vf('ga-importe'); if (!importe) { toast('Ingresar importe','r2'); return; }
-  const cant = $vi('ga-cant') || 1;
-  const conceptos = await ADB.getAll('concepto_gasto');
-  const con = conceptos.find(c => c.ID_CONCEPTO_GASTO === conceptoId);
-  const tipos = await ADB.getAll('m_tipo_gastos');
-  const tipo = tipos.find(t => t.ID_TIPO_GASTO == (con ? con.ID_TIPO_GASTO : null));
-  cartGastos.push({ ID_CONCEPTO_GASTO: conceptoId, CONCEPTO: (con&&con.CONCEPTO_GASTO?con.CONCEPTO_GASTO:'?'), TIPO: (tipo&&tipo.NOMBRE_CATEGORIA?tipo.NOMBRE_CATEGORIA:'?'), CANT_ITEM: cant, IMPORTE_ITEM: importe, DETALLE: $v('ga-detalle') });
-  renderCartGastos(); $id('ga-importe').value=''; $id('ga-detalle').value=''; $id('ga-cant').value='1';
+function gaPintar() {
+  var tb = $id('gas-body'); if (!tb) return;
+  var txt = ($v('gas-buscar') || '').toLowerCase();
+  var lista = _GA.GASTOS.filter(function(g) { return !txt || [g.DESCRIPCION, g.TIPO, g.DETALLE, g.CAJA].join(' ').toLowerCase().indexOf(txt) !== -1; });
+  var tot = 0;
+  tb.innerHTML = lista.length ? lista.map(function(g) {
+    var an = g.ESTADO === 'ANULADO'; if (!an) tot += g.IMPORTE;
+    return '<tr' + (an ? ' style="opacity:.5;text-decoration:line-through"' : '') + '><td class="mono" style="font-size:12px">' + fmtD(g.FECHA) + '</td><td style="font-size:12px">' + gaEsc(g.DESCRIPCION) + '</td>' +
+      '<td><span class="badge b-warn" style="font-size:9px">' + gaEsc(g.TIPO) + '</span></td><td style="font-size:12px">' + (g.SIN_CAJA ? '<span class="tdim" title="Cargado antes de que los gastos movieran la caja">sin caja</span>' : gaEsc(g.CAJA)) + '</td>' +
+      '<td class="mono tr tred">' + fmt(g.IMPORTE) + '</td><td style="white-space:nowrap"><button class="btn btn-xs btn-s" title="Ver" onclick="gaVer(\'' + gaEsc(g.ID) + '\')"><i class="fas fa-eye"></i></button>' +
+      (g.ANULABLE ? ' <button class="btn btn-xs btn-d" title="Anular" onclick="gaAnularPedir(\'' + gaEsc(g.ID) + '\')"><i class="fas fa-ban"></i></button>' : '') + '</td></tr>';
+  }).join('') : '<tr><td colspan="6" class="tc tdim" style="padding:16px">Sin gastos en el período.</td></tr>';
+  var c = $id('gas-cnt'); if (c) c.textContent = lista.length + (lista.length === 1 ? ' gasto' : ' gastos');
+  var p = $id('gas-pie'); if (p) p.innerHTML = '<tr><td colspan="4" style="font-weight:700">TOTAL (sin anulados)</td><td class="mono tr tred" style="font-weight:700">' + fmt(tot) + '</td><td></td></tr>';
 }
-
-function renderCartGastos() {
-  const el = $id('ga-items'); const cnt = $id('ga-cnt');
-  if (!cartGastos.length) { el.innerHTML='<p class="tdim">Sin ítems.</p>'; cnt.textContent='0 ítems'; $id('ga-total').textContent=fmt(0); return; }
-  const total = cartGastos.reduce((s,i) => s+i.CANT_ITEM*i.IMPORTE_ITEM, 0);
-  cnt.textContent = `${cartGastos.length} ítem${cartGastos.length>1?'s':''}`;
-  $id('ga-total').textContent = fmt(total);
-  el.innerHTML = cartGastos.map((it,idx) => `<div class="cart-row">
-    <div style="flex:1">
-      <div style="font-size:13px;font-weight:500">${it.CONCEPTO}</div>
-      <div style="font-size:11px;color:var(--dim)"><span class="badge b-gray">${it.TIPO}</span> ${it.DETALLE?'· '+it.DETALLE:''}</div>
-    </div>
-    <span class="mono" style="font-size:11px;color:var(--dim)">x${it.CANT_ITEM}</span>
-    <span class="mono tred" style="width:110px;text-align:right">${fmt(it.CANT_ITEM*it.IMPORTE_ITEM)}</span>
-    <button class="btn btn-xs btn-d" onclick="cartGastos.splice(${idx},1);renderCartGastos()">✕</button>
-  </div>`).join('');
+function gaBuscar(id) { return _GA.GASTOS.filter(function(g) { return String(g.ID) === String(id); })[0]; }
+function gaVer(id) {
+  var g = gaBuscar(id); if (!g) return;
+  function row(l, v) { return v ? '<div class="er-line er-neutral"><span style="color:var(--dim);font-size:12px">' + l + '</span><span style="font-size:13px">' + v + '</span></div>' : ''; }
+  showModal('<div class="mh"><span class="mt">Gasto #' + gaEsc(g.ID) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    row('Fecha', fmtD(g.FECHA)) + row('Tipo', gaEsc(g.TIPO) + (g.SUBTIPO ? ' · ' + gaEsc(g.SUBTIPO) : '')) + row('Descripción', gaEsc(g.DESCRIPCION)) + row('Detalle', gaEsc(g.DETALLE)) +
+    row('Importe', '<b>' + fmt(g.IMPORTE) + '</b>') + row('Caja', g.SIN_CAJA ? 'sin movimiento de caja' : gaEsc(g.CAJA)) + row('Cargó', gaEsc(g.USUARIO)) +
+    (g.ESTADO === 'ANULADO' ? '<div class="al al-r mt3">Anulado: ' + gaEsc(g.MOTIVO_ANULACION) + '</div>' : '') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
 }
-
-async function histGastos() {
-  const [gastos, dets, conceptos, tipos] = await Promise.all([ADB.getAll('carga_gastos'), ADB.getAll('carga_gasto_detalle'), ADB.getAll('concepto_gasto'), ADB.getAll('m_tipo_gastos')]);
-  const cm = {}; for (const c of conceptos) cm[c.ID_CONCEPTO_GASTO] = c;
-  const tm = {}; for (const t of tipos) tm[t.ID_TIPO_GASTO] = t;
-  const sorted = [...gastos].sort((a,b) => b.FECHA_GASTO - a.FECHA_GASTO);
-  showModal(`
-    <div class="mh"><span class="mt">Historial de Gastos</span><button class="mc" onclick="closeModal()">×</button></div>
-    <div class="mb2"><div class="tw"><table>
-      <thead><tr><th>Fecha</th><th>Descripción</th><th>Ítems</th><th>Total</th><th></th></tr></thead>
-      <tbody>${sorted.map(g => {
-        const items = dets.filter(d => d.ID_CARGA_GASTO === g.ID_CARGA_GASTO);
-        return `<tr><td>${fmtD(g.FECHA_GASTO)}</td><td class="tdim">${g.DESCRIPCION_GASTO||'—'}</td>
-          <td class="mono tc">${items.length}</td><td class="mono tr tred">${fmt(g.IMPORTE_GASTO)}</td>
-          <td><button class="btn btn-xs btn-s" onclick="verDetalleGasto('${g.ID_CARGA_GASTO}')">Ver</button></td>
-        </tr>`;
-      }).join('')}</tbody>
-      <tfoot><tr><td colspan="3">TOTAL</td><td class="mono tr">${fmt(sorted.reduce((s,g)=>s+g.IMPORTE_GASTO,0))}</td><td></td></tr></tfoot>
-    </table></div></div>
-    <div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>`,'md-xl');
+function gaAnularPedir(id) {
+  var g = gaBuscar(id); if (!g) return;
+  showModal('<div class="mh"><span class="mt">Anular gasto #' + gaEsc(g.ID) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="al al-w mb3" style="font-size:12px">' + gaEsc(g.DESCRIPCION) + ' · <b>' + fmt(g.IMPORTE) + '</b>' + (g.SIN_CAJA ? '' : '<br>La plata vuelve a ' + gaEsc(g.CAJA) + '.') + ' Si estaba mal, anulalo y cargalo de nuevo.</div>' +
+    '<div class="fg"><label class="fl">Motivo *</label><input id="gan-mot" class="fi"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-d" id="gan-btn" onclick="gaAnular(\'' + gaEsc(id) + '\')"><i class="fas fa-ban"></i> Anular</button></div>');
 }
-
-async function verDetalleGasto(id) {
-  const g = await ADB.get('carga_gastos', id);
-  const dets = await ADB.getByIndex('carga_gasto_detalle', 'idx_carga', id);
-  var _dDet = await Promise.all([ADB.getAll('concepto_gasto'), ADB.getAll('m_tipo_gastos')]);
-  var conceptos=_dDet[0], cm={}; for (var _ci=0;_ci<conceptos.length;_ci++) cm[conceptos[_ci].ID_CONCEPTO_GASTO]=conceptos[_ci];
-  var tipos=_dDet[1], tm={}; for (var _ti=0;_ti<tipos.length;_ti++) tm[tipos[_ti].ID_TIPO_GASTO]=tipos[_ti];
-  showModal(`
-    <div class="mh"><span class="mt">Detalle Gasto — ${fmtD(g.FECHA_GASTO)}</span><button class="mc" onclick="closeModal()">×</button></div>
-    <div class="mb2">
-      <div class="al al-b mb3">${g.DESCRIPCION_GASTO||'Sin descripción'}</div>
-      <div class="tw"><table>
-        <thead><tr><th>Concepto</th><th>Tipo</th><th>Cant.</th><th>Importe</th><th>Subtotal</th><th>Detalle</th></tr></thead>
-        <tbody>${dets.map(d => {
-          const con = cm[d.ID_CONCEPTO_GASTO]; const tipo = tm[con ? con.ID_TIPO_GASTO : null];
-          return `<tr><td>${(con&&con.CONCEPTO_GASTO)?con.CONCEPTO_GASTO:'?'}</td><td><span class="badge b-gray">${(tipo&&tipo.NOMBRE_CATEGORIA)?tipo.NOMBRE_CATEGORIA:'?'}</span></td>
-            <td class="mono tc">${d.CANT_ITEM}</td><td class="mono tr">${fmt(d.IMPORTE_ITEM)}</td>
-            <td class="mono tr tred">${fmt(d.CANT_ITEM*d.IMPORTE_ITEM)}</td><td class="tdim" style="font-size:11px">${d.DETALLE_TEXTO||'—'}</td></tr>`;
-        }).join('')}</tbody>
-        <tfoot><tr><td colspan="4">TOTAL</td><td class="mono tr">${fmt(g.IMPORTE_GASTO)}</td><td></td></tr></tfoot>
-      </table></div>
-    </div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>`,'md-lg');
+async function gaAnular(id) {
+  var mot = ($v('gan-mot') || '').trim();
+  if (!mot) { toast('Escribí el motivo', 'r2'); return; }
+  var b = $id('gan-btn'); if (b) b.disabled = true;
+  try {
+    var r = await gsRun('gsGAS_Anular', id, mot);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo anular', 'r2'); if (b) b.disabled = false; return; }
+    toast('Gasto anulado ✓', 'g');
+    if (typeof _mcDel === 'function') { _mcDel('carga_gastos'); _mcDel('movimientos_caja'); }
+    closeModal(); gaCargar();
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; }
 }
-
-// ── EDITAR GASTO ─────────────────────────────────────────────────
-async function gasEditar(id) {
-  var g = await ADB.get('carga_gastos', id);
-  if (!g) { toast('No encontrado','r2'); return; }
-  showModal(
-    '<div class="mh"><span class="mt">Editar Gasto</span><button class="mc" onclick="closeModal()">×</button></div>'+
-    '<div class="mb2">'+
-    '<div class="fr mb3">'+
-    '<div class="fg"><label class="fl">Fecha</label><input id="ged-fecha" class="fi" type="date" value="'+fechaISO(g.FECHA_GASTO)+'"/></div>'+
-    '<div class="fg"><label class="fl">Importe ($)</label><input id="ged-importe" class="fi" type="number" step="0.01" value="'+(g.IMPORTE_GASTO||0)+'"/></div>'+
-    '</div>'+
-    '<div class="fg mb3"><label class="fl">Descripción</label><input id="ged-desc" class="fi" value="'+(g.DESCRIPCION_GASTO||'')+'"/></div>'+
-    '</div>'+
-    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button>'+
-    '<button class="btn btn-p" onclick="gedGuardar(\''+id+'\')">Guardar</button></div>'
-  );
-}
-
-async function gedGuardar(id) {
-  var g = await ADB.get('carga_gastos', id);
-  if (!g) { toast('No encontrado','r2'); return; }
-  var imp=parseFloat(($id('ged-importe')||{}).value)||0;
-  if(!imp){ toast('Ingresar importe','r2'); return; }
-  var fecha=($id('ged-fecha')||{}).value;
-  if(fecha) g.FECHA_GASTO=new Date(fecha+'T12:00:00').getTime();
-  g.IMPORTE_GASTO=imp;
-  g.DESCRIPCION_GASTO=($id('ged-desc')||{}).value||g.DESCRIPCION_GASTO;
-  await ADB.put('carga_gastos', g);
-  toast('Gasto actualizado ✓','g');
-  closeModal();
-  gasRefreshHist();
-}
-
-function gasTipoChange(sel) {
-  var tipo = sel ? sel.value : '';
-  // Panel fijo SERVICE
-  var sp = document.getElementById('gas-service-panel');
-  if (sp) sp.style.display = (tipo === 'SERVICE') ? '' : 'none';
-  // Llamar la funcion original para el resto
-  onGasTipoChange(tipo);
-}
-
 </script>
+
 <script>
 async function renderCargaCombustible() {
   var el=$id('page-carga-combustible');
@@ -5015,8 +4478,8 @@ async function cedGuardar(id) {
 // ── CHEQUES: todo pasa por el servidor (gsCHQ_*). Cada acción mueve caja / cuentas corrientes y se puede deshacer la última. ──
 var _CHQ = { CHEQUES: [], CAJAS: [], CLIENTES: [] };
 var _chPage = 1, _chPageSize = 25;
-var CHQ_EST_TXT = { EN_CARTERA: 'En cartera', DEPOSITADO: 'Depositado', ACREDITADO: 'Acreditado', RECHAZADO: 'Rechazado', ENDOSADO: 'Endosado', ENTREGADO: 'Entregado', DEBITADO: 'Debitado', ANULADO: 'Anulado' };
-var CHQ_EST_CLS = { EN_CARTERA: 'b-blue', DEPOSITADO: 'b-warn', ACREDITADO: 'b-green', RECHAZADO: 'b-red', ENDOSADO: 'b-purple', ENTREGADO: 'b-orange', DEBITADO: 'b-green', ANULADO: 'b-gray' };
+var CHQ_EST_TXT = { EN_CARTERA: 'En cartera', DEPOSITADO: 'Depositado', ACREDITADO: 'Acreditado', RECHAZADO: 'Rechazado', ENDOSADO: 'Endosado', ENTREGADO: 'Entregado', DEBITADO: 'Debitado', DESCONTADO: 'Descontado', ANULADO: 'Anulado' };
+var CHQ_EST_CLS = { EN_CARTERA: 'b-blue', DEPOSITADO: 'b-warn', ACREDITADO: 'b-green', RECHAZADO: 'b-red', ENDOSADO: 'b-purple', ENTREGADO: 'b-orange', DEBITADO: 'b-green', DESCONTADO: 'b-info', ANULADO: 'b-gray' };
 var CHQ_VINC_TXT = { COBRO: 'Cobro', ORDEN_PAGO: 'Orden de pago', CARGA_INICIAL: 'Carga inicial' };
 function chEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function chNum(v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; }
@@ -5083,7 +4546,7 @@ function renderChequesUI() {
 function chLimpiarFiltros() { ['ch-buscar', 'ch-fil-estado', 'ch-fil-origen'].forEach(function(i) { var e = $id(i); if (e) e.value = ''; }); _chPage = 1; chAplicarFiltros(); }
 function chFiltrados() {
   var txt = ($v('ch-buscar') || '').toLowerCase(), est = $v('ch-fil-estado') || '', ori = $v('ch-fil-origen') || '';
-  var fin = { ACREDITADO: 1, DEBITADO: 1, ANULADO: 1 };
+  var fin = { ACREDITADO: 1, DEBITADO: 1, ANULADO: 1, DESCONTADO: 1 };
   return _CHQ.CHEQUES.filter(function(c) {
     if (est === '' && fin[c.ESTADO]) return false;
     if (est && est !== '*' && c.ESTADO !== est) return false;
@@ -5096,9 +4559,10 @@ function chBotones(c) {
   var b = [], id = chEsc(c.ID_CHEQUE);
   function btn(cls, fn, ic, tit) { b.push('<button class="btn btn-xs ' + cls + '" onclick="' + fn + '(\'' + id + '\')" title="' + tit + '"><i class="fas fa-' + ic + '"></i></button>'); }
   btn('btn-info', 'chVerDetalle', 'eye', 'Ver');
-  if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'EN_CARTERA') { btn('btn-w', 'chModalDepositar', 'university', 'Depositar'); btn('btn-g', 'chModalVentanilla', 'money-bill', 'Cobrado por ventanilla'); }
+  if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'EN_CARTERA') { btn('btn-w', 'chModalDepositar', 'university', 'Depositar'); btn('btn-g', 'chModalVentanilla', 'money-bill', 'Cobrado por ventanilla'); btn('btn-purple', 'chModalDescontar', 'percent', 'Descontar en financiera / banco'); }
   if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'DEPOSITADO') { btn('btn-g', 'chModalAcreditar', 'check', 'Acreditado'); btn('btn-d', 'chModalRechazar', 'times', 'Rechazado'); }
   if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'ENDOSADO') btn('btn-d', 'chModalRechazar', 'times', 'Rechazado por el proveedor');
+  if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'DESCONTADO') btn('btn-d', 'chModalRechazar', 'times', 'Rechazado (la financiera lo cobra)');
   if (c.TIPO_ORIGEN === 'PROPIO' && c.ESTADO === 'ENTREGADO') { btn('btn-g', 'chModalDebitar', 'check', 'Debitado del banco'); btn('btn-d', 'chModalRechazar', 'times', 'Rechazado'); }
   if (c.PUEDE_DESHACER && c.PUEDE_DESHACER !== 'Carga inicial') btn('btn-s', 'chModalDeshacer', 'undo', 'Deshacer: ' + c.PUEDE_DESHACER);
   if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'EN_CARTERA' && c.VINCULO !== 'COBRO' && c.VINCULO !== 'ORDEN_PAGO') btn('btn-s', 'chModalAnular', 'ban', 'Anular');
@@ -5149,13 +4613,26 @@ function chModalAcreditar(id) {
   var sel = ''; _CHQ.CAJAS.forEach(function(k) { if (k.CAJA_DESC === c.CAJA_DEPOSITO) sel = k.ID_CAJA; });
   chModal('Cheque acreditado', c, chCampoCaja('Cuenta donde se acreditó', sel) + chCampoFecha(), 'ACREDITAR', '<i class="fas fa-check"></i> Acreditar', 'btn-g');
 }
+function chModalDescontar(id) {
+  var c = chBuscar(id); if (!c) return;
+  chModal('Descontar cheque', c, '<div class="fg mb3"><label class="fl">Financiera o banco *</label><input id="ch-ac-ent" class="fi"></div>' +
+    '<div class="fg mb3"><label class="fl">Lo que se recibe *</label><input id="ch-ac-neto" class="fi" type="number" min="0" step="0.01" oninput="chDescCosto(' + chNum(c.IMPORTE) + ')"></div><div id="ch-ac-costo" class="mb3"></div>' +
+    chCampoCaja('Cuenta o caja donde entra', '') + chCampoFecha(), 'DESCONTAR', '<i class="fas fa-percent"></i> Descontar', 'btn-p');
+}
+function chDescCosto(imp) {
+  var e = $id('ch-ac-costo'); if (!e) return;
+  var n = chNum($v('ch-ac-neto')), c = Math.round((imp - n) * 100) / 100;
+  e.innerHTML = n > 0 ? '<div class="al ' + (c < 0 ? 'al-r' : 'al-w') + '" style="font-size:12px">' + (c < 0 ? 'Lo recibido no puede ser más que el cheque' : 'Costo del descuento: <b>' + fmt(c) + '</b> (' + (imp ? Math.round(c / imp * 1000) / 10 : 0) + '%) — queda como gasto financiero') + '</div>' : '';
+}
 function chModalDebitar(id) { var c = chBuscar(id); if (!c) return; chModal('Cheque propio debitado', c, chCampoCaja('Cuenta de donde se debitó', '') + chCampoFecha(), 'DEBITAR', '<i class="fas fa-check"></i> Registrar débito', 'btn-g'); }
 function chModalRechazar(id) {
   var c = chBuscar(id); if (!c) return;
   var ef = c.TIPO_ORIGEN === 'PROPIO' ? 'La deuda con ' + chEsc(c.PROVEEDOR || 'el proveedor') + ' vuelve a quedar pendiente.' :
     (c.CLIENTE ? 'Se le carga la deuda a ' + chEsc(c.CLIENTE) + ' en su cuenta corriente.' : 'El cheque no tiene cliente vinculado: no se carga deuda a nadie.') +
-    (c.ESTADO === 'ENDOSADO' ? ' Y se le vuelve a deber a ' + chEsc(c.PROVEEDOR || 'el proveedor') + '.' : '');
-  chModal('Cheque rechazado', c, '<div class="al al-r mb3" style="font-size:12px">' + ef + '</div><div class="fg mb3"><label class="fl">Motivo *</label><input id="ch-ac-mot" class="fi" placeholder="Ej: sin fondos, firma"></div>' + chCampoFecha(), 'RECHAZAR', '<i class="fas fa-times"></i> Registrar rechazo', 'btn-d');
+    (c.ESTADO === 'ENDOSADO' ? ' Y se le vuelve a deber a ' + chEsc(c.PROVEEDOR || 'el proveedor') + '.' : '') +
+    (c.ESTADO === 'DESCONTADO' ? ' La financiera se cobra el cheque de la cuenta que elijas.' : '');
+  chModal('Cheque rechazado', c, '<div class="al al-r mb3" style="font-size:12px">' + ef + '</div><div class="fg mb3"><label class="fl">Motivo *</label><input id="ch-ac-mot" class="fi" placeholder="Ej: sin fondos, firma"></div>' +
+    (c.ESTADO === 'DESCONTADO' ? chCampoCaja('Cuenta de donde se lo cobran', '') : '') + chCampoFecha(), 'RECHAZAR', '<i class="fas fa-times"></i> Registrar rechazo', 'btn-d');
 }
 function chModalAnular(id) { var c = chBuscar(id); if (!c) return; chModal('Anular cheque', c, '<div class="fg mb3"><label class="fl">Motivo *</label><input id="ch-ac-mot" class="fi" placeholder="Por qué se anula"></div>', 'ANULAR', '<i class="fas fa-ban"></i> Anular', 'btn-d'); }
 function chModalDeshacer(id) { var c = chBuscar(id); if (!c) return; chModal('Deshacer: ' + chEsc(c.PUEDE_DESHACER), c, '<div class="al al-w" style="font-size:12px">Se revierten los movimientos de caja y cuenta corriente de esa acción y el cheque vuelve al estado anterior.</div>', 'DESHACER', '<i class="fas fa-undo"></i> Deshacer', 'btn-w'); }
@@ -5163,6 +4640,8 @@ async function chEjecutar(id, accion) {
   var d = {};
   if ($id('ch-ac-caja')) { d.ID_CAJA = $v('ch-ac-caja'); if (!d.ID_CAJA) { toast('Elegí la cuenta o caja', 'r2'); return; } }
   if ($id('ch-ac-fecha')) d.FECHA = $v('ch-ac-fecha');
+  if ($id('ch-ac-ent')) { d.ENTIDAD = ($v('ch-ac-ent') || '').trim(); if (!d.ENTIDAD) { toast('Escribí la financiera o banco', 'r2'); return; } }
+  if ($id('ch-ac-neto')) { d.NETO = chNum($v('ch-ac-neto')); if (!(d.NETO > 0)) { toast('Cargá lo que se recibe', 'r2'); return; } }
   if ($id('ch-ac-mot')) { d.MOTIVO = ($v('ch-ac-mot') || '').trim(); if (!d.MOTIVO) { toast('Escribí el motivo', 'r2'); return; } }
   var b = $id('ch-ac-btn'); if (b) b.disabled = true;
   try {
@@ -5495,162 +4974,171 @@ function ctcVerCliente(idCli) {
 </script>
 
 <script>
+// ── CAJA: saldos por caja/cuenta, movimientos del período, manuales, pases entre cajas y arqueo. Todo en el servidor (gsCAJA_*). ──
+var _CJ = { CAJAS: [], MOVS: [], ARQUEOS: [] };
+var CJ_ORIG_TXT = { MANUAL: 'Manual', TRANSFERENCIA_CAJA: 'Pase entre cajas', ARQUEO: 'Arqueo', COBRO: 'Cobro', ANULACION_COBRO: 'Anulación cobro', ORDEN_PAGO: 'Orden de pago', ANULACION_OP: 'Anulación OP',
+  CHEQUE: 'Cheque', COMPRA: 'Compra contado', ANULACION_COMPRA: 'Anulación compra', GASTO: 'Gasto', ANULACION_GASTO: 'Anulación gasto', FINANCIERO: 'Financiero', IMPOSITIVO: 'Impositivo', SUELDO: 'Sueldo', TRANSPORTE: 'Transporte' };
+function cjEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function cjNum(v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; }
+function cjOrigen(o) { if (o.indexOf('ANULA_') === 0) return 'Anulación ' + (CJ_ORIG_TXT[o.slice(6)] || o.slice(6)).toLowerCase(); return CJ_ORIG_TXT[o] || o || '—'; }
+function cjHoy() { return fechaISO(new Date()); }
+function cjOptsCajas(sel, conVacio) {
+  return (conVacio ? '<option value="">— Elegí —</option>' : '') + _CJ.CAJAS.filter(function(c) { return c.ACTIVA; }).map(function(c) {
+    return '<option value="' + cjEsc(c.ID_CAJA) + '"' + (String(sel) === String(c.ID_CAJA) ? ' selected' : '') + '>' + cjEsc(c.CAJA_DESC) + ' (' + fmt(c.SALDO) + ')</option>';
+  }).join('');
+}
 async function renderCaja() {
   var el = $id('page-caja');
   if (!el) return;
-  var _stores = ['movimientos_caja','cajas'];
-  var _b;
-  if (isGsMode()) {
-    _b = await gsRun('gsBatchLoad', _stores);
-  } else {
-    var _pa = await Promise.all(_stores.map(function(s){ return ADB.getAll(s); }));
-    _b = {}; _stores.forEach(function(s,i){ _b[s]=_pa[i]; });
-  }
-  var movs  = _b['movimientos_caja']||[];
-  var cajas = _b['cajas']||[];
-  window._cajaMoves = movs;
-  window._cajaCajas = cajas;
-
-  var cajaOpts = '<option value="">Todas las cajas</option>' +
-    cajas.map(function(c){ return '<option value="'+c.ID_CAJA+'">'+c.CAJA_DESC+'</option>'; }).join('');
-
-  var movActivos = movs.filter(function(m){ return m.ESTADO!=='ANULADO'; });
-  var totalIng   = movActivos.filter(function(m){ return m.TIPO_MOV==='INGRESO'; }).reduce(function(s,m){ return s+(m.IMPORTE||0); },0);
-  var totalEgr   = movActivos.filter(function(m){ return m.TIPO_MOV==='EGRESO'; }).reduce(function(s,m){ return s+(m.IMPORTE||0); },0);
-  var saldo      = totalIng - totalEgr;
-
-  el.innerHTML =
-  '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-cash-register" style="color:var(--warn)"></i> Libro de Caja</div>' +
-  '<div class="page-sub">TODOS LOS MOVIMIENTOS DE INGRESOS Y EGRESOS</div></div>' +
-  '<button class="btn btn-p" onclick="cajaMovManual()"><i class="fas fa-plus"></i> Mov. Manual</button></div>' +
-  '<div class="content">' +
-  '<div class="g4 mb4">' +
-  '<div class="stat" style="border-top:3px solid var(--success)"><div class="stat-label">Total Ingresos</div><div class="stat-val sv-green">'+fmt(totalIng)+'</div><div class="stat-sub">'+movActivos.filter(function(m){return m.TIPO_MOV==='INGRESO';}).length+' movimientos</div></div>' +
-  '<div class="stat" style="border-top:3px solid var(--danger)"><div class="stat-label">Total Egresos</div><div class="stat-val sv-red">'+fmt(totalEgr)+'</div><div class="stat-sub">'+movActivos.filter(function(m){return m.TIPO_MOV==='EGRESO';}).length+' movimientos</div></div>' +
-  '<div class="stat" style="border-top:3px solid '+(saldo>=0?'var(--success)':'var(--danger)')+'"><div class="stat-label">Saldo Actual</div><div class="stat-val '+(saldo>=0?'sv-green':'sv-red')+'">'+fmt(saldo)+'</div><div class="stat-sub">'+(saldo>=0?'✓ POSITIVO':'✗ NEGATIVO')+'</div></div>' +
-  '<div class="stat" style="border-top:3px solid var(--accent)"><div class="stat-label">Movimientos Hoy</div><div class="stat-val sv-blue">'+movActivos.filter(function(m){var d=new Date(m.FECHA);var h=new Date();return d.toDateString()===h.toDateString();}).length+'</div><div class="stat-sub">'+fmtD(Date.now())+'</div></div>' +
-  '</div>' +
-  '<div class="card"><div class="card-hd"><span class="card-title">Movimientos de Caja</span>' +
-  '<span class="badge b-blue" id="caja-cnt">...</span></div>' +
-  '<div class="fbar" style="flex-wrap:wrap;gap:8px">' +
-  buildFiltroFechas('caja','cajaRefresh()') +
-  '<select id="caja-filtro-caja" class="fs" style="max-width:200px" onchange="cajaRefresh()">'+cajaOpts+'</select>' +
-  '<select id="caja-filtro-tipo" class="fs" style="max-width:160px" onchange="cajaRefresh()">' +
-  '<option value="">Todos</option><option value="INGRESO">Solo Ingresos</option><option value="EGRESO">Solo Egresos</option></select>' +
-  '<input id="caja-buscar" class="fi" style="max-width:200px" placeholder="Buscar concepto..." oninput="cajaRefresh()"/>' +
-  '</div>' +
-  '<div class="tw"><table><thead><tr>' +
-  '<th>Fecha</th><th>Caja</th><th>Tipo</th><th>Concepto</th><th>Origen</th><th class="tr">Importe</th><th></th>' +
-  '</tr></thead><tbody id="caja-body"></tbody>' +
-  '<tfoot><tr><td colspan="5" style="font-weight:700">SALDO PERIODO</td>' +
-  '<td class="mono tr" style="font-weight:700" id="caja-saldo-pie">$ 0,00</td><td></td></tr></tfoot>' +
-  '</table></div></div>' +
-  '</div>';
-
-  setTimeout(function(){ cajaRefresh(); }, 50);
+  var def = fechaDefecto30();
+  el.innerHTML = '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-cash-register" style="color:var(--warn)"></i> Caja y bancos</div>' +
+    '<div class="page-sub">SALDO DE CADA CAJA O CUENTA · MOVIMIENTOS · PASES · ARQUEO</div></div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s btn-sm" onclick="cjModalArqueo()"><i class="fas fa-calculator"></i> Arqueo</button>' +
+    '<button class="btn btn-s btn-sm" onclick="cjModalPase()"><i class="fas fa-exchange-alt"></i> Pase entre cajas</button>' +
+    '<button class="btn btn-p btn-sm" onclick="cjModalManual()"><i class="fas fa-plus"></i> Movimiento manual</button></div></div>' +
+    '<div class="content"><div id="cj-saldos" class="mb4"><div class="al al-b tc"><i class="fas fa-sync-alt fa-spin"></i> Cargando...</div></div>' +
+    '<div class="card"><div class="fbar" style="flex-wrap:wrap;gap:8px">' +
+    '<span class="tdim" style="font-size:12px">Desde</span><input id="cj-desde" type="date" class="fi" style="width:140px" value="' + def.desde + '" onchange="cjCargar()">' +
+    '<span class="tdim" style="font-size:12px">Hasta</span><input id="cj-hasta" type="date" class="fi" style="width:140px" value="' + def.hasta + '" onchange="cjCargar()">' +
+    '<select id="cj-caja" class="fs" style="max-width:220px" onchange="cjCargar()"><option value="">Todas las cajas</option></select>' +
+    '<select id="cj-tipo" class="fs" style="max-width:150px" onchange="cjPintarMovs()"><option value="">Ingresos y egresos</option><option value="INGRESO">Ingresos</option><option value="EGRESO">Egresos</option></select>' +
+    '<input id="cj-buscar" class="fi" style="max-width:200px" placeholder="Buscar concepto..." oninput="cjPintarMovs()">' +
+    '</div><div class="tw"><table><thead><tr><th>Fecha</th><th>Caja</th><th>Concepto</th><th>Origen</th><th class="tr">Ingreso</th><th class="tr">Egreso</th><th class="tr" id="cj-th-saldo">Saldo</th><th>Usuario</th><th></th></tr></thead>' +
+    '<tbody id="cj-body"></tbody><tfoot id="cj-pie"></tfoot></table></div></div>' +
+    '<div class="card mt4"><div class="card-hd"><span class="card-title">Últimos arqueos</span></div><div class="tw"><table><thead><tr><th>Fecha</th><th>Caja</th><th class="tr">Sistema</th><th class="tr">Contado</th><th class="tr">Diferencia</th><th>Observación</th><th>Usuario</th></tr></thead><tbody id="cj-arq"></tbody></table></div></div>' +
+    '</div>';
+  cjCargar();
 }
-
-async function cajaRefresh() {
-  var tbody = $id('caja-body');
-  var cnt   = $id('caja-cnt');
-  var pie   = $id('caja-saldo-pie');
-  if (!tbody) return;
-
-  var movs  = await ADB.getAll('movimientos_caja');
-  var cajas = window._cajaCajas||[];
-  var cm = {}; cajas.forEach(function(c){ cm[c.ID_CAJA]=c; });
-
-  var desde     = ($id('flt-desde-caja')||{}).value||'';
-  var hasta     = ($id('flt-hasta-caja')||{}).value||'';
-  var filCaja   = ($id('caja-filtro-caja')||{}).value||'';
-  var filTipo   = ($id('caja-filtro-tipo')||{}).value||'';
-  var buscar    = (($id('caja-buscar')||{}).value||'').toLowerCase();
-
-  var fil = fechaFiltrar(movs,'FECHA',desde,hasta);
-  if (filCaja) fil = fil.filter(function(m){ return String(m.ID_CAJA)===String(filCaja); });
-  if (filTipo) fil = fil.filter(function(m){ return m.TIPO_MOV===filTipo; });
-  if (buscar)  fil = fil.filter(function(m){ return (m.CONCEPTO||'').toLowerCase().indexOf(buscar)!==-1; });
-  fil = fil.sort(function(a,b){ return (b.FECHA||0)-(a.FECHA||0); });
-
-  if (cnt) cnt.textContent = fil.length + ' movimientos';
-
-  var ingPer = fil.filter(function(m){return m.TIPO_MOV==='INGRESO';}).reduce(function(s,m){return s+(m.IMPORTE||0);},0);
-  var egrPer = fil.filter(function(m){return m.TIPO_MOV==='EGRESO';}).reduce(function(s,m){return s+(m.IMPORTE||0);},0);
-  var saldoPer = ingPer - egrPer;
-  if (pie) { pie.textContent=fmt(saldoPer); pie.style.color=saldoPer>=0?'var(--success)':'var(--danger)'; }
-
-  if (!fil.length) { tbody.innerHTML='<tr><td colspan="7" class="tc tdim" style="padding:16px">Sin movimientos en el periodo.</td></tr>'; return; }
-
-  tbody.innerHTML = fil.map(function(m){
-    var caja = cm[m.ID_CAJA];
-    var nomCaja = caja ? caja.CAJA_DESC : (m.ID_CAJA||'—');
-    var esIng = m.TIPO_MOV==='INGRESO';
-    return '<tr>'+
-      '<td class="mono" style="font-size:12px">'+fmtD(m.FECHA)+'</td>'+
-      '<td style="font-size:12px">'+nomCaja+'</td>'+
-      '<td><span class="badge '+(esIng?'b-green':'b-red')+'" style="font-size:9px">'+m.TIPO_MOV+'</span></td>'+
-      '<td style="font-size:12px">'+(m.CONCEPTO||'—')+'</td>'+
-      '<td><span class="badge b-gray" style="font-size:9px">'+(m.ORIGEN||'—')+'</span></td>'+
-      '<td class="mono tr '+(esIng?'tgreen':'tred')+'" style="font-weight:700">'+(esIng?'+':'-')+fmt(m.IMPORTE||0)+'</td>'+
-      '<td></td>'+
-      '</tr>';
-  }).join('');
-}
-
-function cajaMovManual() {
-  var cajas = window._cajaCajas||[];
-  var cajaOpts = cajas.map(function(c){ return '<option value="'+c.ID_CAJA+'">'+c.CAJA_DESC+'</option>'; }).join('');
-  showModal(
-    '<div class="mh"><span class="mt">Movimiento Manual de Caja</span><button class="mc" onclick="closeModal()">×</button></div>'+
-    '<div class="mb2">'+
-    '<div class="fr mb3">'+
-    '<div class="fg"><label class="fl">Fecha *</label><input id="cm-fecha" class="fi" type="date" value="'+fechaISO(new Date())+'"/></div>'+
-    '<div class="fg"><label class="fl">Tipo *</label>'+
-    '<select id="cm-tipo" class="fs">'+
-    '<option value="INGRESO">INGRESO</option>'+
-    '<option value="EGRESO">EGRESO</option>'+
-    '</select></div></div>'+
-    '<div class="fg mb3"><label class="fl">Caja *</label>'+
-    '<select id="cm-caja" class="fs"><option value="">— Seleccionar —</option>'+cajaOpts+'</select></div>'+
-    '<div class="fg mb3"><label class="fl">Concepto *</label>'+
-    '<input id="cm-concepto" class="fi" placeholder="Descripción del movimiento..."/></div>'+
-    '<div class="fg mb3"><label class="fl">Importe *</label>'+
-    '<input id="cm-importe" class="fi" type="number" step="0.01" min="0" placeholder="0.00"/></div>'+
-    '</div>'+
-    '<div class="mf">'+
-    '<button class="btn btn-s" onclick="closeModal()">Cancelar</button>'+
-    '<button class="btn btn-p" onclick="cajaGuardarManual()"><i class="fas fa-save"></i> Guardar</button>'+
-    '</div>'
-  );
-}
-
-async function cajaGuardarManual() {
-  var fecha    = $v('cm-fecha');
-  var tipo     = $v('cm-tipo');
-  var idCaja   = $v('cm-caja');
-  var concepto = $v('cm-concepto').trim();
-  var importe  = parseFloat($v('cm-importe'))||0;
-  if (!fecha||!idCaja||!concepto||importe<=0) { toast('Completá todos los campos','r2'); return; }
+async function cjCargar() {
+  var sel = $v('cj-caja');
   try {
-    var idMov = await nextId('movimientos_caja','ID_MOV_CAJA');
-    var mov = {
-      ID_MOV_CAJA: idMov,
-      FECHA:       new Date(fecha+'T00:00:00').getTime(),
-      ID_CAJA:     idCaja,
-      TIPO_MOV:    tipo,
-      CONCEPTO:    concepto,
-      ORIGEN:      'MANUAL',
-      ID_ORIGEN:   '',
-      IMPORTE:     importe,
-      SALDO_ACUM:  0
-    };
-    if (isGsMode()) { await gsRun('gsMovCaja', mov); }
-    else { await ADB.put('movimientos_caja', mov); }
-    _mcDel('movimientos_caja');
-    toast('Movimiento registrado ✓','g');
-    closeModal();
-    renderCaja();
-  } catch(e) { toast('Error: '+e.message,'r2'); }
+    var r = await gsRun('gsCAJA_Datos', $v('cj-desde'), $v('cj-hasta'), sel);
+    if (!r || !r.ok) throw new Error((r && r.error) || 'sin datos');
+    _CJ = r;
+  } catch (e) { var s = $id('cj-saldos'); if (s) s.innerHTML = '<div class="al al-r">Error cargando caja: ' + cjEsc(e.message || e) + '</div>'; return; }
+  var cs = $id('cj-caja');
+  if (cs) cs.innerHTML = '<option value="">Todas las cajas</option>' + _CJ.CAJAS.map(function(c) { return '<option value="' + cjEsc(c.ID_CAJA) + '"' + (String(sel) === String(c.ID_CAJA) ? ' selected' : '') + '>' + cjEsc(c.CAJA_DESC) + '</option>'; }).join('');
+  cjPintarSaldos(); cjPintarMovs(); cjPintarArqueos();
+}
+function cjPintarSaldos() {
+  var el = $id('cj-saldos'); if (!el) return;
+  var act = _CJ.CAJAS.filter(function(c) { return c.ACTIVA || Math.abs(c.SALDO) > 0.005; });
+  var tot = act.reduce(function(s, c) { return s + c.SALDO; }, 0);
+  el.innerHTML = '<div class="tw"><table><thead><tr><th>Caja / cuenta</th><th class="tr">Saldo al inicio del período</th><th class="tr">Ingresos</th><th class="tr">Egresos</th><th class="tr">Saldo actual</th></tr></thead><tbody>' +
+    act.map(function(c) {
+      return '<tr style="cursor:pointer" onclick="cjVerCaja(\'' + cjEsc(c.ID_CAJA) + '\')"><td style="font-weight:600">' + cjEsc(c.CAJA_DESC) + (c.ACTIVA ? '' : ' <span class="badge b-gray" style="font-size:9px">inactiva</span>') + '</td>' +
+        '<td class="mono tr">' + fmt(c.SALDO_ANTES) + '</td><td class="mono tr tgreen">' + fmt(c.INGRESOS) + '</td><td class="mono tr tred">' + fmt(c.EGRESOS) + '</td>' +
+        '<td class="mono tr" style="font-weight:700;color:' + (c.SALDO < 0 ? 'var(--danger)' : 'var(--text)') + '">' + fmt(c.SALDO) + '</td></tr>';
+    }).join('') + '</tbody><tfoot><tr><td colspan="4" style="font-weight:700">TOTAL</td><td class="mono tr" style="font-weight:700">' + fmt(tot) + '</td></tr></tfoot></table></div>';
+}
+function cjVerCaja(id) { var s = $id('cj-caja'); if (s) { s.value = id; cjCargar(); } }
+function cjPintarMovs() {
+  var tb = $id('cj-body'); if (!tb) return;
+  var tipo = $v('cj-tipo'), txt = ($v('cj-buscar') || '').toLowerCase(), una = !!$v('cj-caja');
+  var th = $id('cj-th-saldo'); if (th) th.style.display = una ? '' : 'none';
+  var lista = _CJ.MOVS.filter(function(m) { return (!tipo || m.TIPO_MOV === tipo) && (!txt || (m.CONCEPTO + ' ' + m.CAJA).toLowerCase().indexOf(txt) !== -1); });
+  var ing = 0, egr = 0;
+  tb.innerHTML = lista.length ? lista.slice().reverse().map(function(m) {
+    var esI = m.TIPO_MOV === 'INGRESO'; if (esI) ing += m.IMPORTE; else egr += m.IMPORTE;
+    return '<tr' + (m.ANULADO ? ' style="text-decoration:line-through;opacity:.55"' : '') + '><td class="mono" style="font-size:12px">' + fmtD(m.FECHA) + '</td><td style="font-size:12px">' + cjEsc(m.CAJA) + '</td>' +
+      '<td style="font-size:12px">' + cjEsc(m.CONCEPTO) + '</td><td><span class="badge b-gray" style="font-size:9px">' + cjEsc(cjOrigen(m.ORIGEN)) + '</span></td>' +
+      '<td class="mono tr tgreen">' + (esI ? fmt(m.IMPORTE) : '') + '</td><td class="mono tr tred">' + (esI ? '' : fmt(m.IMPORTE)) + '</td>' +
+      '<td class="mono tr" style="' + (una ? '' : 'display:none;') + 'font-weight:600">' + (una ? fmt(m.SALDO) : '') + '</td><td class="tdim" style="font-size:11px">' + cjEsc(m.USUARIO) + '</td>' +
+      '<td>' + (m.ANULABLE ? '<button class="btn btn-xs btn-s" title="Anular" onclick="cjModalAnular(\'' + cjEsc(m.ID_MOV_CAJA) + '\')"><i class="fas fa-ban"></i></button>' : '') + '</td></tr>';
+  }).join('') : '<tr><td colspan="9" class="tc tdim" style="padding:16px">Sin movimientos en el período.</td></tr>';
+  var pie = $id('cj-pie');
+  if (pie) pie.innerHTML = '<tr><td colspan="4" style="font-weight:700">' + lista.length + (lista.length === 1 ? ' movimiento' : ' movimientos') + ' · neto del período</td><td class="mono tr tgreen" style="font-weight:700">' + fmt(ing) + '</td><td class="mono tr tred" style="font-weight:700">' + fmt(egr) + '</td>' +
+    '<td class="mono tr" style="font-weight:700;' + (una ? '' : 'display:none') + '">' + fmt(ing - egr) + '</td><td colspan="2"></td></tr>';
+}
+function cjPintarArqueos() {
+  var tb = $id('cj-arq'); if (!tb) return;
+  tb.innerHTML = _CJ.ARQUEOS.length ? _CJ.ARQUEOS.map(function(a) {
+    return '<tr><td class="mono" style="font-size:12px">' + fmtD(a.FECHA) + '</td><td>' + cjEsc(a.CAJA) + '</td><td class="mono tr">' + fmt(a.SALDO_SISTEMA) + '</td><td class="mono tr">' + fmt(a.CONTADO) + '</td>' +
+      '<td class="mono tr" style="font-weight:700;color:' + (Math.abs(a.DIFERENCIA) < 0.005 ? 'var(--success)' : 'var(--danger)') + '">' + fmt(a.DIFERENCIA) + '</td><td style="font-size:12px">' + cjEsc(a.OBSERVACION) + '</td><td class="tdim" style="font-size:11px">' + cjEsc(a.USUARIO) + '</td></tr>';
+  }).join('') : '<tr><td colspan="7" class="tc tdim" style="padding:12px">Sin arqueos.</td></tr>';
+}
+function cjModal(titulo, cuerpo, fn, txtBtn) {
+  showModal('<div class="mh"><span class="mt">' + titulo + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' + cuerpo + '</div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="cj-btn" onclick="' + fn + '">' + txtBtn + '</button></div>');
+}
+function cjModalManual() {
+  cjModal('Movimiento manual', '<div class="fr mb3"><div class="fg"><label class="fl">Fecha *</label><input id="cjm-fecha" class="fi" type="date" value="' + cjHoy() + '"></div>' +
+    '<div class="fg"><label class="fl">Tipo *</label><select id="cjm-tipo" class="fs"><option value="EGRESO">Egreso (sale plata)</option><option value="INGRESO">Ingreso (entra plata)</option></select></div></div>' +
+    '<div class="fg mb3"><label class="fl">Caja *</label><select id="cjm-caja" class="fs">' + cjOptsCajas($v('cj-caja'), true) + '</select></div>' +
+    '<div class="fg mb3"><label class="fl">Concepto *</label><input id="cjm-con" class="fi" placeholder="Qué es"></div>' +
+    '<div class="fg"><label class="fl">Importe *</label><input id="cjm-imp" class="fi" type="number" min="0" step="0.01"></div>' +
+    '<div class="al al-w mt3" style="font-size:12px">Las ventas, cobros, pagos, compras y cheques ya mueven la caja solos: no los cargues acá.</div>', 'cjGuardarManual()', '<i class="fas fa-save"></i> Guardar');
+}
+async function cjEnviar(fn, arg, okTxt) {
+  var b = $id('cj-btn'); if (b) b.disabled = true;
+  try {
+    var r = await gsRun(fn, arg);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); if (b) b.disabled = false; return null; }
+    toast(okTxt(r) + ' ✓', 'g');
+    if (typeof _mcDel === 'function') _mcDel('movimientos_caja');
+    closeModal(); cjCargar();
+    return r;
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; return null; }
+}
+function cjGuardarManual() {
+  var o = { FECHA: $v('cjm-fecha'), TIPO_MOV: $v('cjm-tipo'), ID_CAJA: $v('cjm-caja'), CONCEPTO: ($v('cjm-con') || '').trim(), IMPORTE: cjNum($v('cjm-imp')) };
+  if (!o.ID_CAJA) { toast('Elegí la caja', 'r2'); return; }
+  if (!o.CONCEPTO) { toast('Escribí el concepto', 'r2'); return; }
+  if (!(o.IMPORTE > 0)) { toast('Falta el importe', 'r2'); return; }
+  cjEnviar('gsCAJA_Manual', o, function() { return 'Movimiento registrado'; });
+}
+function cjModalPase() {
+  cjModal('Pase entre cajas', '<div class="fg mb3"><label class="fl">Fecha *</label><input id="cjp-fecha" class="fi" type="date" value="' + cjHoy() + '"></div>' +
+    '<div class="fr mb3"><div class="fg"><label class="fl">Sale de *</label><select id="cjp-desde" class="fs">' + cjOptsCajas('', true) + '</select></div>' +
+    '<div class="fg"><label class="fl">Entra a *</label><select id="cjp-hacia" class="fs">' + cjOptsCajas('', true) + '</select></div></div>' +
+    '<div class="fr"><div class="fg"><label class="fl">Importe *</label><input id="cjp-imp" class="fi" type="number" min="0" step="0.01"></div>' +
+    '<div class="fg"><label class="fl">Detalle</label><input id="cjp-con" class="fi" placeholder="Ej: depósito de efectivo"></div></div>', 'cjGuardarPase()', '<i class="fas fa-exchange-alt"></i> Pasar');
+}
+function cjGuardarPase() {
+  var o = { FECHA: $v('cjp-fecha'), DESDE: $v('cjp-desde'), HACIA: $v('cjp-hacia'), IMPORTE: cjNum($v('cjp-imp')), CONCEPTO: ($v('cjp-con') || '').trim() };
+  if (!o.DESDE || !o.HACIA) { toast('Elegí las dos cajas', 'r2'); return; }
+  if (o.DESDE === o.HACIA) { toast('Las dos cajas son la misma', 'r2'); return; }
+  if (!(o.IMPORTE > 0)) { toast('Falta el importe', 'r2'); return; }
+  cjEnviar('gsCAJA_Transferir', o, function() { return 'Pase registrado'; });
+}
+function cjModalArqueo() {
+  cjModal('Arqueo de caja', '<div class="fg mb3"><label class="fl">Caja *</label><select id="cja-caja" class="fs" onchange="cjArqDif()">' + cjOptsCajas($v('cj-caja'), true) + '</select></div>' +
+    '<div class="fg mb3"><label class="fl">Lo que se contó *</label><input id="cja-cont" class="fi" type="number" min="0" step="0.01" oninput="cjArqDif()"></div>' +
+    '<div id="cja-dif" class="mb3"></div><div class="fg"><label class="fl">Observación (obligatoria si hay diferencia)</label><input id="cja-obs" class="fi"></div>', 'cjGuardarArqueo()', '<i class="fas fa-check"></i> Registrar arqueo');
+  cjArqDif();
+}
+function cjArqDif() {
+  var el = $id('cja-dif'); if (!el) return;
+  var c = _CJ.CAJAS.filter(function(x) { return String(x.ID_CAJA) === String($v('cja-caja')); })[0];
+  if (!c) { el.innerHTML = ''; return; }
+  var cont = $v('cja-cont'), d = Math.round((cjNum(cont) - c.SALDO) * 100) / 100;
+  el.innerHTML = '<div class="al ' + (cont === '' ? 'al-b' : Math.abs(d) < 0.005 ? 'al-g' : 'al-r') + '" style="font-size:13px">Según el sistema: <b>' + fmt(c.SALDO) + '</b>' +
+    (cont === '' ? '' : ' · ' + (Math.abs(d) < 0.005 ? 'Coincide' : (d > 0 ? 'Sobran ' : 'Faltan ') + fmt(Math.abs(d)) + ' (queda registrado como movimiento)')) + '</div>';
+}
+function cjGuardarArqueo() {
+  var o = { ID_CAJA: $v('cja-caja'), CONTADO: $v('cja-cont'), OBS: ($v('cja-obs') || '').trim() };
+  if (!o.ID_CAJA) { toast('Elegí la caja', 'r2'); return; }
+  if (o.CONTADO === '') { toast('Cargá lo que se contó', 'r2'); return; }
+  cjEnviar('gsCAJA_Arqueo', o, function(r) { return Math.abs(r.DIFERENCIA) < 0.005 ? 'Arqueo sin diferencias' : 'Arqueo con diferencia de ' + fmt(r.DIFERENCIA); });
+}
+function cjModalAnular(id) {
+  var m = _CJ.MOVS.filter(function(x) { return String(x.ID_MOV_CAJA) === String(id); })[0]; if (!m) return;
+  showModal('<div class="mh"><span class="mt">Anular movimiento</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="al al-b mb3" style="font-size:13px">' + cjEsc(m.CONCEPTO) + ' · ' + cjEsc(m.CAJA) + ' · <b>' + fmt(m.IMPORTE) + '</b>' + (m.ORIGEN === 'TRANSFERENCIA_CAJA' ? '<br>Se anulan las dos partes del pase.' : '') + '</div>' +
+    '<div class="fg"><label class="fl">Motivo *</label><input id="cjn-mot" class="fi"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-d" id="cj-btn" onclick="cjAnular(\'' + cjEsc(id) + '\')"><i class="fas fa-ban"></i> Anular</button></div>');
+}
+async function cjAnular(id) {
+  var mot = ($v('cjn-mot') || '').trim();
+  if (!mot) { toast('Escribí el motivo', 'r2'); return; }
+  var b = $id('cj-btn'); if (b) b.disabled = true;
+  try {
+    var r = await gsRun('gsCAJA_Anular', id, mot);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo anular', 'r2'); if (b) b.disabled = false; return; }
+    toast('Movimiento anulado ✓', 'g');
+    if (typeof _mcDel === 'function') _mcDel('movimientos_caja');
+    closeModal(); cjCargar();
+  } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; }
 }
 </script>
 
