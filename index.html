@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "3d7844e48338"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "5f12d9bb57c1"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -15,6 +15,12 @@
   var meta = function(n, c) { var e = document.createElement('meta'); e.name = n; e.content = c; h.appendChild(e); };
   link('manifest', 'precios.webmanifest'); link('apple-touch-icon', 'icono-precios-192.png'); link('icon', 'icono-precios-192.png');
   meta('apple-mobile-web-app-title', 'Vulcan Precios'); meta('apple-mobile-web-app-capable', 'yes'); meta('mobile-web-app-capable', 'yes'); meta('theme-color', '#1f2a5c');
+})();
+// Con ?fichaje entra directo a la pantalla de entrada y salida del personal (tablet de la puerta)
+(function() {
+  if (!/[?&#]fichaje/.test(location.search + location.hash)) return;
+  window.EMA_MODO_FICHAJE = true;
+  var m = document.createElement('meta'); m.name = 'theme-color'; m.content = '#0f172a'; document.head.appendChild(m);
 })();
 (function() {
   if (!/[?&#]puesto/.test(location.search + location.hash)) return;
@@ -287,6 +293,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
       <div class="nav-item" data-page="carga-transporte"><span class="nav-icon"><i class="fas fa-truck-moving"></i></span> Transporte</div>
       <div class="nav-item" data-page="carga-impositivo"><span class="nav-icon"><i class="fas fa-file-invoice"></i></span> Impositivo</div>
       <div class="nav-item" data-page="carga-sueldos"><span class="nav-icon"><i class="fas fa-users"></i></span> Sueldos</div>
+      <div class="nav-item" data-page="asistencia"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> Asistencia</div>
 
       <div class="sb-group">Finanzas</div>
       <div class="nav-item" data-page="cheques"><span class="nav-icon"><i class="fas fa-money-check-alt"></i></span> Cheques</div>
@@ -353,6 +360,8 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-carga-transporte" class="hidden"></div>
     <div id="page-carga-impositivo" class="hidden"></div>
     <div id="page-carga-sueldos" class="hidden"></div>
+    <div id="page-asistencia" class="hidden"></div>
+    <div id="page-fichaje" class="hidden"></div>
     <div id="page-recapados" class="hidden"></div>
     <div id="page-cheques" class="hidden"></div>
     <div id="page-ventas" class="hidden"></div>
@@ -663,7 +672,7 @@ function _mcDelAll(){ _MC={}; }
 var PAGINA_MODULO = {
   'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'precios-nuevos':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
   'carga-gastos':'GASTOS', 'carga-financiero':'ADMINISTRACION', 'carga-transporte':'ADMINISTRACION',
-  'carga-impositivo':'ADMINISTRACION', 'carga-sueldos':'ADMINISTRACION', 'carga-combustible':'COMBUSTIBLE',
+  'carga-impositivo':'ADMINISTRACION', 'carga-sueldos':'ADMINISTRACION', 'asistencia':'ADMINISTRACION', 'fichaje':'PRODUCCION', 'carga-combustible':'COMBUSTIBLE',
   'cheques':'COBRANZAS', 'cobranzas':'COBRANZAS', 'caja':'COBRANZAS', 'cta-cte-clientes':'COBRANZAS',
   'ordenes-pago':'PAGOS', 'cta-cte-proveedores':'PAGOS',
   'estado-resultados':'REPORTES', 'rpt-ventas':'REPORTES', 'rpt-produccion':'REPORTES', 'rpt-gastos':'REPORTES',
@@ -1044,6 +1053,8 @@ function getPage(name) {
     'ordenes-trabajo': typeof renderOT !== 'undefined' ? renderOT : null,
     'recetas': function(){ if(typeof renderRecetas!=='undefined') renderRecetas(); },
     'stock-insumos': function(){ if(typeof renderStockInsumos!=='undefined') renderStockInsumos(); },
+    'asistencia': function(){ if(typeof renderAsistencia!=='undefined') renderAsistencia(); },
+    'fichaje': function(){ if(typeof renderFichaje!=='undefined') renderFichaje(); },
     'produccion-cubiertas': function(){ if(typeof renderProdCub!=='undefined') renderProdCub(); },
     'puesto-estacion': function(){ if(typeof renderPuesto!=='undefined') renderPuesto(); },
     'precios-nuevos': function(){ if(typeof renderPrecios!=='undefined') renderPrecios(); },
@@ -1113,6 +1124,7 @@ function navTo(page) {
   document.querySelectorAll('.nav-item').forEach(function(el) {
     el.classList.toggle('active', el.dataset.page === page);
   });
+  if (page !== 'fichaje' && typeof fkSalirPagina === 'function') fkSalirPagina();
   var fn = getPage(page);
   if (fn) fn();
   if (!_hist.volviendo && page !== _hist.pagina) histPush({ ema: 1, page: page });
@@ -1187,7 +1199,9 @@ async function appInit() {
   var inicio = primeraPaginaPermitida();
   // Pantalla de estaciones sola: para los operarios (siempre) y con el link ?puesto para quien no sea administrador. Los administradores ven el sistema completo.
   var rolP = String((SES && SES.rol) || '').toUpperCase(), adminP = rolP.indexOf('SUPER') !== -1 || rolP.indexOf('ADMIN') !== -1;
-  if (!adminP && (window.EMA_MODO_PUESTO || rolP.indexOf('OPERA') !== -1) && puedeVerPagina('puesto-estacion')) { document.body.classList.add('modo-puesto'); inicio = 'puesto-estacion'; document.title = 'Vulcan Estaciones'; }
+  // Pantalla de fichaje (tablet de la entrada): siempre sola, sin menú, también para un administrador
+  if (window.EMA_MODO_FICHAJE && puedeVerPagina('fichaje')) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-fichaje'); inicio = 'fichaje'; document.title = 'Vulcan Fichaje'; }
+  else if (!adminP && (window.EMA_MODO_PUESTO || rolP.indexOf('OPERA') !== -1) && puedeVerPagina('puesto-estacion')) { document.body.classList.add('modo-puesto'); inicio = 'puesto-estacion'; document.title = 'Vulcan Estaciones'; }
   // Lista de precios sola (link ?precios o rol vendedor). El administrador entra a la misma pantalla pero con el menú.
   else if (window.EMA_MODO_PRECIOS && puedeVerPagina('precios-nuevos')) { if (!adminP) document.body.classList.add('modo-puesto'); inicio = 'precios-nuevos'; document.title = 'Vulcan Precios'; }
   else if (!adminP && rolP.indexOf('VENDE') !== -1 && puedeVerPagina('precios-nuevos')) { document.body.classList.add('modo-puesto'); inicio = 'precios-nuevos'; document.title = 'Vulcan Precios'; }
@@ -1196,6 +1210,8 @@ async function appInit() {
   if (inicio) navTo(inicio);
   // Aviso de insumos por acabarse, una vez por ingreso
   if (typeof cobAvisoInicio === 'function') setTimeout(cobAvisoInicio, 1500);
+  // Aviso de asistencia (quién falta hoy, certificados para revisar), una vez por ingreso
+  if (typeof asAvisoInicio === 'function' && !window.EMA_MODO_FICHAJE) setTimeout(asAvisoInicio, 2500);
 }
 
 async function loadConfig(cacheOnly) {
@@ -17342,6 +17358,417 @@ async function suRefreshHist() {
 function suFiltrarHist() {
   var q = ($id('su-hist-buscar')||{}).value||'';
   suRefreshHist();
+}
+</script>
+
+<style>
+/* ── Fichaje (tablet de la entrada) ── */
+#page-fichaje{min-height:100vh;background:#0f172a;color:#fff}
+.fk{max-width:900px;margin:0 auto;padding:16px;text-align:center;font-family:inherit}
+.fk-top{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.fk-top img{height:46px;background:#fff;border-radius:8px;padding:3px 6px}
+.fk-top button{background:#1e293b;color:#cbd5e1;border:1px solid #334155;border-radius:10px;padding:8px 12px;font-size:14px}
+.fk-reloj{font-size:96px;font-weight:800;letter-spacing:2px;margin:16px 0 0;line-height:1}
+.fk-fecha{font-size:22px;color:#94a3b8;margin-bottom:12px;text-transform:capitalize}
+.fk-caja{background:#111c33;border:2px dashed #334155;border-radius:20px;padding:22px 16px;margin:12px auto;max-width:640px}
+.fk-caja h2{font-size:34px;margin:0 0 8px}.fk-caja p{font-size:18px;color:#cbd5e1;margin:6px 0}
+.fk-cam{width:240px;height:180px;border-radius:14px;background:#000;object-fit:cover;transform:scaleX(-1);margin:8px auto;display:block}
+.fk-in{position:absolute;left:-9999px;top:0;opacity:0}
+.fk-est{font-size:14px;color:#94a3b8;margin-top:6px}
+.fk-btn{background:#E8792B;color:#fff;border:0;border-radius:14px;padding:16px 22px;font-size:20px;font-weight:700;margin:10px 6px}
+.fk-res{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:9500;padding:20px;text-align:center}
+.fk-res .ic{font-size:110px;line-height:1}.fk-res h1{font-size:56px;margin:12px 0 6px}.fk-res h2{font-size:40px;margin:0}.fk-res p{font-size:26px;margin:14px 0 0}
+.fk-ok{background:#15803d}.fk-out{background:#1d4ed8}.fk-warn{background:#b45309}.fk-err{background:#b91c1c}
+.fk-hoja{background:#fff;color:#111827;border-radius:18px;max-width:560px;width:100%;padding:18px;text-align:left}
+.fk-hoja label{display:block;font-size:14px;color:#4b5563;margin:10px 0 4px}.fk-hoja select,.fk-hoja input,.fk-hoja textarea{width:100%;box-sizing:border-box;font-size:18px;padding:10px;border:1px solid #d1d5db;border-radius:10px}
+.fk-hoja img{max-width:100%;max-height:240px;border-radius:10px;margin-top:8px;display:block}
+/* ── Asistencia (oficina) ── */
+#page-asistencia .as-wrap{max-width:1100px;margin:0 auto;padding:4px 0 40px}
+.as-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.as-top h2{margin:0;font-size:20px}.as-top .as-acc{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.as-top input{font-size:14px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)}
+.as-tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px}
+.as-tab{flex:0 0 auto;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);border-radius:18px;padding:6px 12px;font-size:13px;cursor:pointer}.as-tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.as-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.as-card{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--surface,#fff);border-left:6px solid #9ca3af}
+.as-card b{display:block;font-size:14px}.as-card .as-e{font-size:13px;margin-top:4px}
+.as-t{width:100%;border-collapse:collapse;font-size:13px;background:var(--surface,#fff)}.as-t th{text-align:left;font-size:11px;color:var(--dim);padding:6px;border-bottom:1px solid var(--border);white-space:nowrap}.as-t td{padding:6px;border-bottom:1px solid var(--border);vertical-align:top}
+.as-t td.n,.as-t th.n{text-align:right;white-space:nowrap}
+.as-b{border-radius:8px;padding:1px 7px;font-size:11px;font-weight:700;white-space:nowrap}
+.as-bR{background:#fee2e2;color:#b91c1c}.as-bY{background:#fef9c3;color:#854d0e}.as-bG{background:#dcfce7;color:#166534}.as-bB{background:#dbeafe;color:#1e40af}.as-bN{background:#eef0f3;color:#4b5563}
+.as-caja{background:#fff6ee;border-left:4px solid #E8792B;padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:13px;color:#1f2937;line-height:1.45}
+.as-form{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin:8px 0;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface,#fff)}
+.as-form label{display:flex;flex-direction:column;font-size:12px;color:var(--dim);gap:3px;flex:1;min-width:140px}
+.as-form input,.as-form select,.as-form textarea{font-size:14px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)}
+.as-tarj{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.as-tj{border:1px solid var(--border);border-radius:12px;padding:10px;background:#fff;color:#111;text-align:center}
+.as-tj svg{width:150px;height:150px}
+.as-aviso{position:fixed;top:64px;right:12px;z-index:8000;background:#fff;color:#1f2937;border:1px solid #e5e7eb;border-left:6px solid #E8792B;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:10px 12px;max-width:360px;font-size:13px}
+.as-aviso button{margin-top:6px}
+</style>
+<script>
+var AS_ = { d: null, tab: 'hoy', mes: '', abierto: '', confA: '', confT: '' };
+var FK_ = { stream: null, timer: null, ultimo: '', ultimoT: 0, ocupado: false, modo: 'fichar', cert: null, libQR: false };
+var AS_LOGO = 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg';
+function asEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function asAdmin() { var r = String((SES && SES.rol) || '').toUpperCase(); return r === 'SUPER' || r === 'ADMINISTRADOR'; }
+function asHM(min) { min = Math.round(min || 0); return Math.floor(min / 60) + ':' + ('0' + (min % 60)).slice(-2); }
+function asFechaTxt(dia) { var p = String(dia || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] : dia; }
+function asDiaNom(dia) { var d = new Date(dia + 'T12:00:00'); return ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getDay()]; }
+function asHoyLocal() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+// Fotos: van a una tabla aparte por una función de la base que pide la sesión del sistema
+async function asImg(fn, args) {
+  var r = await fetch(EMA_SB.url + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: EMA_SB.key, Authorization: 'Bearer ' + EMA_SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
+  return r.json();
+}
+function asScript(url) { return new Promise(function(ok, mal) { var s = document.createElement('script'); s.src = url; s.onload = ok; s.onerror = mal; document.head.appendChild(s); }); }
+async function asLibQR() { if (typeof qrcode === 'undefined') await asScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'); }
+function asQRsvg(txt, tam) { var q = qrcode(0, 'M'); q.addData(txt); q.make(); return q.createSvgTag({ cellSize: Math.max(2, Math.floor((tam || 150) / (q.getModuleCount() + 8))), margin: 4, scalable: true }); }
+function asComprimir(srcCanvasOrImg, maxLado, calidad) {
+  var w = srcCanvasOrImg.videoWidth || srcCanvasOrImg.naturalWidth || srcCanvasOrImg.width, h = srcCanvasOrImg.videoHeight || srcCanvasOrImg.naturalHeight || srcCanvasOrImg.height;
+  if (!w || !h) return '';
+  var k = Math.min(1, maxLado / Math.max(w, h)), c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+  c.getContext('2d').drawImage(srcCanvasOrImg, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', calidad);
+}
+function asBip(bien) {
+  try { var A = window.AudioContext || window.webkitAudioContext; var a = new A(), o = a.createOscillator(), g = a.createGain(); o.frequency.value = bien ? 880 : 220; o.connect(g); g.connect(a.destination); g.gain.value = 0.15; o.start(); setTimeout(function() { o.stop(); a.close(); }, bien ? 160 : 450); } catch (e) {}
+}
+
+// ═════════ PANTALLA DE FICHAJE (tablet en la entrada) ═════════
+async function renderFichaje() {
+  var el = $id('page-fichaje'); if (!el) return;
+  el.innerHTML = '<div class="fk"><div class="fk-top"><img src="' + AS_LOGO + '" alt=""><div style="font-size:18px;font-weight:700">Entrada y salida del personal</div>' +
+    '<div>' + (!asAdmin() ? '<button onclick="doLogout()">Salir</button>' : '') + '</div></div>' +
+    '<div class="fk-reloj" id="fk-reloj">--:--</div><div class="fk-fecha" id="fk-fecha"></div>' +
+    '<div class="fk-caja"><h2>Acercá tu tarjeta</h2><p>Pasala por el lector o mostrala a la cámara.</p>' +
+    '<video class="fk-cam" id="fk-cam" playsinline muted autoplay></video><div class="fk-est" id="fk-est">Preparando la cámara…</div></div>' +
+    '<button class="fk-btn" onclick="fkCertificado()">📄 Presentar certificado o aviso</button>' +
+    '<div class="fk-est" id="fk-adentro"></div>' +
+    '<input class="fk-in" id="fk-in" autocomplete="off" autocapitalize="off" spellcheck="false"></div>';
+  fkReloj(); clearInterval(FK_.relojT); FK_.relojT = setInterval(fkReloj, 1000);
+  var inp = $id('fk-in');
+  // El lector USB escribe el código y aprieta Enter, como un teclado
+  inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') { var v = inp.value.trim(); inp.value = ''; if (v) fkLeido(v, 'LECTOR'); } });
+  el.addEventListener('click', function(e) { if (!e.target.closest('button,select,input,textarea,label')) inp.focus(); });
+  inp.focus();
+  clearInterval(FK_.focoT); FK_.focoT = setInterval(function() { if (FK_.modo === 'fichar' && $id('fk-in') && document.activeElement !== $id('fk-in') && !document.querySelector('.fk-res')) $id('fk-in').focus(); }, 1500);
+  fkCamara();
+  fkEstado();
+  // La sesión de la tablet se renueva sola cada 20 minutos
+  clearInterval(FK_.vivoT); FK_.vivoT = setInterval(fkEstado, 20 * 60000);
+}
+function fkReloj() {
+  var r = $id('fk-reloj'); if (!r) { clearInterval(FK_.relojT); return; }
+  var d = new Date(); r.textContent = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  $id('fk-fecha').textContent = d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+async function fkEstado() {
+  try { var r = await gsRun('gsAS_Kiosco'); if (r && r.ok && $id('fk-adentro')) $id('fk-adentro').textContent = 'Horario ' + r.ENTRADA + ' a ' + r.SALIDA + ' · adentro ahora: ' + r.ADENTRO; } catch (e) { if ($id('fk-adentro')) $id('fk-adentro').textContent = 'Sin conexión con el sistema: ' + e.message; }
+}
+async function fkCamara() {
+  var est = $id('fk-est');
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('sin cámara');
+    if (FK_.stream) FK_.stream.getTracks().forEach(function(t) { t.stop(); });
+    FK_.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    var v = $id('fk-cam'); v.srcObject = FK_.stream; await v.play();
+    var det = null;
+    if ('BarcodeDetector' in window) { try { det = new BarcodeDetector({ formats: ['qr_code'] }); } catch (e) { det = null; } }
+    if (!det && typeof jsQR === 'undefined') { try { await asScript('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js'); } catch (e) {} }
+    est.textContent = 'Cámara lista' + (det ? '' : (typeof jsQR !== 'undefined' ? '' : ' (solo foto: usá el lector)'));
+    var cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+    clearInterval(FK_.timer);
+    FK_.timer = setInterval(async function() {
+      if (!$id('fk-cam')) { clearInterval(FK_.timer); return; }
+      if (FK_.ocupado || v.readyState < 2) return;
+      try {
+        var txt = '';
+        if (det) { var cods = await det.detect(v); if (cods.length) txt = cods[0].rawValue; }
+        else if (typeof jsQR !== 'undefined') { cv.width = 320; cv.height = 240; cx.drawImage(v, 0, 0, 320, 240); var im = cx.getImageData(0, 0, 320, 240), q = jsQR(im.data, 320, 240); if (q) txt = q.data; }
+        if (txt) fkLeido(txt, 'CAMARA');
+      } catch (e) {}
+    }, 300);
+  } catch (e) { est.textContent = 'Sin cámara: se marca solo con el lector (sin foto).'; }
+}
+function fkFoto() { var v = $id('fk-cam'); if (!v || !FK_.stream || v.readyState < 2) return ''; return asComprimir(v, 320, 0.6); }
+async function fkLeido(cod, origen) {
+  cod = String(cod).trim().toUpperCase();
+  if (FK_.ocupado) return;
+  if (cod === FK_.ultimo && Date.now() - FK_.ultimoT < 5000) return;
+  FK_.ultimo = cod; FK_.ultimoT = Date.now();
+  if (FK_.modo === 'cert') { fkCertTarjeta(cod); return; }
+  FK_.ocupado = true;
+  try {
+    var fotoId = '', foto = fkFoto();
+    if (foto) { try { var fi = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'FICHADA', ref: 'kiosco', data: foto }); if (fi && fi.ok) fotoId = String(fi.id); } catch (e) {} }
+    var r = await gsRun('gsAS_Fichar', { CODIGO: cod, FOTO_ID: fotoId, ORIGEN: origen });
+    if (!r || !r.ok) { asBip(false); fkMostrar('fk-err', '✖', (r && r.error) || 'No se pudo registrar', '', 'Probá de nuevo o avisá en la oficina'); return; }
+    asBip(true);
+    if (r.REPETIDA) { fkMostrar('fk-warn', '⏱', r.PILA, 'Ya marcaste ' + r.TIPO + ' a las ' + r.HORA, 'No hace falta pasarla de nuevo'); return; }
+    if (r.ALMUERZO_SALE) fkMostrar('fk-out', '🍽', 'Buen provecho, ' + r.PILA, 'SALIDA A ALMORZAR ' + r.HORA, 'Pasá la tarjeta al volver · hasta las ' + r.VOLVER);
+    else if (r.ALMUERZO_VUELTA) fkMostrar(r.ALMUERZO_EXCESO ? 'fk-warn' : 'fk-ok', '👍', 'Bienvenido, ' + r.PILA, 'VUELTA DEL ALMUERZO ' + r.HORA, r.ALMUERZO_EXCESO ? 'Almuerzo de ' + r.ALMUERZO_VUELTA + ' min: ' + r.ALMUERZO_EXCESO + ' min de más' : 'Almuerzo de ' + r.ALMUERZO_VUELTA + ' minutos');
+    else if (r.TIPO === 'ENTRADA') fkMostrar(r.TARDE ? 'fk-warn' : 'fk-ok', '👋', 'Buen día, ' + r.PILA, 'ENTRADA ' + r.HORA, r.TARDE ? 'Llegada tarde: ' + r.TARDE + ' minutos' : 'Que tengas buen día');
+    else fkMostrar('fk-out', '🏠', 'Hasta mañana, ' + r.PILA, 'SALIDA ' + r.HORA, r.ANTES ? 'Salida antes de hora: ' + r.ANTES + ' minutos' : 'Buen descanso');
+    fkEstado();
+  } catch (e) { asBip(false); fkMostrar('fk-err', '✖', 'Sin conexión', '', 'No se registró: avisá en la oficina (' + e.message + ')'); }
+}
+function fkMostrar(cls, ic, h1, h2, p) {
+  var o = document.createElement('div'); o.className = 'fk-res ' + cls;
+  o.innerHTML = '<div class="ic">' + ic + '</div><h1>' + asEsc(h1) + '</h1><h2>' + asEsc(h2) + '</h2><p>' + asEsc(p) + '</p>';
+  document.body.appendChild(o);
+  setTimeout(function() { o.remove(); FK_.ocupado = false; if ($id('fk-in')) $id('fk-in').focus(); }, 3500);
+}
+// Certificado o aviso desde la tablet: pasa la tarjeta, saca foto, elige qué es y las fechas
+function fkCertificado() {
+  FK_.modo = 'cert'; FK_.cert = { foto: '' };
+  var o = document.createElement('div'); o.className = 'fk-res'; o.id = 'fk-cert'; o.style.background = 'rgba(15,23,42,.92)';
+  o.innerHTML = '<div class="fk-hoja"><h2 style="margin:0 0 6px">📄 Presentar certificado o aviso</h2><p style="margin:0;font-size:17px">Primero pasá tu tarjeta por el lector o mostrala a la cámara.</p>' +
+    '<div id="fk-cert-q" style="margin-top:10px;font-size:18px;color:#b45309">Esperando la tarjeta…</div>' +
+    '<div style="text-align:right;margin-top:14px"><button class="btn" onclick="fkCertCerrar()">Cancelar</button></div></div>';
+  document.body.appendChild(o);
+  setTimeout(function() { if ($id('fk-in')) $id('fk-in').focus(); }, 100);
+}
+function fkCertCerrar() { FK_.modo = 'fichar'; FK_.cert = null; var o = $id('fk-cert'); if (o) o.remove(); if ($id('fk-in')) $id('fk-in').focus(); }
+function fkCertTarjeta(cod) {
+  if (!$id('fk-cert')) { FK_.modo = 'fichar'; return; }
+  FK_.cert.codigo = cod; FK_.modo = 'cert-form';
+  var hoy = asHoyLocal(), ops = (AS_.tiposNov || ['CERTIFICADO MEDICO', 'LICENCIA', 'VACACIONES', 'PERMISO', 'OTRO']).map(function(t) { return '<option>' + asEsc(t) + '</option>'; }).join('');
+  $id('fk-cert').innerHTML = '<div class="fk-hoja"><h2 style="margin:0 0 6px">📄 Presentar certificado o aviso</h2>' +
+    '<div style="color:#15803d;font-weight:700">✔ Tarjeta leída</div>' +
+    '<label>¿Qué es?</label><select id="fk-c-tipo">' + ops + '</select>' +
+    '<div style="display:flex;gap:8px"><div style="flex:1"><label>Desde</label><input type="date" id="fk-c-desde" value="' + hoy + '"></div><div style="flex:1"><label>Hasta</label><input type="date" id="fk-c-hasta" value="' + hoy + '"></div></div>' +
+    '<label>Detalle (opcional)</label><input id="fk-c-det" placeholder="Ej: reposo 2 días">' +
+    '<label>Foto del certificado</label><input type="file" id="fk-c-foto" accept="image/*" capture="environment" onchange="fkCertFoto(this)"><div id="fk-c-prev"></div>' +
+    '<div id="fk-c-err" style="color:#b91c1c;margin-top:8px"></div>' +
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn" onclick="fkCertCerrar()">Cancelar</button><button class="btn btn-p" id="fk-c-ok" onclick="fkCertEnviar()">Enviar a la oficina</button></div></div>';
+}
+function fkCertFoto(inp) {
+  var f = inp.files && inp.files[0]; if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function() { var im = new Image(); im.onload = function() { FK_.cert.foto = asComprimir(im, 1400, 0.72); $id('fk-c-prev').innerHTML = '<img src="' + FK_.cert.foto + '">'; }; im.src = rd.result; };
+  rd.readAsDataURL(f);
+}
+async function fkCertEnviar() {
+  var b = $id('fk-c-ok'), er = $id('fk-c-err'); er.textContent = '';
+  var tipo = $id('fk-c-tipo').value;
+  if (tipo === 'CERTIFICADO MEDICO' && !FK_.cert.foto) { er.textContent = 'Sacale una foto al certificado'; return; }
+  b.disabled = true;
+  try {
+    var aid = '';
+    if (FK_.cert.foto) { var fi = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'CERT', ref: 'kiosco', data: FK_.cert.foto }); if (!fi || !fi.ok) { er.textContent = (fi && fi.error) || 'No se pudo subir la foto'; b.disabled = false; return; } aid = String(fi.id); }
+    var r = await gsRun('gsAS_NovedadKiosco', { CODIGO: FK_.cert.codigo, TIPO: tipo, DESDE: $id('fk-c-desde').value, HASTA: $id('fk-c-hasta').value, DETALLE: $id('fk-c-det').value, ARCHIVO_ID: aid });
+    if (!r || !r.ok) { er.textContent = (r && r.error) || 'No se pudo enviar'; b.disabled = false; return; }
+    fkCertCerrar(); asBip(true); FK_.ocupado = true;
+    fkMostrar('fk-ok', '📄', 'Listo, ' + String(r.NOMBRE || '').split(' ').pop(), 'Enviado a la oficina', 'Queda pendiente hasta que lo revisen');
+  } catch (e) { er.textContent = e.message; b.disabled = false; }
+}
+function fkSalirPagina() { clearInterval(FK_.timer); clearInterval(FK_.relojT); clearInterval(FK_.focoT); clearInterval(FK_.vivoT); if (FK_.stream) FK_.stream.getTracks().forEach(function(t) { t.stop(); }); FK_.stream = null; }
+
+// ═════════ ASISTENCIA (oficina) ═════════
+async function renderAsistencia() {
+  fkSalirPagina();
+  var el = $id('page-asistencia'); if (!el) return;
+  if (!AS_.d) el.innerHTML = '<div class="as-wrap"><div class="al">Cargando asistencia…</div></div>';
+  try { AS_.d = await gsRun('gsAS_Datos', AS_.mes); } catch (e) { el.innerHTML = '<div class="al al-r">' + asEsc(e.message) + '</div>'; return; }
+  if (!AS_.d || !AS_.d.ok) { el.innerHTML = '<div class="al al-r">' + asEsc((AS_.d && AS_.d.error) || 'No se pudo cargar') + '</div>'; return; }
+  AS_.mes = AS_.d.MES; AS_.tiposNov = AS_.d.TIPOS_NOV;
+  asPintar();
+}
+function asPintar() {
+  var d = AS_.d, el = $id('page-asistencia'), pend = d.NOVEDADES.filter(function(n) { return n.ESTADO === 'PENDIENTE'; }).length;
+  var h = '<div class="as-wrap"><div class="as-top"><h2>👥 Asistencia del personal</h2><div class="as-acc">' +
+    '<input type="month" value="' + asEsc(AS_.mes) + '" onchange="AS_.mes=this.value;renderAsistencia()">' +
+    '<button class="btn btn-sm" onclick="window.open(location.href.split(\'?\')[0].split(\'#\')[0]+\'?fichaje\',\'_blank\')">🖥 Pantalla de fichaje</button>' +
+    '<button class="btn btn-sm" onclick="asAyuda()">❓ Cómo funciona</button><button class="btn btn-sm" onclick="renderAsistencia()">↻</button></div></div>';
+  h += '<div class="as-tabs">';
+  [['hoy', 'Hoy'], ['mes', 'Resumen del mes'], ['fich', 'Fichadas'], ['nov', 'Novedades' + (pend ? ' (' + pend + ' para revisar)' : '')], ['tarj', 'Tarjetas'], ['aj', 'Horario']].forEach(function(t) {
+    h += '<button class="as-tab' + (AS_.tab === t[0] ? ' on' : '') + '" onclick="AS_.tab=\'' + t[0] + '\';asPintar()">' + t[1] + '</button>';
+  });
+  h += '</div>';
+  h += AS_.tab === 'hoy' ? asHoy() : AS_.tab === 'mes' ? asMes() : AS_.tab === 'fich' ? asFichadas() : AS_.tab === 'nov' ? asNovedades() : AS_.tab === 'tarj' ? asTarjetas() : asAjustes();
+  el.innerHTML = h + '</div>';
+  if (AS_.tab === 'tarj') asPintarQR();
+}
+function asEstBadge(f) {
+  var m = { OK: ['Trabajó', 'as-bG'], ADENTRO: ['Adentro', 'as-bB'], ALMORZANDO: ['Almorzando', 'as-bN'], FALTA: ['Faltó', 'as-bR'], JUSTIFICADA: ['Justificada', 'as-bY'], 'SIN SALIDA': ['Sin salida', 'as-bY'], TODAVIA: ['Todavía no llegó', 'as-bN'] }[f.ESTADO] || [f.ESTADO, 'as-bN'];
+  return '<span class="as-b ' + m[1] + '">' + m[0] + '</span>';
+}
+function asHoy() {
+  var d = AS_.d, f = d.HOY_FILAS, P = d.PARAM;
+  var n = { aden: 0, falta: 0, tarde: 0, alm: 0 }; f.forEach(function(x) { if (x.ESTADO === 'ALMORZANDO') n.alm++; if (x.ESTADO === 'ADENTRO') n.aden++; if (x.ESTADO === 'FALTA') n.falta++; if (x.TARDE) n.tarde++; });
+  var h = '<div class="as-caja">Hoy ' + asDiaNom(d.HOY) + ' ' + asFechaTxt(d.HOY) + ' · horario ' + asEsc(P.ENTRADA) + ' a ' + asEsc(d.SALIDA_HOY) + ' (tolerancia ' + P.TOLERANCIA + ' min) · <b>' + n.aden + '</b> adentro · <b>' + n.alm + '</b> almorzando · <b>' + n.tarde + '</b> llegaron tarde · <b>' + n.falta + '</b> faltan</div>';
+  if (!f.length) return h + '<div class="al">Hoy no es día laborable y nadie marcó.</div>';
+  h += '<div class="as-grid">';
+  f.forEach(function(x) {
+    var col = { OK: '#16a34a', ADENTRO: '#2563eb', ALMORZANDO: '#7c3aed', FALTA: '#dc2626', JUSTIFICADA: '#eab308', 'SIN SALIDA': '#eab308', TODAVIA: '#9ca3af' }[x.ESTADO] || '#9ca3af';
+    h += '<div class="as-card" style="border-left-color:' + col + '"><b>' + asEsc(x.NOMBRE) + '</b><div class="as-e">' + asEstBadge(x) +
+      (x.ENTRADA ? ' entró ' + asEsc(x.ENTRADA) : '') + (x.SALIDA ? ' · salió ' + asEsc(x.SALIDA) : '') + '</div>' +
+      (x.TARDE ? '<div class="as-e" style="color:#b45309">Llegó ' + x.TARDE + ' min tarde</div>' : '') +
+      (x.ESTADO === 'ALMORZANDO' ? '<div class="as-e">Tiene que volver ' + asEsc(x.VUELVE) + '</div>' : '') +
+      (x.ALM_REAL ? '<div class="as-e"' + (x.ALM_EXCESO ? ' style="color:#b45309"' : '') + '>Almuerzo ' + x.ALM_REAL + ' min' + (x.ALM_EXCESO ? ' (' + x.ALM_EXCESO + ' de más)' : '') + '</div>' : '') +
+      (x.NOVEDAD ? '<div class="as-e">📄 ' + asEsc(x.NOVEDAD) + '</div>' : '') + '</div>';
+  });
+  return h + '</div>';
+}
+function asMes() {
+  var d = AS_.d;
+  var h = '<div class="as-caja">Resumen de ' + asEsc(AS_.mes) + ' hasta hoy, contando desde el ' + asFechaTxt(d.INICIO) + ' (primer día con el control). <b>Faltó</b> = día laborable sin marcar y sin novedad aprobada. <b>Horas</b> no cuentan el almuerzo: si lo marcó, se descuenta lo que tardó; si no lo marcó, se descuentan ' + d.PARAM.ALMUERZO + ' min (el sábado no hay almuerzo). <b>Almuerzo largo</b> = más de ' + d.PARAM.ALMUERZO + ' min + la tolerancia. <b>Extra</b> = lo que se quedó después de la hora de salida de ese día. Tocá un empleado para ver día por día.</div>';
+  h += '<div style="overflow-x:auto"><table class="as-t"><tr><th>Empleado</th><th class="n">Días trab.</th><th class="n">Faltas</th><th class="n">Justif.</th><th class="n">Tardes</th><th class="n">Min. tarde</th><th class="n">Salidas antes</th><th class="n">Sin salida</th>' + (d.PARAM.ALM_MARCA ? '<th class="n">Almuerzos largos</th><th class="n">Min. de más</th><th class="n">No marcó almuerzo</th>' : '') + '<th class="n">Horas</th><th class="n">Extra</th></tr>';
+  d.RESUMEN.forEach(function(r) {
+    var ab = AS_.abierto === r.ID_EMPLEADO;
+    h += '<tr style="cursor:pointer" onclick="AS_.abierto=(AS_.abierto===\'' + r.ID_EMPLEADO + '\'?\'\':\'' + r.ID_EMPLEADO + '\');asPintar()"><td><b>' + asEsc(r.NOMBRE) + '</b> ' + (ab ? '▲' : '▼') + '</td><td class="n">' + r.TRABAJADOS + '</td>' +
+      '<td class="n">' + (r.FALTAS ? '<span class="as-b as-bR">' + r.FALTAS + '</span>' : '0') + '</td><td class="n">' + r.JUSTIFICADAS + '</td>' +
+      '<td class="n">' + (r.TARDES ? '<span class="as-b as-bY">' + r.TARDES + '</span>' : '0') + '</td><td class="n">' + r.MIN_TARDE + '</td><td class="n">' + r.ANTES + '</td><td class="n">' + r.SIN_SALIDA + '</td>' +
+      (d.PARAM.ALM_MARCA ? '<td class="n">' + (r.ALM_LARGOS ? '<span class="as-b as-bY">' + r.ALM_LARGOS + '</span>' : '0') + '</td><td class="n">' + r.MIN_ALM_EXCESO + '</td><td class="n">' + r.ALM_SIN_MARCAR + '</td>' : '') +
+      '<td class="n">' + asHM(r.MIN_TRAB) + '</td><td class="n">' + asHM(r.MIN_EXTRA) + '</td></tr>';
+    if (ab) {
+      h += '<tr><td colspan="' + (d.PARAM.ALM_MARCA ? 13 : 10) + '" style="background:var(--bg)"><table class="as-t"><tr><th>Día</th><th>Estado</th><th>Entrada</th><th>Salida</th><th class="n">Horas</th><th class="n">Tarde</th><th class="n">Antes</th><th class="n">Extra</th><th class="n">Almuerzo</th><th>Marcas</th><th>Novedad</th></tr>';
+      d.DIAS.filter(function(x) { return x.ID_EMPLEADO === r.ID_EMPLEADO; }).forEach(function(x) {
+        h += '<tr><td>' + asDiaNom(x.DIA) + ' ' + asFechaTxt(x.DIA) + '</td><td>' + asEstBadge(x) + '</td><td>' + asEsc(x.ENTRADA) + '</td><td>' + asEsc(x.SALIDA) + '</td><td class="n">' + (x.MIN_TRAB ? asHM(x.MIN_TRAB) + (x.ALMUERZO ? ' <span style="color:var(--dim);font-size:11px">(−' + x.ALMUERZO + ' alm.)</span>' : '') : '') + '</td>' +
+          '<td class="n">' + (x.TARDE || '') + '</td><td class="n">' + (x.ANTES || '') + '</td><td class="n">' + (x.EXTRA ? asHM(x.EXTRA) : '') + '</td><td class="n">' + (x.ALM_REAL ? x.ALM_REAL + ' min' + (x.ALM_EXCESO ? ' <span class="as-b as-bY">+' + x.ALM_EXCESO + '</span>' : '') : x.ALM_SIN_MARCAR ? '<span class="as-b as-bN">no marcó</span>' : '') + '</td><td style="font-size:12px">' + asEsc(x.MARCAS.join(' · ')) + '</td><td>' + asEsc(x.NOVEDAD) + '</td></tr>';
+      });
+      h += '</table><div style="font-size:11px;color:var(--dim);margin-top:4px">* = cargada a mano por la oficina. Tarde y antes en minutos.</div></td></tr>';
+    }
+  });
+  return h + '</table></div>';
+}
+function asFichadas() {
+  var d = AS_.d, ad = asAdmin(), ops = d.EMPLEADOS.map(function(e) { return '<option value="' + asEsc(e.ID_EMPLEADO) + '">' + asEsc(e.NOMBRE) + '</option>'; }).join('');
+  var h = '';
+  if (ad) h += '<div class="as-form"><b style="width:100%">Cargar una fichada a mano</b><span style="width:100%;font-size:12px;color:var(--dim)">Solo cuando alguien no pudo marcar (se olvidó la tarjeta, se cortó internet). Queda con tu usuario y el motivo.</span>' +
+    '<label>Empleado<select id="as-m-emp"><option value="">Elegí…</option>' + ops + '</select></label><label>Día<input type="date" id="as-m-dia" value="' + asHoyLocal() + '"></label>' +
+    '<label>Hora<input id="as-m-hora" placeholder="07:30" inputmode="numeric"></label><label>Tipo<select id="as-m-tipo"><option>ENTRADA</option><option>SALIDA</option></select></label>' +
+    '<label style="flex:2">Motivo<input id="as-m-mot" placeholder="Ej: se olvidó la tarjeta"></label><button class="btn btn-sm btn-p" onclick="asManual()">Cargar</button></div>';
+  h += '<div style="overflow-x:auto"><table class="as-t"><tr><th>Día</th><th>Hora</th><th>Empleado</th><th>Tipo</th><th>Cómo</th><th>Foto</th><th>Detalle</th><th></th></tr>';
+  if (!d.FICHADAS.length) h += '<tr><td colspan="8">No hay fichadas este mes.</td></tr>';
+  d.FICHADAS.forEach(function(f) {
+    var an = f.ESTADO === 'ANULADA';
+    h += '<tr style="' + (an ? 'opacity:.5;text-decoration:line-through' : '') + '"><td>' + asDiaNom(f.DIA) + ' ' + asFechaTxt(f.DIA) + '</td><td><b>' + asEsc(f.HORA) + '</b></td><td>' + asEsc(f.NOMBRE) + '</td>' +
+      '<td><span class="as-b ' + (f.TIPO === 'ENTRADA' ? 'as-bG' : 'as-bB') + '">' + f.TIPO + '</span></td><td>' + asEsc(f.ORIGEN === 'MANUAL' ? 'A mano (' + f.USUARIO + ')' : f.ORIGEN === 'CAMARA' ? 'Cámara' : f.ORIGEN === 'PRUEBA' ? 'Prueba' : 'Lector') + '</td>' +
+      '<td>' + (f.FOTO_ID ? '<button class="btn btn-sm" onclick="asVerImg(' + Number(f.FOTO_ID) + ',\'Foto de ' + asEsc(f.NOMBRE) + ' · ' + f.TIPO + ' ' + f.HORA + '\')">📷</button>' : '<span style="color:var(--dim);font-size:12px">sin foto</span>') + '</td>' +
+      '<td style="font-size:12px">' + asEsc(f.MOTIVO) + '</td><td>' + (ad && !an ? '<button class="btn btn-sm" onclick="asAnular(' + f.ID_FICH + ')">Anular</button>' : '') + '</td></tr>';
+    if (AS_.confA === f.ID_FICH) h += '<tr><td colspan="8"><div class="as-form" style="margin:0"><label style="flex:3">Motivo de la anulación<input id="as-a-mot" placeholder="Ej: la pasó dos veces"></label><button class="btn btn-sm btn-d" onclick="asAnularOk(' + f.ID_FICH + ')">Anular</button><button class="btn btn-sm" onclick="AS_.confA=\'\';asPintar()">Cancelar</button></div></td></tr>';
+  });
+  return h + '</table></div>';
+}
+async function asManual() {
+  var d = { ID_EMPLEADO: $id('as-m-emp').value, DIA: $id('as-m-dia').value, HORA: $id('as-m-hora').value.trim(), TIPO: $id('as-m-tipo').value, MOTIVO: $id('as-m-mot').value };
+  try { var r = await gsRun('gsAS_FichadaManual', d); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Fichada cargada', 'g'); renderAsistencia(); } catch (e) { toast(e.message, 'r2'); }
+}
+function asAnular(id) { AS_.confA = id; asPintar(); setTimeout(function() { if ($id('as-a-mot')) $id('as-a-mot').focus(); }, 50); }
+async function asAnularOk(id) {
+  try { var r = await gsRun('gsAS_FichadaAnular', id, $id('as-a-mot').value); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } AS_.confA = ''; toast('Fichada anulada', 'g'); renderAsistencia(); } catch (e) { toast(e.message, 'r2'); }
+}
+async function asVerImg(id, titulo) {
+  var o = showModal('<div class="mh"><span class="mt">' + asEsc(titulo) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" id="as-img-b" style="text-align:center">Cargando…</div>');
+  try { var r = await asImg('vt_as_img_get', { tok: SES.token, nid: id }); o.querySelector('#as-img-b').innerHTML = r && r.ok ? '<img src="' + r.data + '" style="max-width:100%;max-height:70vh;border-radius:8px">' : asEsc((r && r.error) || 'No se pudo cargar'); }
+  catch (e) { o.querySelector('#as-img-b').textContent = e.message; }
+}
+function asNovedades() {
+  var d = AS_.d, ad = asAdmin(), ops = d.EMPLEADOS.map(function(e) { return '<option value="' + asEsc(e.ID_EMPLEADO) + '">' + asEsc(e.NOMBRE) + '</option>'; }).join('');
+  var tops = d.TIPOS_NOV.map(function(t) { return '<option>' + asEsc(t) + '</option>'; }).join('');
+  var h = '<div class="as-caja">Las novedades llegan desde la tablet (el empleado pasa la tarjeta y saca foto al certificado) o se cargan acá (por ejemplo, si lo mandó por WhatsApp). Quedan <b>pendientes</b> hasta que alguien las aprueba: aprobadas, esos días no cuentan como falta.</div>';
+  if (ad) h += '<div class="as-form"><b style="width:100%">Cargar una novedad</b><label>Empleado<select id="as-n-emp"><option value="">Elegí…</option>' + ops + '</select></label><label>Qué es<select id="as-n-tipo">' + tops + '</select></label>' +
+    '<label>Desde<input type="date" id="as-n-desde" value="' + asHoyLocal() + '"></label><label>Hasta<input type="date" id="as-n-hasta" value="' + asHoyLocal() + '"></label>' +
+    '<label style="flex:2">Detalle<input id="as-n-det" placeholder="Ej: reposo 48 h"></label><label>Foto o archivo (jpg/png)<input type="file" id="as-n-arch" accept="image/*"></label><button class="btn btn-sm btn-p" onclick="asNovCargar()">Cargar</button></div>';
+  h += '<div style="overflow-x:auto"><table class="as-t"><tr><th>Estado</th><th>Empleado</th><th>Qué es</th><th>Días</th><th>Detalle</th><th>Archivo</th><th>Cargó</th><th></th></tr>';
+  if (!d.NOVEDADES.length) h += '<tr><td colspan="8">Sin novedades.</td></tr>';
+  d.NOVEDADES.slice().sort(function(a, b) { return (a.ESTADO === 'PENDIENTE' ? 0 : 1) - (b.ESTADO === 'PENDIENTE' ? 0 : 1) || b.FECHA - a.FECHA; }).forEach(function(n) {
+    var cls = n.ESTADO === 'PENDIENTE' ? 'as-bY' : n.ESTADO === 'APROBADA' ? 'as-bG' : 'as-bR';
+    h += '<tr><td><span class="as-b ' + cls + '">' + n.ESTADO + '</span></td><td>' + asEsc(n.NOMBRE) + '</td><td>' + asEsc(n.TIPO) + '</td><td>' + asFechaTxt(n.DESDE) + (n.HASTA !== n.DESDE ? ' al ' + asFechaTxt(n.HASTA) : '') + '</td>' +
+      '<td style="font-size:12px">' + asEsc(n.DETALLE) + (n.OBS ? '<br><i>' + asEsc(n.OBS) + '</i>' : '') + '</td><td>' + (n.ARCHIVO_ID ? '<button class="btn btn-sm" onclick="asVerImg(' + Number(n.ARCHIVO_ID) + ',\'' + asEsc(n.TIPO) + ' · ' + asEsc(n.NOMBRE) + '\')">📄 Ver</button>' : '') + '</td>' +
+      '<td style="font-size:12px">' + asEsc(n.USUARIO) + (n.DECIDE ? '<br>decidió ' + asEsc(n.DECIDE) : '') + '</td><td style="white-space:nowrap">' +
+      (ad && n.ESTADO === 'PENDIENTE' ? '<button class="btn btn-sm btn-p" onclick="asDecidir(' + n.ID_NOV + ',\'APROBADA\')">Aprobar</button> <button class="btn btn-sm btn-d" onclick="asRechazar(' + n.ID_NOV + ')">Rechazar</button>' : '') + '</td></tr>';
+    if (AS_.confT === n.ID_NOV) h += '<tr><td colspan="8"><div class="as-form" style="margin:0"><label style="flex:3">Por qué se rechaza<input id="as-r-mot" placeholder="Ej: el certificado no tiene firma"></label><button class="btn btn-sm btn-d" onclick="asDecidir(' + n.ID_NOV + ',\'RECHAZADA\')">Rechazar</button><button class="btn btn-sm" onclick="AS_.confT=\'\';asPintar()">Cancelar</button></div></td></tr>';
+  });
+  return h + '</table></div>';
+}
+function asRechazar(id) { AS_.confT = id; asPintar(); }
+async function asDecidir(id, est) {
+  var obs = est === 'RECHAZADA' && $id('as-r-mot') ? $id('as-r-mot').value : '';
+  try { var r = await gsRun('gsAS_NovedadDecidir', id, est, obs); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } AS_.confT = ''; toast(est === 'APROBADA' ? 'Aprobada' : 'Rechazada', 'g'); renderAsistencia(); } catch (e) { toast(e.message, 'r2'); }
+}
+async function asNovCargar() {
+  var f = $id('as-n-arch').files && $id('as-n-arch').files[0], aid = '';
+  try {
+    if (f) {
+      var url = await new Promise(function(ok, mal) { var rd = new FileReader(); rd.onload = function() { ok(rd.result); }; rd.onerror = mal; rd.readAsDataURL(f); });
+      var im = await new Promise(function(ok, mal) { var i = new Image(); i.onload = function() { ok(i); }; i.onerror = function() { mal(new Error('No es una imagen')); }; i.src = url; });
+      var fi = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'CERT', ref: 'oficina', data: asComprimir(im, 1400, 0.72) });
+      if (!fi || !fi.ok) { toast((fi && fi.error) || 'No se pudo subir', 'r2'); return; } aid = String(fi.id);
+    }
+    var r = await gsRun('gsAS_Novedad', { ID_EMPLEADO: $id('as-n-emp').value, TIPO: $id('as-n-tipo').value, DESDE: $id('as-n-desde').value, HASTA: $id('as-n-hasta').value, DETALLE: $id('as-n-det').value, ARCHIVO_ID: aid });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast('Novedad cargada: queda pendiente', 'g'); renderAsistencia();
+  } catch (e) { toast(e.message, 'r2'); }
+}
+function asTarjetas() {
+  var d = AS_.d, ad = asAdmin();
+  var h = '<div class="as-caja">Cada empleado tiene una tarjeta con su código. Imprimilas, plastificalas o pedí tarjetas de PVC con el mismo diseño. Si una se pierde, tocá <b>Tarjeta nueva</b> (dos veces): la anterior deja de funcionar.</div>';
+  h += '<div style="margin:8px 0"><button class="btn btn-sm btn-p" onclick="asImprimir()">🖨 Imprimir todas las tarjetas</button></div><div class="as-tarj">';
+  d.EMPLEADOS.forEach(function(e) {
+    h += '<div class="as-tj"><img src="' + AS_LOGO + '" style="height:34px"><div style="font-weight:800;font-size:15px;margin:6px 0 2px">' + asEsc(e.NOMBRE) + '</div><div style="font-size:12px;color:#555">' + asEsc(e.PUESTO || '') + '</div>' +
+      (e.CODIGO ? '<div class="as-qr" data-c="' + asEsc(e.CODIGO) + '"></div><div style="font-size:11px;color:#777;font-family:monospace">' + asEsc(e.CODIGO) + '</div>' : '<div style="margin:30px 0;color:#b91c1c">Sin tarjeta</div>') +
+      (ad ? '<button class="btn btn-sm" style="margin-top:6px" onclick="asTarjeta(\'' + asEsc(e.ID_EMPLEADO) + '\',' + (e.CODIGO ? 1 : 0) + ')">' + (e.CODIGO ? 'Tarjeta nueva' : 'Crear tarjeta') + '</button>' : '') + '</div>';
+  });
+  return h + '</div>';
+}
+async function asPintarQR() { try { await asLibQR(); document.querySelectorAll('.as-qr').forEach(function(x) { x.innerHTML = asQRsvg(x.getAttribute('data-c'), 150); }); } catch (e) { toast('No se pudo dibujar el QR: ' + e.message, 'r2'); } }
+async function asTarjeta(id, reemplaza) {
+  if (reemplaza && AS_.confTj !== id) { AS_.confTj = id; toast('Tocá «Tarjeta nueva» otra vez: la tarjeta anterior deja de funcionar', 'r2'); return; }
+  AS_.confTj = '';
+  try { var r = await gsRun('gsAS_TarjetaNueva', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Tarjeta lista: ' + r.CODIGO, 'g'); renderAsistencia(); } catch (e) { toast(e.message, 'r2'); }
+}
+async function asImprimir() {
+  await asLibQR();
+  var cards = AS_.d.EMPLEADOS.filter(function(e) { return e.CODIGO; }).map(function(e) {
+    return '<div class="c"><img src="' + AS_LOGO + '"><div class="n">' + asEsc(e.NOMBRE) + '</div><div class="p">' + asEsc(e.PUESTO || '') + '</div>' + asQRsvg(e.CODIGO, 180) + '<div class="k">' + asEsc(e.CODIGO) + '</div><div class="f">Tarjeta de asistencia · Vulcan Tread</div></div>';
+  }).join('');
+  var html = '<!doctype html><html><head><meta charset="utf-8"><title>Tarjetas</title><style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;margin:0}' +
+    '.g{display:grid;grid-template-columns:repeat(3,63mm);gap:6mm}.c{width:63mm;height:88mm;border:1px dashed #999;border-radius:4mm;box-sizing:border-box;padding:4mm;text-align:center;page-break-inside:avoid}' +
+    '.c img{height:10mm}.n{font-weight:bold;font-size:11pt;margin-top:2mm}.p{font-size:8pt;color:#555}.c svg{width:42mm;height:42mm;margin-top:2mm}.k{font-family:monospace;font-size:8pt;color:#666}.f{font-size:7pt;color:#888;margin-top:1mm}</style></head><body><div class="g">' + cards + '</div></body></html>';
+  var ifr = document.createElement('iframe'); ifr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'; document.body.appendChild(ifr);
+  ifr.contentDocument.open(); ifr.contentDocument.write(html); ifr.contentDocument.close();
+  setTimeout(function() { try { ifr.contentWindow.focus(); ifr.contentWindow.print(); } catch (e) {} setTimeout(function() { ifr.remove(); }, 60000); }, 800);
+}
+function asAjustes() {
+  var P = AS_.d.PARAM, ad = asAdmin(), dis = ad ? '' : ' disabled';
+  return '<div class="as-form"><b style="width:100%">Horario</b>' +
+    '<label>Entrada<input id="as-p-AS_ENTRADA" value="' + asEsc(P.ENTRADA) + '"' + dis + '></label><label>Salida (lunes a viernes)<input id="as-p-AS_SALIDA" value="' + asEsc(P.SALIDA) + '"' + dis + '></label><label>Salida del sábado<input id="as-p-AS_SAB_SALIDA" value="' + asEsc(P.SAB_SALIDA) + '"' + dis + '></label>' +
+    '<label>Almuerzo permitido (minutos, lun a vie)<input id="as-p-AS_ALMUERZO" value="' + P.ALMUERZO + '"' + dis + '></label>' +
+    '<label>¿Marcan el almuerzo?<select id="as-p-AS_ALMUERZO_MARCA"' + dis + '><option value="1"' + (P.ALM_MARCA ? ' selected' : '') + '>Sí: pasan la tarjeta al salir y al volver</option><option value="0"' + (P.ALM_MARCA ? '' : ' selected') + '>No: se descuenta solo</option></select></label>' +
+    '<label>Horario de almuerzo (una salida en este horario es para almorzar)<input id="as-p-AS_ALM_VENTANA" value="' + asEsc(P.ALM_VENTANA) + '"' + dis + '></label><label>Contar faltas desde (vacío = primera fichada)<input type="date" id="as-p-AS_INICIO" value="' + asEsc(P.INICIO) + '"' + dis + '></label>' +
+    '<label>Tolerancia (minutos)<input id="as-p-AS_TOLERANCIA" value="' + P.TOLERANCIA + '"' + dis + '></label><label>Días que se trabaja (1 = lunes … 7 = domingo)<input id="as-p-AS_DIAS" value="' + asEsc(P.DIAS.join(',')) + '"' + dis + '></label>' +
+    '<label>Minutos para no contar dos veces la misma tarjeta<input id="as-p-AS_MIN_REPETIDA" value="' + P.MIN_REPETIDA + '"' + dis + '></label>' +
+    (ad ? '<button class="btn btn-sm btn-p" onclick="asAjGuardar()">Guardar</button>' : '<span style="font-size:12px;color:var(--dim)">Solo un administrador los cambia</span>') + '</div>' +
+    '<div class="as-caja"><b>Confirmado:</b> entrada 7:30, salida 17:30, sábados medio día, almuerzo de 1 hora, tolerancia entre 10 y 15 min. <b>Supuesto hasta que lo confirmen:</b> que el sábado se sale a las 12:00 y que el almuerzo es entre las 11:30 y las 14:30. Con «Marcan el almuerzo: Sí», cada uno pasa la tarjeta 4 veces por día (entrada, salida a comer, vuelta, salida) y se controla cuánto tardó; si alguno no lo marca, se le descuenta la hora igual y figura «no marcó». Los feriados todavía no se descuentan solos: ese día figura como falta para todos (se puede justificar con una novedad).</div>';
+}
+async function asAjGuardar() {
+  var cl = ['AS_ENTRADA', 'AS_SALIDA', 'AS_SAB_SALIDA', 'AS_TOLERANCIA', 'AS_ALMUERZO', 'AS_ALMUERZO_MARCA', 'AS_ALM_VENTANA', 'AS_DIAS', 'AS_MIN_REPETIDA', 'AS_INICIO'], i;
+  try { for (i = 0; i < cl.length; i++) { var r = await gsRun('gsPC_GuardarParam', cl[i], $id('as-p-' + cl[i]).value); if (!r || !r.ok) { toast(((r && r.error) || 'No se pudo') + ' (' + cl[i] + ')', 'r2'); return; } } toast('Horario guardado', 'g'); renderAsistencia(); } catch (e) { toast(e.message, 'r2'); }
+}
+function asAyuda() {
+  showModal('<div class="mh"><span class="mt">Cómo funciona la asistencia</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="font-size:14px;line-height:1.5">' +
+    '<p><b>Marcar:</b> en la tablet de la entrada (pantalla de fichaje) cada uno pasa su tarjeta por el lector o la muestra a la cámara. El sistema decide solo si es entrada o salida, usa la hora del servidor (no la de la tablet) y saca una foto en ese momento. Si la pasa dos veces seguidas, no la cuenta de nuevo. Al mediodía: pasa la tarjeta al salir a comer y al volver; la tablet le dice a qué hora tiene que volver y, al volver, cuánto tardó.</p>' +
+    '<p><b>Hoy:</b> quién está adentro, quién llegó tarde y quién falta. Al entrar al sistema aparece un aviso con los que faltan.</p>' +
+    '<p><b>Resumen del mes:</b> días trabajados, faltas, llegadas tarde, salidas antes, días sin marcar la salida, horas y horas extra (después de la hora de salida).</p>' +
+    '<p><b>Novedades:</b> certificados médicos, licencias, vacaciones. El empleado los presenta en la tablet con su tarjeta y una foto, o la oficina los carga. Aprobados, esos días no son falta.</p>' +
+    '<p><b>Correcciones:</b> si alguien no pudo marcar, la oficina carga la fichada a mano con el motivo; si marcó mal, se anula con el motivo. Todo queda con el usuario que lo hizo.</p></div>' +
+    '<div class="mf"><button class="btn btn-p" onclick="closeModal()">Entendido</button></div>');
+}
+// Aviso al entrar al sistema: quién falta hoy y certificados para revisar
+async function asAvisoInicio() {
+  try {
+    if (document.body.classList.contains('modo-puesto') || !puedeVerPagina('asistencia')) return;
+    var tk = SES && SES.token; if (!tk || window._asAvisado === tk) return; window._asAvisado = tk;
+    var r = await gsRun('gsAS_Aviso'); if (!r || !r.ok || (!r.FALTAN.length && !r.PENDIENTES) || !SES || SES.token !== tk) return;
+    var a = document.createElement('div'); a.className = 'as-aviso'; a.id = 'as-aviso';
+    a.innerHTML = '<b>👥 Asistencia de hoy</b>' + (r.FALTAN.length ? '<div style="margin-top:4px">Faltan ' + r.FALTAN.length + ': ' + asEsc(r.FALTAN.join(', ')) + '</div>' : '') +
+      (r.TARDE && r.TARDE.length ? '<div style="margin-top:4px">Llegaron tarde: ' + asEsc(r.TARDE.join(', ')) + '</div>' : '') +
+      (r.PENDIENTES ? '<div style="margin-top:4px">📄 ' + r.PENDIENTES + ' novedad' + (r.PENDIENTES === 1 ? '' : 'es') + ' para revisar</div>' : '') +
+      '<div><button class="btn btn-sm btn-p" onclick="$id(\'as-aviso\').remove();navTo(\'asistencia\')">Ver asistencia</button> <button class="btn btn-sm" onclick="$id(\'as-aviso\').remove()">Cerrar</button></div>';
+    document.body.appendChild(a);
+  } catch (e) { }
 }
 </script>
 
