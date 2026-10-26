@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "147169a1c57d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "fc08f14801c9"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10167,6 +10167,11 @@ function pcEncImp(titulo, nro) {
   return '<div class="enc"><div style="display:flex;gap:12px;align-items:center"><img src="' + logo + '" crossorigin="anonymous" style="height:62px;border-radius:6px"/><div><h1>' + pcEsc(titulo) + '</h1><div class="emp">VULCAN TREAD NEUMÁTICOS S.R.L. · Salta</div></div></div><div style="text-align:right"><div style="font-size:20px;font-weight:700">' + pcEsc(nro) + '</div><div class="emp">Impreso ' + fmtD(Date.now()) + '</div></div></div>';
 }
 // Orden de trabajo: el pedido del cliente (boleta) con sus cascos
+// Cambio de trabajo hecho en la inspección (lo decidió el encargado): se muestra en la orden de trabajo y el remito
+function pcCambioTrab(idCub) {
+  var cs = (PC_.d.cambiosTrabajo || []).filter(function(x) { return String(x.ID_CUB) === String(idCub); });
+  return cs.map(function(x) { return '<div style="font-size:9px;color:#b45309">Cambiado de ' + pcEsc(x.ANTES) + ' en la inspección · ' + pcEsc(x.MOTIVO) + ' · decidió ' + pcEsc(x.DECIDE) + '</div>'; }).join('');
+}
 function pcImpOTrab(id) {
   var d = PC_.d, o = (d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0];
   if (!o) { toast('No encontré la orden de trabajo', 'r2'); return; }
@@ -10176,7 +10181,7 @@ function pcImpOTrab(id) {
     '<div class="dat"><div><b>Cliente</b>' + pcEsc(o.CLIENTE) + '</div><div><b>N° de boleta (pedido)</b>' + pcEsc(o.NRO_MANUAL || '—') + '</div><div><b>Fecha</b>' + fmtD(+o.FECHA) + '</div><div><b>Cubiertas</b>' + cs.length + '</div>' +
     (cli.TELEFONO ? '<div><b>Teléfono</b>' + pcEsc(cli.TELEFONO) + '</div>' : '') + (cli.CUIT ? '<div><b>CUIT</b>' + pcEsc(cli.CUIT) + '</div>' : '') + (o.OBSERVACIONES ? '<div style="grid-column:span 2"><b>Observaciones</b>' + pcEsc(o.OBSERVACIONES) + '</div>' : '') + '</div>' +
     '<table><thead><tr><th>#</th><th>N° interno</th><th>DOT / marca</th><th>Tipo</th><th>Medida</th><th>Marca casco</th><th>Trabajo</th><th>Marca grabada</th><th>Observaciones</th></tr></thead><tbody>' +
-    cs.map(function(c, i) { return '<tr><td>' + (i + 1) + '</td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcEsc(c.DOT || '') + '</td><td>' + pcEsc(c.TIPO) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + '</td><td>' + pcEsc(c.MARCA || '') + '</td><td style="width:22%"></td></tr>'; }).join('') +
+    cs.map(function(c, i) { return '<tr><td>' + (i + 1) + '</td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcEsc(c.DOT || '') + '</td><td>' + pcEsc(c.TIPO) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + pcCambioTrab(c.ID_CUB) + '</td><td>' + pcEsc(c.MARCA || '') + '</td><td style="width:22%"></td></tr>'; }).join('') +
     '</tbody></table><div class="nota">Cada casco se identifica por su N° interno y su DOT o marca. La marca grabada se completa al entrar a la línea.</div>' +
     '<div class="firmas"><div>Entregó (cliente)</div><div>Recibió (Vulcan Tread)</div></div>';
   pcImprimir('Orden de trabajo ' + o.NRO, h);
@@ -10586,6 +10591,7 @@ function pcContador() {
     g.innerHTML = (lin || 'Carga') + ': ' + tit.length + ' de ' + cap + ' cubiertas' + (sup.length ? ' · ' + sup.length + ' suplentes' : '') + (tit.length >= cap ? ' · <span style="color:#15803d">COMPLETA</span>' : ' · faltan ' + (cap - tit.length)) +
       (tit.length ? '<div style="font-size:12px;font-weight:400;margin-top:3px">' + Object.keys(cli).map(function(k) { return pcEsc(k) + ' (' + cli[k] + ')'; }).join(' · ') + '</div>' : '');
     g.style.background = tit.length > cap ? '#fee2e2' : (tit.length >= cap ? '#dcfce7' : 'var(--accent-light)');
+    if (mezcla) { g.innerHTML = 'Carga mezclada (' + pcEsc(lu.join(' + ')) + '): no se puede armar'; g.style.background = '#fee2e2'; }
   }
 }
 async function pcCrearOT() {
@@ -10811,7 +10817,7 @@ function pcImpRemito(i) {
   var x = window.PC_REM[i]; if (!x) return;
   var ter = x.ITEMS.filter(function(t) { return t.RESULTADO === 'TERMINADA'; }), dev = x.ITEMS.filter(function(t) { return t.RESULTADO !== 'TERMINADA'; });
   var nInt = {}; (PC_.d.cubiertas || []).forEach(function(c) { nInt[String(c.ID_CUB)] = c.ID_CASCO; });
-  var fila = function(t, k) { return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(t.MARCA) + '</b>' + (nInt[String(t.ID_CUB)] ? '<div style="font-size:9px;color:#444">N° int. ' + pcEsc(nInt[String(t.ID_CUB)]) + '</div>' : '') + '</td><td>' + pcEsc(t.DOT) + '</td><td>' + pcEsc(t.MEDIDA) + '</td><td>' + pcEsc(t.FABRICANTE) + '</td><td>' + pcEsc(t.TRABAJO) + (t.REPROCESO ? ' (con corrección)' : '') + '</td><td>' + pcEsc(t.OTRAB) + (t.BOLETA ? ' · boleta ' + pcEsc(t.BOLETA) : '') + '</td>' + (t.RESULTADO === 'TERMINADA' ? '' : '<td>' + pcEsc(t.MOTIVO) + '</td>') + '<td class="ck">☐</td></tr>'; };
+  var fila = function(t, k) { return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(t.MARCA) + '</b>' + (nInt[String(t.ID_CUB)] ? '<div style="font-size:9px;color:#444">N° int. ' + pcEsc(nInt[String(t.ID_CUB)]) + '</div>' : '') + '</td><td>' + pcEsc(t.DOT) + '</td><td>' + pcEsc(t.MEDIDA) + '</td><td>' + pcEsc(t.FABRICANTE) + '</td><td>' + pcEsc(t.TRABAJO) + (t.REPROCESO ? ' (con corrección)' : '') + pcCambioTrab(t.ID_CUB) + '</td><td>' + pcEsc(t.OTRAB) + (t.BOLETA ? ' · boleta ' + pcEsc(t.BOLETA) : '') + '</td>' + (t.RESULTADO === 'TERMINADA' ? '' : '<td>' + pcEsc(t.MOTIVO) + '</td>') + '<td class="ck">☐</td></tr>'; };
   var h = pcEncImp('REMITO DE ENTREGA', x.NRO) +
     '<div class="dat"><div><b>Cliente</b>' + pcEsc(x.CLIENTE) + '</div><div><b>Fecha</b>' + fmtD(x.FECHA) + '</div><div><b>Orden de servicio</b>' + pcEsc(x.NRO_OT) + '</div><div><b>Cubiertas</b>' + x.ITEMS.length + '</div>' +
     (x.CUIT ? '<div><b>CUIT</b>' + pcEsc(x.CUIT) + '</div>' : '') + (x.DIRECCION ? '<div><b>Dirección</b>' + pcEsc(x.DIRECCION) + '</div>' : '') + (x.TELEFONO ? '<div><b>Teléfono</b>' + pcEsc(x.TELEFONO) + '</div>' : '') + '</div>' +
