@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "fc95d42d00db"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "8b113bca2483"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -336,6 +336,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
       <div class="nav-item" data-page="abm-conceptos"><span class="nav-icon"><i class="fas fa-folder-open"></i></span> Conceptos de Gasto</div>
 
       <div class="sb-group">Sistema</div>
+      <div class="nav-item" data-page="agenda"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Agenda del proyecto</div>
       <div class="nav-item" data-page="seguridad"><span class="nav-icon"><i class="fas fa-shield-alt"></i></span> Seguridad</div>
       <div class="nav-item" data-page="configuracion"><span class="nav-icon"><i class="fas fa-cog"></i></span> Configuración</div>
       <div class="nav-item" data-page="gsheets"><span class="nav-icon"><i class="fas fa-table"></i></span> Google Sheets</div>
@@ -396,6 +397,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-rpt-diferencias-precios" class="hidden"></div>
     <div id="page-rpt-ventas" class="hidden"></div>
     <div id="page-seguridad" class="hidden"></div>
+    <div id="page-agenda" class="hidden"></div>
     <div id="page-caja" class="hidden"></div>
     <div id="page-cobranzas" class="hidden"></div>
     <div id="page-cta-cte-clientes" class="hidden"></div>
@@ -678,7 +680,7 @@ var PAGINA_MODULO = {
   'estado-resultados':'REPORTES', 'rpt-ventas':'REPORTES', 'rpt-produccion':'REPORTES', 'rpt-gastos':'REPORTES',
   'rpt-costo-cubiertas':'REPORTES', 'rpt-diferencias-precios':'REPORTES', 'inteligencia':'REPORTES',
   'objetivo':'REPORTES', 'clientes-analisis':'REPORTES', 'rentabilidad':'REPORTES', 'iva-control':'REPORTES',
-  'stock':'STOCK', 'recapados':'PRODUCCION', 'seguridad':'SEGURIDAD',
+  'stock':'STOCK', 'recapados':'PRODUCCION', 'seguridad':'SEGURIDAD', 'agenda':'SEGURIDAD',
   'configuracion':'CONFIGURACION', 'gsheets':'CONFIGURACION', 'backup-page':'CONFIGURACION'
 };
 
@@ -700,7 +702,7 @@ function puedeVerPagina(page) {
 
 function aplicarPermisosMenu() {
   document.querySelectorAll('.nav-item').forEach(function(el) {
-    el.style.display = puedeVerPagina(el.dataset.page) ? '' : 'none';
+    el.style.display = puedeVerPagina(el.dataset.page) && (el.dataset.page !== 'agenda' || String((SES && SES.rol) || '').toUpperCase() === 'SUPER') ? '' : 'none';
   });
   // Oculta los títulos de grupo que quedaron sin opciones visibles
   document.querySelectorAll('.sb-group').forEach(function(g) {
@@ -1077,6 +1079,7 @@ function getPage(name) {
     'ventas': typeof renderVentas !== 'undefined' ? renderVentas : null,
     'stock': function(){ if(typeof renderStock!=='undefined') renderStock(); },
     'seguridad': typeof renderSeguridad !== 'undefined' ? renderSeguridad : null,
+    'agenda': function(){ if(typeof renderAgenda!=='undefined') renderAgenda(); },
     'configuracion': typeof renderConfiguracion !== 'undefined' ? renderConfiguracion : null,
     'backup-page': typeof renderBackupPage !== 'undefined' ? renderBackupPage : null,
     'gsheets': typeof renderGsheets !== 'undefined' ? renderGsheets : null,
@@ -16350,6 +16353,132 @@ async function segCargarAccesos() {
 }
 
 </script>
+<style>
+#page-agenda .ag-wrap{max-width:1150px;margin:0 auto;padding:4px 0 40px}
+.ag-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}.ag-top h2{margin:0;font-size:20px}.ag-top .ag-acc{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.ag-cont{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+.ag-c{border:1px solid var(--border);border-radius:12px;padding:8px 12px;background:var(--surface,#fff);cursor:pointer;min-width:120px}
+.ag-c b{display:block;font-size:24px;line-height:1.1}.ag-c span{font-size:12px;color:var(--dim)}.ag-c.on{outline:3px solid var(--accent)}
+.ag-tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px}
+.ag-tab{flex:0 0 auto;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);border-radius:18px;padding:6px 12px;font-size:13px;cursor:pointer}.ag-tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ag-fil{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin:4px 0 10px}
+.ag-fil label{display:flex;flex-direction:column;font-size:12px;color:var(--dim);gap:3px}
+.ag-fil input,.ag-fil select{font-size:14px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)}
+.ag-b{border-radius:8px;padding:1px 8px;font-size:11px;font-weight:700;white-space:nowrap;display:inline-block}
+.ag-PROBADO{background:#dcfce7;color:#166534}.ag-SIN_PROBAR{background:#fef9c3;color:#854d0e}.ag-NO_FUNCIONA{background:#fee2e2;color:#b91c1c}.ag-FALTA{background:#eef0f3;color:#374151}.ag-A_AGREGAR{background:#dbeafe;color:#1e40af}.ag-ANULADO{background:#f3f4f6;color:#9ca3af;text-decoration:line-through}
+.ag-dia{background:var(--surface,#fff);border:1px solid var(--border);border-radius:12px;margin:10px 0;overflow:hidden}
+.ag-dia-h{padding:8px 12px;background:var(--bg);font-weight:700;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ag-ev{padding:7px 12px;border-top:1px solid var(--border);font-size:13.5px;display:flex;gap:10px;align-items:flex-start}
+.ag-ev .ag-ar{font-size:11px;color:var(--dim);min-width:110px;text-transform:uppercase}
+.ag-ev .ag-tx{flex:1}.ag-ev .ag-no{font-size:12px;color:var(--dim);margin-top:2px}
+.ag-t{width:100%;border-collapse:collapse;font-size:13px;background:var(--surface,#fff)}.ag-t th{text-align:left;font-size:11px;color:var(--dim);padding:6px;border-bottom:1px solid var(--border);white-space:nowrap}.ag-t td{padding:6px;border-bottom:1px solid var(--border);vertical-align:top}
+.ag-area{font-size:15px;margin:16px 0 6px;color:var(--accent)}
+</style>
+<script>
+var AG_ = { d: null, tab: 'dia', area: '', est: '', q: '' };
+var AG_EST = { PROBADO: 'Probado y funciona', SIN_PROBAR: 'Hecho, sin probar', NO_FUNCIONA: 'No funciona', FALTA: 'Falta hacer', A_AGREGAR: 'A agregar', ANULADO: 'Sacado' };
+function agEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function agBadge(e) { return '<span class="ag-b ag-' + agEsc(e) + '">' + agEsc(AG_EST[e] || e || 'Alta') + '</span>'; }
+function agFechaTxt(f) { var p = String(f || '').split('-'); if (p.length !== 3) return f; var d = new Date(f + 'T12:00:00'); return ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getDay()] + ' ' + p[2] + '/' + p[1] + '/' + p[0]; }
+function agHoy() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+async function renderAgenda() {
+  var el = $id('page-agenda'); if (!el) return;
+  if (!AG_.d) el.innerHTML = '<div class="ag-wrap"><div class="al">Cargando la agenda…</div></div>';
+  try { AG_.d = await gsRun('gsAG_Datos'); } catch (e) { el.innerHTML = '<div class="al al-r">' + agEsc(e.message) + '</div>'; return; }
+  if (!AG_.d || !AG_.d.ok) { el.innerHTML = '<div class="al al-r">' + agEsc((AG_.d && AG_.d.error) || 'No se pudo cargar') + '</div>'; return; }
+  agPintar();
+}
+function agItem(id) { return AG_.d.ITEMS.filter(function(x) { return x.ID_ITEM === id; })[0]; }
+function agPasa(it) {
+  if (!it) return false;
+  if (AG_.area && it.AREA !== AG_.area) return false;
+  if (AG_.est && it.ESTADO !== AG_.est) return false;
+  if (AG_.q) { var t = (it.AREA + ' ' + it.TITULO + ' ' + it.DETALLE + ' ' + it.ORIGEN).toUpperCase(), q = AG_.q.toUpperCase().split(/\s+/).filter(Boolean); if (!q.every(function(p) { return t.indexOf(p) !== -1; })) return false; }
+  return true;
+}
+function agPintar() {
+  var d = AG_.d, el = $id('page-agenda'), n = {};
+  d.ITEMS.forEach(function(it) { n[it.ESTADO] = (n[it.ESTADO] || 0) + 1; });
+  var areas = {}; d.ITEMS.forEach(function(it) { areas[it.AREA] = 1; });
+  var h = '<div class="ag-wrap"><div class="ag-top"><h2>📋 Agenda del proyecto</h2><span style="font-size:12px;color:var(--dim)">Qué se hizo cada día y en qué estado está cada cosa. Solo la ve el usuario SUPER.</span><div class="ag-acc">' +
+    '<button class="btn btn-sm btn-p" onclick="agForm(0)">+ Agregar un punto</button><button class="btn btn-sm" onclick="renderAgenda()">↻</button></div></div>';
+  h += '<div class="ag-cont">' + d.ESTADOS.map(function(e) { return '<div class="ag-c' + (AG_.est === e ? ' on' : '') + '" onclick="AG_.est=(AG_.est===\'' + e + '\'?\'\':\'' + e + '\');agPintar()"><b>' + (n[e] || 0) + '</b>' + agBadge(e) + '</div>'; }).join('') +
+    '<div class="ag-c" onclick="AG_.est=\'\';AG_.area=\'\';AG_.q=\'\';agPintar()"><b>' + d.ITEMS.length + '</b><span>Total (ver todo)</span></div></div>';
+  h += '<div class="ag-tabs">' + [['dia', 'Día por día'], ['area', 'Estado actual por área'], ['falta', 'Lo que falta']].map(function(t) { return '<button class="ag-tab' + (AG_.tab === t[0] ? ' on' : '') + '" onclick="AG_.tab=\'' + t[0] + '\';agPintar()">' + t[1] + '</button>'; }).join('') + '</div>';
+  h += '<div class="ag-fil"><label>Área<select onchange="AG_.area=this.value;agPintar()"><option value="">Todas</option>' + Object.keys(areas).sort().map(function(a) { return '<option' + (AG_.area === a ? ' selected' : '') + '>' + agEsc(a) + '</option>'; }).join('') + '</select></label>' +
+    '<label>Estado<select onchange="AG_.est=this.value;agPintar()"><option value="">Todos</option>' + d.ESTADOS.map(function(e) { return '<option value="' + e + '"' + (AG_.est === e ? ' selected' : '') + '>' + AG_EST[e] + '</option>'; }).join('') + '</select></label>' +
+    '<label>Buscar<input id="ag-q" value="' + agEsc(AG_.q) + '" placeholder="Palabra…" onkeydown="if(event.key===\'Enter\'){AG_.q=this.value;agPintar()}"></label><button class="btn btn-sm" onclick="AG_.q=$id(\'ag-q\').value;agPintar()">Buscar</button></div>';
+  h += AG_.tab === 'dia' ? agDias() : AG_.tab === 'area' ? agAreas() : agFalta();
+  el.innerHTML = h + '</div>';
+}
+// Día por día: lo que pasó cada día (altas y cambios de estado), del más nuevo al más viejo
+function agDias() {
+  var d = AG_.d, porDia = {};
+  d.CAMBIOS.forEach(function(c) { var it = agItem(c.ID_ITEM); if (!it || !agPasa(it)) return; (porDia[c.FECHA] = porDia[c.FECHA] || []).push(c); });
+  var dias = Object.keys(porDia).sort().reverse();
+  if (!dias.length) return '<div class="al">No hay nada con ese filtro.</div>';
+  return dias.map(function(f) {
+    var cs = porDia[f].sort(function(a, b) { return a.ID_CAMBIO - b.ID_CAMBIO; }), cuenta = {};
+    cs.forEach(function(c) { cuenta[c.ESTADO] = (cuenta[c.ESTADO] || 0) + 1; });
+    return '<div class="ag-dia"><div class="ag-dia-h">' + agFechaTxt(f) + (f === d.HOY ? ' <span class="ag-b ag-A_AGREGAR">HOY</span>' : '') + '<span style="font-weight:400;font-size:12px;color:var(--dim)">' + cs.length + ' movimiento' + (cs.length === 1 ? '' : 's') + '</span></div>' +
+      cs.map(function(c) { var it = agItem(c.ID_ITEM);
+        return '<div class="ag-ev"><div class="ag-ar">' + agEsc(it.AREA) + '</div><div class="ag-tx"><b>' + agEsc(it.TITULO) + '</b>' + (c.ESTADO_ANT ? ' <span style="font-size:12px;color:var(--dim)">' + agEsc(AG_EST[c.ESTADO_ANT] || c.ESTADO_ANT) + ' →</span> ' : ' ') + agBadge(c.ESTADO) +
+          (c.NOTA && c.NOTA !== 'Alta' ? '<div class="ag-no">' + agEsc(c.NOTA) + '</div>' : (!c.ESTADO_ANT && it.DETALLE ? '<div class="ag-no">' + agEsc(it.DETALLE) + '</div>' : '')) + '</div>' +
+          '<button class="btn btn-xs" onclick="agForm(' + it.ID_ITEM + ')">Abrir</button></div>'; }).join('') + '</div>';
+  }).join('');
+}
+function agFila(it) {
+  return '<tr><td style="white-space:nowrap">' + agFechaTxt(it.FECHA) + '</td><td><b>' + agEsc(it.TITULO) + '</b>' + (it.DETALLE ? '<div style="font-size:12px;color:var(--dim)">' + agEsc(it.DETALLE) + '</div>' : '') + '</td><td>' + agBadge(it.ESTADO) + '</td><td style="font-size:12px">' + agEsc(it.ORIGEN) + '</td>' +
+    '<td style="white-space:nowrap"><button class="btn btn-xs btn-p" onclick="agEstForm(' + it.ID_ITEM + ')">Cambiar estado</button> <button class="btn btn-xs" onclick="agForm(' + it.ID_ITEM + ')">Editar</button></td></tr>';
+}
+function agTabla(lista) { return '<div style="overflow-x:auto"><table class="ag-t"><tr><th>Desde</th><th>Qué</th><th>Estado</th><th>De dónde sale</th><th></th></tr>' + lista.map(agFila).join('') + '</table></div>'; }
+function agAreas() {
+  var its = AG_.d.ITEMS.filter(agPasa), por = {};
+  its.forEach(function(it) { (por[it.AREA] = por[it.AREA] || []).push(it); });
+  var ks = Object.keys(por).sort(); if (!ks.length) return '<div class="al">No hay nada con ese filtro.</div>';
+  return ks.map(function(a) { var l = por[a].sort(function(x, y) { return x.FECHA < y.FECHA ? 1 : -1; }), c = {}; l.forEach(function(x) { c[x.ESTADO] = (c[x.ESTADO] || 0) + 1; });
+    return '<h3 class="ag-area">' + agEsc(a) + ' <span style="font-size:12px;font-weight:400">' + Object.keys(c).map(function(e) { return agBadge(e) + ' ' + c[e]; }).join(' · ') + '</span></h3>' + agTabla(l); }).join('');
+}
+function agFalta() {
+  var orden = { NO_FUNCIONA: 0, SIN_PROBAR: 1, FALTA: 2, A_AGREGAR: 3 };
+  var l = AG_.d.ITEMS.filter(function(it) { return orden[it.ESTADO] !== undefined && agPasa(it); }).sort(function(a, b) { return orden[a.ESTADO] - orden[b.ESTADO] || (a.AREA < b.AREA ? -1 : 1); });
+  if (!l.length) return '<div class="al">No queda nada pendiente con ese filtro.</div>';
+  return '<div class="as-caja" style="background:#fff6ee;border-left:4px solid #E8792B;padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:13px">Primero lo que no funciona, después lo hecho sin probar, lo que falta hacer y lo que se va a agregar.</div>' + agTabla(l);
+}
+function agForm(id) {
+  var it = id ? agItem(id) : { FECHA: agHoy(), AREA: AG_.area || '', TITULO: '', DETALLE: '', ESTADO: 'SIN_PROBAR', ORIGEN: '' };
+  var areas = {}; AG_.d.ITEMS.forEach(function(x) { areas[x.AREA] = 1; });
+  var hist = id ? AG_.d.CAMBIOS.filter(function(c) { return c.ID_ITEM === id; }).sort(function(a, b) { return a.ID_CAMBIO - b.ID_CAMBIO; }) : [];
+  showModal('<div class="mh"><span class="mt">' + (id ? 'Punto N° ' + id : 'Agregar un punto') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="fr"><div class="fg"><label class="fl">Fecha *</label><input class="fi" type="date" id="ag-f" value="' + agEsc(it.FECHA) + '"></div><div class="fg"><label class="fl">Área *</label><input class="fi" id="ag-a" list="ag-areas" value="' + agEsc(it.AREA) + '" style="text-transform:uppercase"><datalist id="ag-areas">' + Object.keys(areas).sort().map(function(a) { return '<option value="' + agEsc(a) + '">'; }).join('') + '</datalist></div></div>' +
+    '<div class="fg"><label class="fl">Qué es *</label><input class="fi" id="ag-t" value="' + agEsc(it.TITULO) + '"></div>' +
+    '<div class="fg"><label class="fl">Detalle</label><textarea class="fi" id="ag-d" rows="3">' + agEsc(it.DETALLE) + '</textarea></div>' +
+    '<div class="fr"><div class="fg"><label class="fl">Estado *</label><select class="fs" id="ag-e">' + AG_.d.ESTADOS.map(function(e) { return '<option value="' + e + '"' + (it.ESTADO === e ? ' selected' : '') + '>' + AG_EST[e] + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">De dónde sale (versión, prueba, pedido)</label><input class="fi" id="ag-o" value="' + agEsc(it.ORIGEN) + '"></div></div>' +
+    '<div class="fg"><label class="fl">Nota (si cambia el estado)</label><input class="fi" id="ag-n" placeholder="Ej: probado en la planta con la OS-00032"></div>' +
+    (hist.length ? '<div style="margin-top:8px;font-size:13px"><b>Historia</b>' + hist.map(function(c) { return '<div style="padding:3px 0;border-top:1px solid var(--border)">' + agFechaTxt(c.FECHA) + ' · ' + (c.ESTADO_ANT ? agEsc(AG_EST[c.ESTADO_ANT] || c.ESTADO_ANT) + ' → ' : '') + agBadge(c.ESTADO) + (c.NOTA ? ' <span style="color:var(--dim)">' + agEsc(c.NOTA) + '</span>' : '') + ' <span style="color:var(--dim);font-size:11px">' + agEsc(c.USUARIO) + '</span></div>'; }).join('') + '</div>' : '') +
+    '</div><div class="mf">' + (id ? '<button class="btn btn-d" onclick="agSacar(' + id + ')">Sacar de la agenda</button>' : '') + '<button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="agGuardar(' + (id || 0) + ')">Guardar</button></div>');
+}
+async function agGuardar(id) {
+  var d = { ID_ITEM: id, FECHA: $v('ag-f'), AREA: $v('ag-a'), TITULO: $v('ag-t'), DETALLE: $v('ag-d'), ESTADO: $v('ag-e'), ORIGEN: $v('ag-o'), NOTA: $v('ag-n') };
+  try { var r = await gsRun('gsAG_Guardar', d); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Guardado ✓', 'g'); renderAgenda(); } catch (e) { toast(e.message, 'r2'); }
+}
+function agEstForm(id) {
+  var it = agItem(id); if (!it) return;
+  showModal('<div class="mh"><span class="mt">Cambiar estado</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div style="margin-bottom:8px"><b>' + agEsc(it.TITULO) + '</b><br>Hoy: ' + agBadge(it.ESTADO) + '</div>' +
+    '<div class="fr"><div class="fg"><label class="fl">Nuevo estado</label><select class="fs" id="ag-ne">' + AG_.d.ESTADOS.map(function(e) { return '<option value="' + e + '"' + (it.ESTADO === e ? ' selected' : '') + '>' + AG_EST[e] + '</option>'; }).join('') + '</select></div><div class="fg"><label class="fl">Fecha</label><input class="fi" type="date" id="ag-nf" value="' + agHoy() + '"></div></div>' +
+    '<div class="fg"><label class="fl">Qué pasó (cómo se probó, qué falló…)</label><input class="fi" id="ag-nn"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="agEstGuardar(' + id + ')">Guardar</button></div>');
+}
+async function agEstGuardar(id) {
+  try { var r = await gsRun('gsAG_Estado', id, $v('ag-ne'), $v('ag-nn'), $v('ag-nf')); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Estado cambiado ✓', 'g'); renderAgenda(); } catch (e) { toast(e.message, 'r2'); }
+}
+async function agSacar(id) {
+  var m = $v('ag-n'); if (m.length < 3) { toast('Escribí en «Nota» por qué se saca', 'r2'); $id('ag-n').focus(); return; }
+  try { var r = await gsRun('gsAG_Anular', id, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Sacado de la agenda', 'g'); renderAgenda(); } catch (e) { toast(e.message, 'r2'); }
+}
+</script>
+
 <script>
 // ============================================================
 // MOD-FINANCIERO — Modulo dedicado de carga financiera
