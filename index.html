@@ -10859,7 +10859,7 @@ async function pcPesaje() {
       if (x.SIN_PESAJE) est = '<span class="badge b-red">Sin pesaje del día</span>';
       else if (P.ESTADO === 'ANULADO') est = '<span class="badge b-gray">Anulado: ' + pcEsc(P.MOTIVO_ANULA) + '</span>';
       else if (P.ESTADO === 'ABIERTO') est = '<span class="badge b-orange">Falta el pesaje del final</span>';
-      else est = c && c.FUERA ? '<b style="color:var(--danger)">' + (c.DIF > 0 ? '+' : '') + f3(c.DIF) + ' ' + u + ' (' + (c.PCT > 0 ? '+' : '') + c.PCT + '%)</b>' : '<span style="color:var(--success);font-weight:700">' + (c.DIF > 0 ? '+' : '') + f3(c.DIF) + ' ' + u + ' (' + c.PCT + '%)</span>';
+      else est = c && c.FUERA ? '<b style="color:var(--danger)">' + (c.DIF > 0 ? '+' : '') + f3(c.DIF) + ' ' + u + ' (' + (c.PCT > 0 ? '+' : '') + String(c.PCT).replace('.', ',') + '%)</b>' : '<span style="color:var(--success);font-weight:700">' + (c.DIF > 0 ? '+' : '') + f3(c.DIF) + ' ' + u + ' (' + String(c.PCT).replace('.', ',') + '%)</span>';
       return '<tr' + (P && P.ESTADO === 'ANULADO' ? ' style="opacity:.5"' : '') + '><td>' + dd(x.FECHA) + '</td><td>' + pcEsc(x.ESTACION) + '</td><td>' + pcEsc(x.INSUMO) + '</td>' +
         '<td class="tr mono">' + (P ? f3(P.INICIO) + ' ' + u : '—') + '</td><td class="tr mono">' + (P && P.FIN !== null ? f3(P.FIN) + ' ' + u : '—') + '</td><td class="tr mono">' + (c ? f3(c.REAL) + ' ' + u : '—') + '</td>' +
         '<td class="tr mono">' + f3(x.USADO_CUB) + ' ' + u + '<div class="tdim" style="font-size:10px">' + x.CUBIERTAS + ' cub.' + (x.PESADAS ? ' · ' + x.PESADAS + ' pesadas' : ' · receta') + '</div></td><td class="tr">' + est + '</td>' +
@@ -12084,7 +12084,7 @@ async function puPesaje() {
       if (P.ESTADO === 'CERRADO') {
         var c = i.CALC || {};
         h += '<div style="font-size:15px">Sobró: <b>' + puF(P.FIN) + ' ' + u + '</b>' + (P.DESTINO ? ' · ' + (P.DESTINO === 'QUEDA' ? 'quedó en la estación' : 'volvió al depósito') : '') + ' · pesó ' + puEsc(P.OPERARIO_FIN) + '</div>' +
-          '<div style="font-size:16px;font-weight:700;color:' + (c.FUERA ? 'var(--danger)' : 'var(--success)') + '">Se fue: ' + puF(c.REAL) + ' ' + u + ' · diferencia con lo cargado: ' + (c.DIF > 0 ? '+' : '') + puF(c.DIF) + ' ' + u + ' (' + (c.PCT > 0 ? '+' : '') + c.PCT + '%)</div>' +
+          '<div style="font-size:16px;font-weight:700;color:' + (c.FUERA ? 'var(--danger)' : 'var(--success)') + '">Se fue: ' + puF(c.REAL) + ' ' + u + ' · diferencia con lo cargado: ' + (c.DIF > 0 ? '+' : '') + puF(c.DIF) + ' ' + u + ' (' + (c.PCT > 0 ? '+' : '') + String(c.PCT).replace('.', ',') + '%)</div>' +
           (P.JUSTIFICACION ? '<div style="font-size:14px">Explicación: ' + puEsc(P.JUSTIFICACION) + (P.AUTORIZA ? ' · ' + puEsc(P.AUTORIZA) : '') + '</div>' : '');
       } else {
         h += '<div style="font-size:15px;margin-top:6px"><b>Fin del día:</b> pesá lo que sobró.</div>' +
@@ -12124,7 +12124,7 @@ function puPesFin(k) {
       if (ac) ac.value = '';
       if (r && r.PIDE_JUSTIFICACION) {
         var c = r.CALC, box = $id('pu-pes-just-' + k);
-        box.innerHTML = '<div style="color:var(--danger);font-weight:700;font-size:16px">Se fueron ' + puF(c.REAL) + ' ' + puEsc(i.UNIDAD) + ' y en las cubiertas se cargaron ' + puF(c.USADO) + ': diferencia ' + (c.DIF > 0 ? '+' : '') + puF(c.DIF) + ' (' + c.PCT + '%). El encargado tiene que explicarla.</div>' +
+        box.innerHTML = '<div style="color:var(--danger);font-weight:700;font-size:16px">Se fueron ' + puF(c.REAL) + ' ' + puEsc(i.UNIDAD) + ' y en las cubiertas se cargaron ' + puF(c.USADO) + ': diferencia ' + (c.DIF > 0 ? '+' : '') + puF(c.DIF) + ' (' + String(c.PCT).replace('.', ',') + '%). El encargado tiene que explicarla.</div>' +
           '<input class="pu-q" id="pu-pes-jtx-' + k + '" style="font-size:16px;text-transform:none" placeholder="¿Qué pasó con la diferencia?" autocomplete="off">' +
           (PU_.pes.SOY_ENCARGADO ? '' : '<div class="fr2"><input id="pu-pes-au-' + k + '" placeholder="Usuario del encargado" autocomplete="off"><input id="pu-pes-ac-' + k + '" type="password" placeholder="Clave" autocomplete="new-password"></div>');
         $id('pu-pes-fin-' + k).value = v; return;
