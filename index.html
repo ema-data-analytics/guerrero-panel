@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f0a9573fffa2"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "1de27dccb61f"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10181,7 +10181,7 @@ function pcImpOTrab(id) {
     '<div class="dat"><div><b>Cliente</b>' + pcEsc(o.CLIENTE) + '</div><div><b>N° de boleta (pedido)</b>' + pcEsc(o.NRO_MANUAL || '—') + '</div><div><b>Fecha</b>' + fmtD(+o.FECHA) + '</div><div><b>Cubiertas</b>' + cs.length + '</div>' +
     (cli.TELEFONO ? '<div><b>Teléfono</b>' + pcEsc(cli.TELEFONO) + '</div>' : '') + (cli.CUIT ? '<div><b>CUIT</b>' + pcEsc(cli.CUIT) + '</div>' : '') + '<div><b>Parche</b>' + pcEsc(pcParcheTxt(o)) + '</div>' + (o.OBSERVACIONES ? '<div style="grid-column:span 2"><b>Observaciones</b>' + pcEsc(o.OBSERVACIONES) + '</div>' : '') + '</div>' +
     '<table><thead><tr><th>#</th><th>N° interno</th><th>DOT / marca</th><th>Tipo</th><th>Medida</th><th>Marca casco</th><th>Trabajo</th><th>Marca grabada</th><th>Observaciones</th></tr></thead><tbody>' +
-    cs.map(function(c, i) { return '<tr><td>' + (i + 1) + '</td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcEsc(c.DOT || '') + '</td><td>' + pcEsc(c.TIPO) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + pcCambioTrab(c.ID_CUB) + '</td><td>' + pcEsc(c.MARCA || '') + '</td><td style="width:22%"></td></tr>'; }).join('') +
+    cs.map(function(c, i) { return '<tr><td>' + (i + 1) + '</td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcEsc(c.DOT || '') + '</td><td>' + pcEsc(c.TIPO) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + pcCambioTrab(c.ID_CUB) + (String(c.PARCHE_INCLUIDO || '') ? '<div style="font-size:9px;color:#444">' + pcEsc(pcParcheTxt(c)) + ' (solo esta)</div>' : '') + '</td><td>' + pcEsc(c.MARCA || '') + '</td><td style="width:22%"></td></tr>'; }).join('') +
     '</tbody></table><div class="nota">Cada casco se identifica por su N° interno y su DOT o marca. La marca grabada se completa al entrar a la línea.</div>' +
     '<div class="firmas"><div>Entregó (cliente)</div><div>Recibió (Vulcan Tread)</div></div>';
   pcImprimir('Orden de trabajo ' + o.NRO, h);
@@ -10337,7 +10337,7 @@ function pcOTrab() {
   }).filter(function(x) { return x.pend || x.linea; }).sort(function(a, b) { return b.o.ID_OTRAB - a.o.ID_OTRAB; });
   h += '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de trabajo en curso (' + lo.length + ')</span><span class="tdim" style="font-size:12px">Las terminadas y anuladas están en "Historial"</span></div><div class="tw"><table style="font-size:12px" id="pc-o-lista"><thead><tr><th>OT</th><th>Fecha</th><th>Cliente</th><th>N° boleta</th><th class="tr">Cubiertas</th><th class="tr">Esperando</th><th class="tr">En la línea</th><th>Parche</th><th></th></tr></thead><tbody>' +
     (lo.length ? lo.map(function(x) { var o = x.o;
-      return '<tr><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL) + '</td><td class="tr">' + x.mias.length + '</td><td class="tr">' + x.pend + '</td><td class="tr">' + x.linea + '</td><td style="white-space:nowrap">' + pcParcheBadge(o) + ' <button class="btn btn-s btn-xs" onclick="pcParcheForm(' + o.ID_OTRAB + ')">Cambiar</button></td>' +
+      return '<tr><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL) + '</td><td class="tr">' + x.mias.length + '</td><td class="tr">' + x.pend + '</td><td class="tr">' + x.linea + '</td><td style="white-space:nowrap">' + pcParcheBadge(o) + (x.mias.filter(function(c) { return String(c.PARCHE_INCLUIDO || ''); }).length ? ' <span class="badge b-orange">' + x.mias.filter(function(c) { return String(c.PARCHE_INCLUIDO || ''); }).length + (x.mias.filter(function(c) { return String(c.PARCHE_INCLUIDO || ''); }).length === 1 ? ' excepción' : ' excepciones') + '</span>' : '') + ' <button class="btn btn-s btn-xs" onclick="pcParcheForm(' + o.ID_OTRAB + ')">Cambiar</button></td>' +
         '<td style="white-space:nowrap"><button class="btn btn-s btn-xs" title="Imprimir" onclick="pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-print"></i></button> ' + (pcPuede('ANULAR') && x.pend === x.mias.length ? '<button class="btn btn-s btn-xs" onclick="pcOTrabAnular(' + o.ID_OTRAB + ')">Anular</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="9" class="tc tdim" style="padding:16px">No hay órdenes de trabajo en curso.</td></tr>') + '</tbody></table></div></div>';
   $id('pc-body').innerHTML = h;
   $id('pc-o-cli').addEventListener('change', function() { var n = pcCliId(this.value); if (n === PC_.ocli) return; PC_.ocli = n; PC_.otr = {}; pcOTrabItems(); });
@@ -10470,6 +10470,8 @@ async function pcAnularCub(id) {
   toast('Anulada ✓', 'g'); pcRecargar();
 }
 // ── Parche incluido en el recapado: por orden de trabajo (la toma del cliente) ──
+// Lo que vale para una cubierta: su excepción si la tiene; si no, la de su orden de trabajo
+function pcParcheCub(c, o) { var v = String(c && c.PARCHE_INCLUIDO || '').toUpperCase(); return { PARCHE_INCLUIDO: v === 'SI' || v === 'NO' ? v : (o && o.PARCHE_INCLUIDO) }; }
 function pcParcheTxt(o) { return String(o && o.PARCHE_INCLUIDO || '').toUpperCase() === 'SI' ? 'Parche incluido en el recapado' : 'Parche: se cobra'; }
 function pcParcheBadge(o) { var si = String(o && o.PARCHE_INCLUIDO || '').toUpperCase() === 'SI'; return '<span class="badge ' + (si ? 'b-green' : 'b-gray') + '">' + (si ? 'Incluido' : 'Se cobra') + '</span>'; }
 // En el remito (sin precios): si la cubierta llevó parche, dice si va incluido en el recapado o se cobra
@@ -10478,7 +10480,7 @@ function pcParcheRemito(idCub) {
   var p = []; try { p = JSON.parse(c.PARCHES || '[]'); } catch (e) { p = []; }
   if (!p.length) return '';
   var o = (PC_.d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(c.ID_OTRAB); })[0];
-  return '<div style="font-size:9px;color:#444">' + pcEsc(pcParcheTxt(o)) + '</div>';
+  return '<div style="font-size:9px;color:#444">' + pcEsc(pcParcheTxt(pcParcheCub(c, o))) + '</div>';
 }
 function pcParcheForm(id) {
   var o = (PC_.d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0]; if (!o) return;
@@ -10486,14 +10488,17 @@ function pcParcheForm(id) {
   showModal('<div class="mh"><span class="mt">Parche · ' + pcEsc(o.NRO) + ' · ' + pcEsc(o.CLIENTE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     '<div class="al al-b mb2">Ahora: <b>' + pcEsc(pcParcheTxt(o)) + '</b>. El remito no lleva precios: dice si el parche va incluido o se cobra, y la factura lo pone a $0 o con su precio.</div>' +
     '<div class="fr"><div class="fg"><label class="fl">El parche</label><select class="fs" id="pc-pa-v"><option value="SI"' + (si ? '' : ' selected') + '>Va incluido en el precio del recapado ($0)</option><option value="NO"' + (si ? ' selected' : '') + '>Se cobra aparte</option></select></div>' +
-    '<div class="fg"><label class="fl">Para</label><select class="fs" id="pc-pa-a"><option value="CLIENTE">Este cliente, de ahora en más (y esta orden)</option><option value="OT">Solo esta orden de trabajo</option></select></div></div>' +
+    '<div class="fg"><label class="fl">Para</label><select class="fs" id="pc-pa-a" onchange="$id(\'pc-pa-cw\').style.display=this.value===\'CUBIERTA\'?\'\':\'none\'"><option value="CLIENTE">Este cliente, de ahora en más (y esta orden)</option><option value="OT">Solo esta orden de trabajo</option><option value="CUBIERTA">Una cubierta (excepción)</option></select></div></div>' +
+    '<div class="fg" id="pc-pa-cw" style="display:none"><label class="fl">Cubierta</label><select class="fs" id="pc-pa-cub">' + (PC_.d.cubiertas || []).filter(function(c) { return String(c.ID_OTRAB) === String(id) && c.ESTADO !== 'ANULADA'; }).map(function(c) { var x = String(c.PARCHE_INCLUIDO || '').toUpperCase(); return '<option value="' + c.ID_CUB + '">N° int. ' + pcEsc(c.ID_CASCO || '') + ' · ' + pcEsc(c.MARCA || c.DOT || '') + ' · ' + pcEsc(c.MEDIDA || '') + (x ? ' · hoy: ' + (x === 'SI' ? 'incluido' : 'se cobra') : '') + '</option>'; }).join('') + '</select>' +
+    '<label style="display:flex;gap:6px;align-items:center;margin-top:6px;font-size:12px"><input type="checkbox" id="pc-pa-quitar"> Sacar la excepción (vuelve a lo que diga la orden)</label></div>' +
     '<div class="fg"><label class="fl">Por qué *</label><input class="fi" id="pc-pa-m" placeholder="Ej: acuerdo con el cliente"></div>' +
     '<div class="fr"><div class="fg"><label class="fl">Usuario del encargado (si no sos encargado)</label><input class="fi" id="pc-pa-u" autocomplete="off"></div><div class="fg"><label class="fl">Clave</label><input class="fi" type="password" id="pc-pa-c" autocomplete="new-password"></div></div>' +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pc-pa-ok">Guardar</button></div>');
   $id('pc-pa-ok').onclick = async function() {
     var u = $v('pc-pa-u').trim(), b = this; b.disabled = true;
     try {
-      var r = await gsRun('gsPC_ParcheCond', { ID_OTRAB: id, VALOR: $v('pc-pa-v'), ALCANCE: $v('pc-pa-a'), MOTIVO: $v('pc-pa-m').trim(), AUTORIZA: u ? { USUARIO: u, CLAVE: $v('pc-pa-c') } : null });
+      var alc = $v('pc-pa-a'), quitar = alc === 'CUBIERTA' && $id('pc-pa-quitar').checked;
+      var r = await gsRun('gsPC_ParcheCond', { ID_OTRAB: id, ID_CUB: alc === 'CUBIERTA' ? $v('pc-pa-cub') : '', VALOR: quitar ? '' : $v('pc-pa-v'), ALCANCE: alc, MOTIVO: $v('pc-pa-m').trim(), AUTORIZA: u ? { USUARIO: u, CLAVE: $v('pc-pa-c') } : null });
       if ($id('pc-pa-c')) $id('pc-pa-c').value = '';
       if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); b.disabled = false; return; }
       closeModal(); toast('Guardado ✓', 'g'); await pcRecargar();
@@ -10557,7 +10562,7 @@ function pcVidaCab(v) {
     f('Cliente', pcEsc(v.CLIENTE)) + f('Recibida', fmtD(v.FECHA_RECEPCION)) + f('Cubierta', pcEsc(v.TIPO + ' ' + v.MEDIDA)) + f('Marca de fábrica', pcEsc(v.FABRICANTE || '')) + f('DOT', pcEsc(v.DOT)) + f('N° interno', pcEsc(v.ID_CASCO)) +
     f('Orden de trabajo', pcEsc(v.OTRAB + (v.NRO_MANUAL ? ' · boleta ' + v.NRO_MANUAL : ''))) + f('Orden de servicio', pcEsc(v.NRO_OT)) + f('Trabajo', pcEsc(v.TRABAJO)) + f('Estado', pcBadge(v.ESTADO)) +
     f('Inspección', pcEsc(v.INSPECCION === 'APTA' ? 'Apta' : v.INSPECCION === 'NO_APTA' ? 'No apta' : (v.INSPECCION || ''))) + f('Banda elegida', pcEsc(v.BANDA)) + f('Parches', pcEsc((v.PARCHES || []).join(' · '))) +
-    f('Trabajos extra', pcEsc((v.EXTRAS || []).join(' · '))) + f('Parche', v.OTRAB ? pcEsc(pcParcheTxt(v)) : '') + f('Costo', v.COSTO_TOTAL ? '$ ' + Math.round(v.COSTO_TOTAL).toLocaleString('es-AR') : '') + f('Reprocesos', v.REPROCESOS ? String(v.REPROCESOS) : '') +
+    f('Trabajos extra', pcEsc((v.EXTRAS || []).join(' · '))) + f('Parche', v.OTRAB ? pcEsc(pcParcheTxt(v)) + (v.PARCHE_EXCEPCION ? ' <span class="tdim">(excepción de esta cubierta)</span>' : '') : '') + f('Costo', v.COSTO_TOTAL ? '$ ' + Math.round(v.COSTO_TOTAL).toLocaleString('es-AR') : '') + f('Reprocesos', v.REPROCESOS ? String(v.REPROCESOS) : '') +
     f('Motivo de rechazo', pcEsc(v.MOTIVO_RECHAZO)) + '</div>' +
     (v.CAMBIOS || []).map(function(c) { return '<div style="font-size:12px;color:#b45309;margin-top:6px">Trabajo cambiado de ' + pcEsc(c.ANTES) + ' a ' + pcEsc(c.DESPUES) + ' en la inspección (' + fmtDT(c.FECHA) + ') · ' + pcEsc(c.MOTIVO) + ' · decidió ' + pcEsc(c.DECIDE) + '</div>'; }).join('') + '</div>';
 }
