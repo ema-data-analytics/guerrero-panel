@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "511e1c038082"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e79a5ff73ba3"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10234,7 +10234,7 @@ async function pcImpOS(id) {
     '<div class="dat"><div><b>Línea</b>' + pcEsc(o.LINEA) + '</div><div><b>Fecha</b>' + fmtD(o.FECHA) + '</div><div><b>Responsable</b>' + pcEsc(o.RESPONSABLE || '—') + '</div><div><b>Cubiertas</b>' + r.items.filter(function(i) { return i.ROL === 'TITULAR'; }).length + ' titulares · ' + r.items.filter(function(i) { return i.ROL === 'SUPLENTE'; }).length + ' suplentes</div>' +
     (o.OBSERVACIONES ? '<div style="grid-column:span 4"><b>Observaciones</b>' + pcEsc(o.OBSERVACIONES) + '</div>' : '') + '</div>' +
     '<table><thead><tr><th>#</th><th>Marca grabada</th><th>Rol</th><th>Cliente</th><th>OT · boleta</th><th>Medida</th><th>Trabajo</th>' + ests.map(function(e) { return '<th class="ck" title="' + pcEsc(e.NOMBRE) + '">' + e.ORDEN + '</th>'; }).join('') + '</tr></thead><tbody>' +
-    r.items.map(function(i, k) { var c = cub[String(i.ID_CUB)] || {}; return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(i.MARCA) + '</b></td><td>' + (i.ROL === 'SUPLENTE' ? 'Suplente' : 'Titular') + '</td><td>' + pcEsc(c.CLIENTE || '') + '</td><td>' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + (c.NRO_MANUAL ? ' · ' + pcEsc(c.NRO_MANUAL) : '') + '</td><td>' + pcEsc(c.MEDIDA || '') + '</td><td>' + pcEsc(c.TRABAJO || '') + '</td>' + ests.map(function() { return '<td class="ck"></td>'; }).join('') + '</tr>'; }).join('') +
+    r.items.map(function(i, k) { var c = cub[String(i.ID_CUB)] || {}; return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(i.MARCA) + '</b>' + pcCubIdent(c) + '</td><td>' + (i.ROL === 'SUPLENTE' ? 'Suplente' : 'Titular') + '</td><td>' + pcEsc(c.CLIENTE || '') + '</td><td>' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + (c.NRO_MANUAL ? ' · ' + pcEsc(c.NRO_MANUAL) : '') + '</td><td>' + pcEsc(c.MEDIDA || '') + '</td><td>' + pcEsc(c.TRABAJO || '') + '</td>' + ests.map(function() { return '<td class="ck"></td>'; }).join('') + '</tr>'; }).join('') +
     '</tbody></table><div class="nota">Estaciones: ' + ests.map(function(e) { return e.ORDEN + ' ' + pcEsc(e.NOMBRE); }).join(' · ') + '</div>' +
     '<div class="firmas"><div>Responsable de la carga</div><div>Encargado de línea</div></div>';
   pcImprimir('Orden de servicio ' + o.NRO_OT, h, true);
@@ -10677,7 +10677,7 @@ function pcPintarOT() {
     '<div class="tw"><table style="font-size:12px" id="pc-grid"><thead><tr><th>#</th><th>Marca</th><th>Cubierta</th><th>Rol</th>' + cols.map(function(c) { return '<th class="tc" style="min-width:70px;max-width:120px;white-space:normal">' + pcEsc(c.nombre) + '</th>'; }).join('') + '<th>Estado</th><th class="tr">Costo</th><th></th></tr></thead><tbody>' +
     ot.items.map(function(i) {
       var fuera = i.ESTADO === 'RETIRADA';
-      return '<tr' + (fuera ? ' style="opacity:.45"' : '') + '><td>' + i.ORDEN + '</td><td class="mono"><b>' + pcEsc(i.MARCA) + '</b>' +
+      return '<tr' + (fuera ? ' style="opacity:.45"' : '') + '><td>' + i.ORDEN + '</td><td class="mono"><b>' + pcEsc(i.MARCA) + '</b>' + pcCubIdent(i) +
         (i.POS_AUTOCLAVE ? '<div class="tdim" style="font-size:10px">autoclave lugar ' + pcEsc(i.POS_AUTOCLAVE) + '</div>' : '') +
         (i.PASADA > 1 ? '<div><span class="badge b-orange" style="font-size:9px">corrección</span></div>' : '') +
         (i.REPROCESO_DE ? '<div><span class="badge b-orange" style="font-size:9px">reproceso de ' + pcEsc(i.REPROCESO_DE) + '</span></div>' : '') +
@@ -10804,7 +10804,8 @@ function pcRemitosLista(rs) {
 function pcImpRemito(i) {
   var x = window.PC_REM[i]; if (!x) return;
   var ter = x.ITEMS.filter(function(t) { return t.RESULTADO === 'TERMINADA'; }), dev = x.ITEMS.filter(function(t) { return t.RESULTADO !== 'TERMINADA'; });
-  var fila = function(t, k) { return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(t.MARCA) + '</b></td><td>' + pcEsc(t.DOT) + '</td><td>' + pcEsc(t.MEDIDA) + '</td><td>' + pcEsc(t.FABRICANTE) + '</td><td>' + pcEsc(t.TRABAJO) + (t.REPROCESO ? ' (con corrección)' : '') + '</td><td>' + pcEsc(t.OTRAB) + (t.BOLETA ? ' · boleta ' + pcEsc(t.BOLETA) : '') + '</td>' + (t.RESULTADO === 'TERMINADA' ? '' : '<td>' + pcEsc(t.MOTIVO) + '</td>') + '<td class="ck">☐</td></tr>'; };
+  var nInt = {}; (PC_.d.cubiertas || []).forEach(function(c) { nInt[String(c.ID_CUB)] = c.ID_CASCO; });
+  var fila = function(t, k) { return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(t.MARCA) + '</b>' + (nInt[String(t.ID_CUB)] ? '<div style="font-size:9px;color:#444">N° int. ' + pcEsc(nInt[String(t.ID_CUB)]) + '</div>' : '') + '</td><td>' + pcEsc(t.DOT) + '</td><td>' + pcEsc(t.MEDIDA) + '</td><td>' + pcEsc(t.FABRICANTE) + '</td><td>' + pcEsc(t.TRABAJO) + (t.REPROCESO ? ' (con corrección)' : '') + '</td><td>' + pcEsc(t.OTRAB) + (t.BOLETA ? ' · boleta ' + pcEsc(t.BOLETA) : '') + '</td>' + (t.RESULTADO === 'TERMINADA' ? '' : '<td>' + pcEsc(t.MOTIVO) + '</td>') + '<td class="ck">☐</td></tr>'; };
   var h = pcEncImp('REMITO DE ENTREGA', x.NRO) +
     '<div class="dat"><div><b>Cliente</b>' + pcEsc(x.CLIENTE) + '</div><div><b>Fecha</b>' + fmtD(x.FECHA) + '</div><div><b>Orden de servicio</b>' + pcEsc(x.NRO_OT) + '</div><div><b>Cubiertas</b>' + x.ITEMS.length + '</div>' +
     (x.CUIT ? '<div><b>CUIT</b>' + pcEsc(x.CUIT) + '</div>' : '') + (x.DIRECCION ? '<div><b>Dirección</b>' + pcEsc(x.DIRECCION) + '</div>' : '') + (x.TELEFONO ? '<div><b>Teléfono</b>' + pcEsc(x.TELEFONO) + '</div>' : '') + '</div>' +
@@ -11619,7 +11620,7 @@ function puAutoclavePintar() {
   for (var n = 1; n <= r.lugares; n++) {
     var idc = A.pos[String(n)], c = idc ? porId[String(idc)] : null;
     h += '<button class="pu-ac-lugar' + (c ? ' ocupado' : '') + '" ' + (r.cocinando || !listas.length ? 'disabled' : 'onclick="puAcElegir(' + n + ')"') + '><span class="n">' + n + '</span>' +
-      (c ? '<span class="mk">' + puEsc(c.MARCA) + '</span><span class="d">' + puEsc(c.MEDIDA) + (c.REPROCESO ? ' · reproceso' : '') + '</span>' : (idc ? '<span class="mk">' + puEsc(idc) + '</span>' : '<span class="d">vacío</span>')) + '</button>';
+      (c ? '<span class="mk">' + puEsc(c.MARCA) + '</span><span class="d">' + puEsc(c.MEDIDA) + (c.REPROCESO ? ' · reproceso' : '') + '</span>' + (c.FABRICANTE || c.DOT || c.ID_CASCO ? '<span class="d" style="font-size:11px">' + puEsc([c.FABRICANTE, c.DOT ? 'DOT ' + c.DOT : '', c.ID_CASCO ? 'N° int. ' + c.ID_CASCO : ''].filter(Boolean).join(' · ')) + '</span>' : '') : (idc ? '<span class="mk">' + puEsc(idc) + '</span>' : '<span class="d">vacío</span>')) + '</button>';
   }
   h += '</div>';
   if (!r.cocinando && noListas.length) h += '<div class="pu-reg" style="border-color:var(--danger)"><div style="font-weight:700;color:var(--danger)">Todavía no están listas (sin ellas no se puede empezar):</div><div>' + noListas.map(function(c) { return '<b>' + puEsc(c.MARCA) + '</b> está en ' + puEsc(c.SIGUIENTE); }).join(' · ') + '</div></div>';
