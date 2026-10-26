@@ -10006,13 +10006,14 @@ function pcPintar() {
   var abiertas = d.ots.filter(function(o) { return o.ESTADO === 'ARMADA' || o.ESTADO === 'EN_PROCESO'; }).length;
   var nNuevos = (d.cascos || []).filter(function(k) { return k.ESTADO === 'NUEVO'; }).length;
   var nDev = d.cubiertas.filter(function(c) { return c.ESTADO === 'RECHAZADA' && !c.FECHA_DEVOLUCION; }).length;
-  var tabs = [['cascos', '1 · Carga de cascos'], ['otrab', '2 · Órdenes de trabajo' + (nNuevos ? ' (' + nNuevos + ' cascos sin orden)' : '')], ['armar', '3 · Orden de servicio (' + n('EN_ESPERA') + ' pendientes)'], ['ots', 'Órdenes de servicio (' + abiertas + ' abiertas)'],
+  if (PC_.tab === 'armar' || PC_.tab === 'ots') PC_.tab = 'os';
+  var tabs = [['cascos', '1 · Carga de cascos'], ['otrab', '2 · Órdenes de trabajo' + (nNuevos ? ' (' + nNuevos + ' cascos sin orden)' : '')], ['os', '3 · Órdenes de servicio (' + abiertas + ' en línea' + (n('EN_ESPERA') ? ' · ' + n('EN_ESPERA') + ' esperando' : '') + ')'],
     ['rech', 'Rechazadas' + (nDev ? ' (' + nDev + ' a devolver)' : '')], ['costos', 'Costos'], ['herramental', 'Herramental (inner/envelope)'], ['equipos', 'Herramientas y consumibles'], ['alarmas', '⚠ Alarmas'], ['hist', 'Historial'], ['config', 'Configuración'], ['pesaje', '⚖ Pesaje cojín y flux']];
   el.innerHTML = '<div class="page-hd"><div><div class="page-title">Producción por cubierta</div><div class="page-sub">Cada cubierta con su marca grabada: recepción, carga de autoclave, estaciones, insumos reales y costo.</div></div>' +
     '<div class="flex gap2 no-print"><input class="fi" id="pc-marca-q" placeholder="Buscar marca..." style="width:170px"/><button class="btn btn-s" onclick="pcHistorial($v(\'pc-marca-q\'))"><i class="fas fa-search"></i> Vida de la cubierta</button><button class="btn btn-p" onclick="pcAyuda(pcAyudaClave())">❓ Ayuda</button></div></div>' +
     '<div class="tabs mb3">' + tabs.map(function(t) { return '<div class="tab' + (PC_.tab === t[0] ? ' active' : '') + '" onclick="PC_.tab=\'' + t[0] + '\';pcPintar()">' + t[1] + '</div>'; }).join('') + '</div><div id="pc-body"></div>';
   $id('pc-marca-q').addEventListener('keydown', function(e) { if (e.key === 'Enter') pcHistorial(this.value); });
-  ({ recepcion: pcRecepcion, cascos: pcCascos, otrab: pcOTrab, rech: pcRechazadas, armar: pcArmar, ots: pcOts, costos: pcCostos, herramental: pcHerramental, equipos: pcEquipos, alarmas: pcAlarmas, hist: pcHist, config: pcConfig, pesaje: pcPesaje })[PC_.tab]();
+  ({ recepcion: pcRecepcion, cascos: pcCascos, otrab: pcOTrab, rech: pcRechazadas, armar: pcOS, ots: pcOS, os: pcOS, costos: pcCostos, herramental: pcHerramental, equipos: pcEquipos, alarmas: pcAlarmas, hist: pcHist, config: pcConfig, pesaje: pcPesaje })[PC_.tab]();
 }
 
 // ================================================================
@@ -10158,7 +10159,8 @@ function pcAyudaTodo() {
   pcImprimir('Ayuda Produccion por cubierta', pcEncImp('AYUDA · PRODUCCIÓN POR CUBIERTA', 'Manual') + PC_AYUDA.map(pcAyudaSec).join(''), false);
 }
 function pcAyudaClave() {
-  if (PC_.tab === 'ots' && $id('pc-ot') && $id('pc-ot').innerHTML.trim()) return 'ot';
+  if ((PC_.tab === 'os' || PC_.tab === 'ots') && $id('pc-ot') && $id('pc-ot').innerHTML.trim()) return 'ot';
+  if (PC_.tab === 'os') return 'armar';
   return PC_.tab || 'general';
 }
 function pcCerrarVista() { var v = $id('pc-vista'); if (v) v.remove(); }
@@ -10638,6 +10640,11 @@ async function pcArmTrabOk(id) {
     if (ok) { toast(ok + (ok === 1 ? ' cubierta pasó' : ' cubiertas pasaron') + ' a ' + tr + ' ✓ · ya se pueden tildar', 'g'); closeModal(); await pcRecargar(); }
   } catch (e) { toast(e.message, 'r2'); } finally { b.disabled = false; }
 }
+// Una sola pestaña: arriba las que están en la línea (con su detalle), abajo para armar una nueva
+function pcOS() {
+  pcArmar();
+  $id('pc-body').insertAdjacentHTML('afterbegin', pcOtsHtml());
+}
 function pcArmar() {
   var d = PC_.d, esp = d.cubiertas.filter(function(c) { return c.ESTADO === 'EN_ESPERA'; });
   PC_.rpVisto = PC_.rpVisto || {};
@@ -10651,7 +10658,7 @@ function pcArmar() {
   });
   var sug = Object.keys(porCli).sort().map(function(k) { return '<option value="' + pcEsc(k) + '">' + porCli[k] + ' esperando</option>'; }).join('') +
     Object.keys(porOT).sort().map(function(k) { return '<option value="' + pcEsc(k) + '">' + pcEsc(porOT[k].cli) + (porOT[k].man ? ' · boleta ' + pcEsc(porOT[k].man) : '') + ' · ' + porOT[k].n + '</option>'; }).join('');
-  var h = '<div class="card"><div class="card-hd"><span class="card-title">Orden de servicio: qué cubiertas entran a la línea</span><span id="pc-contador" class="badge b-blue"></span></div>' +
+  var h = '<div class="card"><div class="card-hd"><span class="card-title">Armar una orden de servicio nueva (' + esp.length + ' cubiertas esperando)</span><span id="pc-contador" class="badge b-blue"></span></div>' +
     '<div class="card-body">' +
     '<div id="pc-a-cont" style="position:sticky;top:0;z-index:5;background:var(--accent-light);border:1px solid #93c5fd;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:15px;font-weight:600;color:var(--accent)"></div>' +
     '<div class="flex gap2 mb2" style="align-items:flex-end;flex-wrap:wrap"><div style="flex:1 1 320px;max-width:460px"><label class="fl">Cliente, OT, N° de boleta o DOT</label>' +
@@ -10768,7 +10775,7 @@ async function pcCrearOT() {
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
     PC_.mk = {};
     toast('Orden de servicio ' + r.NRO_OT + ' creada (' + r.LINEA + ', tope ' + r.TOPE + ') ✓', 'g');
-    PC_.sel = {}; PC_.armAuto = 0; PC_.tab = 'ots'; await pcRecargar(); pcAbrirOT(r.ID_OT);
+    PC_.sel = {}; PC_.armAuto = 0; PC_.tab = 'os'; await pcRecargar(); pcAbrirOT(r.ID_OT);
   } catch (e) { toast('Error: ' + e.message, 'r2'); }
   finally { b.disabled = false; }
 }
@@ -10803,19 +10810,21 @@ function pcHist() {
   $id('pc-h-q').addEventListener('input', function() { PC_.hq = this.value; pintar(); });
   pintar();
 }
-function pcOts() {
+function pcOts() { $id('pc-body').innerHTML = pcOtsHtml(); }
+function pcOtsHtml() {
   var d = PC_.d;
   var ots = d.ots.filter(function(o) { return o.ESTADO === 'ARMADA' || o.ESTADO === 'EN_PROCESO'; }).sort(function(a, b) { return b.ID_OT - a.ID_OT; });
-  $id('pc-body').innerHTML = '<div class="tdim mb2" style="font-size:12px">Solo las abiertas. Las cerradas y anuladas están en "Historial".</div><div class="card"><div class="tw"><table style="font-size:12px" id="pc-tbl-ots"><thead><tr><th>OT</th><th>Fecha</th><th>Línea</th><th class="tr">Titulares</th><th class="tr">Suplentes</th><th class="tr">Terminadas</th><th>Estado</th><th></th></tr></thead><tbody>' +
+  return '<div class="card mb3"><div class="card-hd"><span class="card-title">En la línea ahora (' + ots.length + ')</span><span class="tdim" style="font-size:12px">Las cerradas y anuladas están en "Historial"</span></div><div class="tw"><table style="font-size:12px" id="pc-tbl-ots"><thead><tr><th>OT</th><th>Fecha</th><th>Línea</th><th class="tr">Titulares</th><th class="tr">Suplentes</th><th class="tr">Terminadas</th><th>Estado</th><th></th></tr></thead><tbody>' +
     ots.map(function(o) { return '<tr><td class="mono"><b>' + pcEsc(o.NRO_OT) + '</b></td><td>' + fmtD(o.FECHA) + '</td><td>' + pcEsc(o.LINEA) + ' (tope ' + o.TOPE + ')</td><td class="tr">' + o.TITULARES + '/' + o.TOPE + '</td><td class="tr">' + o.SUPLENTES + '</td><td class="tr">' + o.TERMINADAS + '</td><td>' + pcBadge(o.ESTADO) + '</td><td style="white-space:nowrap"><button class="btn btn-p btn-sm" onclick="pcAbrirOT(' + o.ID_OT + ')">Abrir</button> <button class="btn btn-s btn-sm" onclick="pcImpOS(' + o.ID_OT + ')"><i class="fas fa-print"></i> Imprimir</button></td></tr>'; }).join('') +
-    '</tbody></table>' + (ots.length ? '' : '<div class="tdim" style="padding:12px">No hay órdenes de servicio abiertas. Se arman en "3 · Orden de servicio".</div>') + '</div></div><div id="pc-ot"></div>';
+    '</tbody></table>' + (ots.length ? '' : '<div class="tdim" style="padding:12px">No hay órdenes de servicio en la línea. Se arman acá abajo.</div>') + '</div></div><div id="pc-ot"></div>';
 }
 async function pcAbrirOT(id) {
   var r = await gsRun('gsPC_OTDetalle', id);
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo abrir', 'r2'); return; }
   PC_.ot = r;
-  if (PC_.tab !== 'ots') { PC_.tab = 'ots'; pcPintar(); }
+  if (PC_.tab !== 'os') { PC_.tab = 'os'; pcPintar(); }
   pcPintarOT();
+  var po = $id('pc-ot'); if (po && po.scrollIntoView) po.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 function pcEstacionesOT() {
   var ot = PC_.ot, est = pcEstLin(ot.ot && ot.ot.LINEA).slice(), usadas = {};
