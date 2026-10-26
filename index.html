@@ -11842,8 +11842,8 @@ async function puAcFin() {
     try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e2) {}
     PU_.vista = 'listo';
     var ctl = 'el control final';
-    $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">🔥</div><h2>Salió la carga del autoclave</h2><div style="font-size:18px">' + r.N + ' cubiertas · cocción de ' + r.MINUTOS + ' min</div>' +
-      '<div style="font-size:20px"><b>Pasan a ' + puEsc(ctl) + ': las confirma el encargado una por una.</b></div>' +
+    $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">🔥</div><h2>Salió la carga del autoclave</h2><div style="font-size:18px">' + r.N + (r.N === 1 ? ' cubierta' : ' cubiertas') + ' · cocción de ' + r.MINUTOS + ' min</div>' +
+      '<div style="font-size:20px"><b>Pasan ' + puEsc(ctl.replace(/^el /, 'al ')) + ': las confirma el encargado una por una.</b></div>' +
       '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puVolver()">Ver las cubiertas</button></div>';
   } catch (e) { toast(e.message, 'r2'); }
 }
