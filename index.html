@@ -10550,7 +10550,7 @@ function pcVidaImprimir(k) {
         var us = cons.filter(function(c) { return String(c.ID_REG) === String(g.ID_REG); }).map(function(c) { var nm = nomI[c.ID_INSUMO] || c.ID_INSUMO; return pcEsc(nm) + ': ' + (c.UNIDAD === 'pieza' ? '1 pieza' : n3(c.REAL) + ' ' + pcEsc(c.UNIDAD || '')) + (String(c.PESO_ANTES || '') !== '' ? ' (pesado)' : ''); });
         var extra = String(g.ID_ESTACION) && ac && /autoclave|cocci/i.test(nomE[g.ID_ESTACION] || '') ? '<br>Cocción desde ' + fmtDT(+ac.INICIO) + (ac.FIN ? ' hasta ' + fmtDT(+ac.FIN) : '') + (+ac.MINUTOS ? ' · ' + Math.round(+ac.MINUTOS) + ' min' : '') + (i.POS_AUTOCLAVE ? ' · lugar ' + pcEsc(i.POS_AUTOCLAVE) : '') +
           (x.espec ? '<br>Especificado: ' + pcEsc(pcEspTxt(x.espec)) : '') +
-          ((ac.LECTURAS || []).length ? '<br>Registrado: ' + ac.LECTURAS.map(function(l) { return pcEsc(pcLectTxt(l, true)); }).join('<br>') : '<br>Registrado: sin lecturas cargadas') : '';
+          ((ac.LECTURAS || []).length ? '<br>Registrado: ' + ac.LECTURAS.map(function(l) { return pcEsc(pcLectTxt(l, true)) + (l.FUERA ? ' · <b>fuera de lo especificado (' + pcEsc(l.FUERA) + ')</b>' : ''); }).join('<br>') : '<br>Registrado: sin lecturas cargadas') : '';
         return '<tr><td>' + pcEsc(nomE[g.ID_ESTACION] || g.ID_ESTACION) + (g.PASADA > 1 ? ' (2ª pasada)' : '') + '</td><td>' + fmtDT(+g.FECHA) + '</td><td>' + pcEsc(resTxt[g.RESULTADO] || g.RESULTADO || '') + extra + '</td><td>' + (us.join('<br>') || '—') + '</td></tr>';
       }).join('') + '</tbody></table>';
   });
