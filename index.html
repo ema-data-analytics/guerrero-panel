@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "0ac6a467c088"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "b7b13b9d9573"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -17369,7 +17369,7 @@ function suFiltrarHist() {
 .fk-top img{height:46px;background:#fff;border-radius:8px;padding:3px 6px}
 .fk-top button{background:#1e293b;color:#cbd5e1;border:1px solid #334155;border-radius:10px;padding:8px 12px;font-size:14px}
 .fk-reloj{font-size:96px;font-weight:800;letter-spacing:2px;margin:16px 0 0;line-height:1}
-.fk-fecha{font-size:22px;color:#94a3b8;margin-bottom:12px;text-transform:capitalize}
+.fk-fecha{font-size:22px;color:#94a3b8;margin-bottom:12px}
 .fk-caja{background:#111c33;border:2px dashed #334155;border-radius:20px;padding:22px 16px;margin:12px auto;max-width:640px}
 .fk-caja h2{font-size:34px;margin:0 0 8px}.fk-caja p{font-size:18px;color:#cbd5e1;margin:6px 0}
 .fk-cam{width:240px;height:180px;border-radius:14px;background:#000;object-fit:cover;transform:scaleX(-1);margin:8px auto;display:block}
@@ -17460,7 +17460,7 @@ async function renderFichaje() {
 function fkReloj() {
   var r = $id('fk-reloj'); if (!r) { clearInterval(FK_.relojT); return; }
   var d = new Date(); r.textContent = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-  $id('fk-fecha').textContent = d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+  var ft = d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }); $id('fk-fecha').textContent = ft.charAt(0).toUpperCase() + ft.slice(1);
 }
 async function fkEstado() {
   try { var r = await gsRun('gsAS_Kiosco'); if (r && r.ok && $id('fk-adentro')) $id('fk-adentro').textContent = 'Horario ' + r.ENTRADA + ' a ' + r.SALIDA + ' · adentro ahora: ' + r.ADENTRO; } catch (e) { if ($id('fk-adentro')) $id('fk-adentro').textContent = 'Sin conexión con el sistema: ' + e.message; }
@@ -17632,17 +17632,20 @@ function asPremioCelda(r) {
 }
 function asMes() {
   var d = AS_.d, P = d.PARAM, pre = (d.PREMIOS || []).filter(function(p) { return p.ACTIVO; }).length;
-  var h = '<div class="as-caja">Resumen de ' + asEsc(AS_.mes) + ' hasta hoy, contando desde el ' + asFechaTxt(d.INICIO) + ' (primer día con el control). <b>Faltó</b> = día laborable sin marcar y sin novedad aprobada. <b>Suspendido</b> = días de una suspensión notificada (sin goce de sueldo: no cuentan como falta). <b>Horas</b> no cuentan el almuerzo. <b>Extra</b>: solo las aprobadas (o todas, si en Reglas no hace falta aprobarlas). ' + (pre ? '<b>Premio</b>: % que pierde según la escala cargada en Reglas.' : '') + ' Tocá un empleado para ver día por día.</div>';
-  var nc = 13 + (P.ALM_MARCA ? 3 : 0) + (pre ? 1 : 0);
-  h += '<div style="overflow-x:auto"><table class="as-t"><tr><th>Empleado</th><th class="n">Días trab.</th><th class="n">Faltas</th><th class="n">Justif.</th><th class="n">Suspendido</th><th class="n">Tardes</th><th class="n">Min. tarde</th><th class="n">Salidas antes</th><th class="n">Sin salida</th>' +
-    (P.ALM_MARCA ? '<th class="n">Almuerzos largos</th><th class="n">Min. de más</th><th class="n">No marcó almuerzo</th>' : '') + '<th class="n">Horas</th><th class="n">Extra ' + P.EXTRA_PCT_COMUN + '%</th><th class="n">Extra ' + P.EXTRA_PCT_ESPECIAL + '%</th>' + (pre ? '<th>Premio</th>' : '') + '<th>Sugerencia</th></tr>';
+  var h = '<div class="as-caja">Resumen de ' + asEsc(AS_.mes) + ' hasta hoy, contando desde el ' + asFechaTxt(d.INICIO) + ' (primer día con el control). <b>Faltó</b> = día laborable sin marcar y sin novedad aprobada. <b>Suspendido</b> = días de una suspensión notificada (sin goce: no cuentan como falta). <b>Horas</b> no cuentan el almuerzo. <b>Extra</b>: las aprobadas (o todas, si en Reglas no hace falta aprobarlas). ' + (pre ? '<b>Premio</b>: % que pierde según la escala de Reglas.' : '') + ' Tocá un empleado para ver día por día.</div>';
+  var nc = 11 + (P.ALM_MARCA ? 1 : 0) + (pre ? 1 : 0);
+  h += '<div style="overflow-x:auto"><table class="as-t"><tr><th>Empleado</th><th class="n">Días trab.</th><th class="n">Faltas</th><th class="n">Justif.</th><th class="n">Susp.</th><th class="n">Llegadas tarde</th><th class="n">Salidas antes</th><th class="n">Sin salida</th>' +
+    (P.ALM_MARCA ? '<th>Almuerzo</th>' : '') + '<th class="n">Horas</th><th>Extra</th>' + (pre ? '<th>Premio</th>' : '') + '<th>Sugerencia</th></tr>';
   d.RESUMEN.forEach(function(r) {
-    var ab = AS_.abierto === r.ID_EMPLEADO;
-    h += '<tr style="cursor:pointer" onclick="AS_.abierto=(AS_.abierto===\'' + r.ID_EMPLEADO + '\'?\'\':\'' + r.ID_EMPLEADO + '\');asPintar()"><td><b>' + asEsc(r.NOMBRE) + '</b> ' + (ab ? '▲' : '▼') + '</td><td class="n">' + r.TRABAJADOS + '</td>' +
+    var ab = AS_.abierto === r.ID_EMPLEADO, alm = [];
+    if (r.ALM_LARGOS) alm.push('<span class="as-b as-bY">' + r.ALM_LARGOS + ' largo' + (r.ALM_LARGOS === 1 ? '' : 's') + ' (+' + r.MIN_ALM_EXCESO + '\')</span>');
+    if (r.ALM_SIN_MARCAR) alm.push('<span class="as-b as-bN">' + r.ALM_SIN_MARCAR + ' sin marcar</span>');
+    var ext = (r.MIN_EXTRA50 ? '<div>' + asHM(r.MIN_EXTRA50) + ' al ' + P.EXTRA_PCT_COMUN + '%</div>' : '') + (r.MIN_EXTRA100 ? '<div>' + asHM(r.MIN_EXTRA100) + ' al ' + P.EXTRA_PCT_ESPECIAL + '%</div>' : '') + (r.EXTRA_DIAS_PEND ? '<div><span class="as-b as-bY">' + asHM(r.EXTRA_PEND) + ' a aprobar</span></div>' : '');
+    h += '<tr style="cursor:pointer" onclick="AS_.abierto=(AS_.abierto===\'' + r.ID_EMPLEADO + '\'?\'\':\'' + r.ID_EMPLEADO + '\');asPintar()"><td style="white-space:nowrap"><b>' + asEsc(r.NOMBRE) + '</b> <span style="font-size:10px;color:var(--dim)">' + (ab ? '▲' : '▼') + '</span></td><td class="n">' + r.TRABAJADOS + '</td>' +
       '<td class="n">' + (r.FALTAS ? '<span class="as-b as-bR">' + r.FALTAS + '</span>' : '0') + '</td><td class="n">' + r.JUSTIFICADAS + '</td><td class="n">' + (r.SUSPENDIDO ? '<span class="as-b as-bR">' + r.SUSPENDIDO + '</span>' : '0') + '</td>' +
-      '<td class="n">' + (r.TARDES ? '<span class="as-b as-bY">' + r.TARDES + '</span>' : '0') + '</td><td class="n">' + r.MIN_TARDE + '</td><td class="n">' + r.ANTES + '</td><td class="n">' + r.SIN_SALIDA + '</td>' +
-      (P.ALM_MARCA ? '<td class="n">' + (r.ALM_LARGOS ? '<span class="as-b as-bY">' + r.ALM_LARGOS + '</span>' : '0') + '</td><td class="n">' + r.MIN_ALM_EXCESO + '</td><td class="n">' + r.ALM_SIN_MARCAR + '</td>' : '') +
-      '<td class="n">' + asHM(r.MIN_TRAB) + '</td><td class="n">' + asHM(r.MIN_EXTRA50) + '</td><td class="n">' + asHM(r.MIN_EXTRA100) + (r.EXTRA_DIAS_PEND ? '<div><span class="as-b as-bY">' + asHM(r.EXTRA_PEND) + ' a aprobar</span></div>' : '') + '</td>' +
+      '<td class="n">' + (r.TARDES ? '<span class="as-b as-bY">' + r.TARDES + '</span> <span style="font-size:11px;color:var(--dim)">' + r.MIN_TARDE + ' min</span>' : '0') + '</td><td class="n">' + r.ANTES + '</td><td class="n">' + r.SIN_SALIDA + '</td>' +
+      (P.ALM_MARCA ? '<td style="white-space:nowrap">' + (alm.join(' ') || '<span style="font-size:12px;color:var(--dim)">ok</span>') + '</td>' : '') +
+      '<td class="n">' + asHM(r.MIN_TRAB) + '</td><td style="white-space:nowrap;font-size:12px">' + (ext || '<span style="color:var(--dim)">—</span>') + '</td>' +
       (pre ? '<td>' + asPremioCelda(r) + '</td>' : '') +
       '<td>' + (r.SUGERIDA ? '<span class="as-b ' + (r.SANCIONES_MES ? 'as-bN' : 'as-bR') + '">' + asEsc(asSanTxt(r.SUGERIDA)) + '</span><div style="font-size:11px;color:var(--dim)">' + asEsc(r.SUGERIDA_POR) + (r.SANCIONES_MES ? ' · ya tiene sanción este mes' : '') + '</div>' : '') + '</td></tr>';
     if (ab) {
