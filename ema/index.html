@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Agenda EMA</title>
+<style>
+:root{--az:#14213D;--na:#E8792B;--tx:#1f2937;--dim:#6b7280;--bd:#e5e7eb;--bg:#f6f7f9;--w:#fff}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--tx);background:var(--bg);line-height:1.45}
+header{background:var(--az);color:#fff;padding:12px 16px}header .in{max-width:1150px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+header h1{margin:0;font-size:20px}header span{color:#c9d3e6;font-size:13px}header .acc{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+main{max-width:1150px;margin:0 auto;padding:12px 16px 40px}
+button{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--w);color:var(--tx);border-radius:8px;padding:7px 12px;font-size:14px}
+button.p{background:var(--na);border-color:var(--na);color:#fff;font-weight:bold}button.d{background:#fee2e2;color:#b91c1c;border-color:#fecaca}button.s{padding:3px 8px;font-size:12px}
+header button{background:transparent;color:#fff;border-color:#475569}
+input,select,textarea{font:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--bd);border-radius:8px;background:#fff;color:var(--tx);width:100%}
+label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--dim)}
+.b{border-radius:8px;padding:1px 8px;font-size:11px;font-weight:bold;white-space:nowrap;display:inline-block}
+.PROBADO{background:#dcfce7;color:#166534}.SIN_PROBAR{background:#fef9c3;color:#854d0e}.NO_FUNCIONA{background:#fee2e2;color:#b91c1c}.FALTA{background:#eef0f3;color:#374151}.A_AGREGAR{background:#dbeafe;color:#1e40af}.ANULADO{background:#f3f4f6;color:#9ca3af;text-decoration:line-through}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:6px 0 10px}.tab{flex:0 0 auto;border-radius:18px}.tab.on{background:var(--az);border-color:var(--az);color:#fff}
+.fil{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.card{background:var(--w);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.card h3{margin:0 0 4px;font-size:16px;color:var(--az)}.card .sub{font-size:12px;color:var(--dim);margin-bottom:8px}
+.cnt{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}.ult{font-size:12px;color:var(--dim);border-top:1px solid var(--bd);padding-top:6px;margin-top:6px}
+.dia{background:var(--w);border:1px solid var(--bd);border-radius:12px;margin:10px 0;overflow:hidden}
+.dia-h{padding:8px 12px;background:#eef1f6;font-weight:bold;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ev{padding:7px 12px;border-top:1px solid var(--bd);font-size:13.5px;display:grid;grid-template-columns:170px 1fr auto;gap:10px;align-items:start}
+.ev .pr{font-size:11px;color:var(--dim);text-transform:uppercase}.ev .no{font-size:12px;color:var(--dim);margin-top:2px}
+table{width:100%;border-collapse:collapse;background:var(--w);font-size:13px}th{text-align:left;font-size:11px;color:var(--dim);padding:6px;border-bottom:1px solid var(--bd);white-space:nowrap}td{padding:6px;border-bottom:1px solid var(--bd);vertical-align:top}
+.tw{overflow-x:auto}.al{background:#fff6ee;border-left:4px solid var(--na);padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:13.5px}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;padding:20px 12px;z-index:50;overflow:auto}
+.md{background:#fff;border-radius:14px;max-width:620px;width:100%;padding:16px}.md h2{margin:0 0 10px;font-size:18px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.md label{margin-bottom:8px}.mf{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--az);color:#fff;padding:10px 16px;border-radius:10px;z-index:60;font-size:14px}
+.login{max-width:380px;margin:60px auto;background:#fff;border:1px solid var(--bd);border-radius:14px;padding:20px}
+@media(max-width:640px){.ev{grid-template-columns:1fr}.row{grid-template-columns:1fr}}
+</style></head><body>
+<header><div class="in"><h1>📋 Agenda EMA</h1><span>Todos los proyectos · qué se hizo cada día y qué falta</span><div class="acc" id="hacc"></div></div></header>
+<main id="m"></main>
+<script>
+var SB_URL = 'https://igxdgivroxmbuolsdagk.supabase.co', SB_KEY = 'sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G';
+var EST = { PROBADO: 'Probado y funciona', SIN_PROBAR: 'Hecho, sin probar', NO_FUNCIONA: 'No funciona', FALTA: 'Falta hacer', A_AGREGAR: 'A agregar', ANULADO: 'Sacado' };
+var ESTS = ['PROBADO', 'SIN_PROBAR', 'NO_FUNCIONA', 'FALTA', 'A_AGREGAR'];
+var A = { clave: '', d: null, tab: 'tablero', proy: '', est: '', q: '' };
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function bad(e) { return '<span class="b ' + esc(e) + '">' + esc(EST[e] || e || 'Alta') + '</span>'; }
+function ftx(f) { var p = String(f || '').split('-'); if (p.length !== 3) return f || ''; var d = new Date(f + 'T12:00:00'); return ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getDay()] + ' ' + p[2] + '/' + p[1] + '/' + p[0]; }
+function hoy() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function toast(t) { var o = document.createElement('div'); o.className = 'toast'; o.textContent = t; document.body.appendChild(o); setTimeout(function() { o.remove(); }, 2600); }
+function leer(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+function guardar(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} }
+async function rpc(fn, args) {
+  var r = await fetch(SB_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(args || {}) });
+  var j = await r.json(); if (!r.ok) throw new Error((j && (j.message || j.hint)) || ('Error ' + r.status)); return j;
+}
+// ── Entrada con clave ──
+async function inicio() {
+  A.clave = leer('ema_ag_c') || sessionStorage.getItem('ema_ag_c') || '';
+  if (A.clave) { var ok = await cargar(); if (ok) return; }
+  var hay = false; try { hay = await rpc('ema_agenda_hay_clave', {}); } catch (e) { $('m').innerHTML = '<div class="al">No hay conexión: ' + esc(e.message) + '</div>'; return; }
+  $('hacc').innerHTML = '';
+  $('m').innerHTML = '<div class="login"><h2 style="margin:0 0 10px">' + (hay ? 'Entrar' : 'Crear la clave') + '</h2>' + (hay ? '' : '<p style="font-size:14px">Es la primera vez: elegí una clave de 8 caracteres o más. Solo la sabés vos.</p>') +
+    '<label>Clave<input type="password" id="lc" autocomplete="current-password"></label>' + (hay ? '' : '<label style="margin-top:8px">Repetila<input type="password" id="lc2"></label>') +
+    '<label style="flex-direction:row;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:var(--tx)"><input type="checkbox" id="lr" style="width:auto"> Recordar en este aparato</label>' +
+    '<div class="mf"><button class="p" onclick="entrar(' + (hay ? 1 : 0) + ')">' + (hay ? 'Entrar' : 'Crear y entrar') + '</button></div><div id="le" style="color:#b91c1c;font-size:13px"></div></div>';
+  $('lc').addEventListener('keydown', function(e) { if (e.key === 'Enter') entrar(hay ? 1 : 0); });
+}
+async function entrar(hay) {
+  var c = $('lc').value; $('le').textContent = '';
+  if (!hay) { if (c !== $('lc2').value) { $('le').textContent = 'Las dos claves no coinciden'; return; } var r = await rpc('ema_agenda_clave', { p_nueva: c }); if (!r.ok) { $('le').textContent = r.error; return; } }
+  A.clave = c; var ok = await cargar(); if (!ok) { $('le').textContent = 'Clave incorrecta'; A.clave = ''; return; }
+  if ($('lr') && $('lr').checked) guardar('ema_ag_c', c); else sessionStorage.setItem('ema_ag_c', c);
+}
+function salir() { guardar('ema_ag_c', ''); sessionStorage.removeItem('ema_ag_c'); A.clave = ''; A.d = null; inicio(); }
+async function cargar() {
+  var d; try { d = await rpc('ema_agenda_datos', { p_clave: A.clave }); } catch (e) { toast(e.message); return false; }
+  if (!d || !d.ok) return false;
+  A.d = d; pintar(); return true;
+}
+function proyNom(id) { var p = A.d.proyectos.filter(function(x) { return x.id === id; })[0]; return p ? p.nombre : '?'; }
+function item(id) { return A.d.items.filter(function(x) { return x.id === id; })[0]; }
+function pasa(it) {
+  if (!it) return false;
+  if (A.proy && String(it.proyecto_id) !== A.proy) return false;
+  if (A.est && it.estado !== A.est) return false;
+  if (A.q) { var t = (proyNom(it.proyecto_id) + ' ' + it.area + ' ' + it.titulo + ' ' + (it.detalle || '') + ' ' + (it.origen || '')).toUpperCase(); if (!A.q.toUpperCase().split(/\s+/).filter(Boolean).every(function(p) { return t.indexOf(p) !== -1; })) return false; }
+  return true;
+}
+function pintar() {
+  $('hacc').innerHTML = '<button onclick="form(0)">+ Punto</button><button onclick="formProy()">+ Proyecto</button><button onclick="cargar()">↻</button><button onclick="salir()">Salir</button>';
+  var h = '<div class="tabs">' + [['tablero', 'Tablero'], ['dia', 'Día por día'], ['falta', 'Lo que falta'], ['todo', 'Por proyecto y área']].map(function(t) { return '<button class="tab' + (A.tab === t[0] ? ' on' : '') + '" onclick="A.tab=\'' + t[0] + '\';pintar()">' + t[1] + '</button>'; }).join('') + '</div>';
+  h += '<div class="fil"><label>Proyecto<select onchange="A.proy=this.value;pintar()"><option value="">Todos</option>' + A.d.proyectos.map(function(p) { return '<option value="' + p.id + '"' + (A.proy === String(p.id) ? ' selected' : '') + '>' + esc(p.nombre) + '</option>'; }).join('') + '</select></label>' +
+    '<label>Estado<select onchange="A.est=this.value;pintar()"><option value="">Todos</option>' + ESTS.map(function(e) { return '<option value="' + e + '"' + (A.est === e ? ' selected' : '') + '>' + EST[e] + '</option>'; }).join('') + '</select></label>' +
+    '<label>Buscar<input id="q" value="' + esc(A.q) + '" placeholder="Palabra y Enter" onkeydown="if(event.key===\'Enter\'){A.q=this.value;pintar()}"></label></div>';
+  h += A.tab === 'tablero' ? tablero() : A.tab === 'dia' ? dias() : A.tab === 'falta' ? falta() : todo();
+  $('m').innerHTML = h;
+}
+function tablero() {
+  var h = '<div class="grid">';
+  A.d.proyectos.filter(function(p) { return !A.proy || String(p.id) === A.proy; }).forEach(function(p) {
+    var its = A.d.items.filter(function(i) { return i.proyecto_id === p.id; }), n = {};
+    its.forEach(function(i) { n[i.estado] = (n[i.estado] || 0) + 1; });
+    var cs = A.d.cambios.filter(function(c) { var i = item(c.item_id); return i && i.proyecto_id === p.id; }).sort(function(a, b) { return b.id - a.id; });
+    var ult = cs[0], ulti = ult ? item(ult.item_id) : null;
+    h += '<div class="card"><h3>' + esc(p.nombre) + '</h3><div class="sub">' + esc(p.cliente || '') + (p.inicio ? ' · desde ' + ftx(p.inicio) : '') + ' · ' + its.length + ' puntos</div>' +
+      '<div class="cnt">' + ESTS.map(function(e) { return n[e] ? '<span class="b ' + e + '" style="cursor:pointer" onclick="A.proy=\'' + p.id + '\';A.est=\'' + e + '\';A.tab=\'todo\';pintar()">' + n[e] + ' ' + EST[e] + '</span>' : ''; }).join('') + '</div>' +
+      (ult ? '<div class="ult">Último movimiento: ' + ftx(ult.fecha) + '<br><b>' + esc(ulti.titulo) + '</b> ' + bad(ult.estado) + '</div>' : '') +
+      '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="s" onclick="A.proy=\'' + p.id + '\';A.tab=\'dia\';pintar()">Día por día</button><button class="s" onclick="A.proy=\'' + p.id + '\';A.tab=\'falta\';pintar()">Lo que falta</button></div></div>';
+  });
+  return h + '</div>';
+}
+function dias() {
+  var por = {};
+  A.d.cambios.forEach(function(c) { var i = item(c.item_id); if (!i || !pasa(i)) return; (por[c.fecha] = por[c.fecha] || []).push(c); });
+  var ds = Object.keys(por).sort().reverse(); if (!ds.length) return '<div class="al">No hay nada con ese filtro.</div>';
+  return ds.map(function(f) {
+    var cs = por[f].sort(function(a, b) { return a.id - b.id; });
+    return '<div class="dia"><div class="dia-h">' + ftx(f) + (f === A.d.hoy ? ' <span class="b A_AGREGAR">HOY</span>' : '') + ' <span style="font-weight:normal;font-size:12px;color:var(--dim)">' + cs.length + ' movimiento' + (cs.length === 1 ? '' : 's') + '</span></div>' +
+      cs.map(function(c) { var i = item(c.item_id);
+        return '<div class="ev"><div><div class="pr">' + esc(proyNom(i.proyecto_id)) + '</div><div class="pr" style="color:var(--na)">' + esc(i.area) + '</div></div><div><b>' + esc(i.titulo) + '</b> ' + (c.estado_ant ? '<span style="font-size:12px;color:var(--dim)">' + esc(EST[c.estado_ant] || c.estado_ant) + ' →</span> ' : '') + bad(c.estado) +
+          (c.nota && c.nota !== 'Alta' ? '<div class="no">' + esc(c.nota) + '</div>' : (!c.estado_ant && i.detalle ? '<div class="no">' + esc(i.detalle) + '</div>' : '')) + '</div><div><button class="s" onclick="form(' + i.id + ')">Abrir</button></div></div>'; }).join('') + '</div>';
+  }).join('');
+}
+function fila(i) {
+  return '<tr><td>' + esc(proyNom(i.proyecto_id)) + '</td><td>' + esc(i.area) + '</td><td style="white-space:nowrap">' + ftx(i.fecha) + '</td><td><b>' + esc(i.titulo) + '</b>' + (i.detalle ? '<div style="font-size:12px;color:var(--dim)">' + esc(i.detalle) + '</div>' : '') + '</td><td>' + bad(i.estado) + '</td><td style="font-size:12px">' + esc(i.origen || '') + '</td>' +
+    '<td style="white-space:nowrap"><button class="s p" onclick="formEst(' + i.id + ')">Estado</button> <button class="s" onclick="form(' + i.id + ')">Editar</button></td></tr>';
+}
+function tabla(l) { return l.length ? '<div class="tw"><table><tr><th>Proyecto</th><th>Área</th><th>Desde</th><th>Qué</th><th>Estado</th><th>De dónde sale</th><th></th></tr>' + l.map(fila).join('') + '</table></div>' : '<div class="al">No hay nada con ese filtro.</div>'; }
+function falta() {
+  var o = { NO_FUNCIONA: 0, SIN_PROBAR: 1, FALTA: 2, A_AGREGAR: 3 };
+  return '<div class="al">Primero lo que no funciona, después lo hecho sin probar, lo que falta hacer y lo que se va a agregar.</div>' +
+    tabla(A.d.items.filter(function(i) { return o[i.estado] !== undefined && pasa(i); }).sort(function(a, b) { return o[a.estado] - o[b.estado] || (proyNom(a.proyecto_id) < proyNom(b.proyecto_id) ? -1 : 1); }));
+}
+function todo() { return tabla(A.d.items.filter(pasa).sort(function(a, b) { return (proyNom(a.proyecto_id) + a.area) < (proyNom(b.proyecto_id) + b.area) ? -1 : (proyNom(a.proyecto_id) + a.area) > (proyNom(b.proyecto_id) + b.area) ? 1 : (a.fecha < b.fecha ? 1 : -1); })); }
+// ── Ventanas ──
+function modal(h) { cerrar(); var o = document.createElement('div'); o.className = 'mo'; o.id = 'mo'; o.innerHTML = '<div class="md">' + h + '</div>'; o.addEventListener('click', function(e) { if (e.target === o) cerrar(); }); document.body.appendChild(o); }
+function cerrar() { var o = $('mo'); if (o) o.remove(); }
+function form(id) {
+  var i = id ? item(id) : { proyecto_id: A.proy ? Number(A.proy) : (A.d.proyectos[0] || {}).id, fecha: hoy(), area: '', titulo: '', detalle: '', estado: 'SIN_PROBAR', origen: '' };
+  var areas = {}; A.d.items.forEach(function(x) { areas[x.area] = 1; });
+  var hist = id ? A.d.cambios.filter(function(c) { return c.item_id === id; }).sort(function(a, b) { return a.id - b.id; }) : [];
+  modal('<h2>' + (id ? 'Punto N° ' + id : 'Agregar un punto') + '</h2><div class="row"><label>Proyecto<select id="fp">' + A.d.proyectos.map(function(p) { return '<option value="' + esc(p.nombre) + '"' + (p.id === i.proyecto_id ? ' selected' : '') + '>' + esc(p.nombre) + '</option>'; }).join('') + '</select></label>' +
+    '<label>Fecha<input type="date" id="ff" value="' + esc(i.fecha) + '"></label></div><label>Área<input id="fa" list="fal" value="' + esc(i.area) + '"><datalist id="fal">' + Object.keys(areas).sort().map(function(a) { return '<option value="' + esc(a) + '">'; }).join('') + '</datalist></label>' +
+    '<label>Qué es<input id="ft" value="' + esc(i.titulo) + '"></label><label>Detalle<textarea id="fd" rows="3">' + esc(i.detalle || '') + '</textarea></label>' +
+    '<div class="row"><label>Estado<select id="fe">' + ESTS.map(function(e) { return '<option value="' + e + '"' + (i.estado === e ? ' selected' : '') + '>' + EST[e] + '</option>'; }).join('') + '</select></label><label>De dónde sale<input id="fo" value="' + esc(i.origen || '') + '"></label></div>' +
+    '<label>Nota (si cambia el estado, o por qué se saca)<input id="fn"></label>' +
+    (hist.length ? '<div style="font-size:13px;margin-top:6px"><b>Historia</b>' + hist.map(function(c) { return '<div style="border-top:1px solid var(--bd);padding:3px 0">' + ftx(c.fecha) + ' · ' + (c.estado_ant ? esc(EST[c.estado_ant] || c.estado_ant) + ' → ' : '') + bad(c.estado) + (c.nota ? ' <span style="color:var(--dim)">' + esc(c.nota) + '</span>' : '') + '</div>'; }).join('') + '</div>' : '') +
+    '<div class="mf">' + (id ? '<button class="d" onclick="sacar(' + id + ')">Sacar</button>' : '') + '<button onclick="cerrar()">Cancelar</button><button class="p" onclick="guardarItem(' + (id || 0) + ')">Guardar</button></div>');
+}
+async function guardarItem(id) {
+  var d = { id: id, proyecto: $('fp').value, fecha: $('ff').value, area: $('fa').value, titulo: $('ft').value, detalle: $('fd').value, estado: $('fe').value, origen: $('fo').value, nota: $('fn').value };
+  try { var r = await rpc('ema_agenda_guardar', { p_clave: A.clave, d: d }); if (!r.ok) { toast(r.error); return; } cerrar(); toast('Guardado ✓'); cargar(); } catch (e) { toast(e.message); }
+}
+async function sacar(id) {
+  var m = $('fn').value; if (m.length < 3) { toast('Escribí en «Nota» por qué se saca'); $('fn').focus(); return; }
+  try { var r = await rpc('ema_agenda_anular', { p_clave: A.clave, p_item: id, p_motivo: m }); if (!r.ok) { toast(r.error); return; } cerrar(); toast('Sacado'); cargar(); } catch (e) { toast(e.message); }
+}
+function formEst(id) {
+  var i = item(id);
+  modal('<h2>Cambiar estado</h2><div style="margin-bottom:8px"><b>' + esc(i.titulo) + '</b><br>' + esc(proyNom(i.proyecto_id)) + ' · hoy ' + bad(i.estado) + '</div>' +
+    '<div class="row"><label>Nuevo estado<select id="ne">' + ESTS.map(function(e) { return '<option value="' + e + '"' + (i.estado === e ? ' selected' : '') + '>' + EST[e] + '</option>'; }).join('') + '</select></label><label>Fecha<input type="date" id="nf" value="' + hoy() + '"></label></div>' +
+    '<label>Qué pasó (cómo se probó, qué falló…)<input id="nn"></label><div class="mf"><button onclick="cerrar()">Cancelar</button><button class="p" onclick="guardarEst(' + id + ')">Guardar</button></div>');
+}
+async function guardarEst(id) {
+  try { var r = await rpc('ema_agenda_estado', { p_clave: A.clave, p_item: id, p_estado: $('ne').value, p_nota: $('nn').value, p_fecha: $('nf').value }); if (!r.ok) { toast(r.error); return; } cerrar(); toast('Estado cambiado ✓'); cargar(); } catch (e) { toast(e.message); }
+}
+function formProy() {
+  modal('<h2>Proyecto</h2><label>Nombre<input id="pn" placeholder="Ej: BARPRO"></label><label>Cliente<input id="pc"></label><label>Desde cuándo<input type="date" id="pi"></label><label>De qué se trata<input id="pd"></label>' +
+    '<div class="mf"><button onclick="cerrar()">Cancelar</button><button class="p" onclick="guardarProy()">Guardar</button></div>');
+}
+async function guardarProy() {
+  try { var r = await rpc('ema_agenda_proyecto', { p_clave: A.clave, p_nombre: $('pn').value, p_cliente: $('pc').value, p_inicio: $('pi').value || null, p_detalle: $('pd').value }); if (!r.ok) { toast(r.error); return; } cerrar(); toast('Proyecto guardado ✓'); cargar(); } catch (e) { toast(e.message); }
+}
+inicio();
+</script>
+</body></html>
