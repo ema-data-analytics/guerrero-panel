@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "428be29007a0"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e529aee3e572"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10180,8 +10180,10 @@ function pcImpOTrab(id) {
 }
 // Orden de servicio: hoja de carga de la línea, con casilleros para tildar cada estación en papel
 // Informe de la orden de servicio (en proceso o cerrada): cómo terminó cada cubierta, estaciones, insumos reales, herramental, tiempo y costo
+// Estaciones de una línea (camiones o agrícola)
+function pcEstLin(linea) { var L = String(linea || '').toUpperCase(); return PC_.d.estaciones.filter(function(e) { return !L || !e.LINEA || e.LINEA === L; }); }
 function pcImpOSInforme(r, o) {
-  var d = PC_.d, ests = d.estaciones.slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; });
+  var d = PC_.d, ests = pcEstLin(o && o.LINEA).slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; });
   var nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = e.ORDEN + '. ' + e.NOMBRE; });
   var nomI = {}; (d.insumos || []).forEach(function(x) { nomI[x.ID_INSUMO] = x.NOMBRE_INSUMO; });
   var cub = {}; d.cubiertas.forEach(function(c) { cub[String(c.ID_CUB)] = c; });
@@ -10220,7 +10222,7 @@ async function pcImpOS(id) {
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   var d0 = PC_.d, o0 = d0.ots.filter(function(x) { return String(x.ID_OT) === String(id); })[0] || r.ot;
   if (o0.ESTADO !== 'ARMADA') return pcImpOSInforme(r, o0);
-  var d = PC_.d, o = o0, ests = d.estaciones.slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; });
+  var d = PC_.d, o = o0, ests = pcEstLin(o0 && o0.LINEA).slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; });
   var cub = {}; d.cubiertas.forEach(function(c) { cub[String(c.ID_CUB)] = c; });
   var h = pcEncImp('ORDEN DE SERVICIO · HOJA DE CARGA', o.NRO_OT) +
     '<div class="dat"><div><b>Línea</b>' + pcEsc(o.LINEA) + '</div><div><b>Fecha</b>' + fmtD(o.FECHA) + '</div><div><b>Responsable</b>' + pcEsc(o.RESPONSABLE || '—') + '</div><div><b>Cubiertas</b>' + r.items.filter(function(i) { return i.ROL === 'TITULAR'; }).length + ' titulares · ' + r.items.filter(function(i) { return i.ROL === 'SUPLENTE'; }).length + ' suplentes</div>' +
@@ -10640,7 +10642,7 @@ async function pcAbrirOT(id) {
   pcPintarOT();
 }
 function pcEstacionesOT() {
-  var ot = PC_.ot, est = PC_.d.estaciones.slice(), usadas = {};
+  var ot = PC_.ot, est = pcEstLin(ot.ot && ot.ot.LINEA).slice(), usadas = {};
   ot.items.forEach(function(i) { i.LINEAS.forEach(function(l) { usadas[l.ID_ESTACION] = true; }); });
   var todas = +((PC_.d.param || {}).ESTACIONES_OBLIGATORIAS) === 1;
   var cols = est.filter(function(e) { return todas || usadas[String(e.ID_ESTACION)]; }).map(function(e) { return { id: String(e.ID_ESTACION), nombre: e.ORDEN + '. ' + e.NOMBRE }; });
@@ -11180,7 +11182,9 @@ function puElegirEst() {
   $id('pu-body').innerHTML = '<div class="pu-h">¿Cómo se usa esta tablet?</div>' +
     '<button class="pu-btn" style="background:var(--accent);color:#fff;font-size:19px;width:100%;max-width:640px;min-height:64px" onclick="puFijarEst(\'TODAS\')">🚶 Recorro todas las estaciones (operador de turno)</button>' +
     '<div class="tdim" style="font-size:15px">O la tablet queda fija en una estación (se elige una sola vez y la recuerda):</div>' +
-    '<div class="pu-ests">' + PU_.d.estaciones.map(function(e) { return '<button onclick="puFijarEst(\'' + puEsc(e.ID_ESTACION) + '\')"><small>ESTACIÓN ' + e.ORDEN + '</small>' + puEsc(e.NOMBRE) + '</button>'; }).join('') + '</div>';
+    (function() { var grupos = {}, orden = []; PU_.d.estaciones.forEach(function(e) { var L = e.LINEA || ''; if (!grupos[L]) { grupos[L] = []; orden.push(L); } grupos[L].push(e); });
+      return orden.map(function(L) { return (orden.length > 1 ? '<div class="pu-h" style="margin-top:12px">Línea ' + puEsc(L === 'AGRICOLA' ? 'agrícola' : (L === 'CAMIONES' ? 'camiones' : L)) + '</div>' : '') +
+        '<div class="pu-ests">' + grupos[L].map(function(e) { return '<button onclick="puFijarEst(\'' + puEsc(e.ID_ESTACION) + '\')"><small>ESTACIÓN ' + e.ORDEN + '</small>' + puEsc(e.NOMBRE) + '</button>'; }).join('') + '</div>'; }).join(''); })();
 }
 function puFijarEst(id) { PU_.est = String(id); puGuardar('pu_est', PU_.est); puCargar(); }
 function puCambiarEst() { puPararReloj(); PU_.est = ''; PU_.vista = 'lista'; puPintar(); }
@@ -11197,7 +11201,7 @@ function puOperario() {
 function puMapa(c, mini) {
   if (!c || !PU_.d) return '';
   var hechas = (c.ESTACIONES_HECHAS || []).map(String), sig = c.SIGUIENTE ? String(c.SIGUIENTE.ID_ESTACION) : '';
-  return '<div class="pu-mapa' + (mini ? ' mini' : '') + '" aria-label="Recorrido por las estaciones">' + PU_.d.estaciones.map(function(e) {
+  return '<div class="pu-mapa' + (mini ? ' mini' : '') + '" aria-label="Recorrido por las estaciones">' + puEstLin(c).map(function(e) {
     var id = String(e.ID_ESTACION), cls = hechas.indexOf(id) !== -1 ? 'ok' : (id === sig ? 'aca' : '');
     return '<div class="p ' + cls + '" title="' + puEsc(e.ORDEN + ' · ' + e.NOMBRE) + '"><b>' + (cls === 'ok' ? '✓' : e.ORDEN) + '</b><span>' + (cls === 'aca' ? '▲ ACÁ<br>' : '') + puEsc(e.NOMBRE) + '</span></div>';
   }).join('') + '</div>';
@@ -11213,8 +11217,8 @@ function puPintarPanel() {
   var h = '<div class="pu-panel-hd"><div style="min-width:0"><div class="m">' + puEsc(c.MARCA) + '</div>' + puFabDot(c) + '<div class="tdim" style="font-size:13px">' + puEsc(c.TIPO + ' ' + c.MEDIDA + ' · ' + c.NRO_OT) + '</div></div>' +
     '<button class="pu-btn pu-back" onclick="puVolver()">← Otra cubierta</button></div>';
   h += '<div class="pu-aca-txt" style="color:' + (sig ? 'var(--accent)' : 'var(--success)') + '">' +
-    (sig ? 'ESTÁS ACÁ: ' + puEsc(c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE) : '✓ PASÓ POR LAS 10 ESTACIONES') + '</div>';
-  h += '<div class="pu-panel">' + PU_.d.estaciones.map(function(e) {
+    (sig ? 'ESTÁS ACÁ: ' + puEsc(c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE) : '✓ PASÓ POR TODAS LAS ESTACIONES') + '</div>';
+  h += '<div class="pu-panel">' + puEstLin(c).map(function(e) {
     var id = String(e.ID_ESTACION), cls = hechas.indexOf(id) !== -1 ? 'ok' : (id === sig ? 'aca pu-aqui' : 'falta');
     var st = cls === 'ok' ? '✓ Hecha' : (id === sig ? 'Estás acá' : 'Falta');
     return '<button class="pu-tile ' + cls + '" data-est="' + puEsc(id) + '" onclick="puPanelToca(\'' + puEsc(id) + '\')"><span class="num">' + (cls === 'ok' ? '✓' : e.ORDEN) + '</span>' +
@@ -11229,9 +11233,11 @@ function puPanelToca(id) {
   var c = puCubD(PU_.pan.cub); if (!c) return;
   var hechas = (c.ESTACIONES_HECHAS || []).map(String), sig = c.SIGUIENTE ? String(c.SIGUIENTE.ID_ESTACION) : '';
   if (id !== sig && hechas.indexOf(id) === -1) { toast('Todavía no: primero ' + (c.SIGUIENTE ? c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE : ''), 'r2'); return; }
-  if (id === sig && PU_.d.estAutoclave && id === String(PU_.d.estAutoclave)) return puAutoclave(PU_.pan.ot);
+  if (id === sig && c.AUTOCLAVE) return puAutoclave(PU_.pan.ot);
   puAbrir(PU_.pan.ot, PU_.pan.cub, id);
 }
+// Estaciones de la línea de la cubierta (camiones o agrícola)
+function puEstLin(c) { var L = c && (c.LINEA_CUB || c.LINEA); return (PU_.d ? PU_.d.estaciones : []).filter(function(e) { return !L || !e.LINEA || e.LINEA === L; }); }
 function puCubD(idCub) { return PU_.d ? PU_.d.cubiertas.filter(function(c) { return String(c.ID_CUB) === String(idCub); })[0] : null; }
 
 // ── 0. Qué carga (orden de servicio) se controla en este aparato ──
@@ -11653,7 +11659,7 @@ async function puAcFin() {
     if (puTick) { clearInterval(puTick); puTick = null; }
     try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e2) {}
     PU_.vista = 'listo';
-    var ctl = PU_.d && PU_.d.estControl ? puNomEst(PU_.d.estControl) : 'la inspección final';
+    var ctl = 'el control final';
     $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">🔥</div><h2>Salió la carga del autoclave</h2><div style="font-size:18px">' + r.N + ' cubiertas · cocción de ' + r.MINUTOS + ' min</div>' +
       '<div style="font-size:20px"><b>Pasan a ' + puEsc(ctl) + ': las confirma el encargado una por una.</b></div>' +
       '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puVolver()">Ver las cubiertas</button></div>';
