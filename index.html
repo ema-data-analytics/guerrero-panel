@@ -11039,7 +11039,6 @@ async function pcEntregas() {
   $id('pc-body').innerHTML = (nR ? '<div class="al al-y mb3">Hay ' + nR + (nR === 1 ? ' cubierta rechazada' : ' cubiertas rechazadas') + ' sin devolver: sumalas a un remito de abajo o hacé el remito de devolución en "Rechazadas".</div>' : '') +
     '<div class="card"><div class="card-hd"><span class="card-title">Remitos (' + rs.length + ') · ' + nP + ' sin la foto firmada</span><span class="tdim" style="font-size:12px">El remito queda "Entregado" cuando se carga la foto firmada (QR del remito o botón 📷)</span></div><div class="tw">' + pcRemTabla(rs) + '</div></div>';
 }
-}
 async function pcImpRemito(i) {
   var x = window.PC_REM[i]; if (!x) return;
   var qr = ''; try { if (x.TOKEN_FIRMA) { await asLibQR(); qr = asQRsvg(pcRemUrl(x), 130); } } catch (eq) { qr = ''; }
