@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "27f430e3ae5c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7fa1f74fb212"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -274,6 +274,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
       <div class="nav-item" data-page="produccion-cubiertas"><span class="nav-icon"><i class="fas fa-fire"></i></span> Producción por cubierta</div>
       <div class="nav-item" data-page="puesto-estacion"><span class="nav-icon"><i class="fas fa-tablet-alt"></i></span> Puesto de estación</div>
       <div class="nav-item" data-page="recetas"><span class="nav-icon"><i class="fas fa-flask"></i></span> Recetas</div>
+      <div class="nav-item" data-page="stock-insumos"><span class="nav-icon"><i class="fas fa-box-open"></i></span> Stock de insumos</div>
       <div class="nav-item" data-page="ventas"><span class="nav-icon"><i class="fas fa-shopping-cart"></i></span> Ventas</div>
       <div class="nav-item" data-page="precios-nuevos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Precios cubiertas nuevas</div>
       <div class="nav-item" data-page="pedidos-web"><span class="nav-icon"><i class="fas fa-store"></i></span> Pedidos web</div>
@@ -340,6 +341,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-carga-produccion" class="hidden"></div>
     <div id="page-ordenes-trabajo" class="hidden"></div>
     <div id="page-recetas" class="hidden"></div>
+    <div id="page-stock-insumos" class="hidden"></div>
     <div id="page-produccion-cubiertas" class="hidden"></div>
     <div id="page-puesto-estacion" class="hidden"></div>
     <div id="page-precios-nuevos" class="hidden"></div>
@@ -659,7 +661,7 @@ function _mcDelAll(){ _MC={}; }
 // El servidor devuelve un "pase" (token) que acompaña cada llamada.
 // ══════════════════════════════════════════════════════════════════
 var PAGINA_MODULO = {
-  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'precios-nuevos':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
+  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'precios-nuevos':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
   'carga-gastos':'GASTOS', 'carga-financiero':'ADMINISTRACION', 'carga-transporte':'ADMINISTRACION',
   'carga-impositivo':'ADMINISTRACION', 'carga-sueldos':'ADMINISTRACION', 'carga-combustible':'COMBUSTIBLE',
   'cheques':'COBRANZAS', 'cobranzas':'COBRANZAS', 'caja':'COBRANZAS', 'cta-cte-clientes':'COBRANZAS',
@@ -1041,6 +1043,7 @@ function getPage(name) {
     'carga-produccion': typeof renderCargaProduccion !== 'undefined' ? renderCargaProduccion : null,
     'ordenes-trabajo': typeof renderOT !== 'undefined' ? renderOT : null,
     'recetas': function(){ if(typeof renderRecetas!=='undefined') renderRecetas(); },
+    'stock-insumos': function(){ if(typeof renderStockInsumos!=='undefined') renderStockInsumos(); },
     'produccion-cubiertas': function(){ if(typeof renderProdCub!=='undefined') renderProdCub(); },
     'puesto-estacion': function(){ if(typeof renderPuesto!=='undefined') renderPuesto(); },
     'precios-nuevos': function(){ if(typeof renderPrecios!=='undefined') renderPrecios(); },
@@ -1191,6 +1194,8 @@ async function appInit() {
   _hist.pagina = null;
   histReplace({ ema: 1, base: 1 });
   if (inicio) navTo(inicio);
+  // Aviso de insumos por acabarse, una vez por ingreso
+  if (typeof cobAvisoInicio === 'function') setTimeout(cobAvisoInicio, 1500);
 }
 
 async function loadConfig(cacheOnly) {
@@ -12854,6 +12859,177 @@ async function twAjustesGuardar() {
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); return; }
     TW_.d.CFG = r.CFG; $id('tw-ov').remove(); toast('Ajustes guardados', 'g'); twPintar();
   } catch (e) { toast(e.message, 'r2'); }
+}
+</script>
+
+<style>
+#page-stock-insumos .cb-wrap{max-width:980px;margin:0 auto;padding:4px 0 40px}
+.cb-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.cb-top h2{margin:0;font-size:20px}.cb-top .cb-acc{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.cb-res{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.cb-res div{flex:1;min-width:150px;border-radius:12px;padding:10px 12px;font-size:13px}
+.cb-res b{display:block;font-size:24px}
+.cb-r{background:#fee2e2;color:#991b1b}.cb-y{background:#fef9c3;color:#854d0e}.cb-g{background:#dcfce7;color:#166534}.cb-n{background:#eef0f3;color:#4b5563}
+.cb-caja{background:#fff6ee;border-left:4px solid #E8792B;padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:13px;color:#1f2937;line-height:1.45}
+.cb-fila{border:1px solid var(--border);border-radius:12px;background:var(--surface,#fff);margin-bottom:8px;overflow:hidden}
+.cb-cab{display:grid;grid-template-columns:8px minmax(150px,2.2fr) 1fr 1.2fr 1fr 1.3fr;gap:10px;align-items:center;padding:10px 12px 10px 0;cursor:pointer}
+.cb-cab .cb-bar{align-self:stretch;border-radius:0 4px 4px 0}
+.cb-nom b{font-size:14px}.cb-nom small{display:block;color:var(--dim);font-size:11px}
+.cb-k{font-size:11px;color:var(--dim)}.cb-v{font-size:15px;font-weight:700}
+.cb-f{display:inline-block;border-radius:6px;padding:0 6px;font-size:10px;font-weight:800;letter-spacing:.03em}
+.cb-fE{background:#fee2e2;color:#b91c1c}.cb-fR{background:#dbeafe;color:#1e40af}.cb-fC{background:#e5e7eb;color:#111827}
+.cb-est{color:#b91c1c}
+.cb-det{border-top:1px solid var(--border);padding:10px 12px;font-size:13px}
+.cb-det table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}.cb-det th{text-align:left;color:var(--dim);font-weight:700;font-size:11px;padding:3px 4px}.cb-det td{padding:4px;border-top:1px solid var(--border)}
+.cb-form{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin:8px 0}
+.cb-form label{display:flex;flex-direction:column;font-size:12px;color:var(--dim);gap:3px;flex:1;min-width:130px}
+.cb-form input{font-size:14px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)}
+.cb-par{border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin:8px 0;background:var(--surface,#fff)}
+.cb-par .cb-form label{min-width:170px}
+@media (max-width:700px){.cb-cab{grid-template-columns:8px 1fr 1fr;row-gap:6px}.cb-cab .cb-nom{grid-column:2 / 4}}
+.cb-av li{margin:4px 0}
+</style>
+<script>
+var CB_ = { d: null, abierto: '', movs: {}, verPar: false };
+function cbEl() { return $id('page-stock-insumos'); }
+function cbEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function cbN(n) { if (n === null || n === undefined || n === '') return '—'; var x = Math.round(n * 100) / 100; return String(x).replace('.', ','); }
+function cbFecha(ms, dia) {
+  if (!ms) return '—';
+  var d = new Date(ms + 3 * 36e5), s = ('0' + d.getUTCDate()).slice(-2) + '/' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + '/' + d.getUTCFullYear();
+  return dia ? ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getUTCDay()] + ' ' + s : s;
+}
+function cbAdmin() { var r = String((SES && SES.rol) || '').toUpperCase(); return r === 'SUPER' || r === 'ADMINISTRADOR'; }
+function cbFuente(f) {
+  if (f.FUENTE === 'CARGADO') return '<span class="cb-f cb-fC">CARGADO</span>';
+  if (f.FUENTE === 'REAL') return '<span class="cb-f cb-fR">REAL</span>';
+  if (f.FUENTE === 'ESTIMADO') return '<span class="cb-f cb-fE">ESTIMADO</span>';
+  return '<span class="cb-f cb-fC">SIN DATO</span>';
+}
+async function renderStockInsumos() {
+  var el = cbEl(); if (!el) return;
+  if (!CB_.d) el.innerHTML = '<div class="cb-wrap"><div class="al">Calculando el stock de insumos…</div></div>';
+  try { CB_.d = await gsRun('gsINS_Cobertura', {}); } catch (e) { el.innerHTML = '<div class="al al-r">' + cbEsc(e.message) + '</div>'; return; }
+  if (!CB_.d || !CB_.d.ok) { el.innerHTML = '<div class="al al-r">' + cbEsc((CB_.d && CB_.d.error) || 'No se pudo calcular') + '</div>'; return; }
+  CB_.movs = {};
+  cbPintar();
+}
+function cbPintar() {
+  var el = cbEl(), d = CB_.d, n = { r: 0, y: 0, g: 0, n: 0 };
+  d.filas.forEach(function(f) { n[f.NIVEL]++; });
+  var hayEst = d.filas.some(function(f) { return f.FUENTE === 'ESTIMADO'; });
+  var h = '<div class="cb-wrap"><div class="cb-top"><h2>📦 Stock de insumos</h2><div class="cb-acc">' +
+    '<button class="btn btn-sm" onclick="cbAyuda()">❓ Cómo se calcula</button>' +
+    '<button class="btn btn-sm" onclick="CB_.verPar=!CB_.verPar;cbPintar()">⚙ Datos para el cálculo</button>' +
+    '<button class="btn btn-sm" onclick="renderStockInsumos()">↻ Actualizar</button></div></div>';
+  h += '<div class="cb-res"><div class="cb-r"><b>' + n.r + '</b>Pedir YA: no llega a tiempo o no hay</div><div class="cb-y"><b>' + n.y + '</b>Pedir pronto</div><div class="cb-g"><b>' + n.g + '</b>Alcanza</div>' + (n.n ? '<div class="cb-n"><b>' + n.n + '</b>Sin dato de consumo</div>' : '') + '</div>';
+  if (hayEst) h += '<div class="cb-caja"><b class="cb-est">ESTIMADO</b> = calculado con las recetas y las cubiertas que se hacen por día (' + cbEsc(d.PARAM.CUB_DIA.replace(/\|/g, ', ').replace(/:/g, ' ')) + '). Cuando haya ' + d.PARAM.DIAS_HISTORIA + ' días de consumo real cargado en el sistema, pasa solo a <b>REAL</b>. Si ya saben cuánto gastan por día, cárguenlo en el insumo y queda <b>CARGADO</b>.</div>';
+  if (CB_.verPar) h += cbParametros();
+  if (!d.filas.length) h += '<div class="al">No hay insumos con consumo para calcular.</div>';
+  d.filas.forEach(function(f) {
+    var col = { r: '#dc2626', y: '#eab308', g: '#16a34a', n: '#9ca3af' }[f.NIVEL], ab = CB_.abierto === f.ID_INSUMO, id = cbEsc(f.ID_INSUMO);
+    h += '<div class="cb-fila" id="cb-f-' + id + '"><div class="cb-cab" onclick="cbAbrir(\'' + id + '\')"><div class="cb-bar" style="background:' + col + '"></div>' +
+      '<div class="cb-nom"><b>' + cbEsc(f.NOMBRE) + '</b><small>' + id + (f.RUBRO ? ' · ' + cbEsc(f.RUBRO) : '') + '</small></div>' +
+      '<div><div class="cb-k">Stock</div><div class="cb-v">' + cbN(f.STOCK) + ' ' + cbEsc(f.UNIDAD) + '</div></div>' +
+      '<div><div class="cb-k">Gasto por día ' + cbFuente(f) + '</div><div class="cb-v' + (f.FUENTE === 'ESTIMADO' ? ' cb-est' : '') + '">' + (f.CONSUMO_DIA ? cbN(f.CONSUMO_DIA) + ' ' + cbEsc(f.UNIDAD) : '—') + '</div></div>' +
+      '<div><div class="cb-k">Quedan</div><div class="cb-v" style="color:' + col + '">' + (f.DIAS === null ? (f.STOCK <= 0 ? 'SIN STOCK' : '—') : f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's')) + '</div></div>' +
+      '<div><div class="cb-k">Pedir antes del</div><div class="cb-v">' + (f.PEDIR_ANTES ? (f.NIVEL === 'r' ? '<span style="color:#dc2626">¡YA!</span>' : cbFecha(f.PEDIR_ANTES, true)) : '—') + '</div></div></div>' +
+      (ab ? cbDetalle(f) : '') + '</div>';
+  });
+  el.innerHTML = h + '</div>';
+}
+function cbParametros() {
+  var p = CB_.d.PARAM, ad = cbAdmin(), dis = ad ? '' : ' disabled';
+  function campo(cl, et, v, ej) { return '<label>' + et + '<input id="cb-p-' + cl + '" value="' + cbEsc(v) + '"' + dis + (ej ? ' placeholder="' + ej + '"' : '') + '></label>'; }
+  var rec = Object.keys(p.RECETAS || {}).map(function(l) { return l + ': ' + p.RECETAS[l] + ' receta' + (p.RECETAS[l] === 1 ? '' : 's'); }).join(' · ');
+  return '<div class="cb-par"><b>Datos para el cálculo</b>' + (ad ? '' : ' <span class="cb-k">(solo un administrador los cambia)</span>') +
+    '<div class="cb-form">' + campo('COB_CUB_DIA', 'Cubiertas por día de cada línea', p.CUB_DIA, 'CAMIONES:15|AGRICOLA:2') + campo('COB_TRABAJO_BASE', 'Trabajo base por línea', p.TRABAJO_BASE, 'CAMIONES:RECAPADO') + '</div>' +
+    '<div class="cb-form">' + campo('COB_DIAS_SEMANA', 'Días de trabajo por semana', p.DIAS_SEMANA) + campo('COB_DEMORA_DIAS', 'Días que tarda el proveedor', p.DEMORA) + campo('COB_MARGEN_DIAS', 'Días de margen (aviso amarillo)', p.MARGEN) + campo('COB_DIAS_HISTORIA', 'Días de consumo real para usarlo', p.DIAS_HISTORIA) + '</div>' +
+    '<div class="cb-k">Recetas que se usan para el estimado: ' + cbEsc(rec || 'ninguna') + '. La demora y el margen son <b class="cb-est">supuestos</b> hasta que se carguen los reales de cada proveedor.</div>' +
+    (ad ? '<div class="tw-btns" style="margin-top:8px"><button class="btn btn-sm btn-p" id="cb-p-ok" onclick="cbParGuardar()">Guardar datos</button></div>' : '') + '</div>';
+}
+async function cbParGuardar() {
+  var b = $id('cb-p-ok'); b.disabled = true;
+  var cl = ['COB_CUB_DIA', 'COB_TRABAJO_BASE', 'COB_DIAS_SEMANA', 'COB_DEMORA_DIAS', 'COB_MARGEN_DIAS', 'COB_DIAS_HISTORIA'], i;
+  try {
+    for (i = 0; i < cl.length; i++) {
+      var r = await gsRun('gsPC_GuardarParam', cl[i], $id('cb-p-' + cl[i]).value);
+      if (!r || !r.ok) { toast(((r && r.error) || 'No se pudo guardar') + ' (' + cl[i] + ')', 'r2'); b.disabled = false; return; }
+    }
+    toast('Datos guardados. Recalculando…', 'g'); CB_.verPar = false; await renderStockInsumos();
+  } catch (e) { toast(e.message, 'r2'); b.disabled = false; }
+}
+function cbFila(id) { return CB_.d.filas.filter(function(f) { return f.ID_INSUMO === id; })[0]; }
+async function cbAbrir(id) {
+  CB_.abierto = CB_.abierto === id ? '' : id; cbPintar();
+  if (!CB_.abierto || CB_.movs[id]) return;
+  try { var r = await gsRun('gsINS_CobMovs', id); CB_.movs[id] = r && r.ok ? r : { MOVS: [], TOTAL: 0 }; } catch (e) { CB_.movs[id] = { MOVS: [], TOTAL: 0, error: e.message }; }
+  if (CB_.abierto === id) cbPintar();
+}
+function cbDetalle(f) {
+  var id = cbEsc(f.ID_INSUMO), ad = cbAdmin(), dis = ad ? '' : ' disabled', h = '<div class="cb-det">';
+  if (f.FUENTE) h += '<div><b>De dónde sale el gasto por día:</b> ' + cbEsc(f.DETALLE) + '.</div>';
+  else h += '<div>No hay consumo para calcular: no está en las recetas de base ni tuvo salidas. Si se usa, cargá cuánto se gasta por día.</div>';
+  if (f.DIAS !== null) h += '<div style="margin-top:4px">Con ' + cbN(f.STOCK) + ' ' + cbEsc(f.UNIDAD) + ' alcanza para <b>' + cbN(f.DIAS_TRABAJO) + ' días de trabajo</b>: se acaba el <b>' + cbFecha(f.SE_ACABA, true) + '</b>. El proveedor tarda <b>' + f.DEMORA + ' días</b>' + (f.DEMORA_PROPIA ? '' : ' <span class="cb-est">(supuesto)</span>') + ', así que hay que pedirlo antes del <b>' + cbFecha(f.PEDIR_ANTES, true) + '</b>.</div>';
+  if (f.STOCK_MINIMO) h += '<div class="cb-k" style="margin-top:4px">Stock mínimo cargado en Maestros: ' + cbN(f.STOCK_MINIMO) + ' ' + cbEsc(f.UNIDAD) + '</div>';
+  h += '<div class="cb-form"><label>Días que tarda el proveedor<input id="cb-dem-' + id + '" inputmode="decimal" value="' + (f.DEMORA_PROPIA ? cbEsc(f.DEMORA) : '') + '" placeholder="' + CB_.d.PARAM.DEMORA + ' (general)"' + dis + '></label>' +
+    '<label>Gasto por día (si lo saben)<input id="cb-con-' + id + '" inputmode="decimal" value="' + (f.CONSUMO_CARGADO ? cbN(f.CONSUMO_CARGADO) : '') + '" placeholder="vacío = lo calcula el sistema"' + dis + '></label>' +
+    '<label>Nota<input id="cb-obs-' + id + '" value="' + cbEsc(f.OBS) + '" placeholder="Proveedor, contacto…"' + dis + '></label></div>';
+  if (ad) h += '<div class="tw-btns"><button class="btn btn-sm btn-p" onclick="cbGuardar(\'' + id + '\',0)">Guardar</button><button class="btn btn-sm" onclick="cbGuardar(\'' + id + '\',1)">No controlar este insumo</button></div>';
+  var m = CB_.movs[f.ID_INSUMO];
+  h += '<div style="margin-top:10px"><b>Últimos movimientos</b> <span class="cb-k">(trazabilidad: cada entrada y salida con su origen y quién la hizo)</span></div>';
+  if (!m) h += '<div class="cb-k">Cargando…</div>';
+  else if (!m.MOVS.length) h += '<div class="cb-k">Sin movimientos.</div>';
+  else {
+    h += '<table><tr><th>Fecha</th><th>Movimiento</th><th style="text-align:right">Cantidad</th><th>Detalle</th><th>Usuario</th></tr>';
+    m.MOVS.forEach(function(x) {
+      var an = x.ESTADO === 'ANULADO';
+      h += '<tr style="' + (an ? 'opacity:.5;text-decoration:line-through' : '') + '"><td>' + cbFecha(x.FECHA) + '</td><td>' + cbEsc(x.TIPO.replace(/_/g, ' ')) + (an ? ' (anulado)' : '') + '</td><td style="text-align:right;color:' + (x.CANTIDAD < 0 ? '#b91c1c' : '#166534') + '">' + (x.CANTIDAD > 0 ? '+' : '') + cbN(x.CANTIDAD) + '</td><td>' + cbEsc(x.OBS || (x.ORIGEN + ' ' + x.ID_ORIGEN)) + '</td><td>' + cbEsc(x.USUARIO) + '</td></tr>';
+    });
+    h += '</table>' + (m.TOTAL > m.MOVS.length ? '<div class="cb-k">Se muestran los últimos ' + m.MOVS.length + ' de ' + m.TOTAL + '.</div>' : '');
+  }
+  return h + '</div>';
+}
+async function cbGuardar(id, noControlar) {
+  if (noControlar && CB_.confNo !== id) { CB_.confNo = id; toast('Tocá «No controlar este insumo» otra vez para confirmar: deja de aparecer en esta lista y en los avisos', 'r2'); return; }
+  CB_.confNo = '';
+  var d = { ID_INSUMO: id, DEMORA_DIAS: $id('cb-dem-' + id).value, CONSUMO_DIA: $id('cb-con-' + id).value, OBSERVACIONES: $id('cb-obs-' + id).value, NO_CONTROLAR: noControlar ? 1 : 0 };
+  try {
+    var r = await gsRun('gsINS_CobGuardar', d);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); return; }
+    toast(noControlar ? 'Ya no se controla' : 'Guardado. Recalculando…', 'g'); await renderStockInsumos();
+  } catch (e) { toast(e.message, 'r2'); }
+}
+function cbAyuda() {
+  showModal('<div class="mh"><span class="mt">Cómo se calcula el stock de insumos</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="font-size:14px;line-height:1.5">' +
+    '<p><b>Stock</b>: todo lo que entró (stock inicial y compras) menos todo lo que salió (consumos de las estaciones y retiros del depósito). Es la misma cuenta que el resto del sistema.</p>' +
+    '<p><b>Gasto por día</b> (por día de trabajo), en este orden:</p><ul>' +
+    '<li><span class="cb-f cb-fC">CARGADO</span> lo cargaron ustedes en el insumo. Manda sobre todo.</li>' +
+    '<li><span class="cb-f cb-fR">REAL</span> lo que salió del depósito en los últimos 30 días, cuando hay suficientes días con consumo cargado.</li>' +
+    '<li><span class="cb-f cb-fE">ESTIMADO</span> receta × cubiertas por día de cada línea. Solo entran los insumos que están en al menos 1 de cada 4 recetas (los de uso común: flux, cojín, cordón…). Las bandas dependen de la medida: hasta que haya consumo real, su gasto conviene cargarlo a mano.</li></ul>' +
+    '<p><b>Quedan</b>: stock ÷ gasto por día, pasado a días de calendario según los días que se trabaja por semana.</p>' +
+    '<p><b>Pedir antes del</b>: el día en que se acaba menos los días que tarda el proveedor.</p>' +
+    '<p>🔴 <b>Pedir YA</b>: no hay stock o lo que queda no alcanza para lo que tarda el proveedor. 🟡 <b>Pedir pronto</b>: quedan menos días que la demora más el margen.</p>' +
+    '<p>Al entrar al sistema, si hay alguno en rojo o amarillo, aparece un aviso.</p></div>' +
+    '<div class="mf"><button class="btn btn-p" onclick="closeModal()">Entendido</button></div>');
+}
+// Aviso al abrir el sistema (una vez por ingreso)
+async function cobAvisoInicio() {
+  try {
+    if (document.body.classList.contains('modo-puesto') || !puedeVerPagina('stock-insumos')) return;
+    var tk = SES && SES.token; if (!tk || window._cbAvisado === tk) return;
+    window._cbAvisado = tk;
+    var r = await gsRun('gsINS_Cobertura', { ALERTA: 1 });
+    if (!r || !r.ok || !(r.rojas + r.amarillas) || !SES || SES.token !== tk) return;
+    var li = r.filas.map(function(f) {
+      return '<li><b style="color:' + (f.NIVEL === 'r' ? '#dc2626' : '#a16207') + '">' + (f.NIVEL === 'r' ? '🔴 ' : '🟡 ') + cbEsc(f.NOMBRE) + '</b>: ' +
+        (f.DIAS === null ? 'sin stock' : 'quedan ' + f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's') + ' (se acaba el ' + cbFecha(f.SE_ACABA, true) + ')') +
+        (f.NIVEL === 'r' ? ' · <b>pedir YA</b>' : ' · pedir antes del ' + cbFecha(f.PEDIR_ANTES, true)) + (f.FUENTE === 'ESTIMADO' ? ' <span class="cb-f cb-fE">ESTIMADO</span>' : '') + '</li>';
+    }).join('');
+    showModal('<div class="mh"><span class="mt">⚠ Insumos por acabarse</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 cb-av" style="font-size:14px">' +
+      '<div style="margin-bottom:6px">' + (r.rojas ? '<b style="color:#dc2626">' + r.rojas + ' para pedir YA</b>' : '') + (r.rojas && r.amarillas ? ' · ' : '') + (r.amarillas ? '<b style="color:#a16207">' + r.amarillas + ' para pedir pronto</b>' : '') + '</div><ul style="padding-left:18px;margin:0">' + li + '</ul></div>' +
+      '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-p" onclick="closeModal();navTo(\'stock-insumos\')">Ver stock de insumos</button></div>');
+  } catch (e) { }
 }
 </script>
 
