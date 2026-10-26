@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "3b3529582007"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a483ecb6dd99"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -12749,7 +12749,7 @@ function twCliQuitar(id) {
 }
 function twCliDato(id, campo) { twAccion({ ID_PEDIDO: id, ACCION: 'CLI_DATO', CAMPO: campo }, 'Dato pasado al cliente'); if (typeof _mcDel === 'function') _mcDel('clientes'); }
 function twCliAlta(id) {
-  var p = twPed(id), doc = String(p.CUIT_DNI || '').replace(/[^0-9]/g, ''), ops = '';
+  var p = twPed(id), doc = String(p.CUIT_DNI || '').replace(/[^0-9]/g, ''), ops = '', env = p.ENTREGA === 'ENVIO';
   (TW_.d.CONDS || []).forEach(function(c) { ops += '<option value="' + twEsc(c.ID) + '"' + (c.ID === (p.COND_IVA || '3') ? ' selected' : '') + '>' + twEsc(c.NOMBRE) + '</option>'; });
   var o = document.createElement('div'); o.className = 'tw-ov'; o.id = 'tw-alta';
   o.innerHTML = '<div class="tw-hoja"><h3 style="margin:0 0 6px">Dar de alta el cliente</h3>' +
@@ -12757,8 +12757,8 @@ function twCliAlta(id) {
     '<div class="tw-fila"><label>Apellido o razón social *<input id="tw-a-ape" value="' + twEsc(String(p.NOMBRE || '').toUpperCase()) + '"></label><label>Nombre<input id="tw-a-nom"></label></div>' +
     '<div class="tw-fila"><label>CUIT o DNI *<input id="tw-a-doc" inputmode="numeric" value="' + twEsc(doc) + '"></label><label>Condición IVA *<select id="tw-a-iva">' + ops + '</select></label></div>' +
     '<div class="tw-fila"><label>Teléfono<input id="tw-a-tel" value="' + twEsc(p.TELEFONO) + '"></label><label>Mail<input id="tw-a-mail" value="' + twEsc(p.MAIL) + '"></label></div>' +
-    '<div class="tw-fila"><label>Dirección<input id="tw-a-dir" value="' + twEsc(p.DIRECCION) + '"></label><label>Localidad<input id="tw-a-loc" value="' + twEsc(p.LOCALIDAD) + '"></label></div>' +
-    '<div class="tw-fila"><label>Provincia<input id="tw-a-prov" value="' + twEsc(p.PROVINCIA) + '"></label><label>Código postal<input id="tw-a-cp" value="' + twEsc(p.CP) + '"></label></div>' +
+    '<div class="tw-fila"><label>Dirección<input id="tw-a-dir" value="' + (env ? twEsc(p.DIRECCION) : '') + '"></label><label>Localidad<input id="tw-a-loc" value="' + (env ? twEsc(p.LOCALIDAD) : '') + '"></label></div>' +
+    '<div class="tw-fila"><label>Provincia<input id="tw-a-prov" value="' + (env ? twEsc(p.PROVINCIA) : '') + '"></label><label>Código postal<input id="tw-a-cp" value="' + (env ? twEsc(p.CP) : '') + '"></label></div>' +
     '<div class="tw-btns" style="justify-content:flex-end"><button class="btn btn-sm" onclick="$id(\'tw-alta\').remove()">Cancelar</button>' +
     '<button class="btn btn-sm btn-p" id="tw-a-ok" onclick="twCliAltaOk(\'' + twEsc(id) + '\')">Dar de alta</button></div></div>';
   o.addEventListener('click', function(e) { if (e.target === o) o.remove(); });
