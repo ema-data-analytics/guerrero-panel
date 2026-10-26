@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e7c6fb18fc6a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "3307a2dbe060"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10572,8 +10572,9 @@ function pcVidaCab(v) {
 function pcAcDeCub(auto, idCub) { return (auto || []).filter(function(a) { try { var p = JSON.parse(a.POSICIONES || '{}'); return Object.keys(p).some(function(q) { return String(p[q]) === String(idCub); }); } catch (e) { return false; } })[0] || null; }
 function pcEspTxt(e) {
   if (!e) return '';
-  var t = e.TMIN !== null || e.TMAX !== null ? (e.TMIN !== null ? e.TMIN : '…') + ' a ' + (e.TMAX !== null ? e.TMAX : '…') + ' °C' : 'temperatura sin especificación cargada';
-  var p = e.PMIN !== null || e.PMAX !== null ? (e.PMIN !== null ? e.PMIN : '…') + ' a ' + (e.PMAX !== null ? e.PMAX : '…') + ' ' + e.PUNI : 'presión sin especificación cargada';
+  var n = function(x) { return x === null ? '…' : String(x).replace('.', ','); };
+  var t = e.TMIN !== null || e.TMAX !== null ? n(e.TMIN) + ' a ' + n(e.TMAX) + ' °C' : 'temperatura sin especificación cargada';
+  var p = e.PMIN !== null || e.PMAX !== null ? n(e.PMIN) + ' a ' + n(e.PMAX) + ' ' + e.PUNI : 'presión sin especificación cargada';
   return t + ' · ' + p;
 }
 function pcLectTxt(l, conFoto) { return new Date(l.FECHA).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' → ' + String(l.TEMP).replace('.', ',') + ' °C · ' + String(l.PRESION).replace('.', ',') + ' ' + (l.UNIDAD || '') + (l.MOMENTO === 'FIN' ? ' (final)' : '') + (conFoto ? (l.FOTO_ID ? ' · con foto' : ' · sin foto') : ''); }
@@ -11733,7 +11734,11 @@ function puFicha() {
 function puControlHTML() {
   var C = PU_.ctrl, X = PU_.f.control;
   var b = function(v, txt, col) { var on = C.dec === v; return '<button class="pu-btn" style="flex:1;min-width:170px;min-height:70px;font-size:19px;' + (on ? 'background:' + col + ';color:#fff' : 'background:var(--surface2);color:var(--text);border:2px solid ' + col) + '" onclick="PU_.ctrl.dec=\'' + v + '\';puFicha()">' + txt + '</button>'; };
-  var h = '<div class="pu-reg" id="pu-ctrl" style="border-color:var(--accent)"><div style="font-size:20px;font-weight:700">Control del encargado: ¿cómo salió del autoclave?</div>' +
+  var CC = X.coccion, fueraL = CC ? (CC.LECTURAS || []).filter(function(l) { return l.FUERA; }) : [];
+  var h = (CC ? '<div class="pu-reg" style="border-color:' + (fueraL.length ? 'var(--danger);background:var(--danger-light, #fde8e8)' : 'var(--border)') + '"><div style="font-size:17px;font-weight:700' + (fueraL.length ? ';color:var(--danger)' : '') + '">🌡 Cocción: ' + (fueraL.length ? 'hubo lecturas fuera de lo especificado' : 'lecturas de temperatura y presión') + '</div>' +
+    '<div class="tdim" style="font-size:13px">' + puEsc(puAcEspTxt(CC.ESPEC)) + '</div>' + puAcLecturasHTML(CC.LECTURAS, CC.ESPEC && CC.ESPEC.PUNI) +
+    fueraL.map(function(l) { return '<div style="font-size:14px">Explicación: ' + puEsc(l.JUSTIFICACION) + '</div>'; }).join('') + '</div>' : '') +
+    '<div class="pu-reg" id="pu-ctrl" style="border-color:var(--accent)"><div style="font-size:20px;font-weight:700">Control del encargado: ¿cómo salió del autoclave?</div>' +
     '<div style="display:flex;gap:12px;flex-wrap:wrap">' + b('OK', '✓ OK · pasa a Pintura', 'var(--success)') + (X.pulido ? b('PULIR', '✂ Exceso de material · repulir', '#b7791f') : '') + b('REPROCESO', '↻ Volver a una estación', 'var(--warn)') + b('RECHAZO', '✗ Rechazo final', 'var(--danger)') + '</div>';
   if (C.dec === 'REPROCESO') {
     h += '<div style="font-weight:700">¿A qué estación vuelve? (se puede elegir más de una)</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + X.estaciones.map(function(e) {
@@ -11834,8 +11839,9 @@ function puAutoclavePintar() {
 // ── Lecturas del autoclave (termómetro y manómetro) con foto ──
 function puAcEspTxt(e) {
   if (!e) return '';
-  var t = e.TMIN !== null || e.TMAX !== null ? (e.TMIN !== null ? e.TMIN : '…') + ' a ' + (e.TMAX !== null ? e.TMAX : '…') + ' °C' : 'temperatura sin especificación cargada';
-  var p = e.PMIN !== null || e.PMAX !== null ? (e.PMIN !== null ? e.PMIN : '…') + ' a ' + (e.PMAX !== null ? e.PMAX : '…') + ' ' + e.PUNI : 'presión sin especificación cargada';
+  var n = function(x) { return x === null ? '…' : puF(x); };
+  var t = e.TMIN !== null || e.TMAX !== null ? n(e.TMIN) + ' a ' + n(e.TMAX) + ' °C' : 'temperatura sin especificación cargada';
+  var p = e.PMIN !== null || e.PMAX !== null ? n(e.PMIN) + ' a ' + n(e.PMAX) + ' ' + e.PUNI : 'presión sin especificación cargada';
   return 'Especificado: ' + t + ' · ' + p;
 }
 function puAcLecturasHTML(ls, uni) {
