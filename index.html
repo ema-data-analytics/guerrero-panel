@@ -1417,7 +1417,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271834';
+var EMA_BUILD = '202610271838';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -16227,7 +16227,11 @@ function mgAgregar(c) { mgSumar(c); $id('mg-q').value = ''; $id('mg-sug').innerH
 function mgCant(k, v) { var it = MG_.items[k]; if (!it) return; it.n = Math.max(0, it.n + v); if (!it.n) MG_.items.splice(k, 1); mgPintar(); }
 // Descuento escrito a mano (acepta coma): 12, 12,5, 7.5
 function mgDescTxt(t, vivo) { var v = parseFloat(String(t).replace(',', '.')); if (isNaN(v)) v = 0; mgDesc(v, true, vivo ? 'txt' : ''); }
-function mgDesc(v, abs, de) { MG_.desc = Math.max(0, Math.min(90, Math.round((abs ? v : MG_.desc + v) * 10) / 10)); MG_.desdeRng = de === 'rng'; mgPintar(); }
+function mgDesc(v, abs, de) {
+  // Si se toca la barra o un botón con el teclado abierto en la casilla, se cierra el teclado para que se vea el número
+  if (de !== 'txt' && document.activeElement && document.activeElement.id === 'mg-d') document.activeElement.blur();
+  MG_.desc = Math.max(0, Math.min(90, Math.round((abs ? v : MG_.desc + v) * 10) / 10)); MG_.de = de || ''; mgPintar();
+}
 function mgM(n) { n = Math.round(n); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('es-AR'); }
 function mgArt(c) { return MG_.d.ARTICULOS.filter(function(a) { return a.CODIGO === c; })[0]; }
 // Ganancia sobre lo cobrado (sin IVA) con el descuento d (0 a 1): (1 − impuestos) − costo / precio con descuento
@@ -16249,16 +16253,17 @@ function mgPintar() {
   if (!$id('mg-d')) D.innerHTML = '<div class="card"><div class="card-body">' +
     '<div class="tdim" style="font-size:12px;text-align:center;margin-bottom:6px">DESCUENTO · tocá el número y escribilo</div>' +
     '<div class="mg-ctl"><button type="button" class="btn btn-s mg-b" onclick="mgDesc(-1)">−1</button>' +
-    '<div class="mg-dw"><input id="mg-d" class="mg-d" type="text" inputmode="decimal" autocomplete="off" value="' + String(MG_.desc).replace('.', ',') + '" onfocus="this.select()" oninput="mgDescTxt(this.value,true)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b></div>' +
+    '<div class="mg-dw"><input id="mg-d" class="mg-d" type="text" inputmode="decimal" autocomplete="off" value="' + String(MG_.desc).replace('.', ',') + '" onfocus="this.select()" oninput="mgDescTxt(this.value,true)" onblur="mgDesc(MG_.desc,true)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b></div>' +
     '<button type="button" class="btn btn-s mg-b" onclick="mgDesc(1)">+1</button></div>' +
     '<div class="mg-ctl" style="margin-top:8px">' + [0, 5, 10, 15, 20].map(function(v) { return '<button type="button" class="btn btn-s mg-r" onclick="mgDesc(' + v + ',true)">' + v + '%</button>'; }).join('') + '</div>' +
-    '<input id="mg-rng" class="mg-rng" type="range" min="0" max="30" step="0.5" value="' + MG_.desc + '" oninput="mgDesc(+this.value,true,\'rng\')"></div></div>';
+    '<input id="mg-rng" class="mg-rng" type="range" min="0" max="30" step="0.5" value="' + MG_.desc + '" oninput="mgDesc(+this.value,true,\'rng\')" onchange="mgDesc(+this.value,true,\'rng\')"></div></div>';
   else {
     var di = $id('mg-d'), rg = $id('mg-rng');
-    if (document.activeElement !== di) di.value = String(MG_.desc).replace('.', ',');
-    if (rg && MG_.desdeRng !== true) rg.value = Math.min(30, MG_.desc);
+    // El número siempre muestra el descuento, salvo mientras se lo está escribiendo
+    if (MG_.de !== 'txt') di.value = String(MG_.desc).replace('.', ',');
+    if (rg && MG_.de !== 'rng') rg.value = Math.min(30, MG_.desc);
   }
-  MG_.desdeRng = false;
+  MG_.de = '';
   S.innerHTML = '<div class="mg-sem" style="border-color:' + col[0] + ';background:' + col[1] + '">' +
     '<div class="mg-luces">' + ['#dc2626', '#d97706', '#16a34a'].map(function(c) { return '<span style="background:' + (c === col[0] ? c : '#e5e7eb') + (c === col[0] ? ';box-shadow:0 0 14px ' + c : '') + '"></span>'; }).join('') + '</div>' +
     '<div style="flex:1"><div style="font-size:13px;font-weight:800;color:' + col[0] + '">' + col[2] + ' · ' + col[3] + '</div><div style="font-size:30px;font-weight:800;color:' + col[0] + '">' + (g < 0 ? 'Pierde ' + mgPct(-g) : 'Gana ' + mgPct(g)) + '</div>' +
