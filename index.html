@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "48ae1f812fe1"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "23b8a6591028"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1425,7 +1425,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271933';
+var EMA_BUILD = '202610271959';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -11769,7 +11769,7 @@ function pnEsc(s) { return String(s === undefined || s === null ? '' : s).replac
 function pnPlata(n) { n = Number(n) || 0; return '$ ' + Math.round(n).toLocaleString('es-AR'); }
 function pnNorm(s) { return String(s || '').toUpperCase().replace(/×/g, 'X').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]/g, ''); }
 function pnFecha(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
-var PN_RUBROS = [['', 'Todos'], ['AUTO', '🚗 Auto'], ['CAMIONETA', '🛻 Camioneta'], ['CAMION', '🚚 Camión'], ['AGRICOLA', '🚜 Agrícola'], ['INDUSTRIAL', '🏗 Industrial']];
+var PN_RUBROS = [['', 'Todos'], ['AUTO', '🚗 Auto'], ['CAMIONETA', '🛻 Camioneta'], ['CAMION', '🚚 Camión'], ['AGRICOLA', '🚜 Agrícola'], ['INDUSTRIAL', '🏗 Industrial'], ['INSUMOS', '🔧 Insumos']];
 
 async function renderPrecios() {
   var el = pnEl(); if (!el) return;
@@ -12158,7 +12158,7 @@ function pnCotPdfBajar() {
   setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
 }
 // ── Listas de precios para descargar o imprimir (por rubro) ──
-var PN_RUB_L = [['AUTO', 'Auto'], ['CAMIONETA', 'Camioneta'], ['CAMION', 'Camión'], ['AGRICOLA', 'Agrícola'], ['INDUSTRIAL', 'Industrial']];
+var PN_RUB_L = [['AUTO', 'Auto'], ['CAMIONETA', 'Camioneta'], ['CAMION', 'Camión'], ['AGRICOLA', 'Agrícola'], ['INDUSTRIAL', 'Industrial'], ['INSUMOS', 'Insumos y accesorios']];
 function pnListasHoja() {
   pnHojaCerrar();
   var h = '<div class="pn-hoja" onclick="event.stopPropagation()"><div class="pn-hc"><h3>📄 Listas de precios</h3><button class="x" onclick="pnHojaCerrar()">✕</button></div>' +
@@ -16355,8 +16355,8 @@ async function renderMargen() {
 // Tipo de cubierta: achica la búsqueda (Auto, Camioneta, Camión, Agrícola…)
 function mgChips() {
   var rs = []; MG_.d.ARTICULOS.forEach(function(a) { if (a.RUBRO && rs.indexOf(a.RUBRO) === -1) rs.push(a.RUBRO); });
-  var ord = ['AUTO', 'CAMIONETA', 'CAMION', 'AGRICOLA', 'INDUSTRIAL']; rs.sort(function(a, b) { var x = ord.indexOf(a), y = ord.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
-  var nom = { AUTO: '🚗 Auto', CAMIONETA: '🚙 Camioneta', CAMION: '🚛 Camión', AGRICOLA: '🚜 Agrícola', INDUSTRIAL: '🏗 Industrial' };
+  var ord = ['AUTO', 'CAMIONETA', 'CAMION', 'AGRICOLA', 'INDUSTRIAL', 'INSUMOS']; rs.sort(function(a, b) { var x = ord.indexOf(a), y = ord.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
+  var nom = { AUTO: '🚗 Auto', CAMIONETA: '🚙 Camioneta', CAMION: '🚛 Camión', AGRICOLA: '🚜 Agrícola', INDUSTRIAL: '🏗 Industrial', INSUMOS: '🔧 Insumos' };
   return [''].concat(rs).map(function(r) { return '<button class="btn btn-sm ' + (MG_.rubro === r ? 'btn-p' : 'btn-s') + '" onclick="MG_.rubro=\'' + r + '\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">' + (r ? (nom[r] || r) : 'Todas') + '</button>'; }).join('');
 }
 function mgNorm(t) { return String(t || '').toUpperCase().replace(/[\s\/\-.,R]/g, ''); }
