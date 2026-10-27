@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "99425ea9d096"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ae2a5bcacad8"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -15,6 +15,13 @@
   var meta = function(n, c) { var e = document.createElement('meta'); e.name = n; e.content = c; h.appendChild(e); };
   link('manifest', 'precios.webmanifest'); link('apple-touch-icon', 'icono-precios-192.png'); link('icon', 'icono-precios-192.png');
   meta('apple-mobile-web-app-title', 'Vulcan Precios'); meta('apple-mobile-web-app-capable', 'yes'); meta('mobile-web-app-capable', 'yes'); meta('theme-color', '#1f2a5c');
+})();
+// Con ?docs entra directo a buscar documentos para el cliente; con ?cascos a la carga de cascos (celular, reemplaza el talonario)
+(function() {
+  var q = location.search + location.hash;
+  if (/[?&#]docs/.test(q)) window.EMA_MODO_DOCS = true;
+  if (/[?&#]cascos/.test(q)) window.EMA_MODO_CASCOS = true;
+  if (window.EMA_MODO_DOCS || window.EMA_MODO_CASCOS) { var m = document.createElement('meta'); m.name = 'theme-color'; m.content = '#1f2a5c'; document.head.appendChild(m); }
 })();
 // Con ?fichaje entra directo a la pantalla de entrada y salida del personal (tablet de la puerta)
 (function() {
@@ -67,6 +74,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 #sidebar{width:240px;min-width:240px;background:#1e293b;display:flex;flex-direction:column;overflow-y:auto;}
 #main{flex:1;overflow-y:auto;}
 body.modo-puesto #sidebar,body.modo-puesto #mob-menu{display:none!important;}
+body.modo-cascos #page-produccion-cubiertas .tabs,body.modo-cascos #page-produccion-cubiertas .page-hd .no-print{display:none!important;}
 .sb-header{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.08);}
 .sb-logo{font-size:24px;font-weight:900;color:#fff;font-family:var(--mono);letter-spacing:-1px;}
 .sb-tagline{font-size:10px;color:#64748b;letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
@@ -278,6 +286,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
       <div class="nav-item" data-page="carga-produccion"><span class="nav-icon"><i class="fas fa-cog"></i></span> Producción</div>
       <div class="nav-item" data-page="ordenes-trabajo"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Órdenes de Trabajo</div>
       <div class="nav-item" data-page="produccion-cubiertas"><span class="nav-icon"><i class="fas fa-fire"></i></span> Producción por cubierta</div>
+      <div class="nav-item" data-page="documentos"><span class="nav-icon"><i class="fas fa-file-pdf"></i></span> Documentos para el cliente</div>
       <div class="nav-item" data-page="puesto-estacion"><span class="nav-icon"><i class="fas fa-tablet-alt"></i></span> Puesto de estación</div>
       <div class="nav-item" data-page="recetas"><span class="nav-icon"><i class="fas fa-flask"></i></span> Recetas</div>
       <div class="nav-item" data-page="stock-insumos"><span class="nav-icon"><i class="fas fa-box-open"></i></span> Stock de insumos</div>
@@ -351,6 +360,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-recetas" class="hidden"></div>
     <div id="page-stock-insumos" class="hidden"></div>
     <div id="page-produccion-cubiertas" class="hidden"></div>
+    <div id="page-documentos" class="hidden"></div>
     <div id="page-puesto-estacion" class="hidden"></div>
     <div id="page-precios-nuevos" class="hidden"></div>
     <div id="page-pedidos-web" class="hidden"></div>
@@ -672,7 +682,7 @@ function _mcDelAll(){ _MC={}; }
 // El servidor devuelve un "pase" (token) que acompaña cada llamada.
 // ══════════════════════════════════════════════════════════════════
 var PAGINA_MODULO = {
-  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'precios-nuevos':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
+  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'precios-nuevos':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
   'carga-gastos':'GASTOS', 'carga-financiero':'ADMINISTRACION', 'carga-transporte':'ADMINISTRACION',
   'carga-impositivo':'ADMINISTRACION', 'carga-sueldos':'ADMINISTRACION', 'asistencia':'ADMINISTRACION', 'fichaje':'PRODUCCION', 'carga-combustible':'COMBUSTIBLE',
   'cheques':'COBRANZAS', 'cobranzas':'COBRANZAS', 'caja':'COBRANZAS', 'cta-cte-clientes':'COBRANZAS',
@@ -1092,6 +1102,7 @@ function getPage(name) {
     'produccion-cubiertas': function(){ if(typeof renderProdCub!=='undefined') renderProdCub(); },
     'puesto-estacion': function(){ if(typeof renderPuesto!=='undefined') renderPuesto(); },
     'precios-nuevos': function(){ if(typeof renderPrecios!=='undefined') renderPrecios(); },
+    'documentos': function(){ if(typeof renderDocs!=='undefined') renderDocs(); },
     'pedidos-web': function(){ if(typeof renderPedidosWeb!=='undefined') renderPedidosWeb(); },
     'carga-compras': typeof renderCargaCompras !== 'undefined' ? renderCargaCompras : null,
     'carga-gastos': typeof renderCargaGastos !== 'undefined' ? renderCargaGastos : null,
@@ -1236,6 +1247,9 @@ async function appInit() {
   var rolP = String((SES && SES.rol) || '').toUpperCase(), adminP = rolP.indexOf('SUPER') !== -1 || rolP.indexOf('ADMIN') !== -1;
   // Pantalla de fichaje (tablet de la entrada): siempre sola, sin menú, también para un administrador
   if (window.EMA_MODO_FICHAJE && puedeVerPagina('fichaje')) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-fichaje'); inicio = 'fichaje'; document.title = 'Vulcan Fichaje'; }
+  // Documentos para el cliente (?docs) y carga de cascos desde el celular (?cascos): pantalla sola, sin menú
+  else if (window.EMA_MODO_DOCS && puedeVerPagina('documentos')) { document.body.classList.add('modo-puesto'); inicio = 'documentos'; document.title = 'Vulcan Documentos'; }
+  else if (window.EMA_MODO_CASCOS && puedeVerPagina('produccion-cubiertas')) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-cascos'); if (typeof PC_ !== 'undefined') PC_.tab = 'cascos'; inicio = 'produccion-cubiertas'; document.title = 'Vulcan Recepción'; }
   else if (!adminP && (window.EMA_MODO_PUESTO || rolP.indexOf('OPERA') !== -1) && puedeVerPagina('puesto-estacion')) { document.body.classList.add('modo-puesto'); inicio = 'puesto-estacion'; document.title = 'Vulcan Estaciones'; }
   // Lista de precios sola (link ?precios o rol vendedor). El administrador entra a la misma pantalla pero con el menú.
   else if (window.EMA_MODO_PRECIOS && puedeVerPagina('precios-nuevos')) { if (!adminP) document.body.classList.add('modo-puesto'); inicio = 'precios-nuevos'; document.title = 'Vulcan Precios'; }
@@ -8410,6 +8424,7 @@ function pcPintar() {
     ['rech', 'Rechazadas' + (nDev ? ' (' + nDev + ' a devolver)' : '')], ['costos', 'Costos'], ['herramental', 'Herramental y herramientas'], ['alarmas', '⚠ Alarmas'], ['hist', 'Historial'], ['config', 'Configuración'], ['pesaje', '⚖ Pesaje y medición']];
   el.innerHTML = '<div class="page-hd"><div><div class="page-title">Producción por cubierta</div><div class="page-sub">Cada cubierta con su marca grabada: recepción, carga de autoclave, estaciones, insumos reales y costo.</div></div>' +
     '<div class="flex gap2 no-print"><input class="fi" id="pc-marca-q" placeholder="Buscar marca..." style="width:170px"/><button class="btn btn-s" onclick="pcHistorial($v(\'pc-marca-q\'))"><i class="fas fa-search"></i> Vida de la cubierta</button><button class="btn btn-p" onclick="pcAyuda(pcAyudaClave())">❓ Ayuda</button></div></div>' +
+    (document.body.classList.contains('modo-cascos') ? '<div class="flex gap2 mb3" style="flex-wrap:wrap"><b style="font-size:18px;flex:1">📥 Recepción de cascos</b><a class="btn btn-s" href="?docs">📄 Documentos</a></div>' : '') +
     '<div class="tabs mb3">' + tabs.map(function(t) { var on = PC_.tab === t[0] || (t[0] === 'herramental' && PC_.tab === 'equipos'); return '<div class="tab' + (on ? ' active' : '') + '" onclick="PC_.tab=\'' + (t[0] === 'herramental' ? (PC_.herrSub || 'herramental') : t[0]) + '\';pcPintar()">' + t[1] + '</div>'; }).join('') + '</div>' +
     // Una sola pestaña para todo lo que no es insumo: las piezas del autoclave y las herramientas de las estaciones
     (PC_.tab === 'herramental' || PC_.tab === 'equipos' ? '<div class="flex gap2 mb3" style="flex-wrap:wrap;row-gap:8px">' + [['herramental', 'Inner y envelope del autoclave (piezas con usos)'], ['equipos', 'Herramientas de las estaciones y entregas al personal']].map(function(x) { return '<button class="btn ' + (PC_.tab === x[0] ? 'btn-p' : 'btn-s') + '" onclick="PC_.tab=PC_.herrSub=\'' + x[0] + '\';pcPintar()">' + x[1] + '</button>'; }).join('') + '</div>' : '') +
@@ -8580,9 +8595,10 @@ function pcCambioTrab(idCub) {
   var cs = (PC_.d.cambiosTrabajo || []).filter(function(x) { return String(x.ID_CUB) === String(idCub); });
   return cs.map(function(x) { return '<div style="font-size:9px;color:#b45309">Cambiado de ' + pcEsc(x.ANTES) + ' en la inspección · ' + pcEsc(x.MOTIVO) + ' · decidió ' + pcEsc(x.DECIDE) + '</div>'; }).join('');
 }
-function pcImpOTrab(id) {
+async function pcImpOTrab(id) {
   var d = PC_.d, o = (d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0];
   if (!o) { toast('No encontré la orden de trabajo', 'r2'); return; }
+  var firma = ''; if (o.FIRMA_ID) { try { var fi = await asImg('vt_as_img_get', { tok: SES.token, nid: Number(o.FIRMA_ID) }); if (fi && fi.ok) firma = fi.data; } catch (ef) { firma = ''; } }
   var cs = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(id) && c.ESTADO !== 'ANULADA'; }).sort(function(a, b) { return a.ID_CUB - b.ID_CUB; });
   var cli = d.clientes.filter(function(c) { return String(c.ID_CLIENTE) === String(o.ID_CLIENTE); })[0] || {};
   var h = pcEncImp('ORDEN DE TRABAJO', o.NRO) +
@@ -8591,8 +8607,43 @@ function pcImpOTrab(id) {
     '<table><thead><tr><th>#</th><th>Marca grabada</th><th>N° interno</th><th>DOT</th><th>Tipo</th><th>Medida</th><th>Marca casco</th><th>Trabajo</th><th>Observaciones</th></tr></thead><tbody>' +
     cs.map(function(c, i) { return '<tr><td>' + (i + 1) + '</td><td><b>' + pcEsc(c.MARCA || '') + '</b></td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcDotTxt(c.DOT) + '</td><td>' + pcEsc(c.TIPO) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + pcCambioTrab(c.ID_CUB) + (String(c.PARCHE_INCLUIDO || '') ? '<div style="font-size:9px;color:#444">' + pcEsc(pcParcheTxt(c)) + ' (solo esta)</div>' : '') + '</td><td style="width:22%"></td></tr>'; }).join('') +
     '</tbody></table><div class="nota">Cada cubierta se sigue por su marca grabada, que se le graba al recibirla. DOT: el que trae la cubierta (sin DOT si no tiene o no se lee).</div>' +
-    '<div class="firmas"><div>Entregó (cliente)</div><div>Recibió (Vulcan Tread)</div></div>';
+    (firma ? '<div class="firmas"><div style="border-top:0"><img src="' + firma + '" style="max-height:90px;max-width:100%;display:block;margin:0 auto"><div style="border-top:1px solid #111;padding-top:4px">Entregó (cliente): ' + pcEsc(o.FIRMA_NOMBRE || '') + ' · ' + fmtDT(+o.FIRMA_FECHA) + '</div></div><div style="align-self:flex-end">Recibió (Vulcan Tread)</div></div>'
+      : '<div class="firmas"><div>Entregó (cliente)</div><div>Recibió (Vulcan Tread)</div></div>');
   pcImprimir('Orden de trabajo ' + o.NRO, h);
+}
+// ── Firma del cliente en la pantalla (celular o tablet): reemplaza la firma del talonario de papel ──
+function pcFirmaOT(id) {
+  var o = (PC_.d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0]; if (!o) return;
+  var n = PC_.d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(id) && c.ESTADO !== 'ANULADA'; }).length;
+  showModal('<div class="mh"><span class="mt">✍ Firma del cliente · ' + pcEsc(o.NRO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div style="font-size:14px;margin-bottom:6px"><b>' + pcEsc(o.CLIENTE) + '</b> deja <b>' + n + (n === 1 ? ' casco' : ' cascos') + '</b>. Firmá con el dedo en el recuadro.</div>' +
+    '<canvas id="pc-fir-c" style="width:100%;height:200px;border:2px dashed var(--border);border-radius:10px;background:#fff;touch-action:none"></canvas>' +
+    '<div class="flex gap2 mt2" style="align-items:flex-end;flex-wrap:wrap"><div style="flex:1 1 220px"><label class="fl">Aclaración (nombre de quien firma)</label><input class="fi" id="pc-fir-n" style="width:100%" placeholder="Nombre y apellido"></div><button class="btn btn-s" onclick="pcFirmaBorrar()">Borrar</button></div>' +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pc-fir-ok" onclick="pcFirmaGuardar(' + id + ')">Guardar firma</button></div>', 'md-lg');
+  setTimeout(function() {
+    var cv = $id('pc-fir-c'); if (!cv) return; var r = cv.getBoundingClientRect(); cv.width = Math.round(r.width); cv.height = Math.round(r.height);
+    var g = cv.getContext('2d'); g.lineWidth = 2.5; g.lineCap = 'round'; g.strokeStyle = '#111'; PC_.firmaHay = false; var on = false;
+    var pt = function(e) { var b = cv.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; };
+    cv.onpointerdown = function(e) { on = true; var p = pt(e); g.beginPath(); g.moveTo(p.x, p.y); cv.setPointerCapture(e.pointerId); };
+    cv.onpointermove = function(e) { if (!on) return; var p = pt(e); g.lineTo(p.x, p.y); g.stroke(); PC_.firmaHay = true; };
+    cv.onpointerup = cv.onpointercancel = function() { on = false; };
+  }, 80);
+}
+function pcFirmaBorrar() { var cv = $id('pc-fir-c'); if (!cv) return; cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); PC_.firmaHay = false; }
+async function pcFirmaGuardar(id) {
+  var o = (PC_.d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0], cv = $id('pc-fir-c'), nm = $v('pc-fir-n').trim(), b = $id('pc-fir-ok');
+  if (!PC_.firmaHay) { toast('Falta la firma', 'r2'); return; }
+  if (nm.length < 3) { toast('Escribí el nombre de quien firma', 'r2'); $id('pc-fir-n').focus(); return; }
+  b.disabled = true; b.textContent = 'Guardando…';
+  try {
+    var c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = cv.height; var g2 = c2.getContext('2d'); g2.fillStyle = '#fff'; g2.fillRect(0, 0, c2.width, c2.height); g2.drawImage(cv, 0, 0);
+    var fi = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'FIRMA_OT', ref: o.NRO, data: c2.toDataURL('image/jpeg', 0.8) });
+    if (!fi || !fi.ok) { toast((fi && fi.error) || 'No se pudo guardar la firma', 'r2'); return; }
+    var r = await gsRun('gsPC_OTrabFirma', id, String(fi.id), nm);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    o.FIRMA_ID = String(fi.id); o.FIRMA_NOMBRE = nm; o.FIRMA_FECHA = Date.now();
+    closeModal(); toast('Firma guardada ✓', 'g'); if (PC_.tab === 'cascos') pcPintar(); pcImpOTrab(id);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Guardar firma'; } }
 }
 // Orden de servicio: hoja de carga de la línea, con casilleros para tildar cada estación en papel
 // Informe de la orden de servicio (en proceso o cerrada): cómo terminó cada cubierta, estaciones, insumos reales, herramental, tiempo y costo
@@ -8670,7 +8721,7 @@ function pcCascos() {
   var d = PC_.d;
   if (!PC_.kf.length) PC_.kf = [pcCasVacio()];
   var ult = PC_.ultOT ? (d.ordTrabajo || []).filter(function(o) { return o.NRO === PC_.ultOT; })[0] : null;
-  var h = pcAvisoLinea() + (ult ? '<div class="al al-g mb3" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>✓ Grabada · N° de orden <b style="font-size:18px">' + pcEsc(ult.NRO) + '</b> · ' + pcEsc(ult.CLIENTE) + (ult.NRO_MANUAL ? ' · boleta ' + pcEsc(ult.NRO_MANUAL) : '') + '<br><span style="font-size:12px">Anotá ese número en la boleta o imprimí la orden.</span></span><button class="btn btn-p btn-sm" onclick="pcImpOTrab(' + ult.ID_OTRAB + ')"><i class="fas fa-print"></i> Imprimir la orden de trabajo</button></div>' : '') +
+  var h = pcAvisoLinea() + (ult ? '<div class="al al-g mb3" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>✓ Grabada · N° de orden <b style="font-size:18px">' + pcEsc(ult.NRO) + '</b> · ' + pcEsc(ult.CLIENTE) + (ult.NRO_MANUAL ? ' · boleta ' + pcEsc(ult.NRO_MANUAL) : '') + '<br><span style="font-size:12px">' + (ult.FIRMA_ID ? '✓ Firmada por ' + pcEsc(ult.FIRMA_NOMBRE) + '. Mandale el comprobante al cliente.' : 'Hacé firmar al cliente en la pantalla y mandale el comprobante.') + '</span></span><span class="flex gap2" style="flex-wrap:wrap">' + (ult.FIRMA_ID ? '' : '<button class="btn btn-p btn-sm" onclick="pcFirmaOT(' + ult.ID_OTRAB + ')">✍ Firma del cliente</button>') + '<button class="btn ' + (ult.FIRMA_ID ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="pcImpOTrab(' + ult.ID_OTRAB + ')"><i class="fas fa-file-pdf"></i> Comprobante (PDF)</button></span></div>' : '') +
     '<div class="card mb3"><div class="card-hd"><span class="card-title">Carga de la boleta: cascos y orden de trabajo</span><span class="tdim" style="font-size:12px">Se cargan los cascos con su trabajo y al grabar queda hecha la orden de trabajo.</span></div><div class="card-body">' +
     '<div class="pc-fila3"><div class="fg"><label class="fl">Cliente *</label><input class="fi" id="pc-k-cli" list="pc-clientes" placeholder="Escribí el nombre..." value="' + pcEsc(pcCliTxt(PC_.kcli)) + '"/>' + pcCliList() + '</div>' +
     pcNroAuto('pc-k-man') +
@@ -15839,6 +15890,76 @@ async function agEstGuardar(id) {
 async function agSacar(id) {
   var m = $v('ag-n'); if (m.length < 3) { toast('Escribí en «Nota» por qué se saca', 'r2'); $id('ag-n').focus(); return; }
   try { var r = await gsRun('gsAG_Anular', id, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Sacado de la agenda', 'g'); renderAgenda(); } catch (e) { toast(e.message, 'r2'); }
+}
+</script>
+
+<style>
+#page-documentos .dc-wrap{max-width:820px;margin:0 auto;padding:4px 0 40px}
+.dc-q{width:100%;font-size:18px;padding:12px 14px;border:2px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text)}
+.dc-tipos{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.dc-chip{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:18px;padding:6px 12px;font-size:14px;cursor:pointer}
+.dc-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dc-it{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin:8px 0;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.dc-it .dc-t{font-weight:700;font-size:15px}
+.dc-it .dc-s{font-size:13px;color:var(--dim)}
+.dc-it .dc-acc{display:flex;gap:6px;flex-wrap:wrap}
+.dc-it .dc-acc button{min-height:40px;font-size:14px}
+.dc-cli{font-size:13px;color:var(--accent);font-weight:700;margin:14px 0 2px;text-transform:uppercase}
+</style>
+<script>
+// ── Documentos para el cliente (pensado para el celular): buscar y bajar o compartir en PDF
+//    la orden de trabajo (con la firma del cliente), los remitos (y la foto firmada) y el certificado de trazabilidad de cada cubierta ──
+var DC_ = { q: '', tipo: '', rem: null };
+async function renderDocs() {
+  var el = $id('page-documentos'); if (!el) return;
+  el.innerHTML = '<div class="dc-wrap"><div class="al">Cargando…</div></div>';
+  try {
+    if (typeof PC_ === 'undefined' || !PC_.d) { PC_.d = await gsRun('gsPC_Datos'); }
+    var r = await gsRun('gsPC_Remitos', ''); DC_.rem = (r && r.REMITOS) || []; window.PC_REM = DC_.rem;
+  } catch (e) { el.innerHTML = '<div class="dc-wrap"><div class="al al-r">' + pcEsc(e.message) + '</div></div>'; return; }
+  docsPintar();
+}
+function docsNorm(s) { return String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\s\-.\/]/g, ''); }
+function docsPintar() {
+  var el = $id('page-documentos');
+  el.innerHTML = '<div class="dc-wrap"><div class="page-hd" style="margin-bottom:6px"><div><div class="page-title">📄 Documentos para el cliente</div><div class="page-sub">Buscá y mandá en PDF la orden de trabajo, el remito o el certificado de una cubierta.</div></div>' + (document.body.classList.contains('modo-puesto') ? '<a class="btn btn-s" href="?cascos">📥 Recibir cascos</a>' : '') + '</div>' +
+    '<input class="dc-q" id="dc-q" placeholder="Cliente, marca grabada, DOT, OT, remito…" value="' + pcEsc(DC_.q) + '" autocomplete="off">' +
+    '<div class="dc-tipos">' + [['', 'Todo'], ['OT', 'Órdenes de trabajo'], ['REM', 'Remitos'], ['CUB', 'Cubiertas (certificado)']].map(function(t) { return '<button class="dc-chip' + (DC_.tipo === t[0] ? ' on' : '') + '" onclick="DC_.tipo=\'' + t[0] + '\';docsPintar()">' + t[1] + '</button>'; }).join('') + '</div>' +
+    '<div id="dc-res"></div></div>';
+  var q = $id('dc-q'); q.oninput = function() { DC_.q = this.value; docsRes(); }; docsRes();
+}
+function docsRes() {
+  var d = PC_.d, q = docsNorm(DC_.q), box = $id('dc-res'), items = [];
+  var pasa = function(txt) { return !q || docsNorm(txt).indexOf(q) !== -1; };
+  if (!DC_.tipo || DC_.tipo === 'OT') (d.ordTrabajo || []).forEach(function(o) {
+    if (o.ESTADO === 'ANULADA') return;
+    var cs = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(o.ID_OTRAB) && c.ESTADO !== 'ANULADA'; });
+    if (!pasa([o.NRO, o.CLIENTE, o.NRO_MANUAL].concat(cs.map(function(c) { return c.MARCA + ' ' + c.DOT; })).join(' '))) return;
+    items.push({ cli: o.CLIENTE, f: +o.FECHA, h: '<div><div class="dc-t">Orden de trabajo ' + pcEsc(o.NRO) + '</div><div class="dc-s">' + fmtD(+o.FECHA) + ' · ' + cs.length + (cs.length === 1 ? ' cubierta' : ' cubiertas') + ' · ' + (o.FIRMA_ID ? '✓ firmada por ' + pcEsc(o.FIRMA_NOMBRE) : 'sin firma del cliente') + '</div></div>' +
+      '<div class="dc-acc">' + (o.FIRMA_ID ? '' : '<button class="btn btn-s" onclick="pcFirmaOT(' + o.ID_OTRAB + ')">✍ Firmar</button>') + '<button class="btn btn-p" onclick="pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-file-pdf"></i> PDF</button></div>' });
+  });
+  if (!DC_.tipo || DC_.tipo === 'REM') (DC_.rem || []).forEach(function(x, i) {
+    if (!pasa([x.NRO, x.CLIENTE, x.NRO_OT].concat((x.ITEMS || []).map(function(t) { return t.MARCA + ' ' + (t.DOT || ''); })).join(' '))) return;
+    items.push({ cli: x.CLIENTE, f: +x.FECHA, h: '<div><div class="dc-t">Remito ' + pcEsc(x.NRO) + '</div><div class="dc-s">' + fmtD(+x.FECHA) + ' · ' + x.N_TERMINADAS + ' terminadas' + (+x.N_DEVUELTAS ? ' · ' + x.N_DEVUELTAS + ' devueltas' : '') + ' · ' + (x.ESTADO === 'ENTREGADO' ? '✓ entregado' : 'falta la foto firmada') + '</div></div>' +
+      '<div class="dc-acc">' + (x.FOTO_FIRMA ? '<button class="btn btn-s" onclick="asVerImg(' + Number(x.FOTO_FIRMA) + ',\'Remito ' + pcEsc(x.NRO) + ' firmado\')">📷 Firmado</button>' : '') + '<button class="btn btn-p" onclick="pcImpRemito(' + i + ')"><i class="fas fa-file-pdf"></i> PDF</button></div>' });
+  });
+  if ((!DC_.tipo && q.length >= 3) || DC_.tipo === 'CUB') d.cubiertas.forEach(function(c) {
+    if (c.ESTADO === 'ANULADA' || !c.MARCA) return;
+    if (!pasa([c.MARCA, c.DOT, c.CLIENTE, c.MEDIDA].join(' '))) return;
+    items.push({ cli: c.CLIENTE, f: +c.FECHA_RECEPCION || 0, h: '<div><div class="dc-t">Cubierta ' + pcEsc(c.MARCA) + '</div><div class="dc-s">DOT ' + (c.DOT ? pcEsc(c.DOT) : 'sin DOT') + ' · ' + pcEsc((c.TIPO || '') + ' ' + (c.MEDIDA || '')) + ' · ' + pcEsc({ EN_ESPERA: 'esperando', EN_OT: 'en la línea', TERMINADA: 'terminada', RECHAZADA: 'no apta' }[c.ESTADO] || c.ESTADO) + '</div></div>' +
+      '<div class="dc-acc"><button class="btn btn-p" onclick="docsCert(\'' + pcEsc(c.MARCA) + '\')"><i class="fas fa-file-pdf"></i> Certificado</button></div>' });
+  });
+  if (!items.length) { box.innerHTML = '<div class="al">' + (q ? 'No encontré nada con «' + pcEsc(DC_.q) + '».' : 'Escribí para buscar.') + '</div>'; return; }
+  items.sort(function(a, b) { return String(a.cli).localeCompare(String(b.cli)) || b.f - a.f; });
+  var lim = items.slice(0, 80), ant = null, h = '';
+  lim.forEach(function(x) { if (x.cli !== ant) { h += '<div class="dc-cli">' + pcEsc(x.cli || '') + '</div>'; ant = x.cli; } h += '<div class="dc-it">' + x.h + '</div>'; });
+  if (items.length > lim.length) h += '<div class="tdim" style="margin-top:8px">Hay ' + items.length + ' resultados: escribí más para achicar la lista.</div>';
+  box.innerHTML = h;
+}
+// Certificado de trazabilidad: arma la vida de la cubierta y abre el PDF para el cliente
+async function docsCert(marca) {
+  toast('Armando el certificado…', 'b');
+  try { await pcHistorial(marca); closeModal(); if (PC_.vida && PC_.vida.r && PC_.vida.r.vidas.length) pcVidaImprimir(PC_.vida.r.vidas.length - 1); else toast('No encontré la cubierta', 'r2'); } catch (e) { toast(e.message, 'r2'); }
 }
 </script>
 
