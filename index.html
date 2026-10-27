@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "bc180533046d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "48ae1f812fe1"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1425,7 +1425,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271931';
+var EMA_BUILD = '202610271933';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -8681,16 +8681,24 @@ async function pcImpOTrab(id) {
   var firma = ''; if (o.FIRMA_ID) { try { var fi = await asImg('vt_as_img_get', { tok: SES.token, nid: Number(o.FIRMA_ID) }); if (fi && fi.ok) firma = fi.data; } catch (ef) { firma = ''; } }
   var cs = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(id) && c.ESTADO !== 'ANULADA'; }).sort(function(a, b) { return a.ID_CUB - b.ID_CUB; });
   var cli = d.clientes.filter(function(c) { return String(c.ID_CLIENTE) === String(o.ID_CLIENTE); })[0] || {};
-  var h = pcEncImp('ORDEN DE TRABAJO', pcOTPrin(o), pcOTSec(o)) +
-    '<div style="display:flex;gap:10px;margin:0 0 10px;flex-wrap:wrap"><div style="flex:1;min-width:200px;border:2px solid #111;border-radius:8px;padding:8px 12px"><div style="font-size:10px;color:#555;text-transform:uppercase">' + (o.NRO_MANUAL ? 'N° de boleta (talonario)' : 'N° de orden') + '</div><div style="font-size:24px;font-weight:800">' + pcEsc(o.NRO_MANUAL || o.NRO) + '</div></div>' +
-    (o.NRO_MANUAL ? '<div style="flex:1;min-width:200px;border:1px solid #999;border-radius:8px;padding:8px 12px"><div style="font-size:10px;color:#555;text-transform:uppercase">Registro en el sistema</div><div style="font-size:18px;font-weight:700">' + pcEsc(o.NRO) + '</div></div>' : '') + '</div>' +
-    '<div class="dat"><div><b>Cliente</b>' + pcEsc(o.CLIENTE) + '</div><div><b>Fecha</b>' + fmtD(+o.FECHA) + '</div><div><b>Cubiertas</b>' + cs.length + '</div>' +
-    (cli.TELEFONO ? '<div><b>Teléfono</b>' + pcEsc(cli.TELEFONO) + '</div>' : '') + (cli.CUIT ? '<div><b>CUIT</b>' + pcEsc(cli.CUIT) + '</div>' : '') + '<div><b>Parche</b>' + pcEsc(pcParcheTxt(o)) + '</div>' + (o.OBSERVACIONES ? '<div style="grid-column:span 2"><b>Observaciones</b>' + pcEsc(o.OBSERVACIONES) + '</div>' : '') + '</div>' +
-    '<table><thead><tr><th>#</th><th>Marca grabada</th><th>N° interno</th><th>DOT</th><th>Tipo</th><th>Medida</th><th>Marca casco</th><th>Trabajo</th><th>Observaciones</th></tr></thead><tbody>' +
-    cs.map(function(c, i) { return '<tr><td>' + (i + 1) + '</td><td><b>' + pcEsc(c.MARCA || '') + '</b></td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcDotTxt(c.DOT) + '</td><td>' + pcEsc(c.TIPO) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + pcCambioTrab(c.ID_CUB) + (String(c.PARCHE_INCLUIDO || '') ? '<div style="font-size:9px;color:#444">' + pcEsc(pcParcheTxt(c)) + ' (solo esta)</div>' : '') + '</td><td style="width:22%"></td></tr>'; }).join('') +
-    '</tbody></table><div class="nota">Cada cubierta se sigue por su marca grabada, que se le graba al recibirla. DOT: el que trae la cubierta (sin DOT si no tiene o no se lee).</div>' +
-    (firma ? '<div class="firmas"><div style="border-top:0"><img src="' + firma + '" style="max-height:90px;max-width:100%;display:block;margin:0 auto"><div style="border-top:1px solid #111;padding-top:4px">Entregó (cliente): ' + pcEsc(o.FIRMA_NOMBRE || '') + ' · ' + fmtDT(+o.FIRMA_FECHA) + '</div></div><div style="align-self:flex-end">Recibió (Vulcan Tread)</div></div>'
-      : '<div class="firmas"><div>Entregó (cliente)</div><div>Recibió (Vulcan Tread)</div></div>');
+  // Diseño compacto (como la orden del sistema anterior): datos en una grilla y renglones finos
+  var fh = new Date(+o.FECHA), hh = ('0' + fh.getHours()).slice(-2) + ':' + ('0' + fh.getMinutes()).slice(-2);
+  var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
+  var cel = function(t, v, est) { return '<td class="l">' + t + '</td><td class="v"' + (est ? ' style="' + est + '"' : '') + '>' + v + '</td>'; };
+  var h = '<style>.otc{width:100%;border-collapse:collapse;margin:0 0 6px;font-size:10.5px}.otc td{border:1px solid #9aa4b2;padding:3px 6px;vertical-align:middle}.otc td.l{background:#e8edf3;color:#334;font-size:9.5px;white-space:nowrap;width:1%}.otc td.v{font-weight:700}' +
+      '.otd{width:100%;border-collapse:collapse;font-size:10.5px}.otd th{background:#e8edf3;color:#223;font-size:9px;text-transform:none;padding:3px 5px;border:1px solid #9aa4b2}.otd td{padding:2px 5px;border:0;border-bottom:1px solid #e3e7ec}.otd tr:nth-child(even) td{background:#f7f9fb}.otd td.n{color:#666;width:16px}</style>' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><div style="display:flex;gap:10px;align-items:center"><img src="' + logo + '" crossorigin="anonymous" style="height:40px;border-radius:4px"/><div><div style="font-weight:800;font-size:13px;color:#14213d">VULCAN TREAD NEUMÁTICOS S.R.L.</div><div style="font-size:10.5px;color:#14213d">Planta Salta</div></div></div>' +
+    '<div style="text-align:right"><div style="font-weight:800;font-size:14px;color:#14213d">Orden de Trabajo</div><div style="font-size:10px;color:#444">Operador: ' + pcEsc(o.USUARIO || '—') + ' · impresa ' + fmtD(Date.now()) + '</div></div></div>' +
+    '<table class="otc"><tr>' + cel('Orden de trabajo', '<span style="font-size:14px">' + pcEsc(o.NRO) + '</span>') + cel('Fecha y hora', fmtD(+o.FECHA) + (hh !== '00:00' ? ' ' + hh : '')) + cel('Orden manual N°', '<span style="font-size:14px">' + pcEsc(o.NRO_MANUAL || '—') + '</span>') + '</tr>' +
+    '<tr>' + cel('Razón social', (cli.ID_CLIENTE ? '<span style="color:#666;font-weight:400">' + pcEsc(cli.ID_CLIENTE) + '</span> ' : '') + pcEsc(o.CLIENTE), '') + cel('CUIT', pcEsc(cli.CUIT || '—')) + cel('Condición IVA', pcEsc(cli.COND_IVA || '—')) + '</tr>' +
+    '<tr>' + cel('Domicilio', pcEsc(cli.DIRECCION || '—')) + cel('Localidad', pcEsc([cli.LOCALIDAD, cli.CP ? '(' + cli.CP + ')' : ''].join(' ').trim() || '—')) + cel('Provincia', pcEsc(cli.PROVINCIA || '—')) + '</tr>' +
+    '<tr>' + cel('Teléfono', pcEsc(cli.TELEFONO || '—')) + cel('Cubiertas', cs.length) + cel('Parche', pcEsc(pcParcheTxt(o))) + '</tr>' +
+    (o.OBSERVACIONES ? '<tr><td class="l">Observaciones</td><td class="v" colspan="5" style="font-weight:400">' + pcEsc(o.OBSERVACIONES) + '</td></tr>' : '') + '</table>' +
+    '<table class="otd"><thead><tr><th></th><th>Marca grabada</th><th>Identificación</th><th>N° DOT</th><th>Medida</th><th>Marca</th><th>Trabajo</th><th>Observaciones</th></tr></thead><tbody>' +
+    cs.map(function(c, i) { return '<tr><td class="n">' + (i + 1) + '</td><td><b>' + pcEsc(c.MARCA || '') + '</b></td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcDotTxt(c.DOT) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + pcCambioTrab(c.ID_CUB) + (String(c.PARCHE_INCLUIDO || '') ? '<div style="font-size:8.5px;color:#444">' + pcEsc(pcParcheTxt(c)) + ' (solo esta)</div>' : '') + '</td><td style="width:18%"></td></tr>'; }).join('') +
+    '</tbody></table><div class="nota" style="font-size:9px">Cada cubierta se sigue por su marca grabada. DOT: el que trae la cubierta (sin DOT si no tiene o no se lee). Identificación: N° interno del casco.</div>' +
+    (firma ? '<div class="firmas" style="margin-top:22px"><div style="border-top:0"><img src="' + firma + '" style="max-height:70px;max-width:100%;display:block;margin:0 auto"><div style="border-top:1px solid #111;padding-top:3px">Entregó (cliente): ' + pcEsc(o.FIRMA_NOMBRE || '') + ' · ' + fmtDT(+o.FIRMA_FECHA) + '</div></div><div style="align-self:flex-end">Recibió (Vulcan Tread)</div></div>'
+      : '<div class="firmas" style="margin-top:30px"><div>Entregó (cliente)</div><div>Recibió (Vulcan Tread)</div></div>');
   pcImprimir('Orden de trabajo ' + (o.NRO_MANUAL ? 'boleta ' + o.NRO_MANUAL : o.NRO), h);
 }
 // ── Firma del cliente en la pantalla (celular o tablet): reemplaza la firma del talonario de papel ──
