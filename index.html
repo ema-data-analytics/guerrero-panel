@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d82942d28a00"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "c189b47b1d24"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10548,7 +10548,7 @@ function puFilaHTML(r, k) {
   else if (l.TIPO_LINEA === 'HERRAMENTAL') {
     var ps = PU_.f.piezas.filter(function(p) { return p.ID_INSUMO === l.ID_INSUMO && !puPiezaTomada(p.ID_PIEZA, r); }), otraPz = false;
     // Si no hay de la que dice la receta, se ofrecen las del mismo tipo (inner o envelope) que haya en planta
-    if (!ps.length) { var fam = /INNER/i.test(l.NOMBRE + ' ' + l.ID_INSUMO) ? /INNER/i : (/ENVEL/i.test(l.NOMBRE + ' ' + l.ID_INSUMO) ? /ENVEL/i : null); if (fam) { ps = PU_.f.piezas.filter(function(p) { return fam.test(p.NOMBRE || '') && !puPiezaTomada(p.ID_PIEZA, r); }); otraPz = true; } }
+    if (!ps.length) { var fam = /INNER/i.test(l.NOMBRE + ' ' + l.ID_INSUMO) ? /INNER/i : (/ENVEL/i.test(l.NOMBRE + ' ' + l.ID_INSUMO) ? /ENVEL/i : null); if (fam) { var agr = /AGRICOLA/i.test(l.NOMBRE + ' ' + l.ID_INSUMO); ps = PU_.f.piezas.filter(function(p) { return fam.test(p.NOMBRE || '') && /AGRICOLA/i.test(p.NOMBRE || '') === agr && !puPiezaTomada(p.ID_PIEZA, r); }); otraPz = true; } }
     // Un botón por modelo (con cuántas hay); si ya eligió una pieza, queda esa marcada
     if (false) { var cnt = {}, uno = {}; ps.forEach(function(p) { cnt[p.ID_INSUMO] = (cnt[p.ID_INSUMO] || 0) + 1; if (!uno[p.ID_INSUMO] || String(p.ID_PIEZA) === String(r.pieza)) uno[p.ID_INSUMO] = p; }); ps = Object.keys(uno).map(function(k) { var p = uno[k]; return { ID_PIEZA: p.ID_PIEZA, ID_INSUMO: p.ID_INSUMO, NOMBRE: p.NOMBRE, CODIGO: p.CODIGO, USOS: p.USOS, MAX_USOS: p.MAX_USOS, HAY: cnt[k] }; }); }
     var fq = String(r.fpz || '').toUpperCase().trim(), psv = fq ? ps.filter(function(p) { return String(p.CODIGO).toUpperCase().indexOf(fq) !== -1 || String(r.pieza) === String(p.ID_PIEZA); }) : ps;
@@ -15956,9 +15956,9 @@ async function agSacar(id) {
 .mv-tile{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 10px;text-align:center;cursor:pointer;min-height:118px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:15px;font-weight:700;color:var(--text)}
 .mv-tile .ic{font-size:34px;line-height:1}
 .mv-tile small{font-weight:400;color:var(--dim);font-size:12px}
-#mv-home{position:fixed;left:12px;bottom:12px;z-index:900;border-radius:24px;padding:10px 16px;font-size:15px;box-shadow:0 4px 14px rgba(0,0,0,.25);display:none}
+#mv-home{position:fixed;right:12px;top:10px;z-index:900;border-radius:24px;padding:10px 16px;font-size:15px;box-shadow:0 4px 14px rgba(0,0,0,.25);display:none}
 body.modo-movil #mv-home{display:block}
-body.modo-movil #main{padding:12px 12px 84px!important}
+body.modo-movil #main{padding:56px 12px 24px!important}
 body.modo-cascos #page-produccion-cubiertas .page-hd{display:none!important}
 body.modo-movil.en-inicio-movil #mv-home{display:none}
 </style>
