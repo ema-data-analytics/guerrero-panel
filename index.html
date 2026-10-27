@@ -1425,7 +1425,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271927';
+var EMA_BUILD = '202610271931';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -8661,10 +8661,14 @@ function pcAyudaClave() {
   return PC_.tab || 'general';
 }
 function pcCerrarVista() { var v = $id('pc-vista'); if (v) v.remove(); }
-function pcEncImp(titulo, nro) {
+function pcEncImp(titulo, nro, sub) {
   var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
-  return '<div class="enc"><div style="display:flex;gap:12px;align-items:center"><img src="' + logo + '" crossorigin="anonymous" style="height:62px;border-radius:6px"/><div><h1>' + pcEsc(titulo) + '</h1><div class="emp">VULCAN TREAD NEUMÁTICOS S.R.L. · Salta</div></div></div><div style="text-align:right"><div style="font-size:20px;font-weight:700">' + pcEsc(nro) + '</div><div class="emp">Impreso ' + fmtD(Date.now()) + '</div></div></div>';
+  return '<div class="enc"><div style="display:flex;gap:12px;align-items:center"><img src="' + logo + '" crossorigin="anonymous" style="height:62px;border-radius:6px"/><div><h1>' + pcEsc(titulo) + '</h1><div class="emp">VULCAN TREAD NEUMÁTICOS S.R.L. · Salta</div></div></div><div style="text-align:right"><div style="font-size:20px;font-weight:700">' + pcEsc(nro) + '</div>' + (sub ? '<div class="emp" style="font-weight:600">' + pcEsc(sub) + '</div>' : '') + '<div class="emp">Impreso ' + fmtD(Date.now()) + '</div></div></div>';
 }
+// N° de la orden de trabajo: si se cargó con la boleta de papel, el número que conoce el cliente es el de la boleta
+function pcOTPrin(o) { return o && o.NRO_MANUAL ? 'Boleta N° ' + o.NRO_MANUAL : (o ? o.NRO : ''); }
+function pcOTSec(o) { return o && o.NRO_MANUAL ? 'Registro del sistema: ' + o.NRO : 'N° del sistema'; }
+function pcOTCorto(o) { return o && o.NRO_MANUAL ? 'Boleta ' + o.NRO_MANUAL + ' · ' + o.NRO : (o ? o.NRO : ''); }
 // Orden de trabajo: el pedido del cliente (boleta) con sus cascos
 // Cambio de trabajo hecho en la inspección (lo decidió el encargado): se muestra en la orden de trabajo y el remito
 function pcCambioTrab(idCub) {
@@ -8677,21 +8681,23 @@ async function pcImpOTrab(id) {
   var firma = ''; if (o.FIRMA_ID) { try { var fi = await asImg('vt_as_img_get', { tok: SES.token, nid: Number(o.FIRMA_ID) }); if (fi && fi.ok) firma = fi.data; } catch (ef) { firma = ''; } }
   var cs = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(id) && c.ESTADO !== 'ANULADA'; }).sort(function(a, b) { return a.ID_CUB - b.ID_CUB; });
   var cli = d.clientes.filter(function(c) { return String(c.ID_CLIENTE) === String(o.ID_CLIENTE); })[0] || {};
-  var h = pcEncImp('ORDEN DE TRABAJO', o.NRO) +
-    '<div class="dat"><div><b>Cliente</b>' + pcEsc(o.CLIENTE) + '</div>' + (o.NRO_MANUAL ? '<div><b>N° de boleta (pedido)</b>' + pcEsc(o.NRO_MANUAL) + '</div>' : '') + '<div><b>Fecha</b>' + fmtD(+o.FECHA) + '</div><div><b>Cubiertas</b>' + cs.length + '</div>' +
+  var h = pcEncImp('ORDEN DE TRABAJO', pcOTPrin(o), pcOTSec(o)) +
+    '<div style="display:flex;gap:10px;margin:0 0 10px;flex-wrap:wrap"><div style="flex:1;min-width:200px;border:2px solid #111;border-radius:8px;padding:8px 12px"><div style="font-size:10px;color:#555;text-transform:uppercase">' + (o.NRO_MANUAL ? 'N° de boleta (talonario)' : 'N° de orden') + '</div><div style="font-size:24px;font-weight:800">' + pcEsc(o.NRO_MANUAL || o.NRO) + '</div></div>' +
+    (o.NRO_MANUAL ? '<div style="flex:1;min-width:200px;border:1px solid #999;border-radius:8px;padding:8px 12px"><div style="font-size:10px;color:#555;text-transform:uppercase">Registro en el sistema</div><div style="font-size:18px;font-weight:700">' + pcEsc(o.NRO) + '</div></div>' : '') + '</div>' +
+    '<div class="dat"><div><b>Cliente</b>' + pcEsc(o.CLIENTE) + '</div><div><b>Fecha</b>' + fmtD(+o.FECHA) + '</div><div><b>Cubiertas</b>' + cs.length + '</div>' +
     (cli.TELEFONO ? '<div><b>Teléfono</b>' + pcEsc(cli.TELEFONO) + '</div>' : '') + (cli.CUIT ? '<div><b>CUIT</b>' + pcEsc(cli.CUIT) + '</div>' : '') + '<div><b>Parche</b>' + pcEsc(pcParcheTxt(o)) + '</div>' + (o.OBSERVACIONES ? '<div style="grid-column:span 2"><b>Observaciones</b>' + pcEsc(o.OBSERVACIONES) + '</div>' : '') + '</div>' +
     '<table><thead><tr><th>#</th><th>Marca grabada</th><th>N° interno</th><th>DOT</th><th>Tipo</th><th>Medida</th><th>Marca casco</th><th>Trabajo</th><th>Observaciones</th></tr></thead><tbody>' +
     cs.map(function(c, i) { return '<tr><td>' + (i + 1) + '</td><td><b>' + pcEsc(c.MARCA || '') + '</b></td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcDotTxt(c.DOT) + '</td><td>' + pcEsc(c.TIPO) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + pcCambioTrab(c.ID_CUB) + (String(c.PARCHE_INCLUIDO || '') ? '<div style="font-size:9px;color:#444">' + pcEsc(pcParcheTxt(c)) + ' (solo esta)</div>' : '') + '</td><td style="width:22%"></td></tr>'; }).join('') +
     '</tbody></table><div class="nota">Cada cubierta se sigue por su marca grabada, que se le graba al recibirla. DOT: el que trae la cubierta (sin DOT si no tiene o no se lee).</div>' +
     (firma ? '<div class="firmas"><div style="border-top:0"><img src="' + firma + '" style="max-height:90px;max-width:100%;display:block;margin:0 auto"><div style="border-top:1px solid #111;padding-top:4px">Entregó (cliente): ' + pcEsc(o.FIRMA_NOMBRE || '') + ' · ' + fmtDT(+o.FIRMA_FECHA) + '</div></div><div style="align-self:flex-end">Recibió (Vulcan Tread)</div></div>'
       : '<div class="firmas"><div>Entregó (cliente)</div><div>Recibió (Vulcan Tread)</div></div>');
-  pcImprimir('Orden de trabajo ' + o.NRO, h);
+  pcImprimir('Orden de trabajo ' + (o.NRO_MANUAL ? 'boleta ' + o.NRO_MANUAL : o.NRO), h);
 }
 // ── Firma del cliente en la pantalla (celular o tablet): reemplaza la firma del talonario de papel ──
 function pcFirmaOT(id) {
   var o = (PC_.d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0]; if (!o) return;
   var n = PC_.d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(id) && c.ESTADO !== 'ANULADA'; }).length;
-  showModal('<div class="mh"><span class="mt">✍ Firma del cliente · ' + pcEsc(o.NRO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+  showModal('<div class="mh"><span class="mt">✍ Firma del cliente · ' + pcEsc(pcOTCorto(o)) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     '<div style="font-size:14px;margin-bottom:6px"><b>' + pcEsc(o.CLIENTE) + '</b> deja <b>' + n + (n === 1 ? ' casco' : ' cascos') + '</b>. Firmá con el dedo en el recuadro.</div>' +
     '<canvas id="pc-fir-c" style="width:100%;height:200px;border:2px dashed var(--border);border-radius:10px;background:#fff;touch-action:none"></canvas>' +
     '<div class="flex gap2 mt2" style="align-items:flex-end;flex-wrap:wrap"><div style="flex:1 1 220px"><label class="fl">Aclaración (nombre de quien firma)</label><input class="fi" id="pc-fir-n" style="width:100%" placeholder="Nombre y apellido"></div><button class="btn btn-s" onclick="pcFirmaBorrar()">Borrar</button></div>' +
@@ -8810,7 +8816,7 @@ function pcCascos() {
   var d = PC_.d;
   if (!PC_.kf.length) PC_.kf = [pcCasVacio()];
   var ult = PC_.ultOT ? (d.ordTrabajo || []).filter(function(o) { return o.NRO === PC_.ultOT; })[0] : null;
-  var h = pcAvisoLinea() + (ult ? '<div class="al al-g mb3" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>✓ Grabada · N° de orden <b style="font-size:18px">' + pcEsc(ult.NRO) + '</b> · ' + pcEsc(ult.CLIENTE) + (ult.NRO_MANUAL ? ' · boleta ' + pcEsc(ult.NRO_MANUAL) : '') + '<br><span style="font-size:12px">' + (ult.FIRMA_ID ? '✓ Firmada por ' + pcEsc(ult.FIRMA_NOMBRE) + '. Mandale el comprobante al cliente.' : 'Hacé firmar al cliente en la pantalla y mandale el comprobante.') + '</span></span><span class="flex gap2" style="flex-wrap:wrap">' + (ult.FIRMA_ID ? '' : '<button class="btn btn-p btn-sm" onclick="pcFirmaOT(' + ult.ID_OTRAB + ')">✍ Firma del cliente</button>') + '<button class="btn ' + (ult.FIRMA_ID ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="pcImpOTrab(' + ult.ID_OTRAB + ')"><i class="fas fa-file-pdf"></i> Comprobante (PDF)</button></span></div>' : '') +
+  var h = pcAvisoLinea() + (ult ? '<div class="al al-g mb3" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>✓ Grabada · ' + (ult.NRO_MANUAL ? 'Boleta N° <b style="font-size:18px">' + pcEsc(ult.NRO_MANUAL) + '</b> <span style="font-size:12px">(sistema ' + pcEsc(ult.NRO) + ')</span>' : 'N° de orden <b style="font-size:18px">' + pcEsc(ult.NRO) + '</b>') + ' · ' + pcEsc(ult.CLIENTE) + '<br><span style="font-size:12px">' + (ult.FIRMA_ID ? '✓ Firmada por ' + pcEsc(ult.FIRMA_NOMBRE) + '. Mandale el comprobante al cliente.' : 'Hacé firmar al cliente en la pantalla y mandale el comprobante.') + '</span></span><span class="flex gap2" style="flex-wrap:wrap">' + (ult.FIRMA_ID ? '' : '<button class="btn btn-p btn-sm" onclick="pcFirmaOT(' + ult.ID_OTRAB + ')">✍ Firma del cliente</button>') + '<button class="btn ' + (ult.FIRMA_ID ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="pcImpOTrab(' + ult.ID_OTRAB + ')"><i class="fas fa-file-pdf"></i> Comprobante (PDF)</button></span></div>' : '') +
     '<div class="card mb3"><div class="card-hd"><span class="card-title">Carga de la boleta: cascos y orden de trabajo</span><span class="tdim" style="font-size:12px">Se cargan los cascos con su trabajo y al grabar queda hecha la orden de trabajo.</span></div><div class="card-body">' +
     '<div class="pc-fila3"><div class="fg"><label class="fl">Cliente *</label><input class="fi" id="pc-k-cli" list="pc-clientes" placeholder="Escribí el nombre..." value="' + pcEsc(pcCliTxt(PC_.kcli)) + '"/>' + pcCliList() + '</div>' +
     pcNroAuto('pc-k-man') +
@@ -8944,9 +8950,9 @@ function pcOTrab() {
     var mias = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(o.ID_OTRAB) && c.ESTADO !== 'ANULADA'; });
     return { o: o, mias: mias, pend: mias.filter(function(c) { return c.ESTADO === 'EN_ESPERA'; }).length, linea: mias.filter(function(c) { return c.ESTADO === 'EN_OT'; }).length };
   }).filter(function(x) { return x.pend || x.linea; }).sort(function(a, b) { return b.o.ID_OTRAB - a.o.ID_OTRAB; });
-  h += '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de trabajo en curso (' + lo.length + ')</span><span class="tdim" style="font-size:12px">Las terminadas y anuladas están en "Historial"</span></div><div class="tw"><table style="font-size:12px" id="pc-o-lista"><thead><tr><th>OT</th><th>Fecha</th><th>Cliente</th><th>N° boleta</th><th class="tr">Cubiertas</th><th class="tr">Esperando</th><th class="tr">En la línea</th><th>Parche</th><th></th></tr></thead><tbody>' +
+  h += '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de trabajo en curso (' + lo.length + ')</span><span class="tdim" style="font-size:12px">Las terminadas y anuladas están en "Historial"</span></div><div class="tw"><table style="font-size:12px" id="pc-o-lista"><thead><tr><th>N° de orden</th><th>Fecha</th><th>Cliente</th><th>Sistema</th><th class="tr">Cubiertas</th><th class="tr">Esperando</th><th class="tr">En la línea</th><th>Parche</th><th></th></tr></thead><tbody>' +
     (lo.length ? lo.map(function(x) { var o = x.o;
-      return '<tr><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL) + '</td><td class="tr">' + x.mias.length + '</td><td class="tr">' + x.pend + '</td><td class="tr">' + x.linea + '</td><td style="white-space:nowrap">' + pcParcheBadge(o) + (x.mias.filter(function(c) { return String(c.PARCHE_INCLUIDO || ''); }).length ? ' <span class="badge b-orange">' + x.mias.filter(function(c) { return String(c.PARCHE_INCLUIDO || ''); }).length + (x.mias.filter(function(c) { return String(c.PARCHE_INCLUIDO || ''); }).length === 1 ? ' excepción' : ' excepciones') + '</span>' : '') + ' <button class="btn btn-s btn-xs" onclick="pcParcheForm(' + o.ID_OTRAB + ')">Cambiar</button></td>' +
+      return '<tr><td class="mono"><b>' + pcEsc(o.NRO_MANUAL ? 'Boleta ' + o.NRO_MANUAL : o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL ? o.NRO : '—') + '</td><td class="tr">' + x.mias.length + '</td><td class="tr">' + x.pend + '</td><td class="tr">' + x.linea + '</td><td style="white-space:nowrap">' + pcParcheBadge(o) + (x.mias.filter(function(c) { return String(c.PARCHE_INCLUIDO || ''); }).length ? ' <span class="badge b-orange">' + x.mias.filter(function(c) { return String(c.PARCHE_INCLUIDO || ''); }).length + (x.mias.filter(function(c) { return String(c.PARCHE_INCLUIDO || ''); }).length === 1 ? ' excepción' : ' excepciones') + '</span>' : '') + ' <button class="btn btn-s btn-xs" onclick="pcParcheForm(' + o.ID_OTRAB + ')">Cambiar</button></td>' +
         '<td style="white-space:nowrap"><button class="btn btn-s btn-xs" title="Imprimir" onclick="pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-print"></i></button> ' + (pcPuede('ANULAR') && x.pend === x.mias.length ? '<button class="btn btn-s btn-xs" onclick="pcOTrabAnular(' + o.ID_OTRAB + ')">Anular</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="9" class="tc tdim" style="padding:16px">No hay órdenes de trabajo en curso.</td></tr>') + '</tbody></table></div></div>';
   $id('pc-body').innerHTML = h;
   $id('pc-o-cli').addEventListener('change', function() { var n = pcCliId(this.value); if (n === PC_.ocli) return; PC_.ocli = n; PC_.otr = {}; pcOTrabItems(); });
@@ -9597,11 +9603,11 @@ function pcHistPintar() {
     var q = String(PC_.hq || '').toUpperCase().trim();
     var lo = (d.ordTrabajo || []).filter(function(o) { return porOT[String(o.ID_OTRAB)] || (q && [o.NRO, o.CLIENTE, o.NRO_MANUAL].join(' ').toUpperCase().indexOf(q) !== -1); }).sort(function(a, b) { return b.ID_OTRAB - a.ID_OTRAB; });
     var pg2 = pcHistPag(lo.length, 100);
-    r = '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de trabajo (' + lo.length + ')</span></div><div class="tw"><table style="font-size:12px" id="pc-h-tot"><thead><tr><th>OT</th><th>Fecha</th><th>Cliente</th><th>Boleta</th><th class="tr">Cubiertas</th><th class="tr">Esperando</th><th class="tr">En línea</th><th class="tr">Terminadas</th><th class="tr">Entregadas</th><th class="tr">No aptas</th><th>Estado</th><th></th></tr></thead><tbody>' +
+    r = '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de trabajo (' + lo.length + ')</span></div><div class="tw"><table style="font-size:12px" id="pc-h-tot"><thead><tr><th>N° de orden</th><th>Fecha</th><th>Cliente</th><th>Sistema</th><th class="tr">Cubiertas</th><th class="tr">Esperando</th><th class="tr">En línea</th><th class="tr">Terminadas</th><th class="tr">Entregadas</th><th class="tr">No aptas</th><th>Estado</th><th></th></tr></thead><tbody>' +
       (lo.length ? lo.slice(pg2.desde, pg2.hasta).map(function(o) {
         var x = porOT[String(o.ID_OTRAB)] || { n: 0 }, fin = o.ESTADO !== 'ANULADA' && x.n > 0 && !(x.ESPERA || x.LINEA || x.TERMINADA);
         var est = o.ESTADO === 'ANULADA' ? '<span class="badge b-gray">Anulada</span>' : fin ? '<span class="badge b-green">Completa</span>' : '<span class="badge b-blue">En curso</span>';
-        return '<tr' + (o.ESTADO === 'ANULADA' ? ' style="opacity:.55"' : '') + '><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL || '—') + '</td>' +
+        return '<tr' + (o.ESTADO === 'ANULADA' ? ' style="opacity:.55"' : '') + '><td class="mono"><b>' + pcEsc(o.NRO_MANUAL ? 'Boleta ' + o.NRO_MANUAL : o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL ? o.NRO : '—') + '</td>' +
           '<td class="tr">' + x.n + '</td><td class="tr">' + (x.ESPERA || '') + '</td><td class="tr">' + (x.LINEA || '') + '</td><td class="tr">' + (x.TERMINADA || '') + '</td><td class="tr tgreen">' + (x.ENTREGADA || '') + '</td><td class="tr tred">' + (x.NOAPTA || '') + '</td><td>' + est + '</td>' +
           '<td style="white-space:nowrap"><button class="btn btn-p btn-xs" onclick="pcOTrabVer(' + o.ID_OTRAB + ')">Ver</button> <button class="btn btn-s btn-xs" onclick="pcImpOTrab(' + o.ID_OTRAB + ')" title="Imprimir"><i class="fas fa-print"></i></button></td></tr>';
       }).join('') : '<tr><td colspan="12" class="tc tdim" style="padding:16px">No hay órdenes con esos filtros.</td></tr>') + '</tbody></table></div>' + pg2.html + '</div>';
@@ -9847,7 +9853,7 @@ async function pcImpRemito(i) {
   var qr = ''; try { if (x.TOKEN_FIRMA) { await asLibQR(); qr = asQRsvg(pcRemUrl(x), 130); } } catch (eq) { qr = ''; }
   var ter = x.ITEMS.filter(function(t) { return t.RESULTADO === 'TERMINADA'; }), dev = x.ITEMS.filter(function(t) { return t.RESULTADO !== 'TERMINADA'; });
   var nInt = {}; (PC_.d.cubiertas || []).forEach(function(c) { nInt[String(c.ID_CUB)] = c.ID_CASCO; });
-  var fila = function(t, k) { return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(t.MARCA) + '</b>' + (nInt[String(t.ID_CUB)] ? '<div style="font-size:9px;color:#444">N° int. ' + pcEsc(nInt[String(t.ID_CUB)]) + '</div>' : '') + '</td><td>' + pcDotTxt(t.DOT) + '</td><td>' + pcEsc(t.MEDIDA) + '</td><td>' + pcEsc(t.FABRICANTE) + '</td><td>' + pcEsc(t.TRABAJO) + (t.REPROCESO ? ' (con corrección)' : '') + pcCambioTrab(t.ID_CUB) + pcParcheRemito(t.ID_CUB) + '</td><td>' + pcEsc(t.OTRAB) + (t.BOLETA ? ' · boleta ' + pcEsc(t.BOLETA) : '') + '</td>' + (t.RESULTADO === 'TERMINADA' ? '' : '<td>' + pcEsc(t.MOTIVO) + '</td>') + '<td class="ck">☐</td></tr>'; };
+  var fila = function(t, k) { return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(t.MARCA) + '</b>' + (nInt[String(t.ID_CUB)] ? '<div style="font-size:9px;color:#444">N° int. ' + pcEsc(nInt[String(t.ID_CUB)]) + '</div>' : '') + '</td><td>' + pcDotTxt(t.DOT) + '</td><td>' + pcEsc(t.MEDIDA) + '</td><td>' + pcEsc(t.FABRICANTE) + '</td><td>' + pcEsc(t.TRABAJO) + (t.REPROCESO ? ' (con corrección)' : '') + pcCambioTrab(t.ID_CUB) + pcParcheRemito(t.ID_CUB) + '</td><td>' + (t.BOLETA ? 'Boleta ' + pcEsc(t.BOLETA) + ' · ' : '') + pcEsc(t.OTRAB) + '</td>' + (t.RESULTADO === 'TERMINADA' ? '' : '<td>' + pcEsc(t.MOTIVO) + '</td>') + '<td class="ck">☐</td></tr>'; };
   var h = pcEncImp('REMITO DE ENTREGA', x.NRO) +
     '<div class="dat"><div><b>Cliente</b>' + pcEsc(x.CLIENTE) + '</div><div><b>Fecha</b>' + fmtD(x.FECHA) + '</div><div><b>Orden de servicio</b>' + pcEsc(x.NRO_OT || 'Devolución sin trabajo') + '</div><div><b>Cubiertas</b>' + x.ITEMS.length + '</div>' +
     (x.CUIT ? '<div><b>CUIT</b>' + pcEsc(x.CUIT) + '</div>' : '') + (x.DIRECCION ? '<div><b>Dirección</b>' + pcEsc(x.DIRECCION) + '</div>' : '') + (x.TELEFONO ? '<div><b>Teléfono</b>' + pcEsc(x.TELEFONO) + '</div>' : '') + '</div>' +
@@ -16231,7 +16237,7 @@ function docsRes() {
     if (o.ESTADO === 'ANULADA') return;
     var cs = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(o.ID_OTRAB) && c.ESTADO !== 'ANULADA'; });
     if (!pasa([o.NRO, o.CLIENTE, o.NRO_MANUAL].concat(cs.map(function(c) { return c.MARCA + ' ' + c.DOT; })).join(' '))) return;
-    items.push({ cli: o.CLIENTE, f: +o.FECHA, h: '<div><div class="dc-t">Orden de trabajo ' + pcEsc(o.NRO) + '</div><div class="dc-s">' + fmtD(+o.FECHA) + ' · ' + cs.length + (cs.length === 1 ? ' cubierta' : ' cubiertas') + ' · ' + (o.FIRMA_ID ? '✓ firmada por ' + pcEsc(o.FIRMA_NOMBRE) : 'sin firma del cliente') + '</div></div>' +
+    items.push({ cli: o.CLIENTE, f: +o.FECHA, h: '<div><div class="dc-t">Orden de trabajo ' + pcEsc(o.NRO_MANUAL ? 'boleta ' + o.NRO_MANUAL + ' · ' + o.NRO : o.NRO) + '</div><div class="dc-s">' + fmtD(+o.FECHA) + ' · ' + cs.length + (cs.length === 1 ? ' cubierta' : ' cubiertas') + ' · ' + (o.FIRMA_ID ? '✓ firmada por ' + pcEsc(o.FIRMA_NOMBRE) : 'sin firma del cliente') + '</div></div>' +
       '<div class="dc-acc">' + (o.FIRMA_ID ? '' : '<button class="btn btn-s" onclick="pcFirmaOT(' + o.ID_OTRAB + ')">✍ Firmar</button>') + '<button class="btn btn-p" onclick="pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-file-pdf"></i> PDF</button></div>' });
   });
   if (!DC_.tipo || DC_.tipo === 'REM') (DC_.rem || []).forEach(function(x, i) {
