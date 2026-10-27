@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "15a245804adc"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ea06e8f2d621"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -9277,6 +9277,34 @@ function pcMatPintar(r) {
   el.querySelectorAll('.pc-alt').forEach(function(sel) { sel.onchange = function() { PC_.alts = PC_.alts || {}; if (this.value) PC_.alts[this.dataset.de] = this.value; else delete PC_.alts[this.dataset.de]; pcMateriales(); }; });
   el.scrollIntoView({ block: 'nearest' });
 }
+// ── Preparación de la carga: por estación, lo que la receta prevé (con las alternativas de la carga). Lo que se pesa, con cuánto retirar. ──
+async function pcPrep(id) {
+  var r = await gsRun('gsPC_PrepCarga', id);
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  PC_.prep = r;
+  var n3 = function(x) { return (Math.round((+x || 0) * 1000) / 1000).toString().replace('.', ','); };
+  var pes = r.LINEAS.filter(function(l) { return l.PESA; });
+  var h = '<div class="mh"><span class="mt">⚖ Preparación y pesaje · ' + pcEsc(r.NRO_OT) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="al al-b" style="margin-bottom:10px">Lo que la receta prevé para esta carga, estación por estación (cubiertas que todavía no pasaron por cada una). ' +
+    'Con esto se deja todo listo antes de arrancar: lo que se pesa, se pesa ahora en el pesaje de inicio de cada estación.</div>' +
+    (pes.length ? '<div style="font-weight:700;margin:6px 0">A pesar (retirar del depósito, con ' + r.MARGEN + '% de margen)</div><div class="tw"><table style="font-size:13px"><thead><tr><th>Estación</th><th>Insumo</th><th class="tr">Receta</th><th class="tr">Retirar</th><th class="tr">Cubiertas</th></tr></thead><tbody>' +
+      pes.map(function(l) { return '<tr><td>' + pcEsc(l.ESTACION) + '</td><td><b>' + pcEsc(l.NOMBRE) + '</b></td><td class="tr">' + n3(l.CANT) + ' ' + pcEsc(l.UNIDAD) + '</td><td class="tr"><b>' + n3(l.RETIRAR) + ' ' + pcEsc(l.UNIDAD) + '</b></td><td class="tr">' + l.CUBIERTAS + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="tdim">En esta carga no hay insumos que se pesen.</div>') +
+    '<div style="font-weight:700;margin:12px 0 6px">Todo lo que tiene que estar en cada estación</div><div class="tw"><table style="font-size:12px"><thead><tr><th>Estación</th><th>Material</th><th class="tr">Cantidad</th><th class="tr">Cubiertas</th></tr></thead><tbody>' +
+    r.LINEAS.map(function(l) { return '<tr><td>' + pcEsc(l.ESTACION) + '</td><td>' + pcEsc(l.NOMBRE) + (l.PESA ? ' <span class="badge b-orange" style="font-size:9px">se pesa</span>' : '') + (l.HERRAMENTAL ? ' <span class="badge b-blue" style="font-size:9px">pieza</span>' : '') + '</td><td class="tr">' + n3(l.CANT) + ' ' + pcEsc(l.UNIDAD) + '</td><td class="tr">' + l.CUBIERTAS + '</td></tr>'; }).join('') +
+    '</tbody></table></div></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-p" onclick="pcImpPrep()"><i class="fas fa-print"></i> Imprimir hoja de preparación</button></div>';
+  closeModal(); showModal(h, 'md-lg');
+}
+function pcImpPrep() {
+  var r = PC_.prep; if (!r) return;
+  var n3 = function(x) { return (Math.round((+x || 0) * 1000) / 1000).toString().replace('.', ','); }, ests = [];
+  r.LINEAS.forEach(function(l) { if (ests.indexOf(l.ESTACION) === -1) ests.push(l.ESTACION); });
+  var h = pcEncImp('HOJA DE PREPARACIÓN Y PESAJE', r.NRO_OT) +
+    '<div class="nota">Lo que la receta prevé para la carga. Lo marcado "PESAR" se pesa al retirarlo (margen ' + r.MARGEN + '%) y al final del día se pesa lo que sobra.</div>' +
+    '<table><thead><tr><th>Estación</th><th>Material</th><th>Receta</th><th>Retirar</th><th>Pesado real</th><th class="ck">Listo</th></tr></thead><tbody>' +
+    ests.map(function(e) { return r.LINEAS.filter(function(l) { return l.ESTACION === e; }).map(function(l, k) { return '<tr><td>' + (k ? '' : '<b>' + pcEsc(e) + '</b>') + '</td><td>' + pcEsc(l.NOMBRE) + (l.PESA ? ' <b>· PESAR</b>' : '') + '</td><td>' + n3(l.CANT) + ' ' + pcEsc(l.UNIDAD) + '</td><td>' + (l.PESA ? '<b>' + n3(l.RETIRAR) + ' ' + pcEsc(l.UNIDAD) + '</b>' : '') + '</td><td>' + (l.PESA ? '' : '—') + '</td><td class="ck"></td></tr>'; }).join(''); }).join('') +
+    '</tbody></table><div class="firmas"><div>Preparó</div><div>Encargado de línea</div></div>';
+  pcImprimir('Preparación ' + r.NRO_OT, h, false);
+}
 async function pcCrearOT() {
   var ids = Object.keys(PC_.sel);
   var tit = ids.filter(function(i) { return PC_.sel[i] === 'TITULAR'; }), sup = ids.filter(function(i) { return PC_.sel[i] === 'SUPLENTE'; });
@@ -9296,7 +9324,7 @@ async function pcCrearOT() {
     PC_.alts = {};
     PC_.mk = {};
     toast('Orden de servicio ' + r.NRO_OT + ' creada (' + r.LINEA + ', tope ' + r.TOPE + ') ✓', 'g');
-    PC_.sel = {}; PC_.armAuto = 0; PC_.tab = 'os'; await pcRecargar(); pcAbrirOT(r.ID_OT);
+    PC_.sel = {}; PC_.armAuto = 0; PC_.tab = 'os'; await pcRecargar(); await pcAbrirOT(r.ID_OT); pcPrep(r.ID_OT);
   } catch (e) { toast('Error: ' + e.message, 'r2'); }
   finally { b.disabled = false; }
 }
@@ -9434,6 +9462,7 @@ function pcPintarOT() {
   ot.items.forEach(function(i) { if (i.ESTADO === 'TERMINADA') { tot.mat += i.COSTO.MATERIALES; tot.herr += i.COSTO.HERRAMENTAL; tot.mo += i.COSTO.MO; tot.fij += i.COSTO.FIJOS; tot.t += i.COSTO.TOTAL; tot.n++; } });
   var h = '<div class="card mt3"><div class="card-hd"><span class="card-title">' + pcEsc(o.NRO_OT) + ' · ' + pcEsc(o.LINEA) + ' · tope ' + o.TOPE + ' + ' + o.SUPLENTES_MAX + ' suplentes ' + pcBadge(o.ESTADO) + '</span>' +
     '<span class="flex gap2">' + (abierta && ot.soyEncargado ? '<button class="btn btn-s btn-sm" onclick="pcTiempos()"><i class="fas fa-stopwatch"></i> Tiempos</button>' : '') +
+    (abierta ? '<button class="btn btn-p btn-sm" onclick="pcPrep(' + o.ID_OT + ')">⚖ Preparación y pesaje</button>' : '') +
     '<button class="btn btn-s btn-sm" onclick="pcImpOS(' + o.ID_OT + ')"><i class="fas fa-print"></i> Imprimir</button>' +
     (o.ESTADO === 'CERRADA' ? '<button class="btn btn-p btn-sm" onclick="pcRemitos(' + o.ID_OT + ')"><i class="fas fa-file-alt"></i> Remitos</button>' : '') +
     (abierta && pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" onclick="pcCerrarOT()">Cerrar OT</button>' : '') +
@@ -11054,6 +11083,7 @@ async function puPesaje(dia) {
     h += '<div class="pu-reg" style="border-color:' + (!P ? 'var(--danger)' : (P.ESTADO === 'CERRADO' ? 'var(--success)' : 'var(--accent)')) + '"><div style="font-size:19px;font-weight:700">' + puEsc(i.NOMBRE) + (puTodas() ? ' <span class="tdim" style="font-size:14px">· ' + puEsc(i.ESTACION) + '</span>' : '') + '</div>';
     if (!P) {
       h += '<div style="font-size:15px">' + (p.ES_HOY ? '<b>Inicio del día:</b> pesá lo que retirás del depósito para hoy (más lo que haya quedado en la estación).' : '<b>Preparar para el ' + puEsc(puFechaTxt(p.HOY)) + ':</b> pesá lo que dejás listo en la estación.') + '</div>' +
+        (i.PREVISTO ? '<div style="font-size:16px;background:var(--accent-light,#e0ecff);border-radius:8px;padding:8px">Según la receta de la carga (' + puEsc(i.PREVISTO.OS.join(', ')) + ', ' + i.PREVISTO.CUBIERTAS + ' cubierta' + (i.PREVISTO.CUBIERTAS === 1 ? '' : 's') + '): se usan ' + puF(i.PREVISTO.CANT) + ' ' + u + ' · <b>retirá unos ' + puF(i.PREVISTO.RETIRAR) + ' ' + u + '</b></div>' : '') +
         (i.QUEDO_ANTES ? '<div class="tdim" style="font-size:14px">El ' + puEsc(i.QUEDO_ANTES.FECHA.split('-').reverse().join('/')) + ' quedaron ' + puF(i.QUEDO_ANTES.CANT) + ' ' + u + ' en la estación.</div>' : '') +
         '<div class="pu-qty"><input inputmode="decimal" id="pu-pes-ini-' + k + '" placeholder="Peso" aria-label="Peso de inicio"><span>' + u + '</span></div>' +
         '<button class="pu-btn pu-ok" style="width:max-content" onclick="puPesIni(' + k + ')">Guardar inicio</button>';
