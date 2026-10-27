@@ -23,6 +23,13 @@
   if (/[?&#]cascos/.test(q)) window.EMA_MODO_CASCOS = true;
   if (window.EMA_MODO_DOCS || window.EMA_MODO_CASCOS) { var m = document.createElement('meta'); m.name = 'theme-color'; m.content = '#1f2a5c'; document.head.appendChild(m); }
 })();
+// Sin acceso directo: el sistema se instala en el celular como «Vulcan» (Agregar a pantalla de inicio) y abre el menú del celular
+(function() {
+  if (/[?&#](precios|puesto|fichaje)/.test(location.search + location.hash)) return;
+  var h = document.head, l = function(rel, href) { var e = document.createElement('link'); e.rel = rel; e.href = href; h.appendChild(e); }, m = function(n, c) { var e = document.createElement('meta'); e.name = n; e.content = c; h.appendChild(e); };
+  l('manifest', 'vulcan.webmanifest'); l('apple-touch-icon', 'icono-vulcan-192.png'); l('icon', 'icono-vulcan-192.png');
+  m('apple-mobile-web-app-title', 'Vulcan'); m('apple-mobile-web-app-capable', 'yes'); m('mobile-web-app-capable', 'yes');
+})();
 // Con ?fichaje entra directo a la pantalla de entrada y salida del personal (tablet de la puerta)
 (function() {
   if (!/[?&#]fichaje/.test(location.search + location.hash)) return;
@@ -8430,7 +8437,7 @@ function pcPintar() {
     ['rech', 'Rechazadas' + (nDev ? ' (' + nDev + ' a devolver)' : '')], ['costos', 'Costos'], ['herramental', 'Herramental y herramientas'], ['alarmas', '⚠ Alarmas'], ['hist', 'Historial'], ['config', 'Configuración'], ['pesaje', '⚖ Pesaje y medición']];
   el.innerHTML = '<div class="page-hd"><div><div class="page-title">Producción por cubierta</div><div class="page-sub">Cada cubierta con su marca grabada: recepción, carga de autoclave, estaciones, insumos reales y costo.</div></div>' +
     '<div class="flex gap2 no-print"><input class="fi" id="pc-marca-q" placeholder="Buscar marca..." style="width:170px"/><button class="btn btn-s" onclick="pcHistorial($v(\'pc-marca-q\'))"><i class="fas fa-search"></i> Vida de la cubierta</button><button class="btn btn-p" onclick="pcAyuda(pcAyudaClave())">❓ Ayuda</button></div></div>' +
-    (document.body.classList.contains('modo-cascos') ? '<div class="flex gap2 mb3" style="flex-wrap:wrap"><b style="font-size:18px;flex:1">📥 Recepción de cascos</b><button class="btn btn-s" onclick="mvAbrir(\'documentos\')">📄 Documentos</button></div>' : '') +
+    (document.body.classList.contains('modo-cascos') ? '<div class="flex gap2 mb3" style="flex-wrap:wrap;align-items:center"><b style="font-size:20px;flex:1">' + (PC_.foco ? PC_.foco[1] + ' ' + PC_.foco[2] : '📥 Recibir cascos') + '</b>' + (PC_.tab === 'cascos' ? '<button class="btn btn-s" onclick="mvAbrir(\'documentos\')">📄 Documentos</button>' : '') + '</div>' : '') +
     '<div class="tabs mb3">' + tabs.map(function(t) { var on = PC_.tab === t[0] || (t[0] === 'herramental' && PC_.tab === 'equipos'); return '<div class="tab' + (on ? ' active' : '') + '" onclick="PC_.tab=\'' + (t[0] === 'herramental' ? (PC_.herrSub || 'herramental') : t[0]) + '\';pcPintar()">' + t[1] + '</div>'; }).join('') + '</div>' +
     // Una sola pestaña para todo lo que no es insumo: las piezas del autoclave y las herramientas de las estaciones
     (PC_.tab === 'herramental' || PC_.tab === 'equipos' ? '<div class="flex gap2 mb3" style="flex-wrap:wrap;row-gap:8px">' + [['herramental', 'Inner y envelope del autoclave (piezas con usos)'], ['equipos', 'Herramientas de las estaciones y entregas al personal']].map(function(x) { return '<button class="btn ' + (PC_.tab === x[0] ? 'btn-p' : 'btn-s') + '" onclick="PC_.tab=PC_.herrSub=\'' + x[0] + '\';pcPintar()">' + x[1] + '</button>'; }).join('') + '</div>' : '') +
@@ -15918,6 +15925,8 @@ async function agSacar(id) {
 .mv-tile small{font-weight:400;color:var(--dim);font-size:12px}
 #mv-home{position:fixed;left:12px;bottom:12px;z-index:900;border-radius:24px;padding:10px 16px;font-size:15px;box-shadow:0 4px 14px rgba(0,0,0,.25);display:none}
 body.modo-movil #mv-home{display:block}
+body.modo-movil #main{padding:12px 12px 84px!important}
+body.modo-cascos #page-produccion-cubiertas .page-hd{display:none!important}
 body.modo-movil.en-inicio-movil #mv-home{display:none}
 </style>
 <script>
@@ -15961,7 +15970,7 @@ function docsRes() {
     if (c.ESTADO === 'ANULADA' || !c.MARCA) return;
     if (!pasa([c.MARCA, c.DOT, c.CLIENTE, c.MEDIDA].join(' '))) return;
     items.push({ cli: c.CLIENTE, f: +c.FECHA_RECEPCION || 0, h: '<div><div class="dc-t">Cubierta ' + pcEsc(c.MARCA) + '</div><div class="dc-s">DOT ' + (c.DOT ? pcEsc(c.DOT) : 'sin DOT') + ' · ' + pcEsc((c.TIPO || '') + ' ' + (c.MEDIDA || '')) + ' · ' + pcEsc({ EN_ESPERA: 'esperando', EN_OT: 'en la línea', TERMINADA: 'terminada', RECHAZADA: 'no apta' }[c.ESTADO] || c.ESTADO) + '</div></div>' +
-      '<div class="dc-acc"><button class="btn btn-p" onclick="docsCert(\'' + pcEsc(c.MARCA) + '\')"><i class="fas fa-file-pdf"></i> Certificado</button></div>' });
+      '<div class="dc-acc"><button class="btn btn-s" onclick="pcHistorial(\'' + pcEsc(c.MARCA) + '\')">🔎 Ver</button><button class="btn btn-p" onclick="docsCert(\'' + pcEsc(c.MARCA) + '\')"><i class="fas fa-file-pdf"></i> Certificado</button></div>' });
   });
   if (!items.length) { box.innerHTML = '<div class="al">' + (q ? 'No encontré nada con «' + pcEsc(DC_.q) + '».' : 'Escribí para buscar.') + '</div>'; return; }
   items.sort(function(a, b) { return String(a.cli).localeCompare(String(b.cli)) || b.f - a.f; });
@@ -15978,32 +15987,53 @@ async function docsCert(marca) {
 
 // ── Menú del celular: una sola entrada (el link del sistema) y botones grandes según los permisos del usuario ──
 var MV_OPC = [
-  ['cascos', '📥', 'Recibir cascos', 'Boleta del cliente con su firma', 'produccion-cubiertas'],
-  ['documentos', '📄', 'Documentos', 'Orden, remito o certificado en PDF', 'documentos'],
-  ['puesto-estacion', '🛠', 'Estaciones', 'Trabajo en la línea', 'puesto-estacion'],
-  ['pesaje', '⚖', 'Pesaje y medición', 'Lo que se retira para la carga', 'produccion-cubiertas'],
-  ['precios-nuevos', '🏷', 'Precios', 'Cubiertas nuevas y promos', 'precios-nuevos'],
-  ['fichaje', '🕘', 'Fichaje', 'Entrada y salida del personal', 'fichaje']
+  // [clave, ícono, título, explicación, página, pestaña de producción o filtro]
+  ['cascos', '📥', 'Recibir cascos', 'Boleta del cliente con su firma', 'produccion-cubiertas', 'cascos'],
+  ['documentos', '📄', 'Documentos', 'Orden, remito o certificado en PDF', 'documentos', ''],
+  ['cubierta', '🔎', 'Buscar cubierta', 'Dónde está y toda su vida', 'documentos', 'CUB'],
+  ['cargas', '🏭', 'Cargas en la línea', 'Cada orden de servicio y sus cubiertas', 'produccion-cubiertas', 'os'],
+  ['puesto-estacion', '🛠', 'Estaciones', 'Trabajo en la línea', 'puesto-estacion', ''],
+  ['pesaje', '⚖', 'Pesaje y medición', 'Lo que se retira para la carga', 'produccion-cubiertas', 'pesaje'],
+  ['entregas', '🚚', 'Entregas y remitos', 'Remitos y foto firmada', 'produccion-cubiertas', 'entregas'],
+  ['rech', '↩', 'Rechazadas', 'Cubiertas para devolver', 'produccion-cubiertas', 'rech'],
+  ['alarmas', '⚠', 'Alarmas', 'Stock bajo y cosas atrasadas', 'produccion-cubiertas', 'alarmas'],
+  ['stock', '📦', 'Stock de insumos', 'Cuánto hay de cada insumo', 'stock-insumos', ''],
+  ['precios-nuevos', '🏷', 'Precios', 'Cubiertas nuevas y promos', 'precios-nuevos', ''],
+  ['fichaje', '🕘', 'Fichaje', 'Entrada y salida del personal', 'fichaje', ''],
+  ['asistencia', '👥', 'Asistencia', 'Quién vino, faltas y certificados', 'asistencia', ''],
+  ['agenda', '📋', 'Agenda e informe', 'Avance del sistema en PDF', 'agenda', '']
 ];
 function renderInicioMovil() {
   var el = $id('page-inicio-movil'); if (!el) return;
   document.body.classList.add('modo-movil'); document.body.classList.add('en-inicio-movil');
   var rol = String((SES && SES.rol) || '').toUpperCase(), admin = rol.indexOf('SUPER') !== -1 || rol.indexOf('ADMIN') !== -1;
-  var ops = MV_OPC.filter(function(o) { return puedeVerPagina(o[4]); });
+  var ops = MV_OPC.filter(function(o) { return puedeVerPagina(o[4]) && (o[0] !== 'agenda' || rol === 'SUPER'); });
   el.innerHTML = '<div class="mv-wrap"><div style="display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-size:20px;font-weight:800">Hola, ' + pcEsc(((SES && SES.nombre) || '').split(' ')[0]) + '</div><div class="tdim" style="font-size:13px">¿Qué vas a hacer?</div></div>' +
     '<button class="btn btn-s btn-sm" onclick="doLogout()">Salir</button></div>' +
     '<div class="mv-tiles">' + ops.map(function(o) { return '<div class="mv-tile" onclick="mvAbrir(\'' + o[0] + '\')"><span class="ic">' + o[1] + '</span>' + o[2] + '<small>' + o[3] + '</small></div>'; }).join('') +
     (admin ? '<div class="mv-tile" onclick="mvCompleto()"><span class="ic">💻</span>Sistema completo<small>Con el menú de la PC</small></div>' : '') + '</div>' +
-    (ops.length ? '' : '<div class="al mt3">Tu usuario no tiene pantallas para el celular. Pedile al administrador los permisos.</div>') + '</div>';
+    (ops.length ? '' : '<div class="al mt3">Tu usuario no tiene pantallas para el celular. Pedile al administrador los permisos.</div>') +
+    '<button class="btn btn-s mt3" style="width:100%;min-height:48px" onclick="mvCompartir()">📲 Pasar el sistema a otro celular</button></div>';
   if (!$id('mv-home')) { var b = document.createElement('button'); b.id = 'mv-home'; b.className = 'btn btn-p'; b.textContent = '🏠 Inicio'; b.onclick = function() { mvInicio(); }; document.body.appendChild(b); }
 }
-function mvInicio() { closeModal(); if (typeof pcCerrarVista === 'function') pcCerrarVista(); document.body.classList.remove('modo-cascos'); navTo('inicio-movil'); }
+function mvInicio() { closeModal(); if (typeof pcCerrarVista === 'function') pcCerrarVista(); document.body.classList.remove('modo-cascos'); PC_.foco = null; navTo('inicio-movil'); }
+// Cada botón abre una sola cosa: en Producción por cubierta, la pestaña que corresponde sin las demás (modo foco)
 function mvAbrir(k) {
   var o = MV_OPC.filter(function(x) { return x[0] === k; })[0]; if (!o) return;
-  document.body.classList.remove('en-inicio-movil'); document.body.classList.remove('modo-cascos');
-  if (k === 'cascos') { document.body.classList.add('modo-cascos'); PC_.tab = 'cascos'; }
-  if (k === 'pesaje') PC_.tab = 'pesaje';
+  document.body.classList.remove('en-inicio-movil'); document.body.classList.remove('modo-cascos'); PC_.foco = null;
+  if (o[4] === 'produccion-cubiertas' && o[5]) { document.body.classList.add('modo-cascos'); PC_.tab = o[5]; PC_.foco = o; }
+  if (o[4] === 'documentos') DC_.tipo = o[5] || '';
   navTo(o[4]);
+}
+// QR del sistema: el otro celular lo escanea, entra con su usuario y lo agrega a la pantalla de inicio (queda el ícono «Vulcan»)
+async function mvCompartir() {
+  var url = location.origin + location.pathname, qr = '';
+  try { await asLibQR(); qr = asQRsvg(url, 220); } catch (e) { qr = ''; }
+  showModal('<div class="mh"><span class="mt">📲 Pasar el sistema a otro celular</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="text-align:center">' +
+    (qr ? '<div style="display:inline-block;background:#fff;padding:10px;border-radius:10px">' + qr + '</div>' : '') +
+    '<div style="font-size:13px;word-break:break-all;margin:6px 0">' + pcEsc(url) + '</div>' +
+    '<ol style="text-align:left;font-size:15px;line-height:1.5;padding-left:20px"><li>Con la cámara del otro celular, escaneá el código.</li><li>Entrá con <b>tu usuario y tu clave</b> (cada uno tiene el suyo: cada uno ve solo sus botones).</li><li>En el menú del navegador tocá <b>«Agregar a pantalla de inicio»</b> (Android) o <b>Compartir › «Agregar a inicio»</b> (iPhone).</li><li>Queda el ícono <b>Vulcan</b>: de ahí en adelante se entra tocándolo.</li></ol>' +
+    '<button class="btn btn-p" onclick="if(navigator.share){navigator.share({title:\'Vulcan Tread\',url:\'' + url + '\'})}else{toast(\'Copiá el link de arriba\',\'b\')}">Compartir el link</button></div>');
 }
 function mvCompleto() { document.body.classList.remove('modo-puesto'); document.body.classList.remove('modo-movil'); document.body.classList.remove('en-inicio-movil'); navTo(primeraPaginaPermitida() || 'dashboard'); }
 </script>

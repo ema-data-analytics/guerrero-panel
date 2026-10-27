@@ -1,0 +1,22 @@
+{
+ "name": "Vulcan Tread",
+ "short_name": "Vulcan",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#ffffff",
+ "theme_color": "#1f2a5c",
+ "icons": [
+  {
+   "src": "icono-vulcan-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "icono-vulcan-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  }
+ ]
+}
