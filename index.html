@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9d8a73505144"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d0a7208e6adb"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10423,7 +10423,7 @@ function puControlHTML() {
   var CC = X.coccion, fueraL = CC ? (CC.LECTURAS || []).filter(function(l) { return l.FUERA; }) : [];
   var h = (CC ? '<div class="pu-reg" style="border-color:' + (fueraL.length ? 'var(--danger);background:var(--danger-light, #fde8e8)' : 'var(--border)') + '"><div style="font-size:17px;font-weight:700' + (fueraL.length ? ';color:var(--danger)' : '') + '">🌡 Cocción: ' + (fueraL.length ? 'hubo lecturas fuera de lo especificado' : 'lecturas de temperatura y presión') + '</div>' +
     '<div class="tdim" style="font-size:13px">' + puEsc(puAcEspTxt(CC.ESPEC)) + '</div>' + puAcLecturasHTML(CC.LECTURAS, CC.ESPEC && CC.ESPEC.PUNI) +
-    fueraL.map(function(l) { return '<div style="font-size:14px">Explicación: ' + puEsc(l.JUSTIFICACION) + '</div>'; }).join('') + '</div>' : '') +
+    '</div>' : '') +
     '<div class="pu-reg" id="pu-ctrl" style="border-color:var(--accent)"><div style="font-size:20px;font-weight:700">Control del encargado: ¿cómo salió del autoclave?</div>' +
     '<div style="display:flex;gap:12px;flex-wrap:wrap">' + b('OK', '✓ OK · pasa a Pintura', 'var(--success)') + (X.pulido ? b('PULIR', '✂ Exceso de material · repulir', '#b7791f') : '') + b('REPROCESO', '↻ Volver a una estación', 'var(--warn)') + b('RECHAZO', '✗ Rechazo final', 'var(--danger)') + '</div>';
   if (C.dec === 'REPROCESO') {
@@ -10533,7 +10533,7 @@ function puAcEspTxt(e) {
 function puAcLecturasHTML(ls, uni) {
   if (!ls || !ls.length) return '<div class="tdim" style="font-size:14px">Todavía no se cargó ninguna lectura.</div>';
   return '<div style="display:flex;flex-direction:column;gap:4px">' + ls.map(function(l) {
-    return '<div style="font-size:15px">' + new Date(l.FECHA).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' · <b>' + puF(l.TEMP) + ' °C</b> · <b>' + puF(l.PRESION) + ' ' + puEsc(l.UNIDAD || uni || '') + '</b> · ' + puEsc(l.OPERARIO) + (l.FOTO_ID ? ' · 📷' : ' · sin foto') + (l.FUERA ? ' <span style="color:var(--danger);font-weight:700">· ' + puEsc(l.FUERA) + '</span>' : '') + '</div>';
+    return '<div style="font-size:15px">' + new Date(l.FECHA).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' · <b>' + puF(l.TEMP) + ' °C</b> · <b>' + puF(l.PRESION) + ' ' + puEsc(l.UNIDAD || uni || '') + '</b> · ' + puEsc(l.OPERARIO) + (l.FOTO_ID ? ' · 📷' : ' · sin foto') + (l.FUERA ? ' <span style="color:var(--danger);font-weight:700">· ' + puEsc(l.FUERA) + '</span>' : '') + (l.JUSTIFICACION ? '<div style="font-size:14px">Explicación: ' + puEsc(l.JUSTIFICACION) + '</div>' : '') + '</div>';
   }).join('') + '</div>';
 }
 function puAcLectura(momento) {
@@ -10545,7 +10545,7 @@ function puAcLectura(momento) {
     '<div style="font-size:15px">' + (fin ? 'Antes de abrir, mirá el termómetro y el manómetro y cargá lo que marcan.' : 'Cargá lo que marcan el termómetro y el manómetro ahora.') + ' <span class="tdim">' + puEsc(puAcEspTxt(r.espec)) + '</span></div>' +
     '<div class="pu-qty"><b style="font-size:15px;min-width:110px">Temperatura</b><input inputmode="decimal" id="pu-acl-t" placeholder="°C" aria-label="Temperatura"><span>°C</span></div>' +
     '<div class="pu-qty"><b style="font-size:15px;min-width:110px">Presión</b><input inputmode="decimal" id="pu-acl-p" placeholder="Presión" aria-label="Presión"><span>' + puEsc((r.espec && r.espec.PUNI) || '') + '</span></div>' +
-    '<div><b style="font-size:15px">Foto del termómetro y el manómetro</b> <span class="tdim" style="font-size:13px">(es la prueba de la lectura)</span><br><input type="file" accept="image/*" capture="environment" id="pu-acl-f" style="font-size:15px;margin-top:4px"><div id="pu-acl-prev"></div></div>' +
+    '<div><b style="font-size:15px">Foto del termómetro y el manómetro</b> <span class="tdim" style="font-size:13px">(es la prueba de la lectura' + (r.fotoObligatoria ? ', obligatoria' : '') + ')</span><br><input type="file" accept="image/*" capture="environment" id="pu-acl-f" style="font-size:15px;margin-top:4px"><div id="pu-acl-prev"></div></div>' +
     (emps.length ? '<div><div style="font-weight:700;font-size:15px">¿Quién leyó?</div><div style="display:flex;flex-wrap:wrap;gap:6px">' + emps.map(function(n) { return '<button class="pu-chip pu-acl-op' + (PU_.acL.oper === n ? ' sel' : '') + '" data-n="' + puEsc(n) + '">' + puEsc(n) + '</button>'; }).join('') + '</div></div>' : '') +
     '<div id="pu-acl-just"></div></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pu-acl-ok" style="min-height:48px;font-size:17px">' + (fin ? 'Guardar y terminar la cocción' : 'Guardar lectura') + '</button></div>', 'md-lg');
   document.querySelectorAll('.mo .pu-acl-op').forEach(function(b) { b.onclick = function() { PU_.acL.oper = b.dataset.n; document.querySelectorAll('.mo .pu-acl-op').forEach(function(x) { x.classList.toggle('sel', x === b); }); }; });
@@ -10560,6 +10560,7 @@ function puAcLectura(momento) {
       if (PU_.acL.foto && !fid) { var fi = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'AUTOCLAVE', ref: r.ot.NRO_OT, data: PU_.acL.foto }); if (!fi || !fi.ok) { toast((fi && fi.error) || 'No se pudo subir la foto', 'r2'); b.disabled = false; b.textContent = 'Reintentar'; return; } fid = PU_.acL.fid = String(fi.id); }
       var L = { ID_AUTOC: c.ID_AUTOC, TEMP: puN(t), PRESION: puN(p), FOTO_ID: fid, OPERARIO: PU_.acL.oper || PU_.oper, JUSTIFICACION: j ? j.value.trim() : '' };
       var res = fin ? await gsRun('gsPC_AutoclaveTerminar', c.ID_AUTOC, PU_.acL.oper || PU_.oper, L) : await gsRun('gsPC_AutoclaveLectura', L);
+      if (res && res.PIDE_FOTO) { toast(res.error, 'r2'); $id('pu-acl-f').scrollIntoView({ block: 'center' }); b.disabled = false; b.textContent = fin ? 'Guardar y terminar la cocción' : 'Guardar lectura'; return; }
       if (res && res.PIDE_JUSTIFICACION) { $id('pu-acl-just').innerHTML = '<div style="color:var(--danger);font-weight:700;font-size:16px">Fuera de lo especificado: ' + puEsc(res.FUERA.join(', ')) + '. Explicá qué pasó (lo ve el encargado en el control final).</div><input class="pu-q" id="pu-acl-jtx" style="font-size:16px;text-transform:none" autocomplete="off">'; b.disabled = false; b.textContent = fin ? 'Guardar y terminar la cocción' : 'Guardar lectura'; return; }
       if (!res || !res.ok) { toast((res && res.error) || 'No se pudo', 'r2'); b.disabled = false; b.textContent = fin ? 'Guardar y terminar la cocción' : 'Guardar lectura'; return; }
       closeModal();
