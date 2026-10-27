@@ -1429,7 +1429,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610272033';
+var EMA_BUILD = '202610272034';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16588,7 +16588,7 @@ function mgPintar() {
 @media(min-width:900px){.mg-wrap{max-width:980px}}
 .mg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.mg-chips .btn{min-height:38px}
 .mg-lst{border:2px solid var(--accent,#2563eb);border-radius:12px;background:var(--card,#fff);margin-top:6px;margin-bottom:76px}
-.mg-fil{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px}.mg-fil .btn small{opacity:.75;font-weight:400}.mg-fam{padding:6px;border-radius:10px;background:#f1f5f9}
+.mg-fil{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;margin:8px 0 2px;padding-bottom:4px;scrollbar-width:thin}.mg-fil .btn{flex:0 0 auto;white-space:nowrap}@media(min-width:900px){.mg-fil{flex-wrap:wrap;overflow:visible}}.mg-fil .btn small{opacity:.75;font-weight:400}.mg-fam{padding:6px;border-radius:10px;background:#f1f5f9}
 @media(min-width:900px){.mg-lst{display:grid;grid-template-columns:1fr 1fr;margin-bottom:12px}.mg-lst-h{grid-column:1 / -1}.mg-op{border-right:1px solid var(--border)}.mg-listo{position:sticky;left:auto;right:auto;bottom:8px;grid-column:1 / -1;margin:8px}}
 .mg-lst-h{padding:8px 12px;font-size:13px;background:#eff6ff;color:#1e3a8a;border-radius:10px 10px 0 0}
 .mg-op{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;touch-action:manipulation}
