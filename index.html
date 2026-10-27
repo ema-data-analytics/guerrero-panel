@@ -1427,7 +1427,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610272017';
+var EMA_BUILD = '202610272022';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -5845,19 +5845,19 @@ function stGenPintar() {
   var el = $id('st-gen'), d = STG_.d; if (!el || !d) return;
   var I = d.INSUMOS, A = d.ARTICULOS, sum = function(l, f) { return l.reduce(function(s, x) { return s + (f(x) || 0); }, 0); };
   var bajo = function(l) { return l.filter(function(x) { return x.MINIMO > 0 && x.STOCK <= x.MINIMO; }).length; };
-  var k = function(t, v, s, c, on) { return '<div class="stat" style="border-top:3px solid ' + c + (on ? ';cursor:pointer' : '') + '"' + (on ? ' onclick="' + on + '"' : '') + '><div class="stat-label">' + t + '</div><div class="stat-val" style="font-size:22px">' + v + '</div><div class="stat-sub">' + s + '</div></div>'; };
+  var k = function(t, v, s, c, on) { return '<div class="stat" style="border-top:3px solid ' + c + (on ? ';cursor:pointer' : '') + '"' + (on ? ' onclick="' + on + '"' : '') + '><div class="stat-label">' + t + '</div><div class="stat-val" style="font-size:24px;line-height:1.2">' + v + '</div><div class="stat-sub">' + s + '</div></div>'; };
   var h = '<div class="g4 mb3">' +
-    k('Insumos de planta', I.filter(function(x) { return x.STOCK > 0; }).length + ' con stock', 'valor ' + stgP(sum(I, function(x) { return x.VALOR; })), 'var(--accent)') +
-    k('Cubiertas y artículos', A.filter(function(x) { return x.STOCK > 0; }).length + ' con stock', 'valor ' + stgP(sum(A, function(x) { return x.VALOR; })), 'var(--success)') +
+    k('Insumos con stock', I.filter(function(x) { return x.STOCK > 0; }).length, 'valor ' + stgP(sum(I, function(x) { return x.VALOR; })), 'var(--accent)') +
+    k('Artículos con stock', A.filter(function(x) { return x.STOCK > 0; }).length, 'valor ' + stgP(sum(A, function(x) { return x.VALOR; })), 'var(--success)') +
     k('Bajo el mínimo', bajo(I) + bajo(A), bajo(I) + ' insumos · ' + bajo(A) + ' artículos', 'var(--danger)', "STG_.est='MIN';stGenPintar()") +
-    k('Comprado sin recibir', d.COMPRAS_PENDIENTES + ' compra' + (d.COMPRAS_PENDIENTES === 1 ? '' : 's'), d.REMITOS_A_APROBAR ? d.REMITOS_A_APROBAR + ' remito' + (d.REMITOS_A_APROBAR === 1 ? '' : 's') + ' interno' + (d.REMITOS_A_APROBAR === 1 ? '' : 's') + ' a aprobar' : 'sin remitos internos a aprobar', 'var(--warn)', "STG_.est='REC';stGenPintar()") +
+    k('Compras sin recibir', d.COMPRAS_PENDIENTES, d.REMITOS_A_APROBAR ? d.REMITOS_A_APROBAR + ' remito' + (d.REMITOS_A_APROBAR === 1 ? '' : 's') + ' interno' + (d.REMITOS_A_APROBAR === 1 ? '' : 's') + ' a aprobar' : 'sin remitos internos a aprobar', 'var(--warn)', "STG_.est='REC';stGenPintar()") +
     '</div>';
   h += '<div class="al mb3" style="font-size:12px">El stock sube <b>solo con remito</b>: del proveedor, o interno aprobado por un administrador. <b>Por recibir</b> = está en una factura de compra pero todavía no llegó el remito. <b>En aprobación</b> = hay un remito interno esperando que lo apruebe un administrador.</div>';
   var lista = stgLista(), rubros = []; lista.forEach(function(x) { if (x.RUBRO && rubros.indexOf(x.RUBRO) === -1) rubros.push(x.RUBRO); }); rubros.sort();
   var chip = function(v, t) { return '<button class="btn btn-sm ' + (STG_.est === v ? 'btn-p' : 'btn-s') + '" onclick="STG_.est=\'' + v + '\';STG_.lim=150;stGenPintar()">' + t + '</button>'; };
   h += '<div class="card"><div class="card-hd" style="flex-wrap:wrap;gap:8px"><span style="display:flex;gap:6px">' +
     '<button class="btn ' + (STG_.vista === 'INS' ? 'btn-p' : 'btn-s') + '" onclick="STG_.vista=\'INS\';STG_.rubro=\'\';STG_.lim=150;stGenPintar()">🧪 Insumos de planta</button>' +
-    '<button class="btn ' + (STG_.vista === 'ART' ? 'btn-p' : 'btn-s') + '" onclick="STG_.vista=\'ART\';STG_.rubro=\'\';STG_.lim=150;if(STG_.est===\'MOV\')STG_.est=\'\';stGenPintar()">🛞 Cubiertas y artículos de venta</button></span>' +
+    '<button class="btn ' + (STG_.vista === 'ART' ? 'btn-p' : 'btn-s') + '" onclick="STG_.vista=\'ART\';STG_.rubro=\'\';STG_.lim=150;if(STG_.est===\'MOV\')STG_.est=\'\';stGenPintar()">🚗 Cubiertas y artículos de venta</button></span>' +
     '<button class="btn btn-sm btn-s" onclick="stGenCargar()">↻ Actualizar</button></div>' +
     '<div class="fbar" style="gap:8px;flex-wrap:wrap"><input id="stg-q" class="fi" style="max-width:280px" placeholder="Buscar por nombre o código…" value="' + stgE(STG_.q) + '" oninput="STG_.q=this.value;STG_.lim=150;stgTabla()"/>' +
     '<select class="fs" style="max-width:220px" onchange="STG_.rubro=this.value;STG_.lim=150;stgTabla()"><option value="">Todos los rubros</option>' + rubros.map(function(r) { return '<option' + (STG_.rubro === r ? ' selected' : '') + '>' + stgE(r) + '</option>'; }).join('') + '</select></div>' +
@@ -11756,6 +11756,7 @@ async function puRtGuardar() {
 .pn-busca input{width:100%;box-sizing:border-box;font-size:18px;padding:12px 14px;border-radius:12px;border:2px solid var(--border);background:var(--surface,#fff);color:var(--text)}
 .pn-busca input:focus{border-color:var(--accent);outline:none}
 .pn-chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px}
+.pn-div{display:flex;border:1px solid #14213d;border-radius:12px;overflow:hidden;margin:0 0 10px}.pn-div button{flex:1;border:0;background:#fff;color:#14213d;padding:12px 6px;font-size:15px;font-weight:800;cursor:pointer;min-height:48px}.pn-div button.on{background:#14213d;color:#fff}
 .pn-chip{flex:0 0 auto;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);border-radius:20px;padding:6px 12px;font-size:13.5px;cursor:pointer;white-space:nowrap}
 .pn-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 .pn-info{font-size:12.5px;color:var(--dim);margin:6px 2px}
@@ -11821,13 +11822,13 @@ async function puRtGuardar() {
 <script>
 // ── Precios de cubiertas nuevas (para vendedores, pensado para el celular) ──
 // Lee las tablas pn_precios / pn_promos / pn_promo_items desde el servidor (gsPN_Datos).
-var PN_ = { d: null, q: '', rubro: '', marca: '', promo: 0, max: 40, idx: null, sel: {}, orden: [], cli: '', pdf: null, lista: '30%', desc: 0, dItem: {}, mg: null };
+var PN_ = { div: 'CUB', d: null, q: '', rubro: '', marca: '', promo: 0, max: 40, idx: null, sel: {}, orden: [], cli: '', pdf: null, lista: '30%', desc: 0, dItem: {}, mg: null };
 function pnEl() { return $id('page-precios-nuevos'); }
 function pnEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function pnPlata(n) { n = Number(n) || 0; return '$ ' + Math.round(n).toLocaleString('es-AR'); }
 function pnNorm(s) { return String(s || '').toUpperCase().replace(/×/g, 'X').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]/g, ''); }
 function pnFecha(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
-var PN_RUBROS = [['', 'Todos'], ['AUTO', '🚗 Auto'], ['CAMIONETA', '🛻 Camioneta'], ['CAMION', '🚚 Camión'], ['AGRICOLA', '🚜 Agrícola'], ['INDUSTRIAL', '🏗 Industrial'], ['INSUMOS', '🔧 Insumos']];
+var PN_RUBROS = [['', 'Todos'], ['AUTO', '🚗 Auto'], ['CAMIONETA', '🛻 Camioneta'], ['CAMION', '🚚 Camión'], ['AGRICOLA', '🚜 Agrícola'], ['INDUSTRIAL', '🏗 Industrial']];
 
 async function renderPrecios() {
   var el = pnEl(); if (!el) return;
@@ -11891,20 +11892,25 @@ function pnPintar() {
     });
     h += '</div>';
   }
-  h += '<div class="pn-busca"><input id="pn-q" type="search" inputmode="search" autocomplete="off" placeholder="Buscá medida, marca o diseño (ej: 295 80 22.5)" value="' + pnEsc(PN_.q) + '" oninput="pnBuscar(this.value)"/>' +
-    '<div class="pn-chips">' + PN_RUBROS.map(function(r) { return '<button class="pn-chip' + (PN_.rubro === r[0] ? ' on' : '') + '" onclick="pnRubro(\'' + r[0] + '\')">' + r[1] + '</button>'; }).join('') + '</div>' +
-    '<div class="pn-chips"><button class="pn-chip' + (!PN_.marca ? ' on' : '') + '" onclick="pnMarca(\'\')">Todas las marcas</button>' +
-    Object.keys(marcas).sort().map(function(m) { return '<button class="pn-chip' + (PN_.marca === m ? ' on' : '') + '" onclick="pnMarca(\'' + pnEsc(m) + '\')">' + pnEsc(m) + '</button>'; }).join('') + '</div></div>' +
+  var insV = PN_.div === 'INS', cats = []; if (insV) (PN_.d.PRECIOS || []).forEach(function(p) { if (p.RUBRO === 'INSUMOS' && p.DESCRIPCION && cats.indexOf(p.DESCRIPCION) === -1) cats.push(p.DESCRIPCION); }); cats.sort();
+  h += '<div class="pn-div"><button class="' + (!insV ? 'on' : '') + '" onclick="pnDiv(\'CUB\')">🚗 Cubiertas</button><button class="' + (insV ? 'on' : '') + '" onclick="pnDiv(\'INS\')">🔧 Insumos y accesorios</button></div>' +
+    '<div class="pn-busca"><input id="pn-q" type="search" inputmode="search" autocomplete="off" placeholder="' + (insV ? 'Buscá por nombre o código (ej: parche, raspa, AA0775)' : 'Buscá medida, marca o diseño (ej: 295 80 22.5)') + '" value="' + pnEsc(PN_.q) + '" oninput="pnBuscar(this.value)"/>' +
+    '<div class="pn-chips">' + (insV ? [['', 'Todo']].concat(cats.map(function(c) { return [c, c.charAt(0) + c.slice(1).toLowerCase()]; })) : PN_RUBROS).map(function(r) { return '<button class="pn-chip' + (PN_.rubro === r[0] ? ' on' : '') + '" onclick="pnRubro(\'' + r[0] + '\')">' + r[1] + '</button>'; }).join('') + '</div>' +
+    (insV ? '' : '<div class="pn-chips"><button class="pn-chip' + (!PN_.marca ? ' on' : '') + '" onclick="pnMarca(\'\')">Todas las marcas</button>' +
+    Object.keys(marcas).sort().map(function(m) { return '<button class="pn-chip' + (PN_.marca === m ? ' on' : '') + '" onclick="pnMarca(\'' + pnEsc(m) + '\')">' + pnEsc(m) + '</button>'; }).join('') + '</div>') + '</div>' +
     '<div id="pn-res"></div></div>';
   el.innerHTML = h;
   pnResultados();
 }
 function pnFiltrar() {
+  if (PN_.rubro === 'INSUMOS') { PN_.rubro = ''; PN_.div = 'INS'; }
   var toks = String(PN_.q || '').trim().split(/\s+/).filter(function(t) { return t; }).map(function(t) { var n = pnNorm(t); return { n: n, dig: /^[0-9]+$/.test(n) }; }).filter(function(t) { return t.n; });
   return PN_.idx.filter(function(x) {
     var p = x.p;
-    if (PN_.rubro && p.RUBRO !== PN_.rubro) return false;
-    if (PN_.marca && p.MARCA !== PN_.marca) return false;
+    var esI = p.RUBRO === 'INSUMOS';
+    if ((PN_.div === 'INS') !== esI) return false;
+    if (PN_.rubro && (esI ? p.DESCRIPCION !== PN_.rubro : p.RUBRO !== PN_.rubro)) return false;
+    if (PN_.marca && !esI && p.MARCA !== PN_.marca) return false;
     if (PN_.promo && !(PN_.porPn[p.ID_PN] || []).some(function(it) { return it.ID_PROMO === PN_.promo; })) return false;
     for (var i = 0; i < toks.length; i++) {
       var t = toks[i];
@@ -11954,6 +11960,7 @@ function pnTarjeta(p) {
 }
 function pnPlazos(s) { if (!s) return []; return String(s).split('|').map(function(x) { var a = x.split(':'); return [a[0], Number(a[1])]; }).filter(function(z) { return z[0] && z[1]; }); }
 function pnBuscar(v) { PN_.q = v; PN_.max = 40; clearTimeout(PN_.t); PN_.t = setTimeout(pnResultados, 150); }
+function pnDiv(d) { PN_.div = d; PN_.rubro = ''; PN_.marca = ''; PN_.promo = 0; PN_.max = 40; pnPintar(); }
 function pnRubro(r) { PN_.rubro = r; PN_.max = 40; pnPintar(); var i = $id('pn-q'); if (i && PN_.q) i.focus(); }
 function pnMarca(m) { PN_.marca = m; PN_.max = 40; pnPintar(); }
 function pnLimpiar() { PN_.q = ''; PN_.rubro = ''; PN_.marca = ''; PN_.promo = 0; PN_.max = 40; pnGuardar(); pnPintar(); window.scrollTo(0, 0); }
@@ -16344,8 +16351,11 @@ var MV_OPC = [
   ['rech', '↩', 'Rechazadas', 'Cubiertas para devolver', 'produccion-cubiertas', 'rech', 'RECEPCION ENCARGADO_PLANTA'],
   ['alarmas', '⚠', 'Alarmas', 'Stock bajo y cosas atrasadas', 'produccion-cubiertas', 'alarmas', 'ENCARGADO_PLANTA'],
   ['stock', '📦', 'Stock de insumos', 'Cuánto hay de cada insumo', 'stock-insumos', '', 'ENCARGADO_PLANTA'],
-  ['margen', '📊', 'Margen con descuento', 'Semáforo: cuánto se gana', 'margen', '', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
-  ['precios-nuevos', '🏷', 'Precios', 'Cubiertas nuevas y promos', 'precios-nuevos', '', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
+  ['catalogo', '🛍', 'Catálogo', 'La tienda: cubiertas e insumos con foto', 'precios-nuevos', '', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
+  ['precios-nuevos', '🏷', 'Lista de precios · Cubiertas', 'Cubiertas nuevas y promos', 'precios-nuevos', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
+  ['precios-ins', '🔧', 'Lista de precios · Insumos', 'Insumos y accesorios de gomería', 'precios-nuevos', 'INS', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
+  ['margen', '📊', 'Margen · Cubiertas', 'Semáforo: cuánto se gana con descuento', 'margen', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
+  ['margen-ins', '📊', 'Margen · Insumos', 'Semáforo de los insumos y accesorios', 'margen', 'INS', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
   ['fichaje', '🕘', 'Fichaje', 'Entrada y salida del personal', 'fichaje', '', ''],
   ['asistencia', '👥', 'Asistencia', 'Quién vino, faltas y certificados', 'asistencia', '', ''],
   ['avance', '📈', 'Avance del sistema', 'Qué se hizo y qué sigue', 'avance', '', ''],
@@ -16377,9 +16387,12 @@ function mvInicio() { closeModal(); if (typeof pcCerrarVista === 'function') pcC
 // Cada botón abre una sola cosa: en Producción por cubierta, la pestaña que corresponde sin las demás (modo foco)
 function mvAbrir(k) {
   var o = MV_OPC.filter(function(x) { return x[0] === k; })[0]; if (!o) return;
+  if (k === 'catalogo') { window.open(location.origin + location.pathname.replace(/[^\/]*$/, '') + 'tienda/', '_blank'); return; }
   document.body.classList.remove('en-inicio-movil'); document.body.classList.remove('modo-cascos'); PC_.foco = null;
   if (o[4] === 'produccion-cubiertas' && o[5]) { document.body.classList.add('modo-cascos'); PC_.tab = o[5]; PC_.foco = o; }
   if (o[4] === 'documentos') DC_.tipo = o[5] || '';
+  if (o[4] === 'precios-nuevos' && typeof PN_ !== 'undefined') { PN_.div = o[5] || 'CUB'; PN_.rubro = ''; PN_.marca = ''; PN_.promo = 0; }
+  if (o[4] === 'margen') { MG_.div = o[5] || 'CUB'; MG_.rubro = ''; }
   navTo(o[4]);
 }
 // QR del sistema: el otro celular lo escanea, entra con su usuario y lo agrega a la pantalla de inicio (queda el ícono «Vulcan»)
@@ -16396,7 +16409,7 @@ function mvCompleto() { document.body.classList.remove('modo-puesto'); document.
 </script>
 <script>
 // ── 📊 Margen con descuento (celular): se ponen las cubiertas y el semáforo dice cuánto se gana con el descuento que se va dando ──
-var MG_ = { d: null, items: [], desc: 0, rubro: '' };
+var MG_ = { d: null, items: [], desc: 0, rubro: '', div: 'CUB' };
 async function renderMargen() {
   var el = $id('page-margen'); if (!el) return;
   if (!MG_.d) {
@@ -16412,18 +16425,21 @@ async function renderMargen() {
 }
 // Tipo de cubierta: achica la búsqueda (Auto, Camioneta, Camión, Agrícola…)
 function mgChips() {
-  var rs = []; MG_.d.ARTICULOS.forEach(function(a) { if (a.RUBRO && rs.indexOf(a.RUBRO) === -1) rs.push(a.RUBRO); });
+  var insV = MG_.div === 'INS';
+  var seg = '<div class="pn-div" style="width:100%"><button class="' + (!insV ? 'on' : '') + '" onclick="MG_.div=\'CUB\';MG_.rubro=\'\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">🚗 Cubiertas</button><button class="' + (insV ? 'on' : '') + '" onclick="MG_.div=\'INS\';MG_.rubro=\'\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">🔧 Insumos y accesorios</button></div>';
+  if (insV) return seg;
+  var rs = []; MG_.d.ARTICULOS.forEach(function(a) { if (a.RUBRO && a.RUBRO !== 'INSUMOS' && rs.indexOf(a.RUBRO) === -1) rs.push(a.RUBRO); });
   var ord = ['AUTO', 'CAMIONETA', 'CAMION', 'AGRICOLA', 'INDUSTRIAL', 'INSUMOS']; rs.sort(function(a, b) { var x = ord.indexOf(a), y = ord.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
   var nom = { AUTO: '🚗 Auto', CAMIONETA: '🚙 Camioneta', CAMION: '🚛 Camión', AGRICOLA: '🚜 Agrícola', INDUSTRIAL: '🏗 Industrial', INSUMOS: '🔧 Insumos' };
-  return [''].concat(rs).map(function(r) { return '<button class="btn btn-sm ' + (MG_.rubro === r ? 'btn-p' : 'btn-s') + '" onclick="MG_.rubro=\'' + r + '\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">' + (r ? (nom[r] || r) : 'Todas') + '</button>'; }).join('');
+  return seg + [''].concat(rs).map(function(r) { return '<button class="btn btn-sm ' + (MG_.rubro === r ? 'btn-p' : 'btn-s') + '" onclick="MG_.rubro=\'' + r + '\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">' + (r ? (nom[r] || r) : 'Todas') + '</button>'; }).join('');
 }
 function mgNorm(t) { return String(t || '').toUpperCase().replace(/[\s\/\-.,R]/g, ''); }
 // Lista para tildar varias: cada toque agrega o saca la cubierta (✓). La lista queda abierta hasta «Listo».
 function mgBuscar() {
   var q = $v('mg-q').trim(), box = $id('mg-sug'); if (!box) return;
-  if (q.length < 2 && !MG_.rubro) { box.innerHTML = ''; return; }
+  if (q.length < 2 && !MG_.rubro && MG_.div !== 'INS') { box.innerHTML = ''; return; }
   var qs = q.toUpperCase().split(/\s+/).filter(function(w) { return w; }), qn = mgNorm(q);
-  var r = MG_.d.ARTICULOS.filter(function(a) { if (MG_.rubro && a.RUBRO !== MG_.rubro) return false; if (q.length < 2) return true; var n = a.NOMBRE.toUpperCase() + ' ' + a.CODIGO + ' ' + a.MARCA.toUpperCase(); return a.CODIGO.toUpperCase() === q.toUpperCase() || mgNorm(a.NOMBRE).indexOf(qn) !== -1 || qs.every(function(w) { return n.indexOf(w) !== -1; }); }).slice(0, 30);
+  var r = MG_.d.ARTICULOS.filter(function(a) { if ((MG_.div === 'INS') !== (a.RUBRO === 'INSUMOS')) return false; if (MG_.rubro && a.RUBRO !== MG_.rubro) return false; if (q.length < 2) return true; var n = a.NOMBRE.toUpperCase() + ' ' + a.CODIGO + ' ' + a.MARCA.toUpperCase(); return a.CODIGO.toUpperCase() === q.toUpperCase() || mgNorm(a.NOMBRE).indexOf(qn) !== -1 || qs.every(function(w) { return n.indexOf(w) !== -1; }); }).slice(0, 30);
   MG_.sug = r;
   if (!r.length) { box.innerHTML = '<div class="tdim" style="font-size:13px;padding:8px">No encontré esa cubierta.</div>'; return; }
   var n = MG_.items.reduce(function(a, i) { return a + i.n; }, 0);
