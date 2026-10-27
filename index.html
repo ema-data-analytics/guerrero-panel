@@ -1417,7 +1417,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271838';
+var EMA_BUILD = '202610271846';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -1431,21 +1431,20 @@ function emaActualizar(v) {
 }
 function emaChequearVersion() {
   emaVersionNueva(function(v) {
-    var ya = false; try { ya = sessionStorage.getItem('ema_recarga_' + v) === '1'; } catch (e) {}
-    if (typeof SES === 'undefined' || !SES) { if (!ya) emaActualizar(v); return; }
-    if ($id('ema-ver-nueva')) return;
-    var b = document.createElement('div'); b.id = 'ema-ver-nueva';
-    b.innerHTML = '🔄 Hay una versión nueva del sistema <button class="btn btn-p btn-sm" onclick="emaActualizar(\'' + v + '\')">Actualizar</button>';
-    document.body.appendChild(b);
+    // Siempre un botón azul a la vista (en la entrada, en el celular, en la tablet y en la PC) hasta que lo tocan
+    var b = $id('ema-ver-nueva');
+    if (!b) { b = document.createElement('button'); b.id = 'ema-ver-nueva'; b.type = 'button'; document.body.appendChild(b); }
+    b.onclick = function() { emaActualizar(v); };
+    b.innerHTML = '🔄 Hay una versión nueva · <u>Actualizar</u>';
   });
 }
 setTimeout(emaChequearVersion, 1500);
-setInterval(emaChequearVersion, 120000);
+setInterval(emaChequearVersion, 60000);
 document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') emaChequearVersion(); });
 </script>
 <style>
-#ema-ver-nueva{position:fixed;left:8px;right:8px;bottom:10px;z-index:9999;background:#111827;color:#fff;border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.35)}
-#ema-ver-nueva .btn{min-height:42px}
+#ema-ver-nueva{position:fixed;left:50%;transform:translateX(-50%);top:8px;z-index:100000;background:#2563eb;color:#fff;border:0;border-radius:999px;padding:14px 22px;font-size:17px;font-weight:800;box-shadow:0 6px 20px rgba(37,99,235,.55);cursor:pointer;white-space:nowrap;max-width:calc(100vw - 16px);animation:emaLatido 1.6s ease-in-out infinite;touch-action:manipulation}
+@keyframes emaLatido{0%,100%{box-shadow:0 6px 20px rgba(37,99,235,.55)}50%{box-shadow:0 6px 28px rgba(37,99,235,.95)}}
 </style>
 
 <script>
