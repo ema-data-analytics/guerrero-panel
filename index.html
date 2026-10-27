@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "4629fb218dd5"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ff24e701e001"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -9962,6 +9962,8 @@ var puTick = null;
 
 function puEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function puN(v) { return parseFloat(String(v).replace(',', '.')); }
+// Cantidad de la receta sin redondear (la tiza va 0,001515 por cubierta: redondear a 0,002 cargaba 32% de más)
+function puExacto(n) { return String(Math.round(Number(n) * 1e6) / 1e6).replace('.', ','); }
 function puF(n) { return String(Math.round(n * 1000) / 1000).replace('.', ','); }
 function puReloj(s) { var m = Math.floor(s / 60), x = s % 60; return (m < 10 ? '0' : '') + m + ':' + (x < 10 ? '0' : '') + x; }
 function puGuardar(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -10629,7 +10631,7 @@ function puPintarFila(k) {
       return;
     }
     e.onclick = function() {
-      if (a === 'igual') { r.real = puF(r.l.CANTIDAD); r.ok = true; r.motivo = ''; return puCerrarFila(); }
+      if (a === 'igual') { r.real = puExacto(r.l.CANTIDAD); r.ok = true; r.motivo = ''; return puCerrarFila(); }
       if (a === 'motivo') { r.motivo = e.dataset.v; return puCerrarFila(); }
       if (a === 'pieza') { r.pieza = String(r.pieza) === e.dataset.v ? '' : e.dataset.v; r.sinNro = false; if (r.pieza) return puCerrarFila(); }
       if (a === 'sinnro') { r.sinNro = !r.sinNro; r.pieza = ''; if (r.sinNro) return puCerrarFila(); }
@@ -10644,7 +10646,7 @@ function puPintarFila(k) {
 }
 // Pone la cantidad de la receta en todos los insumos que todavía no se cargaron (los que tienen cantidad y hay stock)
 function puTodoReceta() {
-  PU_.rows.forEach(function(r) { if (!r.no && !r.ok && !r.reemp && !puPesarCub(r) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && !puSinStock(r.l)) { r.real = puF(r.l.CANTIDAD); r.ok = true; r.motivo = ''; } });
+  PU_.rows.forEach(function(r) { if (!r.no && !r.ok && !r.reemp && !puPesarCub(r) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && !puSinStock(r.l)) { r.real = puExacto(r.l.CANTIDAD); r.ok = true; r.motivo = ''; } });
   puFicha();
 }
 // Insumo que no está en la receta: se elige de los que hay en stock y se pone cuánto se usó (no pide clave; queda registrado)
@@ -11073,7 +11075,7 @@ function puReemplazo(filaPre) {
     if (v.charAt(0) === 'r') r = filas[+v.slice(1)];
     else { var l = otros[+v.slice(1)]; PU_.pend.splice(PU_.pend.indexOf(l), 1); r = puNuevaFila(l); PU_.rows.push(r); }
     if (x.ID_INSUMO === r.l.ID_INSUMO) { toast('Es el mismo insumo de la receta', 'r2'); return; }
-    r.reemp = true; r.idReal = x.ID_INSUMO; r.real = puF(r.l.CANTIDAD); r.ok = true; r.motivo = '';
+    r.reemp = true; r.idReal = x.ID_INSUMO; r.real = puExacto(r.l.CANTIDAD); r.ok = true; r.motivo = '';
     closeModal(); puFicha();
   };
 }
