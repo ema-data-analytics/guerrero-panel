@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ae2a5bcacad8"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f29af7873bb9"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -353,6 +353,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
 
       <div class="sb-group">Sistema</div>
       <div class="nav-item" data-page="agenda"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Agenda del proyecto</div>
+      <div class="nav-item" data-page="avance"><span class="nav-icon"><i class="fas fa-chart-line"></i></span> Avance del sistema</div>
       <div class="nav-item" data-page="seguridad"><span class="nav-icon"><i class="fas fa-shield-alt"></i></span> Seguridad</div>
       <div class="nav-item" data-page="configuracion"><span class="nav-icon"><i class="fas fa-cog"></i></span> Configuración</div>
       <div class="nav-item" data-page="gsheets"><span class="nav-icon"><i class="fas fa-table"></i></span> Google Sheets</div>
@@ -369,6 +370,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-produccion-cubiertas" class="hidden"></div>
     <div id="page-documentos" class="hidden"></div>
     <div id="page-inicio-movil" class="hidden"></div>
+    <div id="page-avance" class="hidden"></div>
     <div id="page-puesto-estacion" class="hidden"></div>
     <div id="page-precios-nuevos" class="hidden"></div>
     <div id="page-pedidos-web" class="hidden"></div>
@@ -716,6 +718,7 @@ function tienePermiso(modulo, accion) {
 
 function puedeVerPagina(page) {
   if (page === 'inicio-movil') return !!SES;
+  if (page === 'avance') { var rA = String((SES && SES.rol) || '').toUpperCase(); return rA === 'SUPER' || rA.indexOf('ADMIN') !== -1; }
   // Las pantallas de la planta de recapado no se muestran a los usuarios de una sucursal sin planta (el servidor también lo frena)
   if (SES && SES.planta === false && moduloDePagina(page) === 'PRODUCCION') return false;
   return tienePermiso(moduloDePagina(page), 'VER');
@@ -1113,6 +1116,7 @@ function getPage(name) {
     'precios-nuevos': function(){ if(typeof renderPrecios!=='undefined') renderPrecios(); },
     'documentos': function(){ if(typeof renderDocs!=='undefined') renderDocs(); },
     'inicio-movil': function(){ if(typeof renderInicioMovil!=='undefined') renderInicioMovil(); },
+    'avance': function(){ if(typeof renderAvance!=='undefined') renderAvance(); },
     'pedidos-web': function(){ if(typeof renderPedidosWeb!=='undefined') renderPedidosWeb(); },
     'carga-compras': typeof renderCargaCompras !== 'undefined' ? renderCargaCompras : null,
     'carga-gastos': typeof renderCargaGastos !== 'undefined' ? renderCargaGastos : null,
@@ -15824,9 +15828,14 @@ function agInfForm() {
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="agInforme()">Armar el informe</button></div>');
 }
 function agInforme() {
-  var d = AG_.d, desde = $v('ag-i-d'), hasta = $v('ag-i-h') || desde, para = $v('ag-i-p'), com = $v('ag-i-c'), conEst = $id('ag-i-e').checked, conFal = $id('ag-i-f').checked;
+  var desde = $v('ag-i-d'), hasta = $v('ag-i-h') || desde, para = $v('ag-i-p'), com = $v('ag-i-c'), conEst = $id('ag-i-e').checked, conFal = $id('ag-i-f').checked;
   if (!desde) { toast('Elegí desde qué día', 'r2'); return; }
   if (hasta < desde) { var x = desde; desde = hasta; hasta = x; }
+  closeModal();
+  pcImprimir('Informe de avance ' + (desde === hasta ? desde : desde + ' al ' + hasta), agInformeHTML(desde, hasta, para, com, conEst, conFal), false);
+}
+function agInformeHTML(desde, hasta, para, com, conEst, conFal) {
+  var d = AG_.d;
   var E = function(s) { return agEsc(s).replace(/\n/g, '<br>'); };
   var col = { PROBADO: '#166534', SIN_PROBAR: '#854d0e', NO_FUNCIONA: '#b91c1c', FALTA: '#374151', A_AGREGAR: '#1e40af', ANULADO: '#9ca3af' };
   var est = function(e) { return '<b style="color:' + (col[e] || '#111') + '">' + agEsc(AG_EST[e] || e) + '</b>'; };
@@ -15869,9 +15878,33 @@ function agInforme() {
       pend.map(function(it) { return '<tr><td>' + est(it.ESTADO) + '</td><td>' + agEsc(it.AREA) + '</td><td><b>' + agEsc(it.TITULO) + '</b><div style="color:#666;font-size:9px">desde ' + agEsc(agFechaTxt(it.FECHA)) + '</div></td><td>' + (it.DETALLE ? E(it.DETALLE) : '—') + '</td></tr>'; }).join('') + '</tbody></table>' : '<div>No queda nada pendiente.</div>');
   }
   h += '<div class="nota">Estados: Probado y funciona = se probó en el sistema y anda · Hecho, sin probar = está hecho pero falta probarlo · No funciona = se probó y falla · Falta hacer · A agregar = mejora pedida.</div>';
-  closeModal();
-  pcImprimir('Informe de avance ' + (desde === hasta ? desde : desde + ' al ' + hasta), h, false);
+  return h;
 }
+// ── Avance del sistema para el dueño (celular, solo lectura): de un día o desde el inicio, en pantalla y en PDF ──
+var AV_ = { rango: 'todo' };
+async function renderAvance() {
+  var el = $id('page-avance'); if (!el) return;
+  el.innerHTML = '<div class="al">Cargando el avance…</div>';
+  try { AG_.d = await gsRun('gsAG_Datos'); } catch (e) { el.innerHTML = '<div class="al al-r">' + agEsc(e.message) + '</div>'; return; }
+  if (!AG_.d || !AG_.d.ok) { el.innerHTML = '<div class="al al-r">' + agEsc((AG_.d && AG_.d.error) || 'No se pudo cargar') + '</div>'; return; }
+  avPintar();
+}
+function avRango() {
+  var d = AG_.d, hoy = d.HOY, fs = d.CAMBIOS.map(function(c) { return c.FECHA; }).filter(Boolean).sort();
+  var menos = function(n) { var x = new Date(hoy + 'T12:00:00'); x.setDate(x.getDate() - n); return x.toISOString().slice(0, 10); };
+  if (AV_.rango === 'hoy') return [hoy, hoy];
+  if (AV_.rango === 'semana') return [menos(6), hoy];
+  return [fs[0] || hoy, hoy];
+}
+function avPintar() {
+  var r = avRango(), el = $id('page-avance');
+  var css = '<style>#page-avance .av-doc{background:#fff;color:#111;border-radius:12px;padding:12px;font-size:12px;overflow-x:auto}#page-avance .av-doc table{width:100%;border-collapse:collapse}#page-avance .av-doc th,#page-avance .av-doc td{border:1px solid #bbb;padding:4px 5px;text-align:left;vertical-align:top;font-size:11px}#page-avance .av-doc th{background:#eee}#page-avance .av-doc h1{font-size:16px;margin:0}#page-avance .av-doc h2{font-size:14px;margin:12px 0 6px}#page-avance .av-doc .enc{display:flex;justify-content:space-between;gap:8px;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:8px}#page-avance .av-doc .dat{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin:6px 0}#page-avance .av-doc .dat b{display:block;font-size:10px;color:#555}#page-avance .av-doc .nota,#page-avance .av-doc .emp{font-size:10px;color:#555}#page-avance .av-doc img{max-height:48px}</style>';
+  el.innerHTML = css + '<div style="max-width:900px;margin:0 auto"><div style="font-size:20px;font-weight:800">📈 Avance del sistema</div><div class="tdim" style="font-size:13px;margin-bottom:8px">Lo que se hizo, cómo está cada área y lo que sigue.</div>' +
+    '<div class="flex gap2 mb2" style="flex-wrap:wrap">' + [['hoy', 'Hoy'], ['semana', 'Últimos 7 días'], ['todo', 'Desde el inicio']].map(function(x) { return '<button class="btn btn-sm ' + (AV_.rango === x[0] ? 'btn-p' : 'btn-s') + '" onclick="AV_.rango=\'' + x[0] + '\';avPintar()">' + x[1] + '</button>'; }).join('') +
+    '<button class="btn btn-sm btn-p" style="margin-left:auto" onclick="avPDF()"><i class="fas fa-file-pdf"></i> PDF</button></div>' +
+    '<div class="av-doc">' + agInformeHTML(r[0], r[1], (SES && SES.nombre) || '', '', true, true) + '</div></div>';
+}
+function avPDF() { var r = avRango(); pcImprimir('Informe de avance ' + (r[0] === r[1] ? r[0] : r[0] + ' al ' + r[1]), agInformeHTML(r[0], r[1], (SES && SES.nombre) || '', '', true, true), false); }
 function agForm(id) {
   var it = id ? agItem(id) : { FECHA: agHoy(), AREA: AG_.area || '', TITULO: '', DETALLE: '', ESTADO: 'SIN_PROBAR', ORIGEN: '' };
   var areas = {}; AG_.d.ITEMS.forEach(function(x) { areas[x.AREA] = 1; });
@@ -16001,13 +16034,14 @@ var MV_OPC = [
   ['precios-nuevos', '🏷', 'Precios', 'Cubiertas nuevas y promos', 'precios-nuevos', ''],
   ['fichaje', '🕘', 'Fichaje', 'Entrada y salida del personal', 'fichaje', ''],
   ['asistencia', '👥', 'Asistencia', 'Quién vino, faltas y certificados', 'asistencia', ''],
-  ['agenda', '📋', 'Agenda e informe', 'Avance del sistema en PDF', 'agenda', '']
+  ['avance', '📈', 'Avance del sistema', 'Qué se hizo y qué sigue', 'avance', ''],
+  ['agenda', '📋', 'Agenda (cargar)', 'Puntos y estados', 'agenda', '']
 ];
 function renderInicioMovil() {
   var el = $id('page-inicio-movil'); if (!el) return;
   document.body.classList.add('modo-movil'); document.body.classList.add('en-inicio-movil');
   var rol = String((SES && SES.rol) || '').toUpperCase(), admin = rol.indexOf('SUPER') !== -1 || rol.indexOf('ADMIN') !== -1;
-  var ops = MV_OPC.filter(function(o) { return puedeVerPagina(o[4]) && (o[0] !== 'agenda' || rol === 'SUPER'); });
+  var ops = MV_OPC.filter(function(o) { return o[0] === 'avance' ? (rol === 'SUPER' || rol.indexOf('ADMIN') !== -1) : puedeVerPagina(o[4]) && (o[0] !== 'agenda' || rol === 'SUPER'); });
   el.innerHTML = '<div class="mv-wrap"><div style="display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-size:20px;font-weight:800">Hola, ' + pcEsc(((SES && SES.nombre) || '').split(' ')[0]) + '</div><div class="tdim" style="font-size:13px">¿Qué vas a hacer?</div></div>' +
     '<button class="btn btn-s btn-sm" onclick="doLogout()">Salir</button></div>' +
     '<div class="mv-tiles">' + ops.map(function(o) { return '<div class="mv-tile" onclick="mvAbrir(\'' + o[0] + '\')"><span class="ic">' + o[1] + '</span>' + o[2] + '<small>' + o[3] + '</small></div>'; }).join('') +
