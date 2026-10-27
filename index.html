@@ -8990,11 +8990,37 @@ async function pcHistorial(m) {
     var v = r.vidas[k], h = '';
     for (var j = 0; j < (v.OTS || []).length; j++) {
       try { var d = await gsRun('gsPC_OTDetalle', v.OTS[j].ID_OT); var it = (d.items || []).filter(function(x) { return String(x.ID_CUB) === String(v.ID_CUB); })[0];
-        if (it) { h += pcVidaDet(it, v.OTS[j], d); var rm = null; try { rm = await gsRun('gsPC_Remitos', v.OTS[j].ID_OT); } catch (e2) {} PC_.vida.det[k] = PC_.vida.det[k] || []; PC_.vida.det[k].push({ it: it, os: v.OTS[j], auto: d.autoclave || [], espec: d.espec || null, rem: rm && rm.REMITOS || [] }); } } catch (e) { h += '<div class="al al-r">' + pcEsc(e.message) + '</div>'; }
+        if (it) { h += pcVidaDet(it, v.OTS[j], d); var rm = null; try { rm = await gsRun('gsPC_Remitos', v.OTS[j].ID_OT); } catch (e2) {} PC_.vida.det[k] = PC_.vida.det[k] || []; PC_.vida.det[k].push({ it: it, os: v.OTS[j], osF: d.ot && d.ot.FECHA, auto: d.autoclave || [], espec: d.espec || null, rem: rm && rm.REMITOS || [] }); } } catch (e) { h += '<div class="al al-r">' + pcEsc(e.message) + '</div>'; }
     }
     h += pcVidaEntrega(k, v);
-    var el = $id('pc-vida-' + k); if (el) { el.className = ''; el.innerHTML = h || '<div class="tdim">Todavía no entró a la línea.</div>'; }
+    var el = $id('pc-vida-' + k); if (el) { el.className = ''; el.innerHTML = pcVidaTiempo(k, v) + '<div style="font-weight:700;margin:12px 0 4px">Detalle de cada orden de servicio</div>' + (h || '<div class="tdim">Todavía no entró a la línea.</div>'); }
   }
+}
+// Trazabilidad completa en orden de tiempo, desde que entró a la planta, y dónde está ahora
+function pcVidaTiempo(k, v) {
+  var dets = PC_.vida.det[k] || [], ev = [], add = function(t, q, txt, extra) { if (t) ev.push({ t: +t || new Date(t).getTime(), q: q, txt: txt, ex: extra || '' }); };
+  add(v.FECHA_RECEPCION, 'Planta', 'Entró a la planta: recepción de la boleta' + (v.OTRAB ? ' · orden de trabajo ' + pcEsc(v.OTRAB) : '') + (v.NRO_MANUAL ? ' · boleta ' + pcEsc(v.NRO_MANUAL) : ''), pcEsc([v.TIPO, v.MEDIDA, v.FABRICANTE, v.TRABAJO].filter(Boolean).join(' · ')) + (v.DOT ? ' · DOT ' + pcDotTxt(v.DOT) : ''));
+  (v.CAMBIOS || []).forEach(function(c) { add(c.FECHA, 'Inspección', 'Trabajo cambiado de ' + pcEsc(c.ANTES) + ' a ' + pcEsc(c.DESPUES), pcEsc(c.MOTIVO) + ' · decidió ' + pcEsc(c.DECIDE)); });
+  dets.forEach(function(x) {
+    var ests = pcEstLin(x.os.LINEA), nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = e.ORDEN + '. ' + e.NOMBRE; });
+    add(x.osF, 'Carga', 'Entró a la orden de servicio ' + pcEsc(x.os.NRO_OT) + ' (línea ' + pcEsc(x.os.LINEA) + ')' + (x.it.ROL === 'SUPLENTE' ? ' como suplente' : ''), x.it.PASADA > 1 ? 'Corrección: ' + pcEsc(x.it.MOTIVO_REPROCESO || '') : '');
+    (x.it.REGISTROS || []).forEach(function(g) { add(g.FECHA, 'Estación', pcEsc(nomE[g.ID_ESTACION] || g.ID_ESTACION) + ' · ' + pcEsc(g.RESULTADO || 'OK'), pcEsc([g.OPERARIO || g.USUARIO, g.OBSERVACION].filter(Boolean).join(' · '))); });
+    var ac = pcAcDeCub(x.auto, x.it.ID_CUB);
+    if (ac) { add(ac.INICIO, 'Autoclave', 'Empezó la cocción', x.it.POS_AUTOCLAVE ? 'lugar ' + pcEsc(x.it.POS_AUTOCLAVE) : ''); if (ac.FIN) add(ac.FIN, 'Autoclave', 'Terminó la cocción', +ac.MINUTOS ? Math.round(+ac.MINUTOS) + ' min' : ''); }
+    (x.rem || []).forEach(function(r) { if (!(r.ITEMS || []).some(function(t) { return String(t.ID_CUB) === String(v.ID_CUB); })) return;
+      add(r.FECHA, 'Remito', 'Remito ' + pcEsc(r.NRO) + (r.TIPO ? ' (' + pcEsc(r.TIPO) + ')' : ''), '');
+      if (r.ESTADO === 'ENTREGADO') add(r.FECHA_ENTREGA, 'Entrega', 'Entregada al cliente · remito firmado', ''); });
+  });
+  ev.sort(function(a, b) { return a.t - b.t; });
+  var ahora = { EN_ESPERA: 'Esperando entrar a una carga', EN_OT: 'En la línea', TERMINADA: 'Terminada', RECHAZADA: 'No apta', ANULADA: 'Anulada' }[v.ESTADO] || v.ESTADO;
+  var ult = dets.length ? dets[dets.length - 1] : null;
+  if (v.ESTADO === 'EN_OT' && ult) { var hh = {}; (ult.it.HECHAS || []).forEach(function(q) { hh[String(q.ID_ESTACION)] = 1; }); var sig = pcEstLin(ult.os.LINEA).slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; }).filter(function(e) { return !hh[String(e.ID_ESTACION)]; })[0];
+    ahora = 'En la línea · ' + pcEsc(ult.os.NRO_OT) + (sig ? ' · está en la estación ' + pcEsc(sig.ORDEN + '. ' + sig.NOMBRE) : ' · pasó todas las estaciones'); }
+  var ent = ev.filter(function(e) { return e.q === 'Entrega'; }).length;
+  if (v.ESTADO === 'TERMINADA') ahora += ent ? ' y entregada al cliente' : ' · falta entregarla';
+  return '<div class="al al-b" style="font-size:14px;margin:6px 0"><b>Ahora:</b> ' + ahora + '</div>' +
+    '<div style="font-weight:700;margin:10px 0 4px">Trazabilidad, desde el primer día</div><div class="tw"><table style="font-size:11.5px"><thead><tr><th>Fecha y hora</th><th>Etapa</th><th>Qué pasó</th><th>Detalle</th></tr></thead><tbody>' +
+    ev.map(function(e) { return '<tr><td style="white-space:nowrap">' + fmtDT(e.t) + '</td><td>' + e.q + '</td><td><b>' + e.txt + '</b></td><td>' + (e.ex || '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
 }
 // Entrega al cliente: remito, si ya se entregó y la foto firmada
 function pcVidaEntrega(k, v) {
@@ -9066,7 +9092,7 @@ function pcVidaImprimir(k) {
 function pcVidaCab(v) {
   var f = function(t, x) { return x ? '<div><b style="display:block;font-size:10px;color:var(--dim);text-transform:uppercase">' + t + '</b>' + x + '</div>' : ''; };
   return '<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;font-size:12.5px">' +
-    f('Cliente', pcEsc(v.CLIENTE)) + f('Recibida', fmtD(v.FECHA_RECEPCION)) + f('Cubierta', pcEsc(v.TIPO + ' ' + v.MEDIDA)) + f('Marca de fábrica', pcEsc(v.FABRICANTE || '')) + f('DOT', pcDotTxt(v.DOT)) + f('N° interno', pcEsc(v.ID_CASCO)) +
+    f('Dueño (cliente)', '<b>' + pcEsc(v.CLIENTE) + '</b>') + f('Marca grabada', '<b class="mono">' + pcEsc(v.MARCA || (PC_.vida && PC_.vida.r.marca) || '') + '</b>') + f('Recibida', fmtD(v.FECHA_RECEPCION)) + f('Cubierta', pcEsc(v.TIPO + ' ' + v.MEDIDA)) + f('Marca de fábrica', pcEsc(v.FABRICANTE || '')) + f('DOT', pcDotTxt(v.DOT)) + f('N° interno', pcEsc(v.ID_CASCO)) +
     f('Orden de trabajo', pcEsc(v.OTRAB + (v.NRO_MANUAL ? ' · boleta ' + v.NRO_MANUAL : ''))) + f('Orden de servicio', pcEsc(v.NRO_OT)) + f('Trabajo', pcEsc(v.TRABAJO)) + f('Estado', pcBadge(v.ESTADO)) +
     f('Inspección', pcEsc(v.INSPECCION === 'APTA' ? 'Apta' : v.INSPECCION === 'NO_APTA' ? 'No apta' : (v.INSPECCION || ''))) + f('Banda elegida', pcEsc(v.BANDA)) + f('Parches', pcEsc((v.PARCHES || []).join(' · '))) +
     f('Trabajos extra', pcEsc((v.EXTRAS || []).join(' · '))) + f('Parche', v.OTRAB ? pcEsc(pcParcheTxt(v)) + (v.PARCHE_EXCEPCION ? ' <span class="tdim">(excepción de esta cubierta)</span>' : '') : '') + f('Costo', v.COSTO_TOTAL ? '$ ' + Math.round(v.COSTO_TOTAL).toLocaleString('es-AR') : '') + f('Reprocesos', v.REPROCESOS ? String(v.REPROCESOS) : '') +
@@ -9753,7 +9779,7 @@ async function pcPsGuardar(k) {
   try { var r = await gsRun('gsPC_PesajeSumar', { FECHA: PC_.psR.DIA, ID_ESTACION: x.ID_ESTACION, ID_INSUMO: x.ID_INSUMO, CANTIDAD: v, OPERARIO: op, CUBIERTAS: marcas }); if (!r || !r.ok) return toast((r && r.error) || 'No se pudo', 'r2'); toast(x.NOMBRE + ': sumado ✓', 'g'); pcPsCalc(); } catch (e) { toast(e.message, 'r2'); }
 }
 function pcPsHTML() {
-  var hoy = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10), emps = (PC_.d.empleados || []).map(function(e) { return e.NOMBRE; });
+  var hoy = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10), emps = (PC_.d.empleados || []).map(function(e) { return typeof e === 'string' ? e : e.NOMBRE; });
   return '<div class="card mb3"><div class="card-hd"><span class="card-title">⚖ Pesar y medir lo que se va a hacer</span><span class="flex gap2">' +
     '<button class="btn btn-sm ' + (!PC_.psDia ? 'btn-p' : 'btn-s') + '" onclick="PC_.psDia=\'\';pcPesaje()">Hoy</button><button class="btn btn-sm ' + (PC_.psDia ? 'btn-p' : 'btn-s') + '" onclick="PC_.psDia=\'MANANA\';pcPesaje()">Preparar para el próximo día</button></span></div>' +
     '<div class="card-body"><div class="tdim mb2" style="font-size:12px">1) Tildá las cubiertas que se van a hacer (una carga entera o sueltas). 2) El sistema suma lo que prevé la receta de todo lo que va por peso o volumen (kg, litros, gramos, metros), estación por estación. 3) Pesá o medí lo que retirás y cargalo: se va sumando. A la tarde se pesa lo que sobró.</div>' +
