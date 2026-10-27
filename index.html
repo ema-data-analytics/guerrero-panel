@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ff24e701e001"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e1814d2cfb50"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -8590,7 +8590,7 @@ function pcImpOSInforme(r, o) {
     '<div><b>Cubiertas</b>' + tot.n + ' · terminadas ' + tot.ok + ' · no aptas ' + tot.rech + '</div><div><b>Autoclave</b>' + (ac ? fmtD(ac.INICIO) + (ac.MINUTOS ? ' · ' + Math.round(ac.MINUTOS) + ' min' : '') + (ac.OPERARIO ? ' · ' + pcEsc(ac.OPERARIO) : '') : '—') + '</div>' +
     '<div><b>Costo total</b>' + $$(tot.t) + '</div><div><b>Costo de las terminadas</b>' + $$(tot.tOk) + (tot.ok ? ' · ' + $$(tot.tOk / tot.ok) + ' c/u' : '') + '</div>' +
     '<div><b>Costo de los rechazos</b>' + $$(tot.tRech) + (tot.rech ? ' (' + tot.rech + ')' : '') + '</div><div><b>Promedio por terminada con los rechazos</b>' + (tot.ok ? $$((tot.tOk + tot.tRech) / tot.ok) : '—') + '</div></div>' +
-    '<h2>Resumen por cubierta</h2><table class="res"><colgroup><col style="width:3%"><col style="width:9%"><col style="width:17%"><col style="width:9%"><col style="width:9%"><col style="width:8%"><col style="width:8%"><col style="width:5%"><col style="width:5%"><col style="width:7%"><col style="width:6%"><col style="width:6%"><col style="width:7%"><col style="width:8%"></colgroup><thead><tr><th>#</th><th>Marca</th><th>Cliente</th><th>OT · boleta</th><th>Medida</th><th>Trabajo</th><th>Resultado</th><th class="n">Est.</th><th class="n">Min.</th><th class="n">Materiales</th><th class="n">Herram.</th><th class="n">M. obra</th><th class="n">Fijos</th><th class="n">Total</th></tr></thead><tbody>' +
+    '<h2>Resumen por cubierta</h2><table class="res"><colgroup><col style="width:3%"><col style="width:9%"><col style="width:17%"><col style="width:9%"><col style="width:9%"><col style="width:8%"><col style="width:8%"><col style="width:5%"><col style="width:5%"><col style="width:7%"><col style="width:6%"><col style="width:6%"><col style="width:7%"><col style="width:8%"></colgroup><thead><tr><th>#</th><th>Marca grabada · DOT</th><th>Cliente</th><th>OT · boleta</th><th>Medida</th><th>Trabajo</th><th>Resultado</th><th class="n">Est.</th><th class="n">Min.</th><th class="n">Materiales</th><th class="n">Herram.</th><th class="n">M. obra</th><th class="n">Fijos</th><th class="n">Total</th></tr></thead><tbody>' +
     r.items.map(function(i, k) { var c = cub[String(i.ID_CUB)] || {}; return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(i.MARCA) + '</b>' + (i.ROL === 'SUPLENTE' ? ' (sup.)' : '') + pcCubIdent(c) + '</td><td>' + pcEsc(i.CLIENTE || c.CLIENTE || '') + '</td><td>' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + (c.NRO_MANUAL ? ' · ' + pcEsc(c.NRO_MANUAL) : '') + '</td><td>' + pcEsc(i.MEDIDA || '') + '</td><td>' + pcEsc(i.TRABAJO || '') + '</td>' +
       '<td>' + pcEsc(estTxt[i.ESTADO] || i.ESTADO) + (i.PASADA > 1 ? (i.PULIR ? ' · repulida por exceso de material' : ' · reproceso') : '') + '</td><td class="n">' + i.HECHAS.length + '/' + ests.length + '</td><td class="n">' + (i.COSTO.MINUTOS ? Math.round(i.COSTO.MINUTOS) : '') + '</td><td class="n">' + $$(i.COSTO.MATERIALES) + '</td><td class="n">' + $$(i.COSTO.HERRAMENTAL) + '</td><td class="n">' + $$(i.COSTO.MO) + '</td><td class="n">' + $$(i.COSTO.FIJOS) + '</td><td class="n"><b>' + $$(i.COSTO.TOTAL) + '</b></td></tr>'; }).join('') +
     '<tr class="tot"><td colspan="8"><b>Totales</b></td><td class="n">' + Math.round(tot.min) + '</td><td class="n">' + $$(tot.mat) + '</td><td class="n">' + $$(tot.herr) + '</td><td class="n">' + $$(tot.mo) + '</td><td class="n">' + $$(tot.fij) + '</td><td class="n"><b>' + $$(tot.t) + '</b></td></tr></tbody></table>' +
@@ -8598,7 +8598,7 @@ function pcImpOSInforme(r, o) {
     r.items.map(function(i) {
       var regs = i.REGISTROS.slice().sort(function(a, b) { return (+a.FECHA || 0) - (+b.FECHA || 0); });
       var cons = (i.CONSUMOS || []).filter(function(k) { return String(k.ESTADO) !== 'ANULADO'; });
-      return '<div style="page-break-inside:avoid;border:1px solid #bbb;border-radius:6px;padding:8px;margin-bottom:10px"><div style="font-size:13px;font-weight:700">' + pcEsc(i.MARCA) + ' · ' + pcEsc(i.CLIENTE || '') + ' · ' + pcEsc(i.MEDIDA || '') + ' · ' + pcEsc(estTxt[i.ESTADO] || i.ESTADO) + '</div>' + pcCubIdentLinea(cub[String(i.ID_CUB)] || {}) +
+      return '<div style="page-break-inside:avoid;border:1px solid #bbb;border-radius:6px;padding:8px;margin-bottom:10px"><div style="font-size:13px;font-weight:700">' + pcMkDot(Object.assign({}, cub[String(i.ID_CUB)] || {}, i)) + ' · ' + pcEsc(i.CLIENTE || '') + ' · ' + pcEsc(i.MEDIDA || '') + ' · ' + pcEsc(estTxt[i.ESTADO] || i.ESTADO) + '</div>' + pcCubIdentLinea(cub[String(i.ID_CUB)] || {}) +
         '<table class="det" style="margin-top:6px"><colgroup><col style="width:20%"><col style="width:10%"><col style="width:16%"><col style="width:14%"><col style="width:40%"></colgroup><thead><tr><th>Estación</th><th>Fecha</th><th>Operario</th><th>Resultado</th><th>Insumos usados</th></tr></thead><tbody>' +
         (regs.length ? regs.map(function(g) {
           var us = cons.filter(function(k) { return String(k.ID_REG) === String(g.ID_REG); }).map(function(k) { var nm = nomI[k.ID_INSUMO] || nomI[k.ID_INSUMO_RECETA] || k.ID_INSUMO || k.ID_INSUMO_RECETA; return +k.NO_USO === 1 ? '<span style="color:#777">' + pcEsc(nm) + ': no se usó (' + pcEsc(k.MOTIVO || '') + ')</span>' : pcEsc(nm) + ': <b>' + (Math.round((+k.REAL || 0) * 1000) / 1000).toString().replace('.', ',') + ' ' + pcEsc(k.UNIDAD || '') + '</b>' + (+k.REEMPLAZO === 1 ? ' (reemplazo)' : ''); });
@@ -8786,7 +8786,7 @@ function pcOTrabItems() {
   var ks = (d.cascos || []).filter(function(k) { return String(k.ID_CLIENTE) === String(cli) && k.ESTADO === 'NUEVO'; }).sort(function(a, b) { return a.ID_CASCO - b.ID_CASCO; });
   if (!ks.length) { el.innerHTML = '<div class="al al-y" style="margin-top:8px">Este cliente no tiene cascos nuevos. Primero cargalos en "1 · Carga de cascos".</div>'; return; }
   var opt = function(v, k) { return pcTrabOpts(k.TIPO, k.MEDIDA, v); };
-  el.innerHTML = '<div class="tw"><table style="font-size:12px" id="pc-o-t"><thead><tr><th style="width:30px"></th><th>N° interno</th><th>DOT</th><th>Tipo</th><th>Medida</th><th>Marca</th><th>Trabajo *</th><th>Receta</th></tr></thead><tbody>' + ks.map(function(k) {
+  el.innerHTML = '<div class="tw"><table style="font-size:12px" id="pc-o-t"><thead><tr><th style="width:30px"></th><th>N° interno · marca grabada</th><th>DOT</th><th>Tipo</th><th>Medida</th><th>Marca</th><th>Trabajo *</th><th>Receta</th></tr></thead><tbody>' + ks.map(function(k) {
     var x = PC_.otr[k.ID_CASCO] || (PC_.otr[k.ID_CASCO] = { on: true, tr: 'RECAPADO' }), r = x.tr ? pcRecetaDe(k.TIPO, k.MEDIDA, x.tr, '') : null;
     return '<tr><td><input type="checkbox" class="pc-o-on" data-id="' + k.ID_CASCO + '"' + (x.on ? ' checked' : '') + '/></td><td class="mono"><b>' + k.ID_CASCO + '</b>' + (k.MARCA ? '<div style="font-size:11px">Marca grabada <b>' + pcEsc(k.MARCA) + '</b></div>' : '') + '</td><td class="mono">' + pcDotTxt(k.DOT) + '</td><td>' + pcEsc(k.TIPO) + '</td><td class="mono">' + pcEsc(k.MEDIDA) + '</td><td>' + pcEsc(k.MARCA_FAB) + '</td>' +
       '<td><select class="fs pc-o-tr" data-id="' + k.ID_CASCO + '" style="min-width:170px">' + opt(x.tr, k) + '</select></td><td>' + (x.tr ? (r ? '<span class="badge b-green">✓ receta ' + r.ID_RECETA + '</span>' : '<span class="badge b-red">sin receta</span>') : '') + '</td></tr>';
@@ -8855,7 +8855,7 @@ function pcRecepcion() {
     '<div class="flex gap2 mt3"><button class="btn btn-s btn-sm" onclick="PC_.filas.push(pcFilaVacia());pcFilas()"><i class="fas fa-plus"></i> Otra cubierta</button>' +
     '<button class="btn btn-p" id="pc-recibir" onclick="pcRecibir()"><i class="fas fa-check"></i> Recibir</button></div></div></div>';
   var esp = d.cubiertas.filter(function(c) { return c.ESTADO === 'EN_ESPERA'; });
-  h += '<div class="card"><div class="card-hd"><span class="card-title">En espera (' + esp.length + ')</span></div><div class="tw"><table style="font-size:12px" id="pc-tbl-espera"><thead><tr><th>Marca</th><th>Recibida</th><th>Cliente</th><th>Tipo</th><th>Medida</th><th>Trabajo</th><th>Receta</th><th></th></tr></thead><tbody>' +
+  h += '<div class="card"><div class="card-hd"><span class="card-title">En espera (' + esp.length + ')</span></div><div class="tw"><table style="font-size:12px" id="pc-tbl-espera"><thead><tr><th>Marca grabada · DOT</th><th>Recibida</th><th>Cliente</th><th>Tipo</th><th>Medida</th><th>Trabajo</th><th>Receta</th><th></th></tr></thead><tbody>' +
     esp.map(function(c) { return '<tr><td class="mono"><b>' + pcEsc(c.MARCA) + '</b><div style="font-size:11px">DOT: ' + pcDotTxt(c.DOT) + '</div></td><td>' + fmtD(c.FECHA_RECEPCION) + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + '</td><td>' + (c.ID_RECETA ? '✓' : '<span class="badge b-red">sin receta</span>') + '</td>' +
       '<td>' + (pcPuede('ANULAR') ? '<button class="btn btn-s btn-sm" onclick="pcAnularCub(' + c.ID_CUB + ')">Anular</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table>' + (esp.length ? '' : '<div class="tdim" style="padding:12px">No hay cubiertas en espera.</div>') + '</div></div>';
   $id('pc-body').innerHTML = h;
@@ -9386,7 +9386,7 @@ function pcPintarOT() {
     (abierta && pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" onclick="pcCerrarOT()">Cerrar OT</button>' : '') +
     (abierta && pcPuede('ANULAR') ? '<button class="btn btn-s btn-sm" onclick="pcAnularOT()">Anular OT</button>' : '') + '</span></div>' +
     (o.OBSERVACIONES ? '<div class="tdim" style="padding:0 14px;font-size:12px">' + pcEsc(o.OBSERVACIONES) + '</div>' : '') +
-    '<div class="tw"><table style="font-size:12px" id="pc-grid"><thead><tr><th>#</th><th>Marca</th><th>Cubierta</th><th>Rol</th>' + cols.map(function(c) { return '<th class="tc" style="min-width:70px;max-width:120px;white-space:normal">' + pcEsc(c.nombre) + '</th>'; }).join('') + '<th>Estado</th><th class="tr">Costo</th><th></th></tr></thead><tbody>' +
+    '<div class="tw"><table style="font-size:12px" id="pc-grid"><thead><tr><th>#</th><th>Marca grabada · DOT</th><th>Cubierta</th><th>Rol</th>' + cols.map(function(c) { return '<th class="tc" style="min-width:70px;max-width:120px;white-space:normal">' + pcEsc(c.nombre) + '</th>'; }).join('') + '<th>Estado</th><th class="tr">Costo</th><th></th></tr></thead><tbody>' +
     ot.items.map(function(i) {
       var fuera = i.ESTADO === 'RETIRADA';
       return '<tr' + (fuera ? ' style="opacity:.45"' : '') + '><td>' + i.ORDEN + '</td><td class="mono"><b>' + pcEsc(i.MARCA) + '</b>' + pcCubIdent(i) +
@@ -9748,8 +9748,8 @@ async function pcCostos() {
     '<button class="btn btn-s btn-sm" onclick="pcCostosExcel()"><i class="fas fa-file-download"></i> Excel</button>' +
     (pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" onclick="pcProrratear()"><i class="fas fa-balance-scale"></i> Prorratear gastos fijos del mes</button>' : '') +
     '<span class="tdim" style="font-size:11px">Reparto: ' + (r.metodo === 'MINUTOS' ? 'según minutos de cada cubierta' : 'igual por cubierta') + '</span></div>' +
-    '<div class="tw"><table style="font-size:12px" id="pc-tbl-costos"><thead><tr><th>Terminada</th><th>OT</th><th>Marca</th><th>Cliente</th><th>Cubierta</th><th class="tr">Materiales</th><th class="tr">Herramental</th><th class="tr">Min</th><th class="tr">Mano de obra</th><th class="tr">Fijos</th><th class="tr">Total</th></tr></thead><tbody>' +
-    r.filas.map(function(f) { return '<tr><td>' + fmtD(f.FECHA_FIN) + '</td><td class="mono">' + pcEsc(f.NRO_OT) + '</td><td class="mono"><b>' + pcEsc(f.MARCA) + '</b></td><td>' + pcEsc(f.CLIENTE) + '</td><td style="font-size:11px">' + pcEsc(f.TIPO + ' ' + f.MEDIDA + ' · ' + f.TRABAJO) + '</td><td class="tr mono">' + fmt(f.MATERIALES) + '</td><td class="tr mono">' + fmt(f.HERRAMENTAL) + '</td><td class="tr">' + f.MINUTOS + '</td><td class="tr mono">' + fmt(f.MO) + '</td><td class="tr mono">' + fmt(f.FIJOS) + '</td><td class="tr mono"><b>' + fmt(f.TOTAL) + '</b></td></tr>'; }).join('') +
+    '<div class="tw"><table style="font-size:12px" id="pc-tbl-costos"><thead><tr><th>Terminada</th><th>OT</th><th>Marca grabada · DOT</th><th>Cliente</th><th>Cubierta</th><th class="tr">Materiales</th><th class="tr">Herramental</th><th class="tr">Min</th><th class="tr">Mano de obra</th><th class="tr">Fijos</th><th class="tr">Total</th></tr></thead><tbody>' +
+    r.filas.map(function(f) { return '<tr><td>' + fmtD(f.FECHA_FIN) + '</td><td class="mono">' + pcEsc(f.NRO_OT) + '</td><td class="mono"><b>' + pcEsc(f.MARCA) + '</b><div style="font-size:10px">DOT: ' + pcDotTxt(pcDotDe(f)) + '</div></td><td>' + pcEsc(f.CLIENTE) + '</td><td style="font-size:11px">' + pcEsc(f.TIPO + ' ' + f.MEDIDA + ' · ' + f.TRABAJO) + '</td><td class="tr mono">' + fmt(f.MATERIALES) + '</td><td class="tr mono">' + fmt(f.HERRAMENTAL) + '</td><td class="tr">' + f.MINUTOS + '</td><td class="tr mono">' + fmt(f.MO) + '</td><td class="tr mono">' + fmt(f.FIJOS) + '</td><td class="tr mono"><b>' + fmt(f.TOTAL) + '</b></td></tr>'; }).join('') +
     (n ? '<tr style="font-weight:700"><td colspan="5">Total ' + n + ' cubiertas (promedio ' + fmt(t.tot / n) + ')</td><td class="tr mono">' + fmt(t.mat) + '</td><td class="tr mono">' + fmt(t.herr) + '</td><td></td><td class="tr mono">' + fmt(t.mo) + '</td><td class="tr mono">' + fmt(t.fij) + '</td><td class="tr mono">' + fmt(t.tot) + '</td></tr>' : '') +
     '</tbody></table>' + (n ? '' : '<div class="tdim" style="padding:12px">No hay cubiertas terminadas en ' + mes + '.</div>') + '</div>' +
     (r.prorrateos.length ? '<div class="tdim" style="padding:8px 14px;font-size:11px">Prorrateos hechos: ' + r.prorrateos.map(function(p) { return p.MES + ' (' + p.METODO + ', ' + fmt(p.FIJOS_MES) + ' entre ' + p.CUBIERTAS + ')'; }).join(' · ') + '</div>' : '') + '</div>';
@@ -9765,8 +9765,8 @@ async function pcProrratear() {
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   showModal('<div class="mh"><span class="mt">Prorrateo de gastos fijos — ' + pcEsc(r.mes) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     '<p>Gastos fijos del mes: <b>' + fmt(r.fijosMes) + '</b> entre <b>' + r.cubiertas + '</b> cubiertas terminadas, ' + (r.metodo === 'MINUTOS' ? 'según los minutos de cada una (' + r.minutos + ' min en total)' : 'en partes iguales') + '.</p>' +
-    '<div class="tw" style="max-height:300px"><table style="font-size:12px"><thead><tr><th>Marca</th><th class="tr">Fijos antes</th><th class="tr">Fijos nuevo</th><th class="tr">Total nuevo</th></tr></thead><tbody>' +
-    r.detalle.map(function(d) { return '<tr><td class="mono">' + pcEsc(d.MARCA) + '</td><td class="tr mono">' + fmt(d.FIJOS_ANTES) + '</td><td class="tr mono">' + fmt(d.FIJOS) + '</td><td class="tr mono">' + fmt(d.TOTAL) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+    '<div class="tw" style="max-height:300px"><table style="font-size:12px"><thead><tr><th>Marca grabada · DOT</th><th class="tr">Fijos antes</th><th class="tr">Fijos nuevo</th><th class="tr">Total nuevo</th></tr></thead><tbody>' +
+    r.detalle.map(function(d) { return '<tr><td class="mono">' + pcEsc(d.MARCA) + '<div style="font-size:10px">DOT: ' + pcDotTxt(pcDotDe((PC_.d.cubiertas || []).filter(function(y) { return y.MARCA === d.MARCA; })[0])) + '</div></td><td class="tr mono">' + fmt(d.FIJOS_ANTES) + '</td><td class="tr mono">' + fmt(d.FIJOS) + '</td><td class="tr mono">' + fmt(d.TOTAL) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
     '<div class="tdim" style="font-size:11px">Los gastos fijos salen de Órdenes de Trabajo → Costos (sin la mano de obra, que va por minutos).</div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pcp-ok">Aplicar</button></div>', 'md-lg');
   $id('pcp-ok').addEventListener('click', async function() {
@@ -9838,7 +9838,7 @@ async function pcProrratear() {
 .pu-cub{background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px 16px;text-align:left;display:grid;gap:6px;cursor:pointer;color:var(--text)}
 .pu-cub .m{font:700 26px/1 var(--mono)}
 .pu-cub .d{color:var(--dim);font-size:14px}
-.pu-mkl{display:block;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text3,#64748b);margin-bottom:2px}.pu-fd{display:block;margin-top:4px;font-size:19px;font-weight:800;color:var(--text);line-height:1.2}.pu-fd .dot{background:#fff3cd;border-radius:6px;padding:1px 6px;font-family:var(--mono)}
+.pu-id2{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin:6px 0}.pu-id2 span{display:flex;flex-direction:column;align-items:center}.pu-id2 small{font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text3,#64748b)}.pu-id2 b{font:700 26px/1.1 var(--mono)}.pu-mkl{display:block;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text3,#64748b);margin-bottom:2px}.pu-fd{display:block;margin-top:4px;font-size:19px;font-weight:800;color:var(--text);line-height:1.2}.pu-fd .dot{background:#fff3cd;border-radius:6px;padding:1px 6px;font-family:var(--mono)}
 .pu-cub.aca{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
 .pu-cub.hecha{opacity:.55}
 .pu-tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;width:max-content}
@@ -10095,6 +10095,10 @@ function puElegirOS(ots, ids) {
 // Marca de fábrica y DOT bien visibles (lo pidió la planta)
 // Siempre con su título: DOT (o "sin DOT"), N° interno y marca de fábrica
 function puFabDot(c) { if (!c) return ''; return '<span class="pu-fd"><span class="dot">DOT: ' + (c.DOT ? puEsc(c.DOT) : 'sin DOT') + '</span>' + (c.ID_CASCO ? ' <span class="dot">N° int. ' + puEsc(c.ID_CASCO) + '</span>' : '') + (c.FABRICANTE ? ' ' + puEsc(c.FABRICANTE) : '') + '</span>'; }
+// Identificación de la cubierta, siempre con el título de cada dato
+function puIdTxt(m, d) { return 'Marca grabada ' + (m || '') + ' · DOT ' + (d || 'sin DOT'); }
+function puIdHTML(m, d) { return '<div class="pu-id2"><span><small>Marca grabada</small><b>' + puEsc(m || '') + '</b></span><span><small>DOT</small><b>' + puEsc(d || 'sin DOT') + '</b></span></div>'; }
+function puDotDe(id) { var c = puCubD(id); return c ? c.DOT || '' : ''; }
 function puMk(c, tag) { tag = tag || 'span'; return '<span class="pu-mkl">Marca grabada</span><' + tag + ' class="m">' + puEsc(c.MARCA) + '</' + tag + '>'; }
 function puLista() {
   var wrap = document.querySelector('#page-puesto-estacion .pu-wrap'); if (wrap) wrap.classList.remove('pu-enficha');
@@ -10432,7 +10436,7 @@ async function puCtrlConfirmar() {
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); b.disabled = false; return; }
     var sigue = C.dec === 'OK' ? 'Pasa a Pintura' : C.dec === 'PULIR' ? 'Vuelve a ' + (r.VUELVE_A || []).map(function(e) { return e.ORDEN + ' · ' + e.NOMBRE; }).join(', ') + ' para repulir. Después va directo a Pintura (no vuelve al autoclave).' : (C.dec === 'REPROCESO' ? 'Vuelve a ' + (r.VUELVE_A || []).map(function(e) { return e.ORDEN + ' · ' + e.NOMBRE; }).join(', ') + ' para corregirla. Después espera la próxima carga del autoclave.' : 'Rechazo final: queda para devolver al cliente.');
     puRelQuitar(f.ot.ID_OT, f.cub.ID_CUB, puE());
-    PU_.fin = { marca: f.cub.MARCA, min: r.MINUTOS, n: cons.filter(function(c) { return !c.NO_USO; }).length, desvios: r.DESVIOS || [], sinStock: r.SIN_STOCK || [], reemplazos: r.REEMPLAZOS || [], sigue: sigue, ot: f.ot.ID_OT, cub: f.cub.ID_CUB, dec: C.dec };
+    PU_.fin = { marca: f.cub.MARCA, dot: f.cub.DOT || '', min: r.MINUTOS, n: cons.filter(function(c) { return !c.NO_USO; }).length, desvios: r.DESVIOS || [], sinStock: r.SIN_STOCK || [], reemplazos: r.REEMPLAZOS || [], sigue: sigue, ot: f.ot.ID_OT, cub: f.cub.ID_CUB, dec: C.dec };
     try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e2) {}
     PU_.ctrl = null; PU_.vista = 'listo'; puListo();
   } catch (e) { toast(e.message, 'r2'); b.disabled = false; b.textContent = '✓ Confirmar paso'; }
@@ -10475,10 +10479,10 @@ function puAutoclavePintar() {
   for (var n = 1; n <= r.lugares; n++) {
     var idc = A.pos[String(n)], c = idc ? porId[String(idc)] : null;
     h += '<button class="pu-ac-lugar' + (c ? ' ocupado' : '') + '" ' + (r.cocinando || !listas.length ? 'disabled' : 'onclick="puAcElegir(' + n + ')"') + '><span class="n">' + n + '</span>' +
-      (c ? '<span class="mk">' + puEsc(c.MARCA) + '</span><span class="d">' + puEsc(c.MEDIDA) + (c.REPROCESO ? ' · reproceso' : '') + '</span>' + '<span class="d" style="font-size:11px">' + puEsc(['DOT: ' + (c.DOT || 'sin DOT'), c.ID_CASCO ? 'N° int. ' + c.ID_CASCO : '', c.FABRICANTE].filter(Boolean).join(' · ')) + '</span>' : (idc ? '<span class="mk">' + puEsc(idc) + '</span>' : '<span class="d">vacío</span>')) + '</button>';
+      (c ? '<span class="pu-mkl" style="font-size:10px">Marca grabada</span><span class="mk">' + puEsc(c.MARCA) + '</span><span class="d">' + puEsc(c.MEDIDA) + (c.REPROCESO ? ' · reproceso' : '') + '</span>' + '<span class="d" style="font-size:11px">' + puEsc(['DOT: ' + (c.DOT || 'sin DOT'), c.ID_CASCO ? 'N° int. ' + c.ID_CASCO : '', c.FABRICANTE].filter(Boolean).join(' · ')) + '</span>' : (idc ? '<span class="mk">' + puEsc(idc) + '</span>' : '<span class="d">vacío</span>')) + '</button>';
   }
   h += '</div>';
-  if (!r.cocinando && noListas.length) h += '<div class="pu-reg" style="border-color:var(--danger)"><div style="font-weight:700;color:var(--danger)">Todavía no están listas (sin ellas no se puede empezar):</div><div>' + noListas.map(function(c) { return '<b>' + puEsc(c.MARCA) + '</b> está en ' + puEsc(c.SIGUIENTE); }).join(' · ') + '</div></div>';
+  if (!r.cocinando && noListas.length) h += '<div class="pu-reg" style="border-color:var(--danger)"><div style="font-weight:700;color:var(--danger)">Todavía no están listas (sin ellas no se puede empezar):</div><div>' + noListas.map(function(c) { return '<b>' + puEsc(puIdTxt(c.MARCA, c.DOT || puDotDe(c.ID_CUB))) + '</b> está en ' + puEsc(c.SIGUIENTE); }).join(' · ') + '</div></div>';
   if (r.cocinando) h += '<button class="pu-btn pu-ir" onclick="puAcFin()">■ Terminó la cocción</button>';
   else if (listas.length) {
     var ok = ub === listas.length && !noListas.length;
@@ -10549,7 +10553,7 @@ function puAcElegir(n) {
   var A = PU_.ac, r = A.d, usadas = {}; Object.keys(A.pos).forEach(function(k) { if (A.pos[k] && k !== String(n)) usadas[String(A.pos[k])] = k; });
   var ops = r.cubiertas.filter(function(c) { return c.LISTA && !usadas[String(c.ID_CUB)]; });
   showModal('<div class="mh"><span class="mt">Lugar ' + n + ' del autoclave</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="display:flex;flex-wrap:wrap;gap:8px">' +
-    ops.map(function(c) { return '<button class="pu-chip" data-id="' + puEsc(c.ID_CUB) + '"><b>' + puEsc(c.MARCA) + '</b> · DOT: ' + puEsc(c.DOT || 'sin DOT') + ' · ' + puEsc(c.MEDIDA) + (c.REPROCESO ? ' · reproceso' : '') + '</button>'; }).join('') +
+    ops.map(function(c) { return '<button class="pu-chip" data-id="' + puEsc(c.ID_CUB) + '"><b>' + puEsc(puIdTxt(c.MARCA, c.DOT || puDotDe(c.ID_CUB))) + '</b> · ' + puEsc(c.MEDIDA) + (c.REPROCESO ? ' · reproceso' : '') + '</button>'; }).join('') +
     (A.pos[String(n)] ? '<button class="pu-chip" data-id="">Dejar vacío</button>' : '') + (ops.length ? '' : '<div class="tdim">No quedan cubiertas listas sin lugar.</div>') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button></div>');
   document.querySelectorAll('.mo .pu-chip').forEach(function(b) { b.onclick = function() { closeModal(); if (b.dataset.id) PU_.ac.pos[String(n)] = b.dataset.id; else delete PU_.ac.pos[String(n)]; puAutoclavePintar(); }; });
@@ -10702,7 +10706,7 @@ function puEmpezar(seguir) {
     try { r = await gsRun('gsPC_RelojEmpezar', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE(), OPERARIO: oper, SEGUIR: !!seguir }); } catch (e) { toast(e.message, 'r2'); return; }
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo empezar', 'r2'); return; }
     PU_.dt = r.AHORA - Date.now(); puRelGuardar(r.RELOJ); puRelAplicar(); puFicha();
-    toast('▶ ' + f.cub.MARCA + ' · ' + r.RELOJ.OPERARIO + ' empezó. Podés volver y empezar otra cubierta.', 'g');
+    toast('▶ ' + puIdTxt(f.cub.MARCA, f.cub.DOT) + ' · ' + r.RELOJ.OPERARIO + ' empezó. Podés volver y empezar otra cubierta.', 'g');
   };
   if (seguir) return go(PU_.operF || PU_.oper);
   var emps = ((PU_.d && PU_.d.empleados) || []).map(function(e) { return e.NOMBRE; });
@@ -10728,7 +10732,7 @@ function puRelBanner() {
   return '<div class="pu-h">⏱ Trabajos en curso (' + rs.length + ')</div><div class="pu-relojes" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">' + rs.map(function(r) {
     var corre = r.ESTADO === 'CORRIENDO';
     return '<button class="pu-chip" style="text-align:left;line-height:1.35;border:2px solid ' + (corre ? 'var(--accent)' : 'var(--success)') + '" onclick="puAbrir(' + r.ID_OT + ',' + r.ID_CUB + ',\'' + puEsc(r.ID_ESTACION) + '\')">' +
-      '<b style="font-size:17px">' + puEsc(r.MARCA) + '</b> <span style="font-size:13px">DOT: ' + puEsc((puCubD(r.ID_CUB) || {}).DOT || 'sin DOT') + '</span> · ' + puEsc(puNomEst(r.ID_ESTACION)) + '<br>👷 ' + puEsc(r.OPERARIO) + ' · ' +
+      '<b style="font-size:17px">' + puEsc(puIdTxt(r.MARCA, puDotDe(r.ID_CUB))) + '</b> · ' + puEsc(puNomEst(r.ID_ESTACION)) + '<br>👷 ' + puEsc(r.OPERARIO) + ' · ' +
       (corre ? '<b class="pu-rel-t" data-ini="' + r.INICIO + '">' + puReloj(Math.max(0, Math.floor((Date.now() + (PU_.dt || 0) - r.INICIO) / 1000))) + '</b> en marcha' : '✓ ' + puDur(r.SEG) + ' · falta confirmar') + '</button>';
   }).join('') + '</div>';
 }
@@ -10802,7 +10806,7 @@ async function puConfirmar() {
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); b.disabled = false; b.textContent = '✓ Confirmar paso'; return; }
     b.textContent = '✓ Confirmar paso';   // si no, en la estación siguiente el botón queda diciendo "Guardando…"
     puRelQuitar(f.ot.ID_OT, f.cub.ID_CUB, puE());
-    PU_.fin = { marca: f.cub.MARCA, min: r.MINUTOS, n: cons.filter(function(c) { return !c.NO_USO; }).length + adic.length, desvios: r.DESVIOS || [], sinStock: r.SIN_STOCK || [], reemplazos: r.REEMPLAZOS || [], sigue: puSiguiente() };
+    PU_.fin = { marca: f.cub.MARCA, dot: f.cub.DOT || '', min: r.MINUTOS, n: cons.filter(function(c) { return !c.NO_USO; }).length + adic.length, desvios: r.DESVIOS || [], sinStock: r.SIN_STOCK || [], reemplazos: r.REEMPLAZOS || [], sigue: puSiguiente() };
     PU_.fin.ot = f.ot.ID_OT; PU_.fin.cub = f.cub.ID_CUB; PU_.fin.rechazo = r.RECHAZO || null; PU_.fin.devuelto = r.DEVUELTO || [];
     if (r.RECHAZO) { PU_.vista = 'listo'; return puListoRechazo(); }
     if (f.cub.PASADA > 1) {
@@ -10842,14 +10846,14 @@ function puListo() {
   var wrap = document.querySelector('#page-puesto-estacion .pu-wrap'); if (wrap) wrap.classList.remove('pu-enficha');
   puPie(false);
   var x = PU_.fin, cd = puCubD(x.cub);
-  $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">' + (x.dec === 'RECHAZO' ? '⛔' : (x.dec === 'REPROCESO' ? '↻' : (x.dec === 'PULIR' ? '✂' : '✅'))) + '</div><h2>' + puEsc(x.marca) + ' · paso confirmado</h2>' +
+  $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">' + (x.dec === 'RECHAZO' ? '⛔' : (x.dec === 'REPROCESO' ? '↻' : (x.dec === 'PULIR' ? '✂' : '✅'))) + '</div>' + puIdHTML(x.marca, x.dot) + '<h2>Paso confirmado</h2>' +
     '<div class="tdim" style="font-size:18px">' + (x.min ? 'Tardó ' + puDur(x.min * 60) + ' · ' : '') + x.n + ' insumo' + (x.n === 1 ? '' : 's') + ' cargado' + (x.n === 1 ? '' : 's') + ' · el stock ya se descontó</div>' +
     (x.sinStock.length ? '<div style="color:var(--danger);font-weight:700">⚠ Sin stock en el sistema: ' + puEsc(x.sinStock.join(', ')) + '</div>' : '') +
     (x.reemplazos.length ? '<div style="color:var(--warn);font-weight:700">Reemplazo autorizado: ' + puEsc(x.reemplazos.join('; ')) + '</div>' : '') +
     ((x.devuelto || []).filter(function(v) { return v.VUELVE > 0; }).length ? '<div style="font-size:18px;color:var(--success);font-weight:700">↩ Volvió al stock: ' + x.devuelto.filter(function(v) { return v.VUELVE > 0; }).map(function(v) { return puF(v.VUELVE) + ' ' + puEsc(v.UNIDAD) + ' de ' + puEsc(v.NOMBRE); }).join(' · ') + '</div>' : '') +
     ((x.devuelto || []).filter(function(v) { return v.QUEDA > 0; }).length ? '<div style="font-size:18px;color:var(--accent);font-weight:700">📍 Quedó en la estación: ' + x.devuelto.filter(function(v) { return v.QUEDA > 0; }).map(function(v) { return puF(v.QUEDA) + ' ' + puEsc(v.UNIDAD) + ' de ' + puEsc(v.NOMBRE); }).join(' · ') + '</div>' : '') +
     '<div style="font-size:20px"><b>' + puEsc(x.sigue) + '</b></div>' + puMapa(cd) +
-    (puTodas() && cd && cd.SIGUIENTE ? '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puAbrir(' + x.ot + ',' + x.cub + ',\'' + cd.SIGUIENTE.ID_ESTACION + '\')">→ Seguir con ' + puEsc(x.marca) + ' en ' + puEsc(cd.SIGUIENTE.ORDEN + ' · ' + cd.SIGUIENTE.NOMBRE) + '</button>' : '') +
+    (puTodas() && cd && cd.SIGUIENTE ? '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puAbrir(' + x.ot + ',' + x.cub + ',\'' + cd.SIGUIENTE.ID_ESTACION + '\')">→ Seguir con ' + puEsc(puIdTxt(x.marca, x.dot)) + ' en ' + puEsc(cd.SIGUIENTE.ORDEN + ' · ' + cd.SIGUIENTE.NOMBRE) + '</button>' : '') +
     '<button class="pu-btn" style="min-width:260px;' + (puTodas() && cd && cd.SIGUIENTE ? '' : 'background:var(--accent);color:#fff') + '" onclick="puVolver()">' + (puTodas() ? 'Ver todas las cubiertas' : 'Siguiente cubierta') + '</button></div>';
 }
 
@@ -10867,7 +10871,7 @@ function puCambioTrabajo() {
   var pri = ['RECAPADO', 'VULCANIZADO'], ops = (X.trabajos || []).filter(function(t) { return t !== X.trabajo; });
   ops.sort(function(a, b) { var ia = pri.indexOf(a), ib = pri.indexOf(b); return (ia === -1 ? 9 : ia) - (ib === -1 ? 9 : ib) || a.localeCompare(b); });
   var mot = ['El casco no da para recapar', 'El casco da para recapar', 'Lo pidió el cliente', 'Otro'];
-  var h = '<div class="mh"><span class="mt">Cambiar el trabajo de ' + puEsc(PU_.f.cub.MARCA) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
+  var h = '<div class="mh"><span class="mt">Cambiar el trabajo de ' + puEsc(puIdTxt(PU_.f.cub.MARCA, PU_.f.cub.DOT)) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
     '<div style="font-size:16px">Ahora: <b>' + puEsc(X.trabajo) + '</b>. Lo decide el encargado de línea y queda registrado. Cambia la receta y las estaciones por las que pasa.</div>' +
     '<div style="font-weight:700">Trabajo nuevo</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + ops.map(function(t, i) { return '<button class="pu-chip pu-ct-t' + (i < 2 && pri.indexOf(t) !== -1 ? '" style="font-size:18px;font-weight:700' : '') + '" data-v="' + puEsc(t) + '">' + puEsc(t) + '</button>'; }).join('') + '</div>' +
     '<div style="font-weight:700">¿Por qué?</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + mot.map(function(m) { return '<button class="pu-chip pu-ct-m" data-v="' + puEsc(m) + '">' + puEsc(m) + '</button>'; }).join('') + '</div>' +
@@ -10918,7 +10922,7 @@ function puInspHTML() {
   } else if (I.apta === false) {
     h += '<div style="font-weight:700">¿Por qué no es apta? *</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + X.motivos.map(function(m) { var on = String(I.motivo) === String(m.ID_MOT); return '<button class="pu-chip" style="' + (on ? 'background:var(--danger);color:#fff;border-color:var(--danger)' : '') + '" onclick="PU_.insp.motivo=\'' + m.ID_MOT + '\';puFicha()">' + puEsc(m.DESCRIPCION) + '</button>'; }).join('') + '</div>';
     if (X.suplentes.length) h += '<div style="font-weight:700">¿Qué cubierta entra en su lugar? *</div><div style="display:flex;flex-wrap:wrap;gap:8px">' +
-      X.suplentes.map(function(s) { var on = String(I.reemplazo) === String(s.ID_CUB); return '<button class="pu-chip" style="' + (on ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : '') + '" onclick="PU_.insp.reemplazo=\'' + s.ID_CUB + '\';puFicha()"><b>' + puEsc(s.MARCA) + '</b> · DOT: ' + puEsc((puCubD(s.ID_CUB) || s).DOT || 'sin DOT') + ' · ' + puEsc(s.MEDIDA + ' ' + s.TRABAJO) + '</button>'; }).join('') +
+      X.suplentes.map(function(s) { var on = String(I.reemplazo) === String(s.ID_CUB); return '<button class="pu-chip" style="' + (on ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : '') + '" onclick="PU_.insp.reemplazo=\'' + s.ID_CUB + '\';puFicha()"><b>' + puEsc(puIdTxt(s.MARCA, (puCubD(s.ID_CUB) || s).DOT)) + '</b> · ' + puEsc(s.MEDIDA + ' ' + s.TRABAJO) + '</button>'; }).join('') +
       '<button class="pu-chip" style="' + (I.reemplazo === '' ? 'background:var(--dim);color:#fff' : '') + '" onclick="PU_.insp.reemplazo=\'\';puFicha()">Ninguna</button></div>';
     else if (PU_.f.cub.ROL === 'TITULAR') h += '<div class="tdim">No hay suplentes en esta orden para reemplazarla.</div>';
     h += '<div class="tdim" style="font-size:15px">Queda RECHAZADA, sale de la línea y va a la lista para devolver al cliente.</div>';
@@ -10936,9 +10940,9 @@ function puListoRechazo() {
   var wrap = document.querySelector('#page-puesto-estacion .pu-wrap'); if (wrap) wrap.classList.remove('pu-enficha');
   puPie(false);
   var x = PU_.fin, r = x.rechazo;
-  $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">⛔</div><h2>' + puEsc(r.MARCA) + ' · NO APTA</h2>' +
+  $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">⛔</div>' + puIdHTML(r.MARCA, x.dot) + '<h2>NO APTA</h2>' +
     '<div style="font-size:18px">Quedó <b>RECHAZADA</b> y va a la lista para devolver al cliente.</div>' +
-    (r.REEMPLAZO ? '<div style="font-size:20px;color:var(--accent)"><b>Entra en su lugar: ' + puEsc(r.REEMPLAZO) + '</b></div>' : '') +
+    (r.REEMPLAZO ? '<div style="font-size:20px;color:var(--accent)"><b>Entra en su lugar: ' + puEsc(puIdTxt(r.REEMPLAZO, (PU_.d.cubiertas.filter(function(c) { return c.MARCA === r.REEMPLAZO; })[0] || {}).DOT)) + '</b></div>' : '') +
     '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puVolver()">' + (puTodas() ? 'Ver todas las cubiertas' : 'Siguiente cubierta') + '</button></div>';
 }
 
@@ -10952,33 +10956,41 @@ function puPesajeBanner() {
   var p = PU_.pes; if (!p || !p.ITEMS || !p.ITEMS.length) return '';
   var sinIni = p.ITEMS.filter(function(i) { return !i.PES; }), abiertos = p.ITEMS.filter(function(i) { return i.PES && i.PES.ESTADO === 'ABIERTO'; });
   if (sinIni.length) return '<div class="pu-reg" style="border-color:var(--danger);background:var(--danger-light, #fde8e8)"><div style="font-size:19px;font-weight:700;color:var(--danger)">⚖ Falta el pesaje de inicio del día: ' + puEsc(sinIni.map(function(i) { return i.NOMBRE + (puTodas() ? ' (' + i.ESTACION + ')' : ''); }).join(', ')) + '</div>' +
-    '<div style="font-size:15px">Hasta que no se pese lo que se retira, esta estación no deja cargar ese insumo.</div><button class="pu-btn" style="background:var(--danger);color:#fff;width:max-content" onclick="puPesaje()">Pesar ahora</button></div>';
-  if (abiertos.length) return '<div class="pu-reg" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-color:var(--accent)"><div style="font-size:17px">⚖ Pesaje del día abierto: ' + puEsc(abiertos.map(function(i) { return i.NOMBRE; }).join(', ')) + '. Al terminar el día pesá lo que sobra.</div><button class="pu-btn pu-min" onclick="puPesaje()">Pesaje del día</button></div>';
-  return '<div class="pu-reg" style="border-color:var(--success)"><div style="font-size:16px;color:var(--success);font-weight:700">⚖ Pesaje del día cerrado ✓</div><button class="pu-btn pu-min" style="width:max-content" onclick="puPesaje()">Ver</button></div>';
+    '<div style="font-size:15px">Hasta que no se pese lo que se retira, esta estación no deja cargar ese insumo.</div><button class="pu-btn" style="background:var(--danger);color:#fff;width:max-content" onclick="puPesaje(\'\')">Pesar ahora</button></div>';
+  if (abiertos.length) return '<div class="pu-reg" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-color:var(--accent)"><div style="font-size:17px">⚖ Pesaje del día abierto: ' + puEsc(abiertos.map(function(i) { return i.NOMBRE; }).join(', ')) + '. Al terminar el día pesá lo que sobra.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pu-btn pu-min" onclick="puPesaje(\'\')">Pesaje del día</button><button class="pu-btn pu-min" onclick="puPesaje(\'' + puEsc(p.MANANA || '') + '\')">⚖ Preparar mañana</button></div></div>';
+  return '<div class="pu-reg" style="border-color:var(--success)"><div style="font-size:16px;color:var(--success);font-weight:700">⚖ Pesaje del día cerrado ✓</div><button class="pu-btn pu-min" style="width:max-content" onclick="puPesaje(\'\')">Ver</button> <button class="pu-btn pu-min" style="width:max-content" onclick="puPesaje(\'' + puEsc(p.MANANA || '') + '\')">⚖ Preparar mañana</button></div>';
 }
-async function puPesajeCargar() { try { PU_.pes = await gsRun('gsPC_PesajeDia', puTodas() ? '' : PU_.est); } catch (e) { PU_.pes = null; } }
-async function puPesaje() {
-  await puPesajeCargar();
+async function puPesajeCargar(dia) { try { PU_.pes = await gsRun('gsPC_PesajeDia', puTodas() ? '' : PU_.est, dia || ''); } catch (e) { PU_.pes = null; } }
+function puPesCerrar() { PU_.pesDia = ''; closeModal(); puCargar(); }
+function puFechaTxt(d) { return String(d || '').split('-').reverse().slice(0, 2).join('/'); }
+// dia: vacío = hoy; la fecha del próximo día de trabajo = dejar preparado (por ejemplo, la tarde anterior)
+async function puPesaje(dia) {
+  if (dia !== undefined) PU_.pesDia = dia;
+  await puPesajeCargar(PU_.pesDia || '');
   var p = PU_.pes; if (!p) return toast('No se pudo leer el pesaje', 'r2');
   PU_.pesExtra = PU_.pesExtra || [];
   (p.OTROS || []).forEach(function(o) { if (PU_.pesExtra.indexOf(o.ID_INSUMO) !== -1) p.ITEMS.push(o); });
   var emps = ((PU_.d && PU_.d.empleados) || []).map(function(e) { return e.NOMBRE; });
   if (PU_.pesOper === undefined) PU_.pesOper = PU_.operF || PU_.oper || '';
-  var h = '<div class="mh"><span class="mt">⚖ Pesaje del día · ' + puEsc(p.HOY.split('-').reverse().join('/')) + '</span><button class="mc" onclick="closeModal();puCargar()">×</button></div><div class="mb2 pu-vent">' +
+  var h = '<div class="mh"><span class="mt">⚖ Pesaje ' + (p.ES_HOY ? 'de hoy' : 'para preparar') + ' · ' + puEsc(p.HOY.split('-').reverse().join('/')) + '</span><button class="mc" onclick="puPesCerrar()">×</button></div><div class="mb2 pu-vent">' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pu-chip' + (p.ES_HOY ? ' sel' : '') + '" onclick="puPesaje(\'\')">Hoy ' + puEsc(puFechaTxt(p.DIA_HOY)) + '</button><button class="pu-chip' + (!p.ES_HOY ? ' sel' : '') + '" onclick="puPesaje(\'' + puEsc(p.MANANA) + '\')">Preparar para el ' + puEsc(puFechaTxt(p.MANANA)) + '</button></div>' +
+    (!p.ES_HOY ? '<div style="font-size:15px;background:var(--accent-light,#e0ecff);border-radius:8px;padding:8px">Dejá pesado lo que va a usar cada estación el <b>' + puEsc(puFechaTxt(p.HOY)) + '</b>. Ese día ya se arranca a trabajar sin pesar.</div>' : '') +
     (emps.length ? '<div><div style="font-weight:700;font-size:15px">¿Quién pesa?</div><div style="display:flex;flex-wrap:wrap;gap:6px">' + emps.map(function(n) { return '<button class="pu-chip' + (PU_.pesOper === n ? ' sel' : '') + '" data-n="' + puEsc(n) + '" onclick="PU_.pesOper=this.dataset.n;document.querySelectorAll(\'.pu-pes-op\').forEach(function(b){b.classList.toggle(\'sel\',b.dataset.n===PU_.pesOper)})" >' + puEsc(n) + '</button>'; }).join('').replace(/class="pu-chip/g, 'class="pu-pes-op pu-chip') + '</div></div>' : '');
   if (!p.ITEMS.length) h += '<div class="tdim">En esta estación no se usa ningún insumo que se pese.</div>';
   p.ITEMS.forEach(function(i, k) {
     var P = i.PES, u = puEsc(i.UNIDAD);
     h += '<div class="pu-reg" style="border-color:' + (!P ? 'var(--danger)' : (P.ESTADO === 'CERRADO' ? 'var(--success)' : 'var(--accent)')) + '"><div style="font-size:19px;font-weight:700">' + puEsc(i.NOMBRE) + (puTodas() ? ' <span class="tdim" style="font-size:14px">· ' + puEsc(i.ESTACION) + '</span>' : '') + '</div>';
     if (!P) {
-      h += '<div style="font-size:15px"><b>Inicio del día:</b> pesá lo que retirás del depósito para hoy (más lo que haya quedado en la estación).</div>' +
+      h += '<div style="font-size:15px">' + (p.ES_HOY ? '<b>Inicio del día:</b> pesá lo que retirás del depósito para hoy (más lo que haya quedado en la estación).' : '<b>Preparar para el ' + puEsc(puFechaTxt(p.HOY)) + ':</b> pesá lo que dejás listo en la estación.') + '</div>' +
         (i.QUEDO_ANTES ? '<div class="tdim" style="font-size:14px">El ' + puEsc(i.QUEDO_ANTES.FECHA.split('-').reverse().join('/')) + ' quedaron ' + puF(i.QUEDO_ANTES.CANT) + ' ' + u + ' en la estación.</div>' : '') +
         '<div class="pu-qty"><input inputmode="decimal" id="pu-pes-ini-' + k + '" placeholder="Peso" aria-label="Peso de inicio"><span>' + u + '</span></div>' +
         '<button class="pu-btn pu-ok" style="width:max-content" onclick="puPesIni(' + k + ')">Guardar inicio</button>';
     } else {
       h += '<div style="font-size:15px">Inicio: <b>' + puF(P.INICIO) + ' ' + u + '</b> · pesó ' + puEsc(P.OPERARIO_INI) + '</div>' +
-        '<div style="font-size:15px">Cargado por cubierta hoy: <b>' + puF(i.USADO_CUB) + ' ' + u + '</b> en ' + i.CUBIERTAS + ' cubierta' + (i.CUBIERTAS === 1 ? '' : 's') + '</div>';
-      if (P.ESTADO === 'CERRADO') {
+        (p.ES_HOY ? '<div style="font-size:15px">Cargado por cubierta hoy: <b>' + puF(i.USADO_CUB) + ' ' + u + '</b> en ' + i.CUBIERTAS + ' cubierta' + (i.CUBIERTAS === 1 ? '' : 's') + '</div>' : '');
+      if (!p.ES_HOY) {
+        h += '<div style="font-size:16px;color:var(--success);font-weight:700">✓ Preparado para el ' + puEsc(puFechaTxt(p.HOY)) + '</div>';
+      } else if (P.ESTADO === 'CERRADO') {
         var c = i.CALC || {};
         h += '<div style="font-size:15px">Sobró: <b>' + puF(P.FIN) + ' ' + u + '</b>' + (P.DESTINO ? ' · ' + (P.DESTINO === 'QUEDA' ? 'quedó en la estación' : 'volvió al depósito') : '') + ' · pesó ' + puEsc(P.OPERARIO_FIN) + '</div>' +
           '<div style="font-size:16px;font-weight:700;color:' + (c.FUERA ? 'var(--danger)' : 'var(--success)') + '">Se fue: ' + puF(c.REAL) + ' ' + u + ' · diferencia con lo cargado: ' + (c.DIF > 0 ? '+' : '') + puF(c.DIF) + ' ' + u + ' (' + (c.PCT > 0 ? '+' : '') + String(c.PCT).replace('.', ',') + '%)</div>' +
@@ -10997,7 +11009,7 @@ async function puPesaje() {
   var otr = (p.OTROS || []).filter(function(o) { return PU_.pesExtra.indexOf(o.ID_INSUMO) === -1; });
   if (otr.length) h += '<div style="font-size:14px">¿Hoy usás en esta estación otro insumo que se pesa? ' + otr.map(function(o) { return '<button class="pu-chip" onclick="PU_.pesExtra.push(\'' + puEsc(o.ID_INSUMO) + '\');puPesaje()">+ ' + puEsc(o.NOMBRE) + '</button>'; }).join(' ') + '</div>';
   h += '<div class="tdim" style="font-size:13px">Lo que se fue (inicio − sobrante) se compara con lo cargado en las cubiertas. Si la diferencia pasa el ' + p.MARGEN + '%, la explica el encargado.</div></div>' +
-    '<div class="mf"><button class="btn btn-s" onclick="closeModal();puCargar()">Cerrar</button></div>';
+    '<div class="mf"><button class="btn btn-s" onclick="puPesCerrar()">Cerrar</button></div>';
   closeModal(); showModal(h, 'md-lg'); PU_.pesDest = {};
 }
 function puPesReabrir(k, btn) {
@@ -11015,10 +11027,10 @@ async function puPesReabrirOk(k) {
 function puPesDest(k, v) { PU_.pesDest[k] = v; var a = $id('pu-pes-dep-' + k), b = $id('pu-pes-que-' + k); if (a) a.classList.toggle('sel', v === 'DEPOSITO'); if (b) b.classList.toggle('sel', v === 'QUEDA'); }
 function puPesOper(fn) { var emps = ((PU_.d && PU_.d.empleados) || []).map(function(e) { return e.NOMBRE; }); if (!emps.length) return fn(PU_.oper || 'SIN NOMBRE'); if (!PU_.pesOper) return toast('Elegí arriba quién pesa', 'r2'); fn(PU_.pesOper); }
 function puPesIni(k) {
-  var i = PU_.pes.ITEMS[k], v = $v('pu-pes-ini-' + k).trim();
+  var i = PU_.pes.ITEMS[k], v = $v('pu-pes-ini-' + k).trim(), diaP = PU_.pes.HOY;
   if (v === '' || isNaN(puN(v))) return toast('Poné el peso', 'r2');
   puPesOper(async function(oper) {
-    try { var r = await gsRun('gsPC_PesajeInicio', { ID_ESTACION: i.ID_ESTACION, ID_INSUMO: i.ID_INSUMO, CANTIDAD: puN(v), OPERARIO: oper });
+    try { var r = await gsRun('gsPC_PesajeInicio', { ID_ESTACION: i.ID_ESTACION, ID_INSUMO: i.ID_INSUMO, CANTIDAD: puN(v), OPERARIO: oper, FECHA: diaP });
       if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return puPesaje(); }
       toast('Inicio guardado ✓', 'g'); puPesaje(); } catch (e) { toast(e.message, 'r2'); }
   });
