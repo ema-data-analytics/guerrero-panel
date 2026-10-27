@@ -1425,7 +1425,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271910';
+var EMA_BUILD = '202610271912';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -11711,6 +11711,9 @@ async function puRtGuardar() {
 .pn-ci .d{flex:1;min-width:0}.pn-ci .d b{display:block;font-size:14.5px}.pn-ci .d span{font-size:12px;color:var(--dim)}
 .pn-q{display:flex;align-items:center;gap:4px}.pn-q button{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:18px;color:var(--text);cursor:pointer}.pn-q span{min-width:24px;text-align:center;font-weight:800;font-size:15px}
 .pn-ci .st{min-width:92px;text-align:right;font-weight:800;font-size:14px}
+.pn-dit{display:flex;align-items:center;gap:6px;flex-basis:100%;margin-top:6px;font-size:12.5px;color:var(--dim)}
+.pn-dit input{width:70px;height:42px;font-size:19px;font-weight:800;text-align:center;border:2px solid var(--border);border-radius:9px;background:var(--surface,#fff);color:var(--text)}
+.pn-dit b{color:var(--text)}.pn-dit button{height:42px;padding:0 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface,#fff);color:#b91c1c;font-weight:600}
 .pn-tope{font-size:11.5px;color:var(--dim);margin:4px 0 2px}
 .pn-dbox{border:1px solid var(--border);border-radius:12px;padding:10px;margin-top:10px}.pn-dbox .tl{font-size:11px;color:var(--dim);text-align:center;margin-bottom:6px}
 .pn-dctl{display:flex;gap:8px;justify-content:center;align-items:center;margin-bottom:8px;flex-wrap:wrap}
@@ -11731,7 +11734,7 @@ async function puRtGuardar() {
 <script>
 // ── Precios de cubiertas nuevas (para vendedores, pensado para el celular) ──
 // Lee las tablas pn_precios / pn_promos / pn_promo_items desde el servidor (gsPN_Datos).
-var PN_ = { d: null, q: '', rubro: '', marca: '', promo: 0, max: 40, idx: null, sel: {}, orden: [], cli: '', pdf: null, lista: '30%', desc: 0, mg: null };
+var PN_ = { d: null, q: '', rubro: '', marca: '', promo: 0, max: 40, idx: null, sel: {}, orden: [], cli: '', pdf: null, lista: '30%', desc: 0, dItem: {}, mg: null };
 function pnEl() { return $id('page-precios-nuevos'); }
 function pnEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function pnPlata(n) { n = Number(n) || 0; return '$ ' + Math.round(n).toLocaleString('es-AR'); }
@@ -11751,7 +11754,7 @@ async function renderPrecios() {
 }
 // Al mandar por WhatsApp el celular sale de la app; si al volver la página se recarga, se vuelve a la misma búsqueda y posición.
 function pnGuardar() {
-  try { sessionStorage.setItem('pn_estado', JSON.stringify({ q: PN_.q, rubro: PN_.rubro, marca: PN_.marca, promo: PN_.promo, max: PN_.max, y: window.scrollY || 0, sel: PN_.sel, orden: PN_.orden, cli: PN_.cli, pago: PN_.pago, lista: PN_.lista, desc: PN_.desc })); } catch (e) {}
+  try { sessionStorage.setItem('pn_estado', JSON.stringify({ q: PN_.q, rubro: PN_.rubro, marca: PN_.marca, promo: PN_.promo, max: PN_.max, y: window.scrollY || 0, sel: PN_.sel, orden: PN_.orden, cli: PN_.cli, pago: PN_.pago, lista: PN_.lista, desc: PN_.desc, dItem: PN_.dItem })); } catch (e) {}
 }
 function pnRestaurar() {
   if (PN_.restaurado) return 0;
@@ -11759,7 +11762,7 @@ function pnRestaurar() {
   try {
     var e = JSON.parse(sessionStorage.getItem('pn_estado') || 'null');
     if (!e) return 0;
-    PN_.q = e.q || ''; PN_.rubro = e.rubro || ''; PN_.marca = e.marca || ''; PN_.promo = e.promo || 0; PN_.max = e.max || 40; PN_.sel = e.sel || {}; PN_.orden = e.orden || []; PN_.cli = e.cli || ''; PN_.pago = e.pago || ''; PN_.lista = e.lista || '30%'; PN_.desc = Number(e.desc) || 0;
+    PN_.q = e.q || ''; PN_.rubro = e.rubro || ''; PN_.marca = e.marca || ''; PN_.promo = e.promo || 0; PN_.max = e.max || 40; PN_.sel = e.sel || {}; PN_.orden = e.orden || []; PN_.cli = e.cli || ''; PN_.pago = e.pago || ''; PN_.lista = e.lista || '30%'; PN_.desc = Number(e.desc) || 0; PN_.dItem = e.dItem || {};
     return e.y || 0;
   } catch (x) { return 0; }
 }
@@ -11909,10 +11912,11 @@ function pnUnit(p) {
   return u;
 }
 function pnSelItems() {
-  var d = (PN_.desc || 0) / 100;
   return PN_.orden.filter(function(id) { return PN_.sel[id] && pnPorId(id); }).map(function(id) {
+    // Cada cubierta con su propio descuento, o el general
+    var propio = PN_.dItem && PN_.dItem[id] !== undefined && PN_.dItem[id] !== null, dp = propio ? PN_.dItem[id] : (PN_.desc || 0), d = dp / 100;
     var p = pnPorId(id), u = pnUnit(p), un = Math.round(u.precio * (1 - d));
-    return { p: p, cant: PN_.sel[id], base: u.precio, unit: un, nota: u.nota, lista: u.lista, sub: un * PN_.sel[id], R: pnMgR(p, u.precio) };
+    return { p: p, cant: PN_.sel[id], base: u.precio, unit: un, nota: u.nota, lista: u.lista, sub: un * PN_.sel[id], R: pnMgR(p, u.precio), d: d, dp: dp, propio: propio };
   });
 }
 // ── Descuento con semáforo: cuánto se gana con el descuento que se da (mismo cálculo que «Margen con descuento») ──
@@ -11951,11 +11955,11 @@ function pnBarra() {
   b.innerHTML = '<div class="t">🧾 <b>' + n + '</b> cubierta' + (n === 1 ? '' : 's') + ' · ' + its.length + ' medida' + (its.length === 1 ? '' : 's') + '<br/><b>' + pnPlata(tot) + '</b> con IVA</div><button onclick="pnHoja()">Ver y mandar</button>';
 }
 function pnHoja() {
-  var its = pnSelItems(); pnHojaCerrar();
+  var its = pnSelItems(); pnHojaCerrar(); PN_.hsig = '';
   if (!its.length) return;
   var h = '<div class="pn-hoja" onclick="event.stopPropagation()"><div class="pn-hc"><h3>🧾 Cotización</h3><button class="x" onclick="pnHojaCerrar()">✕</button></div>' +
     '<div id="pn-ci-list"></div>' +
-    '<div class="pn-dbox"><div class="tl">DESCUENTO AL CLIENTE · tocá el número y escribilo</div>' +
+    '<div class="pn-dbox"><div class="tl">DESCUENTO GENERAL (para todas) · tocá el número y escribilo</div>' +
     '<div class="pn-dctl"><button type="button" onclick="pnDesc(-1)">−1</button><div class="pn-dw"><input id="pn-dsc" type="text" inputmode="decimal" autocomplete="off" value="' + String(PN_.desc || 0).replace('.', ',') + '" onfocus="this.select()" oninput="pnDescTxt(this.value)" onblur="this.value=String(PN_.desc||0).replace(\'.\',\',\')" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b></div><button type="button" onclick="pnDesc(1)">+1</button></div>' +
     '<div class="pn-dctl">' + [0, 5, 10, 15].map(function(v) { return '<button type="button" class="q" onclick="pnDesc(' + v + ',true)">' + v + '%</button>'; }).join('') + '</div>' +
     '<div id="pn-sem"></div></div>' +
@@ -11969,27 +11973,50 @@ function pnHoja() {
   document.body.appendChild(ov);
   pnHojaAct();
 }
+function pnDescItem(id, t, limpiar) {
+  var v = parseFloat(String(t).replace(',', '.'));
+  PN_.dItem = PN_.dItem || {};
+  if (limpiar || String(t).trim() === '' || isNaN(v)) { delete PN_.dItem[id]; if (limpiar) { var e = $id('pn-di-' + id); if (e) e.value = ''; } }
+  else PN_.dItem[id] = Math.max(0, Math.min(90, Math.round(v * 10) / 10));
+  PN_.pdf = null; pnGuardar(); pnBarra(); pnHojaAct();
+}
 function pnHojaAct() {
   var L = $id('pn-ci-list'); if (!L) return;
   var its = pnSelItems(); if (!its.length) { pnHojaCerrar(); return; }
-  var d = (PN_.desc || 0) / 100, tot = 0, totL = 0, sinT = 0, cosT = 0, todos = true;
-  L.innerHTML = its.map(function(x) {
-    tot += x.sub; totL += x.base * x.cant;
+  var sig = its.map(function(x) { return x.p.ID_PN; }).join('|');
+  if (sig !== PN_.hsig || !$id('pn-inf-' + its[0].p.ID_PN)) {
+    PN_.hsig = sig;
+    L.innerHTML = its.map(function(x) { var id = x.p.ID_PN;
+      return '<div class="pn-ci" style="flex-wrap:wrap"><div class="d" id="pn-inf-' + id + '"></div>' +
+        '<div class="pn-q"><button onclick="pnCant(' + id + ',-1)">−</button><span id="pn-n-' + id + '"></span><button onclick="pnCant(' + id + ',1)">+</button></div><div class="st" id="pn-st-' + id + '"></div>' +
+        '<div class="pn-dit"><span>Descuento de esta</span><input type="text" inputmode="decimal" id="pn-di-' + id + '" placeholder="gral." onfocus="this.select()" oninput="pnDescItem(' + id + ',this.value)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b><button type="button" id="pn-dg-' + id + '" onclick="pnDescItem(' + id + ',\'\',true)">Usar el general</button></div></div>';
+    }).join('');
+  }
+  var tot = 0, totL = 0, sinD = 0, cosT = 0, todos = true, propios = 0;
+  its.forEach(function(x) {
+    var id = x.p.ID_PN; tot += x.sub; totL += x.base * x.cant; if (x.propio) propios++;
     var dot = '';
-    if (x.R !== null && PN_.mgD) { var g = pnMgGan(x.R, d), c = pnMgCol(g); dot = '<div style="font-size:11.5px;margin-top:2px"><span style="color:' + c[0] + ';font-weight:800">● ' + (g < 0 ? 'Pierde ' + pnPct(-g) : 'Gana ' + pnPct(g)) + '</span> · ' + pnTopesTxt(x.R) + '</div>'; var sn = x.base / 1.21 * x.cant; sinT += sn; cosT += x.R * sn; }
+    if (x.R !== null && PN_.mgD) { var g = pnMgGan(x.R, x.d), c = pnMgCol(g); dot = '<div style="font-size:11.5px;margin-top:2px"><span style="color:' + c[0] + ';font-weight:800">● ' + (g < 0 ? 'Pierde ' + pnPct(-g) : 'Gana ' + pnPct(g)) + '</span> · ' + pnTopesTxt(x.R) + '</div>'; var sn = x.base / 1.21 * x.cant; sinD += sn * (1 - x.d); cosT += x.R * sn; }
     else todos = false;
-    return '<div class="pn-ci"><div class="d"><b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><span>' + pnEsc(x.p.DISENO) + ' · ' + (d ? '<s>' + pnPlata(x.base) + '</s> ' : '') + pnPlata(x.unit) + ' c/u' + (x.lista ? ' · Lista ' + pnEsc(x.lista) : '') + (x.nota ? ' · ' + pnEsc(x.nota) : '') + '</span>' + dot + '</div>' +
-      '<div class="pn-q"><button onclick="pnCant(' + x.p.ID_PN + ',-1)">−</button><span>' + x.cant + '</span><button onclick="pnCant(' + x.p.ID_PN + ',1)">+</button></div><div class="st">' + pnPlata(x.sub) + '</div></div>';
-  }).join('');
-  var tv = $id('pn-tot-v'); if (tv) tv.innerHTML = (d ? '<s style="font-size:13px;color:var(--dim);font-weight:400">' + pnPlata(totL) + '</s> ' : '') + pnPlata(tot);
-  var di = $id('pn-dsc'); if (di && PN_.dscDe !== 'txt') di.value = String(PN_.desc || 0).replace('.', ','); PN_.dscDe = '';
+    var inf = $id('pn-inf-' + id); if (inf) inf.innerHTML = '<b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><span>' + pnEsc(x.p.DISENO) + ' · ' + (x.d ? '<s>' + pnPlata(x.base) + '</s> ' : '') + pnPlata(x.unit) + ' c/u' + (x.d ? ' (' + pnPct(x.d) + (x.propio ? ' propio' : '') + ')' : '') + (x.lista ? ' · Lista ' + pnEsc(x.lista) : '') + (x.nota ? ' · ' + pnEsc(x.nota) : '') + '</span>' + dot;
+    var n = $id('pn-n-' + id); if (n) n.textContent = x.cant;
+    var st = $id('pn-st-' + id); if (st) st.textContent = pnPlata(x.sub);
+    var di = $id('pn-di-' + id); if (di && document.activeElement !== di) di.value = x.propio ? String(x.dp).replace('.', ',') : '';
+    var dg = $id('pn-dg-' + id); if (dg) dg.style.display = x.propio ? '' : 'none';
+  });
+  var tv = $id('pn-tot-v'); if (tv) tv.innerHTML = (tot < totL - 0.5 ? '<s style="font-size:13px;color:var(--dim);font-weight:400">' + pnPlata(totL) + '</s> ' : '') + pnPlata(tot);
+  var dsc = $id('pn-dsc'); if (dsc && PN_.dscDe !== 'txt') dsc.value = String(PN_.desc || 0).replace('.', ','); PN_.dscDe = '';
   var S = $id('pn-sem');
   if (S) {
-    if (!PN_.mgD || !sinT) S.innerHTML = '<div class="tdim" style="font-size:12px">' + (PN_.mgD ? 'Sin costo cargado para calcular la ganancia.' : 'Calculando la ganancia…') + '</div>';
-    else { var R = cosT / sinT, g = pnMgGan(R, d), c = pnMgCol(g);
-      S.innerHTML = '<div class="pn-sem" style="border-color:' + c[0] + ';background:' + c[1] + '"><div class="pn-luz">' + ['#dc2626', '#d97706', '#16a34a'].map(function(k) { return '<span style="background:' + (k === c[0] ? k : '#e5e7eb') + '"></span>'; }).join('') + '</div>' +
-        '<div style="flex:1"><div style="font-weight:800;color:' + c[0] + ';font-size:13px">' + c[2] + ' · ' + c[3] + '</div><div style="font-size:24px;font-weight:800;color:' + c[0] + '">' + (g < 0 ? 'Pierde ' + pnPct(-g) : 'Gana ' + pnPct(g)) + '</div>' +
-        '<div style="font-size:12.5px">Toda la cotización: 🟢 hasta <b>' + pnPct(pnMgTope(R, PN_.mgD.VERDE)) + '</b> · 🟡 hasta <b>' + pnPct(pnMgTope(R, PN_.mgD.AMARILLO)) + '</b> · no gana nada en <b>' + pnPct(pnMgTope(R, 0)) + '</b></div>' +
+    if (!PN_.mgD || !sinD) S.innerHTML = '<div class="tdim" style="font-size:12px">' + (PN_.mgD ? 'Sin costo cargado para calcular la ganancia.' : 'Calculando la ganancia…') + '</div>';
+    else { var g2 = (sinD * (1 - PN_.mgD.IMP) - cosT) / sinD, c2 = pnMgCol(g2), Rg = null;
+      // Topes de la cotización entera (para el descuento general)
+      var sb = 0, cb = 0; its.forEach(function(x) { if (x.R !== null) { var sn = x.base / 1.21 * x.cant; sb += sn; cb += x.R * sn; } }); Rg = sb ? cb / sb : null;
+      S.innerHTML = '<div class="pn-sem" style="border-color:' + c2[0] + ';background:' + c2[1] + '"><div class="pn-luz">' + ['#dc2626', '#d97706', '#16a34a'].map(function(k) { return '<span style="background:' + (k === c2[0] ? k : '#e5e7eb') + '"></span>'; }).join('') + '</div>' +
+        '<div style="flex:1"><div style="font-weight:800;color:' + c2[0] + ';font-size:13px">' + c2[2] + ' · ' + c2[3] + '</div><div style="font-size:24px;font-weight:800;color:' + c2[0] + '">' + (g2 < 0 ? 'Pierde ' + pnPct(-g2) : 'Gana ' + pnPct(g2)) + '</div>' +
+        (tot < totL - 0.5 ? '<div style="font-size:12.5px">Descuento total: <b>' + pnPlata(totL - tot) + '</b> (' + pnPct(1 - tot / totL) + ')</div>' : '') +
+        (Rg !== null ? '<div style="font-size:12.5px">Descuento general: 🟢 hasta <b>' + pnPct(pnMgTope(Rg, PN_.mgD.VERDE)) + '</b> · 🟡 hasta <b>' + pnPct(pnMgTope(Rg, PN_.mgD.AMARILLO)) + '</b> · no gana nada en <b>' + pnPct(pnMgTope(Rg, 0)) + '</b></div>' : '') +
+        (propios ? '<div class="tdim" style="font-size:11px">' + propios + ' cubierta' + (propios === 1 ? ' tiene' : 's tienen') + ' su propio descuento.</div>' : '') +
         (todos ? '' : '<div class="tdim" style="font-size:11px">Hay cubiertas sin costo cargado: no entran en el cálculo.</div>') + '</div></div>'; }
   }
   pnPdfBotones();
@@ -12027,16 +12054,16 @@ function pnCant(id, d) {
 }
 function pnVaciar() {
   PN_.orden.forEach(function(id) { var b = $id('pn-sb-' + id); if (b) { b.className = ''; b.textContent = '➕ Agregar a cotización'; } });
-  PN_.sel = {}; PN_.orden = []; PN_.pdf = null; pnGuardar(); pnHojaCerrar(); pnBarra();
+  PN_.sel = {}; PN_.orden = []; PN_.dItem = {}; PN_.pdf = null; pnGuardar(); pnHojaCerrar(); pnBarra();
 }
 function pnHoyTxt() { var d = new Date(); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear(); }
 function pnVendedor() { var v = $id('sb-nm'); var t = v ? v.textContent.trim() : ''; return t && t !== 'Usuario' ? t : ''; }
 function pnCotTexto() {
   var its = pnSelItems(), tot = 0;
-  var t = '*Cotización · Vulcan Tread Neumáticos*\n' + pnHoyTxt() + (PN_.cli ? '\nCliente: ' + PN_.cli : '') + (PN_.pago ? '\nForma de pago: ' + PN_.pago : '') + (PN_.desc ? '\nDescuento: ' + String(PN_.desc).replace('.', ',') + '% (ya aplicado en los precios)' : '') + '\n';
+  var t = '*Cotización · Vulcan Tread Neumáticos*\n' + pnHoyTxt() + (PN_.cli ? '\nCliente: ' + PN_.cli : '') + (PN_.pago ? '\nForma de pago: ' + PN_.pago : '') + (its.some(function(x) { return x.d; }) ? '\nDescuentos ya aplicados en los precios' : '') + '\n';
   its.forEach(function(x) {
     tot += x.sub;
-    t += '\n• ' + x.cant + ' x ' + x.p.MEDIDA + ' ' + x.p.MARCA + ' ' + x.p.DISENO + '\n   ' + (PN_.desc ? 'Lista ' + pnPlata(x.base) + ' → ' : '') + pnPlata(x.unit) + ' c/u' + (x.nota ? ' (' + x.nota + ')' : '') + ' · Subtotal ' + pnPlata(x.sub);
+    t += '\n• ' + x.cant + ' x ' + x.p.MEDIDA + ' ' + x.p.MARCA + ' ' + x.p.DISENO + '\n   ' + (x.d ? 'Lista ' + pnPlata(x.base) + ' − ' + String(x.dp).replace('.', ',') + '% → ' : '') + pnPlata(x.unit) + ' c/u' + (x.nota ? ' (' + x.nota + ')' : '') + ' · Subtotal ' + pnPlata(x.sub);
   });
   t += '\n\n*Total: ' + pnPlata(tot) + '* (IVA incluido)\nPrecios con IVA incluido. Sujetos a cambio y disponibilidad.';
   return t;
@@ -12047,21 +12074,21 @@ function pnCotWhats() {
   window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
 }
 function pnCotHtml() {
-  var its = pnSelItems(), tot = 0, filas = '';
+  var its = pnSelItems(), tot = 0, filas = '', hayD = its.some(function(x) { return x.d; });
   var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
   its.forEach(function(x, i) {
     tot += x.sub;
     filas += '<tr style="background:' + (i % 2 ? '#f7f8fa' : '#fff') + '"><td style="padding:7px 8px;font-family:Inter,Arial,sans-serif;border:0"><b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><div style="font-size:11px;color:#555">' + pnEsc(x.p.DISENO) + ' · Cód. ' + pnEsc(x.p.CODIGO) + (x.nota ? ' · <b style="color:#c2410c">' + pnEsc(x.nota) + '</b>' : '') + '</div></td>' +
-      '<td style="padding:7px 8px;text-align:center">' + x.cant + '</td>' + (PN_.desc ? '<td style="padding:7px 8px;text-align:right;white-space:nowrap;color:#666">' + pnPlata(x.base) + '</td>' : '') + '<td style="padding:7px 8px;text-align:right;white-space:nowrap">' + pnPlata(x.unit) + '</td><td style="padding:7px 8px;text-align:right;white-space:nowrap"><b>' + pnPlata(x.sub) + '</b></td></tr>';
+      '<td style="padding:7px 8px;text-align:center">' + x.cant + '</td>' + (hayD ? '<td style="padding:7px 8px;text-align:right;white-space:nowrap;color:#666">' + pnPlata(x.base) + '</td><td style="padding:7px 8px;text-align:center;white-space:nowrap;color:#15803d;font-weight:700">' + (x.d ? String(x.dp).replace('.', ',') + '%' : '—') + '</td>' : '') + '<td style="padding:7px 8px;text-align:right;white-space:nowrap">' + pnPlata(x.unit) + '</td><td style="padding:7px 8px;text-align:right;white-space:nowrap"><b>' + pnPlata(x.sub) + '</b></td></tr>';
   });
   var v = '';  // vendedor: se agrega cuando se arme el registro de ventas por vendedor
   return '<div style="width:700px;box-sizing:border-box;padding:24px 26px;font-family:Inter,Arial,sans-serif;color:#1f2937;background:#fff;font-size:13px">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #E8792B;padding-bottom:12px">' +
     '<img src="' + pnEsc(logo) + '" crossorigin="anonymous" style="height:62px"/><div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#14213d">Cotización</div><div style="color:#555">Fecha: ' + pnHoyTxt() + '</div>' + (v ? '<div style="color:#555">Vendedor: ' + pnEsc(v) + '</div>' : '') + '</div></div>' +
     (PN_.cli || PN_.pago ? '<div style="margin:14px 0 4px;font-size:14px">' + (PN_.cli ? '<div><span style="color:#555">Cliente:</span> <b>' + pnEsc(PN_.cli) + '</b></div>' : '') + (PN_.pago ? '<div style="margin-top:3px"><span style="color:#555">Forma de pago:</span> <b>' + pnEsc(PN_.pago) + '</b></div>' : '') + '</div>' : '<div style="height:12px"></div>') +
-    '<table style="width:100%;border-collapse:collapse;margin-top:8px"><tr><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:left">Cubierta</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:center">Cant.</th>' + (PN_.desc ? '<th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">Precio lista</th>' : '') + '<th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">' + (PN_.desc ? 'Con ' + String(PN_.desc).replace('.', ',') + '% desc.' : 'Precio c/u') + '</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">Subtotal</th></tr>' + filas + '</table>' +
+    '<table style="width:100%;border-collapse:collapse;margin-top:8px"><tr><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:left">Cubierta</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:center">Cant.</th>' + (hayD ? '<th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">Precio lista</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:center">Desc.</th>' : '') + '<th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">' + (hayD ? 'Precio final' : 'Precio c/u') + '</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">Subtotal</th></tr>' + filas + '</table>' +
     '<div style="display:flex;justify-content:flex-end;margin-top:12px"><div style="min-width:260px;border-top:2px solid #14213d;padding-top:8px">' +
-    (PN_.desc ? '<div style="display:flex;justify-content:space-between;color:#555"><span>Total de lista</span><span>' + pnPlata(its.reduce(function(a, x) { return a + x.base * x.cant; }, 0)) + '</span></div><div style="display:flex;justify-content:space-between;color:#15803d;font-weight:700"><span>Descuento ' + String(PN_.desc).replace('.', ',') + '%</span><span>− ' + pnPlata(its.reduce(function(a, x) { return a + (x.base - x.unit) * x.cant; }, 0)) + '</span></div>' : '') +
+    (hayD ? '<div style="display:flex;justify-content:space-between;color:#555"><span>Total de lista</span><span>' + pnPlata(its.reduce(function(a, x) { return a + x.base * x.cant; }, 0)) + '</span></div><div style="display:flex;justify-content:space-between;color:#15803d;font-weight:700"><span>Descuento</span><span>− ' + pnPlata(its.reduce(function(a, x) { return a + (x.base - x.unit) * x.cant; }, 0)) + '</span></div>' : '') +
     '<div style="display:flex;justify-content:space-between;color:#555"><span>Subtotal sin IVA</span><span>' + pnPlata(tot / 1.21) + '</span></div>' +
     '<div style="display:flex;justify-content:space-between;color:#555"><span>IVA 21%</span><span>' + pnPlata(tot - tot / 1.21) + '</span></div>' +
     '<div style="display:flex;justify-content:space-between;font-size:19px;font-weight:800;color:#14213d;margin-top:4px"><span>Total</span><span>' + pnPlata(tot) + '</span></div></div></div>' +
@@ -16336,16 +16363,24 @@ function mgEnter() {
 }
 function mgSumar(c) { var it = MG_.items.filter(function(i) { return i.c === c; })[0]; if (it) it.n++; else MG_.items.push({ c: c, n: 1 }); }
 function mgAgregar(c) { mgSumar(c); mgBuscar(); mgPintar(); }
-function mgCant(k, v) { var it = MG_.items[k]; if (!it) return; it.n = Math.max(1, Math.min(999, it.n + v)); MG_.escribeCant = false; mgPintar(); }
+function mgCant(k, v) { var it = MG_.items[k]; if (!it) return; it.n = Math.max(1, Math.min(999, it.n + v)); mgPintar(); }
 // Al escribir se recalcula sin rearmar la lista; al salir de la casilla solo se acomoda el número (si se rearmara, el toque en + o − se perdería)
 function mgCantTxt(k, t, vivo, el) {
   var it = MG_.items[k]; if (!it) return; var v = parseInt(String(t).replace(/\D/g, ''), 10);
   if (vivo && isNaN(v)) return;
   v = Math.max(1, Math.min(999, isNaN(v) ? 1 : v));
   if (!vivo) { if (el) el.value = v; if (v === it.n) return; }
-  it.n = v; MG_.escribeCant = true; mgPintar(); MG_.escribeCant = false;
+  it.n = v; mgPintar();
 }
-function mgQuitar(k) { MG_.items.splice(k, 1); MG_.escribeCant = false; mgPintar(); }
+// Descuento propio de una cubierta (vacío = usa el general)
+function mgDescItem(k, t, limpiar) {
+  var it = MG_.items[k]; if (!it) return;
+  var v = parseFloat(String(t).replace(',', '.'));
+  it.d = limpiar || String(t).trim() === '' || isNaN(v) ? null : Math.max(0, Math.min(90, Math.round(v * 10) / 10));
+  if (limpiar) { var e = $id('mg-di-' + k); if (e) e.value = ''; }
+  mgPintar();
+}
+function mgQuitar(k) { MG_.items.splice(k, 1); MG_.sig = ''; mgPintar(); }
 // Descuento escrito a mano (acepta coma): 12, 12,5, 7.5
 function mgDescTxt(t, vivo) { var v = parseFloat(String(t).replace(',', '.')); if (isNaN(v)) v = 0; mgDesc(v, true, vivo ? 'txt' : ''); }
 function mgDesc(v, abs, de) {
@@ -16361,10 +16396,10 @@ async function mgACotizacion() {
   try {
     if (!PN_.d) { PN_.d = await gsRun('gsPN_Datos'); pnIndexar(); }
     var porCod = {}; (PN_.d.PRECIOS || []).forEach(function(p) { porCod[p.CODIGO] = p; });
-    var sel = {}, orden = [], faltan = [];
-    MG_.items.forEach(function(i) { var p = porCod[i.c]; if (!p) { faltan.push(i.c); return; } if (!sel[p.ID_PN]) orden.push(p.ID_PN); sel[p.ID_PN] = (sel[p.ID_PN] || 0) + i.n; });
+    var sel = {}, orden = [], faltan = [], dIt = {};
+    MG_.items.forEach(function(i) { var p = porCod[i.c]; if (!p) { faltan.push(i.c); return; } if (!sel[p.ID_PN]) orden.push(p.ID_PN); sel[p.ID_PN] = (sel[p.ID_PN] || 0) + i.n; if (!(i.d === null || i.d === undefined)) dIt[p.ID_PN] = i.d; });
     if (!orden.length) { toast('Esas cubiertas no están en la lista de precios', 'r2'); return; }
-    PN_.restaurado = true; PN_.sel = sel; PN_.orden = orden; PN_.desc = MG_.desc; PN_.pdf = null; pnGuardar();
+    PN_.restaurado = true; PN_.sel = sel; PN_.orden = orden; PN_.desc = MG_.desc; PN_.dItem = dIt; PN_.pdf = null; pnGuardar();
     if (faltan.length) toast('No están en la lista de precios: ' + faltan.join(', '), 'w');
     mvAbrir('precios-nuevos');
     var n = 0, t = setInterval(function() { n++; if ((PN_.idx && $id('pn-res')) || n > 40) { clearInterval(t); pnBarra(); pnHoja(); } }, 250);
@@ -16375,21 +16410,42 @@ function mgGan(R, d) { return (1 - MG_.d.IMP) - R / (1 - d); }
 function mgTope(R, t) { return Math.max(0, 1 - R / (1 - MG_.d.IMP - t)); }
 function mgColor(g) { return g >= MG_.d.VERDE - 1e-9 ? ['#16a34a', '#f0fdf4', 'VERDE', 'Conviene'] : g >= MG_.d.AMARILLO - 1e-9 ? ['#d97706', '#fffbeb', 'AMARILLO', 'Gana poco: solo de contado'] : ['#dc2626', '#fef2f2', 'ROJO', g < 0 ? 'Pierde plata' : 'No gana casi nada: no dar']; }
 function mgPct(x) { /* se corta para abajo: si dice 10% es porque llega al 10% */ return (Math.floor(x * 1000 + 1e-6) / 10).toLocaleString('es-AR') + '%'; }
+// Descuento de cada cubierta: el suyo si se lo puso, si no el general
+function mgDi(it) { return (it.d === null || it.d === undefined ? MG_.desc : it.d) / 100; }
+function mgInfo(a, it) {
+  var d = mgDi(it), g = mgGan(a.R, d), col = mgColor(g), propio = !(it.d === null || it.d === undefined);
+  return '<b style="font-size:14px">' + pcEsc(a.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc(a.CODIGO) + ' · lista $' + mgM(a.CON_IVA) + (d ? ' · con ' + mgPct(d) + (propio ? ' (propio)' : '') + ' <b>$' + mgM(a.CON_IVA * (1 - d)) + '</b>' : '') + '</div>' +
+    '<div style="font-size:12px;margin-top:2px">' + (g < 0 ? 'Pierde' : 'Gana') + ' <b style="color:' + col[0] + '">' + mgPct(Math.abs(g)) + '</b> · verde hasta ' + mgPct(mgTope(a.R, MG_.d.VERDE)) + ' · amarillo hasta ' + mgPct(mgTope(a.R, MG_.d.AMARILLO)) + ' · no gana nada en ' + mgPct(mgTope(a.R, 0)) + '</div>';
+}
 function mgPintar() {
   var L = $id('mg-lista'), D = $id('mg-desc'), S = $id('mg-sem'); if (!L) return;
-  var d = MG_.desc / 100, its = MG_.items.map(function(i) { return { i: i, a: mgArt(i.c) }; }).filter(function(x) { return x.a; });
-  if (!its.length) { L.innerHTML = '<div class="al al-b" style="font-size:13px">Todavía no agregaste cubiertas.</div>'; D.innerHTML = ''; S.innerHTML = ''; return; }
-  var sinT = 0, cosT = 0, conT = 0;
-  its.forEach(function(x) { var a = x.a, n = x.i.n, sin = a.CON_IVA / (1 + a.IVA); sinT += sin * n; cosT += a.R * sin * n; conT += a.CON_IVA * n; });
-  // Mientras se escribe una cantidad no se rearma la lista (si no, se cierra el teclado)
-  if (!MG_.escribeCant) L.innerHTML = '<div class="mg-lst-t">🧾 En la cotización: ' + its.length + ' cubierta' + (its.length === 1 ? '' : 's') + ' · para agregar otra, buscala arriba</div>' + its.map(function(x, k) { var a = x.a, n = x.i.n, g = mgGan(a.R, d), col = mgColor(g);
-    return '<div class="mg-it" style="border-left:6px solid ' + col[0] + '"><div style="flex:1;min-width:0"><b style="font-size:14px">' + pcEsc(a.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc(a.CODIGO) + ' · lista $' + mgM(a.CON_IVA) + ' · con descuento <b>$' + mgM(a.CON_IVA * (1 - d)) + '</b></div>' +
-      '<div style="font-size:12px;margin-top:2px">' + (g < 0 ? 'Pierde' : 'Gana') + ' <b style="color:' + col[0] + '">' + mgPct(Math.abs(g)) + '</b> · verde hasta ' + mgPct(mgTope(a.R, MG_.d.VERDE)) + ' · no gana nada en ' + mgPct(mgTope(a.R, 0)) + '</div></div>' +
-      '<div class="mg-cant"><span class="tdim">Cantidad</span><button type="button" onclick="mgCant(' + k + ',-1)">−</button><input type="text" inputmode="numeric" value="' + n + '" onfocus="this.select()" oninput="mgCantTxt(' + k + ',this.value,true)" onblur="mgCantTxt(' + k + ',this.value,false,this)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><button type="button" onclick="mgCant(' + k + ',1)">+</button><button type="button" class="q" onclick="mgQuitar(' + k + ')">Quitar</button></div></div>'; }).join('');
-  var R = cosT / sinT, g = mgGan(R, d), col = mgColor(g), cob = conT * (1 - d), ganP = sinT * (1 - d) * (1 - MG_.d.IMP) - cosT;
+  var its = MG_.items.map(function(i) { return { i: i, a: mgArt(i.c) }; }).filter(function(x) { return x.a; });
+  if (!its.length) { L.innerHTML = '<div class="al al-b" style="font-size:13px">Todavía no agregaste cubiertas.</div>'; D.innerHTML = ''; S.innerHTML = ''; MG_.sig = ''; return; }
+  // Totales: cada cubierta con su descuento
+  var sinT = 0, sinD = 0, cosT = 0, conT = 0, cob = 0, propios = 0;
+  its.forEach(function(x) { var a = x.a, n = x.i.n, sin = a.CON_IVA / (1 + a.IVA), di = mgDi(x.i); sinT += sin * n; sinD += sin * (1 - di) * n; cosT += a.R * sin * n; conT += a.CON_IVA * n; cob += a.CON_IVA * (1 - di) * n; if (!(x.i.d === null || x.i.d === undefined)) propios++; });
+  // La lista se arma de nuevo solo si cambian las cubiertas; si no, se actualiza el texto (así no se pierde el teclado ni el toque)
+  var sig = its.map(function(x) { return x.i.c; }).join('|');
+  if (sig !== MG_.sig || !$id('mg-inf-0')) {
+    MG_.sig = sig;
+    L.innerHTML = '<div class="mg-lst-t">🧾 En la cotización: ' + its.length + ' cubierta' + (its.length === 1 ? '' : 's') + ' · para agregar otra, buscala arriba</div>' + its.map(function(x, k) {
+      return '<div class="mg-it" id="mg-it-' + k + '"><div style="flex:1;min-width:0" id="mg-inf-' + k + '"></div>' +
+        '<div class="mg-cant"><span class="tdim">Cantidad</span><button type="button" onclick="mgCant(' + k + ',-1)">−</button><input type="text" inputmode="numeric" id="mg-n-' + k + '" value="' + x.i.n + '" onfocus="this.select()" oninput="mgCantTxt(' + k + ',this.value,true)" onblur="mgCantTxt(' + k + ',this.value,false,this)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><button type="button" onclick="mgCant(' + k + ',1)">+</button></div>' +
+        '<div class="mg-cant"><span class="tdim">Descuento de esta</span><input type="text" inputmode="decimal" id="mg-di-' + k + '" placeholder="gral." onfocus="this.select()" oninput="mgDescItem(' + k + ',this.value)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b><button type="button" class="q" onclick="mgDescItem(' + k + ',\'\',true)" id="mg-dg-' + k + '">Usar el general</button><button type="button" class="q" onclick="mgQuitar(' + k + ')">Quitar</button></div></div>';
+    }).join('');
+  }
+  its.forEach(function(x, k) {
+    var inf = $id('mg-inf-' + k); if (inf) inf.innerHTML = mgInfo(x.a, x.i);
+    var col = mgColor(mgGan(x.a.R, mgDi(x.i))), it = $id('mg-it-' + k); if (it) it.style.borderLeft = '6px solid ' + col[0];
+    var ni = $id('mg-n-' + k); if (ni && document.activeElement !== ni) ni.value = x.i.n;
+    var di = $id('mg-di-' + k), propio = !(x.i.d === null || x.i.d === undefined);
+    if (di && document.activeElement !== di) di.value = propio ? String(x.i.d).replace('.', ',') : '';
+    var dg = $id('mg-dg-' + k); if (dg) dg.style.display = propio ? '' : 'none';
+  });
+  var R = cosT / sinT, g = sinD > 0 ? ((sinD * (1 - MG_.d.IMP)) - cosT) / sinD : -1, col = mgColor(g), ganP = sinD * (1 - MG_.d.IMP) - cosT, d = MG_.desc / 100;
   // Los controles del descuento se arman una sola vez: así no se pierde el dedo en la barra ni el teclado en la casilla
   if (!$id('mg-d')) D.innerHTML = '<div class="card"><div class="card-body">' +
-    '<div class="tdim" style="font-size:12px;text-align:center;margin-bottom:6px">DESCUENTO · tocá el número y escribilo</div>' +
+    '<div class="tdim" style="font-size:12px;text-align:center;margin-bottom:6px">DESCUENTO GENERAL (para todas) · tocá el número y escribilo</div>' +
     '<div class="mg-ctl"><button type="button" class="btn btn-s mg-b" onclick="mgDesc(-1)">−1</button>' +
     '<div class="mg-dw"><input id="mg-d" class="mg-d" type="text" inputmode="decimal" autocomplete="off" value="' + String(MG_.desc).replace('.', ',') + '" onfocus="this.select()" oninput="mgDescTxt(this.value,true)" onblur="this.value=String(MG_.desc).replace(\'.\',\',\')" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b></div>' +
     '<button type="button" class="btn btn-s mg-b" onclick="mgDesc(1)">+1</button></div>' +
@@ -16405,11 +16461,12 @@ function mgPintar() {
   S.innerHTML = '<div class="mg-sem" style="border-color:' + col[0] + ';background:' + col[1] + '">' +
     '<div class="mg-luces">' + ['#dc2626', '#d97706', '#16a34a'].map(function(c) { return '<span style="background:' + (c === col[0] ? c : '#e5e7eb') + (c === col[0] ? ';box-shadow:0 0 14px ' + c : '') + '"></span>'; }).join('') + '</div>' +
     '<div style="flex:1"><div style="font-size:13px;font-weight:800;color:' + col[0] + '">' + col[2] + ' · ' + col[3] + '</div><div style="font-size:30px;font-weight:800;color:' + col[0] + '">' + (g < 0 ? 'Pierde ' + mgPct(-g) : 'Gana ' + mgPct(g)) + '</div>' +
-    '<div style="font-size:13px">El cliente paga <b>$' + mgM(cob) + '</b> con IVA' + (d ? ' (se le descuentan $' + mgM(conT - cob) + ')' : '') + '</div>' +
+    '<div style="font-size:13px">El cliente paga <b>$' + mgM(cob) + '</b> con IVA' + (conT - cob > 0.5 ? ' (se le descuentan $' + mgM(conT - cob) + ', ' + mgPct(1 - cob / conT) + ' en total)' : '') + '</div>' +
     (MG_.d.ADMIN ? '<div style="font-size:13px">Ganancia: <b>' + (ganP < 0 ? '−$' + mgM(-ganP) : '$' + mgM(ganP)) + '</b> · costo puesto $' + mgM(cosT) + '</div>' : '') + '</div></div>' +
+    (propios ? '<div class="tdim" style="font-size:12px;margin-top:8px">' + propios + ' cubierta' + (propios === 1 ? ' tiene' : 's tienen') + ' su propio descuento. Los topes de abajo son para el descuento general.</div>' : '') +
     '<div class="mg-topes"><div><span style="background:#16a34a"></span>Verde hasta <b>' + mgPct(mgTope(R, MG_.d.VERDE)) + '</b></div><div><span style="background:#d97706"></span>Amarillo hasta <b>' + mgPct(mgTope(R, MG_.d.AMARILLO)) + '</b></div><div><span style="background:#dc2626"></span>No gana nada en <b>' + mgPct(mgTope(R, 0)) + '</b></div></div>' +
-    '<button class="btn btn-p mt3" style="width:100%;min-height:52px;font-size:17px;font-weight:800" onclick="mgACotizacion()">🧾 Armar la cotización con este descuento</button>' +
-    '<button class="btn btn-s mt2" style="width:100%" onclick="MG_.items=[];MG_.desc=0;mgPintar()">Empezar de nuevo</button>';
+    '<button class="btn btn-p mt3" style="width:100%;min-height:52px;font-size:17px;font-weight:800" onclick="mgACotizacion()">🧾 Armar la cotización con estos descuentos</button>' +
+    '<button class="btn btn-s mt2" style="width:100%" onclick="MG_.items=[];MG_.desc=0;MG_.sig=\'\';mgPintar()">Empezar de nuevo</button>';
 }
 </script>
 <style>
@@ -16430,6 +16487,7 @@ function mgPintar() {
 .mg-cant{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;flex-basis:100%}
 .mg-cant button{width:48px;height:46px;font-size:26px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;border:1px solid var(--border);border-radius:10px;background:var(--surface,#fff);color:var(--text);touch-action:manipulation}
 .mg-cant button.q{width:auto;padding:0 12px;font-size:14px;font-weight:600;color:#b91c1c}
+.mg-cant b{font-size:20px}
 .mg-cant input{width:64px;height:46px;font-size:22px;font-weight:800;text-align:center;border:2px solid var(--border);border-radius:10px;background:var(--surface,#fff);color:var(--text)}
 .mg-d{width:100px;min-height:56px;font-size:32px;font-weight:800;text-align:center;border:2px solid var(--border);border-radius:10px;padding:2px 4px}
 .mg-b{min-width:64px;min-height:56px;font-size:20px;font-weight:800;touch-action:manipulation}
