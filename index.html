@@ -8770,7 +8770,7 @@ async function pcCasGrabar() {
     var r = await gsRun('gsPC_CascosGuardar', { ID_CLIENTE: cli, FECHA: $v('pc-k-f'), NRO_MANUAL: $v('pc-k-man'), CASCOS: PC_.kf });
     if (!r || !r.ok) { pcCasErr((r && r.error) || 'No se pudo'); return; }
     toast('Grabados ' + r.IDS.length + ' cascos · marcas ' + (r.MARCAS || r.DOTS || []).join(', ') + (r.OT ? ' · orden de trabajo ' + r.OT + ' con ' + r.OT_N + ' cubiertas' : '') + (r.SIN_RECETA ? ' · ' + r.SIN_RECETA + ' sin receta' : '') + ' ✓', r.SIN_RECETA ? 'r2' : 'g');
-    PC_.kf = []; PC_.kcli = cli; PC_.kman = ''; PC_.ultOT = r.OT || ''; await pcRecargar();
+    PC_.kf = []; PC_.kcli = cli; PC_.kman = ''; PC_.ultOT = r.OT || ''; await pcRecargar(); var gOk = document.querySelector('#pc-body .al.al-g'); if (gOk) gOk.scrollIntoView({ block: 'center', behavior: 'smooth' });
   } catch (e) { pcCasErr(e.message); } finally { b.disabled = false; }
 }
 async function pcCasAnular(id) {
@@ -9249,7 +9249,7 @@ function pcContador() {
   if (g) {
     var cli = {}; tit.forEach(function(i) { var c = d.cubiertas.filter(function(x) { return String(x.ID_CUB) === String(i); })[0]; if (c) cli[c.CLIENTE] = (cli[c.CLIENTE] || 0) + 1; });
     var cap = +l.CAPACIDAD || 15;
-    g.innerHTML = (lin || 'Carga') + ': ' + tit.length + ' de ' + cap + ' cubiertas' + (sup.length ? ' · ' + sup.length + ' suplentes' : '') + (tit.length >= cap ? ' · <span style="color:#15803d">COMPLETA</span>' : ' · faltan ' + (cap - tit.length)) +
+    g.innerHTML = (lin || 'Carga') + ': ' + tit.length + ' de ' + cap + ' cubiertas' + (sup.length ? ' · ' + sup.length + (sup.length === 1 ? ' suplente' : ' suplentes') : '') + (tit.length >= cap ? ' · <span style="color:#15803d">COMPLETA</span>' : ' · faltan ' + (cap - tit.length)) +
       (tit.length ? '<div style="font-size:12px;font-weight:400;margin-top:3px">' + Object.keys(cli).map(function(k) { return pcEsc(k) + ' (' + cli[k] + ')'; }).join(' · ') + '</div>' : '');
     g.style.background = tit.length > cap ? '#fee2e2' : (tit.length >= cap ? '#dcfce7' : 'var(--accent-light)');
     if (mezcla) { g.innerHTML = 'Carga mezclada (' + pcEsc(lu.join(' + ')) + '): no se puede armar'; g.style.background = '#fee2e2'; }
@@ -10355,7 +10355,7 @@ function puFicha() {
     var rg = f.registro;
     h += '<div class="pu-reg"><div style="font-size:20px;font-weight:700;color:var(--success)">✓ Esta estación ya está registrada</div>' +
       '<div class="tdim">' + fmtD(rg.FECHA) + ' · ' + puEsc(rg.OPERARIO || rg.USUARIO) + (rg.MINUTOS !== null ? ' · ' + puDur(rg.MINUTOS * 60) : '') + ' · ' + puEsc(rg.RESULTADO) + '</div>' +
-      '<table><tbody>' + rg.CONSUMOS.map(function(k) { return '<tr><td>' + puEsc(k.NOMBRE) + (k.REEMPLAZO ? ' <span class="badge b-orange">reemplazo</span>' : '') + '</td><td class="tr">' + (k.NO_USO ? 'No se usó' : puF(k.REAL) + ' ' + puEsc(k.UNIDAD)) + '</td><td class="tdim">' + puEsc(k.MOTIVO) + '</td></tr>'; }).join('') + '</tbody></table>' +
+      '<table><tbody>' + rg.CONSUMOS.map(function(k) { return '<tr><td>' + puEsc(k.NOMBRE) + (k.REEMPLAZO ? ' <span class="badge b-orange">reemplazo</span>' : '') + '</td><td class="tr">' + (k.NO_USO ? 'No se usó' : puExacto(k.REAL) + ' ' + puEsc(k.UNIDAD)) + '</td><td class="tdim">' + puEsc(k.MOTIVO) + '</td></tr>'; }).join('') + '</tbody></table>' +
       '<div class="tdim" style="font-size:14px">Si hay que corregir algo, el encargado anula el registro y se vuelve a cargar.</div>' +
       (typeof tienePermiso !== 'function' || tienePermiso('PRODUCCION', 'ANULAR') ? '<button class="pu-btn pu-rep" onclick="puAnularReg(' + rg.ID_REG + ')">Anular este registro</button>' : '') + '</div>';
     $id('pu-body').innerHTML = h; puPie(false); return;
@@ -11039,6 +11039,8 @@ async function puPesaje(dia) {
   h += '<div class="tdim" style="font-size:13px">Lo que se fue (inicio − sobrante) se compara con lo cargado en las cubiertas. Si la diferencia pasa el ' + p.MARGEN + '%, la explica el encargado.</div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="puPesCerrar()">Cerrar</button></div>';
   closeModal(); showModal(h, 'md-lg'); PU_.pesDest = {};
+  // Después de guardar uno, queda a la vista el siguiente que falta pesar
+  if (PU_.pesFoco) { PU_.pesFoco = false; setTimeout(function() { var x = document.querySelector('.mo [id^="pu-pes-ini-"]'); if (x) { x.scrollIntoView({ block: 'center' }); x.focus(); } }, 60); }
 }
 function puPesReabrir(k, btn) {
   if ($id('pu-pes-rm-' + k)) return;
@@ -11060,7 +11062,7 @@ function puPesIni(k) {
   puPesOper(async function(oper) {
     try { var r = await gsRun('gsPC_PesajeInicio', { ID_ESTACION: i.ID_ESTACION, ID_INSUMO: i.ID_INSUMO, CANTIDAD: puN(v), OPERARIO: oper, FECHA: diaP });
       if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return puPesaje(); }
-      toast('Inicio guardado ✓', 'g'); puPesaje(); } catch (e) { toast(e.message, 'r2'); }
+      toast('Inicio guardado ✓', 'g'); PU_.pesFoco = true; puPesaje(); } catch (e) { toast(e.message, 'r2'); }
   });
 }
 function puPesFin(k) {
