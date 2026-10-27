@@ -1417,7 +1417,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271855';
+var EMA_BUILD = '202610271856';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -1425,8 +1425,32 @@ function emaVersionNueva(cb) {
     if (m && m[1] !== EMA_BUILD && Number(m[1]) > Number(EMA_BUILD)) cb(m[1]);
   }).catch(function() {});
 }
+// Texto de la versión: el número es la hora de publicación (UTC) → se muestra en hora de Argentina
+function emaVersionTxt(v) {
+  v = String(v || EMA_BUILD); var m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(v); if (!m) return '';
+  var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) - 3 * 3600000);
+  var z = function(n) { return ('0' + n).slice(-2); };
+  return z(d.getUTCDate()) + '/' + z(d.getUTCMonth() + 1) + ' ' + z(d.getUTCHours()) + ':' + z(d.getUTCMinutes());
+}
+// La versión queda escrita en la entrada, en el menú del celular y en el menú de la PC
+function emaVersionPintar() {
+  var t = emaVersionTxt(); if (!t) return;
+  document.querySelectorAll('.ema-ver').forEach(function(e) { e.textContent = 'Versión ' + t; });
+  var lg = document.querySelector('.login-ema');
+  if (lg && !lg.parentNode.querySelector('.ema-ver')) { var d = document.createElement('div'); d.className = 'ema-ver'; d.textContent = 'Versión ' + t; lg.parentNode.insertBefore(d, lg.nextSibling); }
+  var sb = $id('sb-rol');
+  if (sb && !$id('sb-ver')) { var e = document.createElement('div'); e.id = 'sb-ver'; e.className = 'ema-ver'; e.textContent = 'Versión ' + t; sb.parentNode.appendChild(e); }
+}
+// Después de tocar «Actualizar» se avisa en verde que quedó la versión nueva
+function emaAvisoActualizado() {
+  var v = ''; try { v = sessionStorage.getItem('ema_actualizado') || ''; } catch (e) {}
+  if (!v || v !== EMA_BUILD) return;
+  try { sessionStorage.removeItem('ema_actualizado'); } catch (e) {}
+  var b = document.createElement('div'); b.id = 'ema-ver-ok'; b.innerHTML = '✓ Sistema actualizado · versión ' + emaVersionTxt();
+  document.body.appendChild(b); setTimeout(function() { b.remove(); }, 6000);
+}
 function emaActualizar(v) {
-  try { sessionStorage.setItem('ema_recarga_' + v, '1'); } catch (e) {}
+  try { sessionStorage.setItem('ema_recarga_' + v, '1'); sessionStorage.setItem('ema_actualizado', v); } catch (e) {}
   location.replace(location.pathname + '?v=' + v + location.hash);
 }
 function emaChequearVersion() {
@@ -1438,12 +1462,16 @@ function emaChequearVersion() {
     b.innerHTML = '🔄 Hay una versión nueva · <u>Actualizar</u>';
   });
 }
-setTimeout(emaChequearVersion, 1500);
+setTimeout(function() { emaVersionPintar(); emaAvisoActualizado(); emaChequearVersion(); }, 1500);
+setInterval(emaVersionPintar, 5000);
 setInterval(emaChequearVersion, 60000);
 document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') emaChequearVersion(); });
 </script>
 <style>
 #ema-ver-nueva{position:fixed;left:50%;transform:translateX(-50%);top:8px;z-index:100000;background:#2563eb;color:#fff;border:0;border-radius:999px;padding:12px 20px;font-size:16px;line-height:1.25;font-weight:800;box-shadow:0 6px 20px rgba(37,99,235,.55);cursor:pointer;white-space:normal;text-align:center;width:max-content;max-width:calc(100vw - 16px);animation:emaLatido 1.6s ease-in-out infinite;touch-action:manipulation}
+#ema-ver-ok{position:fixed;left:50%;transform:translateX(-50%);top:8px;z-index:100000;background:#16a34a;color:#fff;border-radius:999px;padding:12px 20px;font-size:16px;font-weight:800;box-shadow:0 6px 20px rgba(22,163,74,.5);text-align:center;max-width:calc(100vw - 16px)}
+.ema-ver{font-size:11px;opacity:.75;text-align:center;margin-top:6px}
+#sb-ver{text-align:left;margin-top:2px}
 @keyframes emaLatido{0%,100%{box-shadow:0 6px 20px rgba(37,99,235,.55)}50%{box-shadow:0 6px 28px rgba(37,99,235,.95)}}
 </style>
 
@@ -16216,7 +16244,8 @@ function renderInicioMovil() {
     '<div class="mv-tiles">' + ops.map(function(o) { return '<div class="mv-tile" onclick="mvAbrir(\'' + o[0] + '\')"><span class="ic">' + o[1] + '</span>' + o[2] + '<small>' + o[3] + '</small></div>'; }).join('') +
     (admin ? '<div class="mv-tile" onclick="mvCompleto()"><span class="ic">💻</span>Sistema completo<small>Con el menú de la PC</small></div>' : '') + '</div>' +
     (ops.length ? '' : '<div class="al mt3">Tu usuario no tiene pantallas para el celular. Pedile al administrador los permisos.</div>') +
-    '<button class="btn btn-s mt3" style="width:100%;min-height:48px" onclick="mvCompartir()">📲 Pasar el sistema a otro celular</button></div>';
+    '<button class="btn btn-s mt3" style="width:100%;min-height:48px" onclick="mvCompartir()">📲 Pasar el sistema a otro celular</button>' +
+    '<div class="ema-ver" style="font-size:13px;margin-top:12px">' + (typeof emaVersionTxt === 'function' && emaVersionTxt() ? 'Versión ' + emaVersionTxt() : '') + '</div></div>';
   if (!$id('mv-home')) { var b = document.createElement('button'); b.id = 'mv-home'; b.className = 'btn btn-p'; b.textContent = '🏠 Inicio'; b.onclick = function() { mvInicio(); }; document.body.appendChild(b); }
 }
 function mvInicio() { closeModal(); if (typeof pcCerrarVista === 'function') pcCerrarVista(); document.body.classList.remove('modo-cascos'); PC_.foco = null; navTo('inicio-movil'); }
