@@ -16200,7 +16200,7 @@ function mgSumar(c) { var it = MG_.items.filter(function(i) { return i.c === c; 
 function mgAgregar(c) { mgSumar(c); $id('mg-q').value = ''; $id('mg-sug').innerHTML = ''; mgPintar(); }
 function mgCant(k, v) { var it = MG_.items[k]; if (!it) return; it.n = Math.max(0, it.n + v); if (!it.n) MG_.items.splice(k, 1); mgPintar(); }
 function mgDesc(v, abs) { MG_.desc = Math.max(0, Math.min(40, Math.round((abs ? v : MG_.desc + v) * 10) / 10)); mgPintar(); }
-function mgM(n) { return Math.round(n).toLocaleString('es-AR'); }
+function mgM(n) { n = Math.round(n); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('es-AR'); }
 function mgArt(c) { return MG_.d.ARTICULOS.filter(function(a) { return a.CODIGO === c; })[0]; }
 // Ganancia sobre lo cobrado (sin IVA) con el descuento d (0 a 1): (1 − impuestos) − costo / precio con descuento
 function mgGan(R, d) { return (1 - MG_.d.IMP) - R / (1 - d); }
@@ -16214,7 +16214,7 @@ function mgPintar() {
   var sinT = 0, cosT = 0, conT = 0;
   L.innerHTML = its.map(function(x, k) { var a = x.a, n = x.i.n, sin = a.CON_IVA / (1 + a.IVA), g = mgGan(a.R, d), col = mgColor(g); sinT += sin * n; cosT += a.R * sin * n; conT += a.CON_IVA * n;
     return '<div class="mg-it" style="border-left:6px solid ' + col[0] + '"><div style="flex:1;min-width:0"><b style="font-size:14px">' + pcEsc(a.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc(a.CODIGO) + ' · lista $' + mgM(a.CON_IVA) + ' · con descuento <b>$' + mgM(a.CON_IVA * (1 - d)) + '</b></div>' +
-      '<div style="font-size:12px;margin-top:2px">Gana <b style="color:' + col[0] + '">' + mgPct(g) + '</b> · verde hasta ' + mgPct(mgTope(a.R, MG_.d.VERDE)) + ' · no gana nada en ' + mgPct(mgTope(a.R, 0)) + '</div></div>' +
+      '<div style="font-size:12px;margin-top:2px">' + (g < 0 ? 'Pierde' : 'Gana') + ' <b style="color:' + col[0] + '">' + mgPct(Math.abs(g)) + '</b> · verde hasta ' + mgPct(mgTope(a.R, MG_.d.VERDE)) + ' · no gana nada en ' + mgPct(mgTope(a.R, 0)) + '</div></div>' +
       '<div class="mg-cant"><button class="btn btn-s" onclick="mgCant(' + k + ',-1)">−</button><b>' + n + '</b><button class="btn btn-s" onclick="mgCant(' + k + ',1)">+</button></div></div>'; }).join('');
   var R = cosT / sinT, g = mgGan(R, d), col = mgColor(g), cob = conT * (1 - d), ganP = sinT * (1 - d) * (1 - MG_.d.IMP) - cosT;
   D.innerHTML = '<div class="card"><div class="card-body"><div style="display:flex;align-items:center;gap:8px;justify-content:center">' +
@@ -16224,9 +16224,9 @@ function mgPintar() {
     '<input type="range" min="0" max="30" step="0.5" value="' + MG_.desc + '" style="width:100%;margin-top:8px" oninput="mgDesc(+this.value,true)"></div></div>';
   S.innerHTML = '<div class="mg-sem" style="border-color:' + col[0] + ';background:' + col[1] + '">' +
     '<div class="mg-luces">' + ['#dc2626', '#d97706', '#16a34a'].map(function(c) { return '<span style="background:' + (c === col[0] ? c : '#e5e7eb') + (c === col[0] ? ';box-shadow:0 0 14px ' + c : '') + '"></span>'; }).join('') + '</div>' +
-    '<div style="flex:1"><div style="font-size:13px;font-weight:800;color:' + col[0] + '">' + col[2] + ' · ' + col[3] + '</div><div style="font-size:30px;font-weight:800;color:' + col[0] + '">Gana ' + mgPct(g) + '</div>' +
+    '<div style="flex:1"><div style="font-size:13px;font-weight:800;color:' + col[0] + '">' + col[2] + ' · ' + col[3] + '</div><div style="font-size:30px;font-weight:800;color:' + col[0] + '">' + (g < 0 ? 'Pierde ' + mgPct(-g) : 'Gana ' + mgPct(g)) + '</div>' +
     '<div style="font-size:13px">El cliente paga <b>$' + mgM(cob) + '</b> con IVA' + (d ? ' (se le descuentan $' + mgM(conT - cob) + ')' : '') + '</div>' +
-    (MG_.d.ADMIN ? '<div style="font-size:13px">Ganancia: <b>$' + mgM(ganP) + '</b> · costo puesto $' + mgM(cosT) + '</div>' : '') + '</div></div>' +
+    (MG_.d.ADMIN ? '<div style="font-size:13px">Ganancia: <b>' + (ganP < 0 ? '−$' + mgM(-ganP) : '$' + mgM(ganP)) + '</b> · costo puesto $' + mgM(cosT) + '</div>' : '') + '</div></div>' +
     '<div class="mg-topes"><div><span style="background:#16a34a"></span>Verde hasta <b>' + mgPct(mgTope(R, MG_.d.VERDE)) + '</b></div><div><span style="background:#d97706"></span>Amarillo hasta <b>' + mgPct(mgTope(R, MG_.d.AMARILLO)) + '</b></div><div><span style="background:#dc2626"></span>No gana nada en <b>' + mgPct(mgTope(R, 0)) + '</b></div></div>' +
     '<button class="btn btn-s mt2" style="width:100%" onclick="MG_.items=[];MG_.desc=0;mgPintar()">Empezar de nuevo</button>';
 }
