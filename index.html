@@ -914,8 +914,10 @@ async function nextId(store, field) {
 function toast(msg, type='b') {
   const el=document.createElement('div');
   el.className=`toast t${type}`;el.textContent=msg;
+  var err = String(type).charAt(0) === 'r';
+  if (err) { el.style.cursor = 'pointer'; el.title = 'Tocá para cerrar'; el.onclick = function() { el.remove(); }; }
   $id('toasts').appendChild(el);
-  setTimeout(()=>el.remove(),3500);
+  setTimeout(function() { el.remove(); }, err ? 9000 : 3500);
 }
 
 function showModal(html, cls) {
@@ -8339,7 +8341,9 @@ var PC_ = { d: null, tab: 'cascos', filas: [], sel: {}, ot: null, fEspera: '', k
     '@media(max-width:820px){.pc-fila3,.pc-fila4{grid-template-columns:1fr}}' +
     '.pc-fila3 .fl,.pc-fila4 .fl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pc-nro-auto{display:flex;align-items:center;white-space:nowrap;font-weight:700;background:var(--surface2,#f1f5f9);cursor:default}' +
     '#pc-h-tcub td.mono,#pc-h-tot td.mono,#pc-h-tos td.mono,#pc-h-tcub td:first-child,#pc-h-tot td:nth-child(2){white-space:nowrap}' +
-    '.pc-celda{display:flex;align-items:center;gap:4px;white-space:nowrap}#pc-k-t td{vertical-align:middle}#pc-k-t .fi,#pc-k-t .fs{height:38px;box-sizing:border-box}';
+    '.pc-celda{display:flex;align-items:center;gap:4px;white-space:nowrap}#pc-k-t td{vertical-align:middle}#pc-k-t .fi,#pc-k-t .fs{height:38px;box-sizing:border-box}' +
+    '@media(max-width:820px){#pc-k-t{min-width:0!important;width:100%}#pc-k-t thead{display:none}#pc-k-t tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;padding:10px 0;border-bottom:2px solid var(--border,#e2e8f0)}#pc-k-t td{display:block;border:0;padding:0}#pc-k-t td[data-l]:before{content:attr(data-l);display:block;font-size:11px;font-weight:600;color:var(--text3,#64748b);margin-bottom:2px}#pc-k-t .fi,#pc-k-t .fs{width:100%!important;min-width:0!important}#pc-k-t .pc-celda .fi{flex:1}}' +
+    '#pc-k-err .al{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}';
   document.head.appendChild(st); })();
 var PC_EST_TXT = { EN_ESPERA: 'En espera', EN_OT: 'En OT', TERMINADA: 'Terminada', RECHAZADA: 'Rechazada', ENTREGADA: 'Entregada', ANULADA: 'Anulada',
   PENDIENTE: 'Pendiente', EN_PROCESO: 'En proceso', RETIRADA: 'Retirada', ARMADA: 'Armada', CERRADA: 'Cerrada', REPROCESO: 'Reproceso: espera otra carga', REPROCESADA: 'Reprocesada' };
@@ -8633,7 +8637,7 @@ function pcCascos() {
     '<div class="fg"><label class="fl">Fecha</label><input class="fi" type="date" id="pc-k-f" value="' + fechaISO(new Date()) + '"/></div></div>' +
     pcMedidasList() + '<datalist id="pc-fabricantes">' + (d.marcas || []).map(function(m) { return '<option value="' + pcEsc(m) + '">'; }).join('') + '</datalist>' +
     '<div class="tw"><table style="font-size:12px" class="pc-rec" id="pc-k-t"><thead><tr><th style="width:40px">#</th><th>N° interno</th><th>Tipo *</th><th title="Si no tiene, la pone el sistema">N° DOT o marca de fábrica</th><th>Medida *</th><th>Marca</th><th>Trabajo</th><th>Observaciones</th><th></th></tr></thead><tbody id="pc-k-filas"></tbody></table></div>' +
-    '<div class="flex gap2 mt3"><button class="btn btn-s btn-sm" id="pc-k-mas" onclick="PC_.kf.push(pcCasVacio());pcCasFilas()"><i class="fas fa-plus"></i> Otro casco</button>' +
+    '<div id="pc-k-err" class="mt3"></div><div class="flex gap2 mt3"><button class="btn btn-s btn-sm" id="pc-k-mas" onclick="PC_.kf.push(pcCasVacio());pcCasFilas()"><i class="fas fa-plus"></i> Otro casco</button>' +
     '<button class="btn btn-p" id="pc-k-ok" onclick="pcCasGrabar()"><i class="fas fa-save"></i> Grabar boleta</button><span class="tdim" style="font-size:12px;align-self:center">Si dejás el trabajo vacío, el casco queda sin orden y lo asignás después en "2 · Órdenes de trabajo".</span></div></div></div>' +
     '<div class="card"><div class="card-hd"><span class="card-title">Cascos declarados con anterioridad</span><span class="badge b-blue" id="pc-k-n"></span></div><div id="pc-k-ant"></div></div>';
   $id('pc-body').innerHTML = h;
@@ -8661,27 +8665,30 @@ async function pcAltaRapidaOk(que, i) {
     toast((r.YA ? 'Ya existía: ' : 'Agregada: ') + r.VALOR + ' ✓', 'g'); closeModal(); pcCascos();
   } catch (e) { toast(e.message, 'r2'); } finally { b.disabled = false; }
 }
+function pcCasFilasLuego() { clearTimeout(PC_._cft); PC_._cft = setTimeout(pcCasFilas, 0); }
 function pcCasFilas() {
+  var ae = document.activeElement, tb = $id('pc-k-filas'); if (!tb) return;
+  if (ae && tb.contains(ae) && ae.blur) ae.blur();
   pcCasAuto();
   var optT = '<option value="">— sin orden —</option>' + PC_.d.trabajos.filter(function(x) { return x.ACTIVO != 0; }).map(function(x) { return '<option>' + pcEsc(x.TRABAJO) + '</option>'; }).join('');
   var d = PC_.d, opt = '<option value="">—</option>' + d.tipos.filter(function(x) { return x.ACTIVO != 0; }).map(function(x) { return '<option>' + pcEsc(x.TIPO) + '</option>'; }).join('');
   $id('pc-k-filas').innerHTML = PC_.kf.map(function(f, i) {
-    return '<tr><td class="mono tc">' + (i + 1) + '</td><td class="tdim">auto</td><td><select class="fs" data-i="' + i + '" data-k="TIPO" style="min-width:115px">' + opt.replace('<option>' + pcEsc(f.TIPO) + '</option>', '<option selected>' + pcEsc(f.TIPO) + '</option>') + '</select></td>' +
-      '<td><input class="fi" data-i="' + i + '" data-k="DOT" value="' + pcEsc(f.DOT) + '" style="width:150px;text-transform:uppercase' + (f._AUTO ? ';color:var(--accent);font-style:italic' : '') + '" title="' + (f._AUTO ? 'Marca automática: si tiene DOT o marca, escribila encima' : '') + '"/></td>' +
-      '<td><div class="pc-celda"><input class="fi" list="' + (f.TIPO ? pcMedKey(f.TIPO) : 'pc-medidas') + '" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" placeholder="' + (f.TIPO ? '' : 'Elegí el tipo') + '" style="width:140px"/><button class="btn btn-s btn-xs" title="Medida nueva" onclick="pcAltaRapida(\'MEDIDA\',' + i + ')">＋</button></div></td>' +
-      '<td><div class="pc-celda"><input class="fi" list="pc-fabricantes" data-i="' + i + '" data-k="MARCA_FAB" value="' + pcEsc(f.MARCA_FAB) + '" style="width:130px;text-transform:uppercase"/><button class="btn btn-s btn-xs" title="Marca nueva" onclick="pcAltaRapida(\'MARCA\',' + i + ')">＋</button></div></td>' +
-      '<td><select class="fs" data-i="' + i + '" data-k="TRABAJO" style="min-width:150px">' + (f.TIPO && f.MEDIDA ? pcTrabOpts(f.TIPO, f.MEDIDA, f.TRABAJO).replace('— elegí —', '— sin orden —') : optT.replace('<option>' + pcEsc(f.TRABAJO) + '</option>', '<option selected>' + pcEsc(f.TRABAJO) + '</option>')) + '</select></td>' +
-      '<td><input class="fi" data-i="' + i + '" data-k="OBSERVACIONES" value="' + pcEsc(f.OBSERVACIONES) + '" style="min-width:120px"/></td>' +
+    return '<tr><td class="mono tc" data-l="Casco">' + (i + 1) + '</td><td class="tdim" data-l="N° interno">auto</td><td data-l="Tipo *"><select class="fs" data-i="' + i + '" data-k="TIPO" style="min-width:115px">' + opt.replace('<option>' + pcEsc(f.TIPO) + '</option>', '<option selected>' + pcEsc(f.TIPO) + '</option>') + '</select></td>' +
+      '<td data-l="N° DOT o marca de fábrica"><input class="fi" data-i="' + i + '" data-k="DOT" value="' + pcEsc(f.DOT) + '" style="width:150px;text-transform:uppercase' + (f._AUTO ? ';color:var(--accent);font-style:italic' : '') + '" title="' + (f._AUTO ? 'Marca automática: si tiene DOT o marca, escribila encima' : '') + '"/></td>' +
+      '<td data-l="Medida *"><div class="pc-celda"><input class="fi" list="' + (f.TIPO ? pcMedKey(f.TIPO) : 'pc-medidas') + '" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" placeholder="' + (f.TIPO ? '' : 'Elegí el tipo') + '" style="width:140px"/><button class="btn btn-s btn-xs" title="Medida nueva" onclick="pcAltaRapida(\'MEDIDA\',' + i + ')">＋</button></div></td>' +
+      '<td data-l="Marca"><div class="pc-celda"><input class="fi" list="pc-fabricantes" data-i="' + i + '" data-k="MARCA_FAB" value="' + pcEsc(f.MARCA_FAB) + '" style="width:130px;text-transform:uppercase"/><button class="btn btn-s btn-xs" title="Marca nueva" onclick="pcAltaRapida(\'MARCA\',' + i + ')">＋</button></div></td>' +
+      '<td data-l="Trabajo"><select class="fs" data-i="' + i + '" data-k="TRABAJO" style="min-width:150px">' + (f.TIPO && f.MEDIDA ? pcTrabOpts(f.TIPO, f.MEDIDA, f.TRABAJO).replace('— elegí —', '— sin orden —') : optT.replace('<option>' + pcEsc(f.TRABAJO) + '</option>', '<option selected>' + pcEsc(f.TRABAJO) + '</option>')) + '</select></td>' +
+      '<td data-l="Observaciones"><input class="fi" data-i="' + i + '" data-k="OBSERVACIONES" value="' + pcEsc(f.OBSERVACIONES) + '" style="min-width:120px"/></td>' +
       '<td>' + (PC_.kf.length > 1 ? '<button class="btn btn-xs btn-d" onclick="PC_.kf.splice(' + i + ',1);pcCasFilas()">✕</button>' : '') + '</td></tr>';
   }).join('');
   document.querySelectorAll('#pc-k-filas [data-i]').forEach(function(e) {
     var fija = function(el) { var f = PC_.kf[+el.dataset.i]; f[el.dataset.k] = el.value; if (el.dataset.k === 'DOT') { f._AUTO = false; el.style.color = ''; el.style.fontStyle = ''; } };
     e.addEventListener('change', function() {
       fija(this);
-      if (this.dataset.k === 'DOT' && !this.value.trim()) { PC_.kf[+this.dataset.i]._AUTO = true; pcCasFilas(); }
+      if (this.dataset.k === 'DOT' && !this.value.trim()) { PC_.kf[+this.dataset.i]._AUTO = true; pcCasFilasLuego(); }
       if (this.dataset.k === 'MEDIDA' && this.value.trim()) { var f = PC_.kf[+this.dataset.i]; if (!f.TIPO) { toast('Primero elegí el tipo', 'r2'); f.MEDIDA = ''; } else if (!pcMedDeTipo(f.TIPO, this.value)) { toast('La medida ' + this.value.toUpperCase() + ' no es de ' + (pcLineaDeTipo(f.TIPO) || f.TIPO).toLowerCase() + '. Si es nueva, agregala con el ＋', 'r2'); f.MEDIDA = ''; } }
       if (this.dataset.k === 'TIPO') { var f2 = PC_.kf[+this.dataset.i]; if (f2.MEDIDA && !pcMedDeTipo(f2.TIPO, f2.MEDIDA)) f2.MEDIDA = ''; }
-      if (this.dataset.k === 'TIPO' || this.dataset.k === 'MEDIDA') pcCasFilas();
+      if (this.dataset.k === 'TIPO' || this.dataset.k === 'MEDIDA') pcCasFilasLuego();
     });
     e.addEventListener('input', function() { fija(this); });
   });
@@ -8698,17 +8705,21 @@ function pcCasAnt() {
         '<td><span class="badge ' + e[0] + '">' + e[1] + '</span>' + (k.ID_OTRAB ? ' <span class="mono" style="font-size:11px">' + pcEsc(pcNroOTrab(k.ID_OTRAB)) + '</span>' : '') + '</td>' +
         '<td>' + (k.ESTADO === 'NUEVO' && pcPuede('ANULAR') ? '<button class="btn btn-s btn-xs" onclick="pcCasAnular(' + k.ID_CASCO + ')">Anular</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="8" class="tc tdim" style="padding:16px">Este cliente todavía no tiene cascos cargados.</td></tr>') + '</tbody></table></div>';
 }
+function pcCasErr(msg) { var e = $id('pc-k-err'); if (!e) { if (msg) toast(msg, 'r2'); return; } e.innerHTML = msg ? '<div class="al al-r"><span><b>No se grabó:</b> ' + pcEsc(msg) + '</span><button class="btn btn-xs btn-s" onclick="pcCasErr(\'\')">✕</button></div>' : ''; if (msg) e.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
 async function pcCasGrabar() {
-  var cli = pcCliId($v('pc-k-cli')); if (!cli) { toast('Elegí el cliente', 'r2'); return; }
+  pcCasErr('');
+  var cli = pcCliId($v('pc-k-cli')); if (!cli) { pcCasErr('Elegí el cliente'); return; }
+  var faltan = []; PC_.kf.forEach(function(f, i) { if (!f.TIPO || !f.MEDIDA) faltan.push(i + 1); });
+  if (faltan.length) { pcCasErr('Casco ' + faltan.join(', ') + ': falta el tipo o la medida'); return; }
   var sinR = PC_.kf.filter(function(f) { return f.TRABAJO && !pcRecetaDe(f.TIPO, f.MEDIDA, f.TRABAJO, ''); });
-  if (sinR.length) { toast('DOT ' + sinR.map(function(f) { return f.DOT || '?'; }).join(', ') + ': ese trabajo no tiene receta para esa medida. Elegí uno de los de arriba de la lista (con receta)', 'r2'); return; }
+  if (sinR.length) { pcCasErr('DOT ' + sinR.map(function(f) { return f.DOT || '?'; }).join(', ') + ': ese trabajo no tiene receta para esa medida. Elegí uno de los de arriba de la lista (con receta) o dejalo sin orden'); return; }
   var b = $id('pc-k-ok'); b.disabled = true;
   try {
     var r = await gsRun('gsPC_CascosGuardar', { ID_CLIENTE: cli, FECHA: $v('pc-k-f'), NRO_MANUAL: $v('pc-k-man'), CASCOS: PC_.kf });
-    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    if (!r || !r.ok) { pcCasErr((r && r.error) || 'No se pudo'); return; }
     toast('Grabados ' + r.IDS.length + ' cascos (' + (r.DOTS || []).join(', ') + ')' + (r.OT ? ' · orden de trabajo ' + r.OT + ' con ' + r.OT_N + ' cubiertas' : '') + (r.SIN_RECETA ? ' · ' + r.SIN_RECETA + ' sin receta' : '') + ' ✓', r.SIN_RECETA ? 'r2' : 'g');
     PC_.kf = []; PC_.kcli = cli; PC_.kman = ''; PC_.ultOT = r.OT || ''; await pcRecargar();
-  } catch (e) { toast(e.message, 'r2'); } finally { b.disabled = false; }
+  } catch (e) { pcCasErr(e.message); } finally { b.disabled = false; }
 }
 async function pcCasAnular(id) {
   var m = prompt('¿Por qué se anula el casco ' + id + '?'); if (m === null) return;
@@ -9271,7 +9282,7 @@ function pcHistPintar() {
     cs.sort(function(a, b) { return (b.RECIBIDA - a.RECIBIDA) || (b.ID_CUB - a.ID_CUB); });
     var pg = pcHistPag(cs.length, 100);
     var cont = {}; cs.forEach(function(c) { var k = pcHistEtapa(c)[0]; cont[k] = (cont[k] || 0) + 1; });
-    r = '<div class="card"><div class="card-hd"><span class="card-title">Cubiertas (' + cs.length + ')</span><span class="tdim" style="font-size:12px">Esperando ' + (cont.ESPERA || 0) + ' · En la línea ' + (cont.LINEA || 0) + ' · Terminadas ' + (cont.TERMINADA || 0) + ' · Entregadas ' + (cont.ENTREGADA || 0) + ' · No aptas ' + (cont.NOAPTA || 0) + '</span></div>' +
+    r = '<div class="card"><div class="card-hd"><span class="card-title">Cubiertas (' + cs.length + ')</span><span class="tdim" style="font-size:12px">Esperando ' + (cont.ESPERA || 0) + ' · En la línea ' + (cont.LINEA || 0) + ' · Terminadas ' + (cont.TERMINADA || 0) + ' · Entregadas ' + (cont.ENTREGADA || 0) + ' · No aptas ' + (cont.NOAPTA || 0) + (cont.ANULADA ? ' · Anuladas ' + cont.ANULADA : '') + '</span></div>' +
       '<div class="tw"><table style="font-size:12px" id="pc-h-tcub"><thead><tr><th>Recibida</th><th>OT · boleta</th><th>Cliente</th><th>DOT · N° int.</th><th>Fábrica</th><th>Medida</th><th>Trabajo</th><th>Etapa</th><th>Orden de servicio</th><th>Terminada</th><th>Remito · entrega</th><th>Marca grabada</th></tr></thead><tbody>' +
       (cs.length ? cs.slice(pg.desde, pg.hasta).map(function(c) {
         var e = pcHistEtapa(c);
