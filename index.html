@@ -10511,7 +10511,8 @@ function puAutoclavePintar() {
   }
   h += '</div>';
   if (!r.cocinando && noListas.length) h += '<div class="pu-reg" style="border-color:var(--danger)"><div style="font-weight:700;color:var(--danger)">Todavía no están listas (sin ellas no se puede empezar):</div><div>' + noListas.map(function(c) { return '<b>' + puEsc(puIdTxt(c.MARCA, c.DOT || puDotDe(c.ID_CUB))) + '</b> está en ' + puEsc(c.SIGUIENTE); }).join(' · ') + '</div></div>';
-  if (r.cocinando) h += '<button class="pu-btn pu-ir" onclick="puAcFin()">■ Terminó la cocción</button>';
+  if (r.cocinando) h += '<button class="pu-btn pu-ir" onclick="puAcFin()">■ Terminó la cocción</button><button class="pu-btn pu-min" style="color:var(--danger);border:2px solid var(--danger);background:var(--surface)" onclick="puAcAnular(' + r.cocinando.ID_AUTOC + ', false)">✗ Me equivoqué: cancelar esta cocción</button>';
+  else if (!listas.length && r.anteriores.length) h += r.anteriores.map(function(a) { return '<button class="pu-btn pu-min" style="color:var(--danger);border:2px solid var(--danger);background:var(--surface)" onclick="puAcAnular(' + a.ID_AUTOC + ', true)">✗ Anular la cocción de las ' + new Date(a.INICIO).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' (' + a.N + ' cubiertas · ' + a.MINUTOS + ' min)</button>'; }).join('');
   else if (listas.length) {
     var ok = ub === listas.length && !noListas.length;
     h += '<button class="pu-btn pu-ir" ' + (ok ? '' : 'disabled ') + 'onclick="puAcIni()">▶ Empieza la cocción (' + ub + ' cubiertas)</button>' + (ok ? '' : '<div class="tdim" style="font-size:14px">Para empezar tienen que estar ubicadas todas las cubiertas listas.</div>');
@@ -10564,10 +10565,21 @@ function puAcLectura(momento) {
       if (res && res.PIDE_JUSTIFICACION) { $id('pu-acl-just').innerHTML = '<div style="color:var(--danger);font-weight:700;font-size:16px">Fuera de lo especificado: ' + puEsc(res.FUERA.join(', ')) + '. Explicá qué pasó (lo ve el encargado en el control final).</div><input class="pu-q" id="pu-acl-jtx" style="font-size:16px;text-transform:none" autocomplete="off">'; b.disabled = false; b.textContent = fin ? 'Guardar y terminar la cocción' : 'Guardar lectura'; return; }
       if (!res || !res.ok) { toast((res && res.error) || 'No se pudo', 'r2'); b.disabled = false; b.textContent = fin ? 'Guardar y terminar la cocción' : 'Guardar lectura'; return; }
       closeModal();
-      if (fin) return puAcFinListo(res);
+      if (fin) { PU_.acUlt = c.ID_AUTOC; return puAcFinListo(res); }
       toast('Lectura guardada ✓', 'g'); puAutoclave(A.ot);
     } catch (e) { toast(e.message, 'r2'); b.disabled = false; b.textContent = 'Reintentar'; }
   };
+}
+// Anular una cocción cargada por error: las cubiertas vuelven a quedar listas para el autoclave (si ya pasaron el control final, el sistema no deja)
+async function puAcAnular(id, terminada) {
+  var mot = await uiPedir(terminada ? 'Anular la cocción terminada' : 'Cancelar la cocción en marcha', { obligatorio: true, ayuda: '¿Por qué? (ej.: se tocó Terminó por error). Las cubiertas vuelven a quedar listas para el autoclave.' });
+  if (!mot) return;
+  if (!(await uiConfirmar('Se anula la cocción y las cubiertas vuelven a esperar el autoclave. ¿Seguro?', 'Sí, anular'))) return;
+  try {
+    var r = await gsRun('gsPC_AutoclaveAnular', id, mot);
+    if (!r || !r.ok) return toast((r && r.error) || 'No se pudo anular', 'r2');
+    toast('Cocción anulada ✓', 'g'); puAutoclave(PU_.ac.ot);
+  } catch (e) { toast(e.message, 'r2'); }
 }
 function puAcFinListo(r) {
   if (puTick) { clearInterval(puTick); puTick = null; }
@@ -10575,7 +10587,8 @@ function puAcFinListo(r) {
   var ctl = 'el control final';
   $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">🔥</div><h2>Salió la carga del autoclave</h2><div style="font-size:18px">' + r.N + (r.N === 1 ? ' cubierta' : ' cubiertas') + ' · cocción de ' + r.MINUTOS + ' min</div>' +
     '<div style="font-size:20px"><b>Pasan ' + puEsc(ctl.replace(/^el /, 'al ')) + ': las confirma el encargado una por una.</b></div>' +
-    '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puVolver()">Ver las cubiertas</button></div>';
+    '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puVolver()">Ver las cubiertas</button>' +
+    (PU_.acUlt ? '<button class="pu-btn pu-min" style="color:var(--danger);border:2px solid var(--danger);background:var(--surface)" onclick="puAcAnular(' + PU_.acUlt + ', true)">✗ Me equivoqué: anular esta cocción</button>' : '') + '</div>';
   gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est).then(function(d) { PU_.d = d; }, function() {});
 }
 function puAcElegir(n) {
@@ -10606,6 +10619,7 @@ async function puAcFin() {
   if (A.d.lecturaObligatoria) return puAcLectura('FIN');
   try {
     var r = await gsRun('gsPC_AutoclaveTerminar', c.ID_AUTOC, PU_.oper);
+    if (r && r.PIDE_JUSTIFICACION) { toast(r.error, 'r2'); return puAcLectura('FIN'); }
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo terminar', 'r2'); return; }
     if (puTick) { clearInterval(puTick); puTick = null; }
     try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e2) {}
