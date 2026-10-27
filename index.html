@@ -1429,7 +1429,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610272110';
+var EMA_BUILD = '202610272111';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -4262,6 +4262,7 @@ async function compraAnular(id, btn) {
 var LPP_ = { d: null, filas: [] };
 function lppEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 async function lppAbrir() {
+  if ($id('lpp-box')) closeModal();
   showModal('<div class="mh"><span class="mt">📋 Listas de precios de proveedores</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" id="lpp-box"><div class="tdim">Cargando…</div></div>', 'md-lg');
   try { LPP_.d = await gsRun('gsLPP_Datos'); } catch (e) { $id('lpp-box').innerHTML = '<div class="al al-r">' + lppEsc(e.message) + '</div>'; return; }
   lppPintar();
