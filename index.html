@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "884b16676e0d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "89b1983d8272"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -9004,14 +9004,16 @@ function pcVidaTiempo(k, v) {
   dets.forEach(function(x) {
     var ests = pcEstLin(x.os.LINEA), nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = e.ORDEN + '. ' + e.NOMBRE; });
     add(x.osF, 'Carga', 'Entró a la orden de servicio ' + pcEsc(x.os.NRO_OT) + ' (línea ' + pcEsc(x.os.LINEA) + ')' + (x.it.ROL === 'SUPLENTE' ? ' como suplente' : ''), x.it.PASADA > 1 ? 'Corrección: ' + pcEsc(x.it.MOTIVO_REPROCESO || '') : '');
-    (x.it.REGISTROS || []).forEach(function(g) { add(g.FECHA, 'Estación', pcEsc(nomE[g.ID_ESTACION] || g.ID_ESTACION) + ' · ' + pcEsc(g.RESULTADO || 'OK'), pcEsc([g.OPERARIO || g.USUARIO, g.OBSERVACION].filter(Boolean).join(' · '))); });
+    (x.it.REGISTROS || []).forEach(function(g) { var ins1 = /^1\./.test(nomE[g.ID_ESTACION] || '') && x.it.PASADA <= 1 ? [v.INSPECCION === 'APTA' ? 'Apta' : v.INSPECCION === 'NO_APTA' ? 'No apta' : '', v.BANDA ? 'banda ' + v.BANDA : '', (v.PARCHES || []).length ? 'parches: ' + v.PARCHES.join(', ') : '', (v.EXTRAS || []).length ? 'extras: ' + v.EXTRAS.join(', ') : ''].filter(Boolean).join(' · ') : '';
+      add(g.FECHA, 'Estación', pcEsc(nomE[g.ID_ESTACION] || g.ID_ESTACION) + ' · ' + pcEsc(g.RESULTADO || 'OK'), pcEsc([g.OPERARIO || g.USUARIO, g.OBSERVACION, ins1].filter(Boolean).join(' · '))); });
     var ac = pcAcDeCub(x.auto, x.it.ID_CUB);
     if (ac) { add(ac.INICIO, 'Autoclave', 'Empezó la cocción', x.it.POS_AUTOCLAVE ? 'lugar ' + pcEsc(x.it.POS_AUTOCLAVE) : ''); if (ac.FIN) add(ac.FIN, 'Autoclave', 'Terminó la cocción', +ac.MINUTOS ? Math.round(+ac.MINUTOS) + ' min' : ''); }
     (x.rem || []).forEach(function(r) { if (!(r.ITEMS || []).some(function(t) { return String(t.ID_CUB) === String(v.ID_CUB); })) return;
       add(r.FECHA, 'Remito', 'Remito ' + pcEsc(r.NRO) + (r.TIPO ? ' (' + pcEsc(r.TIPO) + ')' : ''), '');
       if (r.ESTADO === 'ENTREGADO') add(r.FECHA_ENTREGA, 'Entrega', 'Entregada al cliente · remito firmado', ''); });
   });
-  ev.sort(function(a, b) { return a.t - b.t; });
+  // La recepción va siempre primero (se carga con la fecha de la boleta, sin hora)
+  ev.sort(function(a, b) { return (a.q === 'Planta' ? 0 : 1) - (b.q === 'Planta' ? 0 : 1) || a.t - b.t; });
   var ahora = { EN_ESPERA: 'Esperando entrar a una carga', EN_OT: 'En la línea', TERMINADA: 'Terminada', RECHAZADA: 'No apta', ANULADA: 'Anulada' }[v.ESTADO] || v.ESTADO;
   var ult = dets.length ? dets[dets.length - 1] : null;
   if (v.ESTADO === 'EN_OT' && ult) { var hh = {}; (ult.it.HECHAS || []).forEach(function(q) { hh[String(q.ID_ESTACION)] = 1; }); var sig = pcEstLin(ult.os.LINEA).slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; }).filter(function(e) { return !hh[String(e.ID_ESTACION)]; })[0];
@@ -9020,7 +9022,7 @@ function pcVidaTiempo(k, v) {
   if (v.ESTADO === 'TERMINADA') ahora += ent ? ' y entregada al cliente' : ' · falta entregarla';
   return '<div class="al al-b" style="font-size:14px;margin:6px 0"><b>Ahora:</b> ' + ahora + '</div>' +
     '<div style="font-weight:700;margin:10px 0 4px">Trazabilidad, desde el primer día</div><div class="tw"><table style="font-size:11.5px"><thead><tr><th>Fecha y hora</th><th>Etapa</th><th>Qué pasó</th><th>Detalle</th></tr></thead><tbody>' +
-    ev.map(function(e) { return '<tr><td style="white-space:nowrap">' + fmtDT(e.t) + '</td><td>' + e.q + '</td><td><b>' + e.txt + '</b></td><td>' + (e.ex || '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    ev.map(function(e) { return '<tr><td style="white-space:nowrap">' + (e.q === 'Planta' ? fmtD(e.t) : fmtDT(e.t)) + '</td><td>' + e.q + '</td><td><b>' + e.txt + '</b></td><td>' + (e.ex || '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
 }
 // Entrega al cliente: remito, si ya se entregó y la foto firmada
 function pcVidaEntrega(k, v) {
