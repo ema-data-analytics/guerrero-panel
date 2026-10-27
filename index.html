@@ -1425,7 +1425,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271906';
+var EMA_BUILD = '202610271907';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -16336,7 +16336,9 @@ function mgEnter() {
 }
 function mgSumar(c) { var it = MG_.items.filter(function(i) { return i.c === c; })[0]; if (it) it.n++; else MG_.items.push({ c: c, n: 1 }); }
 function mgAgregar(c) { mgSumar(c); mgBuscar(); mgPintar(); }
-function mgCant(k, v) { var it = MG_.items[k]; if (!it) return; it.n = Math.max(0, it.n + v); if (!it.n) MG_.items.splice(k, 1); mgPintar(); }
+function mgCant(k, v) { var it = MG_.items[k]; if (!it) return; it.n = Math.max(1, Math.min(999, it.n + v)); MG_.escribeCant = false; mgPintar(); }
+function mgCantTxt(k, t, vivo) { var it = MG_.items[k]; if (!it) return; var v = parseInt(String(t).replace(/\D/g, ''), 10); if (vivo && isNaN(v)) return; it.n = Math.max(1, Math.min(999, isNaN(v) ? 1 : v)); MG_.escribeCant = !!vivo; mgPintar(); MG_.escribeCant = false; }
+function mgQuitar(k) { MG_.items.splice(k, 1); MG_.escribeCant = false; mgPintar(); }
 // Descuento escrito a mano (acepta coma): 12, 12,5, 7.5
 function mgDescTxt(t, vivo) { var v = parseFloat(String(t).replace(',', '.')); if (isNaN(v)) v = 0; mgDesc(v, true, vivo ? 'txt' : ''); }
 function mgDesc(v, abs, de) {
@@ -16371,10 +16373,12 @@ function mgPintar() {
   var d = MG_.desc / 100, its = MG_.items.map(function(i) { return { i: i, a: mgArt(i.c) }; }).filter(function(x) { return x.a; });
   if (!its.length) { L.innerHTML = '<div class="al al-b" style="font-size:13px">Todavía no agregaste cubiertas.</div>'; D.innerHTML = ''; S.innerHTML = ''; return; }
   var sinT = 0, cosT = 0, conT = 0;
-  L.innerHTML = '<div class="mg-lst-t">🧾 En la cotización: ' + its.length + ' cubierta' + (its.length === 1 ? '' : 's') + ' · para agregar otra, buscala arriba</div>' + its.map(function(x, k) { var a = x.a, n = x.i.n, sin = a.CON_IVA / (1 + a.IVA), g = mgGan(a.R, d), col = mgColor(g); sinT += sin * n; cosT += a.R * sin * n; conT += a.CON_IVA * n;
+  its.forEach(function(x) { var a = x.a, n = x.i.n, sin = a.CON_IVA / (1 + a.IVA); sinT += sin * n; cosT += a.R * sin * n; conT += a.CON_IVA * n; });
+  // Mientras se escribe una cantidad no se rearma la lista (si no, se cierra el teclado)
+  if (!MG_.escribeCant) L.innerHTML = '<div class="mg-lst-t">🧾 En la cotización: ' + its.length + ' cubierta' + (its.length === 1 ? '' : 's') + ' · para agregar otra, buscala arriba</div>' + its.map(function(x, k) { var a = x.a, n = x.i.n, g = mgGan(a.R, d), col = mgColor(g);
     return '<div class="mg-it" style="border-left:6px solid ' + col[0] + '"><div style="flex:1;min-width:0"><b style="font-size:14px">' + pcEsc(a.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc(a.CODIGO) + ' · lista $' + mgM(a.CON_IVA) + ' · con descuento <b>$' + mgM(a.CON_IVA * (1 - d)) + '</b></div>' +
       '<div style="font-size:12px;margin-top:2px">' + (g < 0 ? 'Pierde' : 'Gana') + ' <b style="color:' + col[0] + '">' + mgPct(Math.abs(g)) + '</b> · verde hasta ' + mgPct(mgTope(a.R, MG_.d.VERDE)) + ' · no gana nada en ' + mgPct(mgTope(a.R, 0)) + '</div></div>' +
-      '<div class="mg-cant"><button class="btn btn-s" onclick="mgCant(' + k + ',-1)">−</button><b>' + n + '</b><button class="btn btn-s" onclick="mgCant(' + k + ',1)">+</button></div></div>'; }).join('');
+      '<div class="mg-cant"><span class="tdim">Cantidad</span><button type="button" onclick="mgCant(' + k + ',-1)">−</button><input type="text" inputmode="numeric" value="' + n + '" onfocus="this.select()" oninput="mgCantTxt(' + k + ',this.value,true)" onblur="mgCantTxt(' + k + ',this.value,false)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><button type="button" onclick="mgCant(' + k + ',1)">+</button><button type="button" class="q" onclick="mgQuitar(' + k + ')">Quitar</button></div></div>'; }).join('');
   var R = cosT / sinT, g = mgGan(R, d), col = mgColor(g), cob = conT * (1 - d), ganP = sinT * (1 - d) * (1 - MG_.d.IMP) - cosT;
   // Los controles del descuento se arman una sola vez: así no se pierde el dedo en la barra ni el teclado en la casilla
   if (!$id('mg-d')) D.innerHTML = '<div class="card"><div class="card-body">' +
@@ -16415,8 +16419,11 @@ function mgPintar() {
 .mg-sug{padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer}
 .mg-sug:active,.mg-sug:hover{background:var(--bg)}
 .mg-it{display:flex;gap:8px;align-items:center;background:var(--card,#fff);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px}
-.mg-cant{display:flex;flex-direction:column;align-items:center;gap:2px}
-.mg-cant .btn{min-width:40px;min-height:34px;padding:0}
+.mg-it{flex-wrap:wrap}
+.mg-cant{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;flex-basis:100%}
+.mg-cant button{width:48px;height:46px;font-size:26px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;border:1px solid var(--border);border-radius:10px;background:var(--surface,#fff);color:var(--text);touch-action:manipulation}
+.mg-cant button.q{width:auto;padding:0 12px;font-size:14px;font-weight:600;color:#b91c1c}
+.mg-cant input{width:64px;height:46px;font-size:22px;font-weight:800;text-align:center;border:2px solid var(--border);border-radius:10px;background:var(--surface,#fff);color:var(--text)}
 .mg-d{width:100px;min-height:56px;font-size:32px;font-weight:800;text-align:center;border:2px solid var(--border);border-radius:10px;padding:2px 4px}
 .mg-b{min-width:64px;min-height:56px;font-size:20px;font-weight:800;touch-action:manipulation}
 .mg-ctl{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
