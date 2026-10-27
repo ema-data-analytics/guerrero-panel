@@ -77,7 +77,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .login-ema img{height:40px;border-radius:6px;}
 @media (max-width:480px){.login-card{width:calc(100vw - 32px);padding:30px 22px;}}
 .login-err{background:var(--danger-light);border:1px solid #fca5a5;color:var(--danger);padding:9px 12px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none;}
-#app{display:flex;height:100vh;overflow:hidden;}
+#app{display:flex;height:100vh;height:100dvh;overflow:hidden;}
 #sidebar{width:240px;min-width:240px;background:#1e293b;display:flex;flex-direction:column;overflow-y:auto;}
 #main{flex:1;overflow-y:auto;}
 body.modo-puesto #sidebar,body.modo-puesto #mob-menu{display:none!important;}
@@ -1425,7 +1425,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271912';
+var EMA_BUILD = '202610271918';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -16183,7 +16183,7 @@ async function agSacar(id) {
 .mv-tile small{font-weight:400;color:var(--dim);font-size:12px}
 #mv-home{position:fixed;right:12px;top:10px;z-index:900;border-radius:24px;padding:10px 16px;font-size:15px;box-shadow:0 4px 14px rgba(0,0,0,.25);display:none}
 body.modo-movil #mv-home{display:block}
-body.modo-movil #main{padding:56px 12px 24px!important}
+body.modo-movil #main{padding:56px 12px calc(110px + env(safe-area-inset-bottom))!important}
 body.modo-cascos #page-produccion-cubiertas .page-hd{display:none!important}
 body.modo-movil.en-inicio-movil #mv-home{display:none}
 </style>
@@ -16349,8 +16349,7 @@ function mgTildar(k) {
   var a = MG_.sug && MG_.sug[k]; if (!a) return;
   var i = MG_.items.findIndex(function(x) { return x.c === a.CODIGO; });
   if (i >= 0) MG_.items.splice(i, 1); else MG_.items.push({ c: a.CODIGO, n: 1 });
-  var y = ($id('mg-sug').querySelector('.mg-lst') || {}).scrollTop || 0;
-  mgBuscar(); var l = $id('mg-sug').querySelector('.mg-lst'); if (l) l.scrollTop = y;
+  mgBuscar();
   mgPintar();
 }
 function mgListo() { $id('mg-q').value = ''; $id('mg-sug').innerHTML = ''; mgPintar(); var l = $id('mg-lista'); if (l) l.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -16472,13 +16471,13 @@ function mgPintar() {
 <style>
 .mg-wrap{max-width:640px;margin:0 auto}
 .mg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.mg-chips .btn{min-height:38px}
-.mg-lst{border:2px solid var(--accent,#2563eb);border-radius:12px;background:var(--card,#fff);margin-top:6px;max-height:60vh;overflow:auto}
-.mg-lst-h{padding:8px 12px;font-size:13px;background:#eff6ff;color:#1e3a8a;position:sticky;top:0;z-index:1}
+.mg-lst{border:2px solid var(--accent,#2563eb);border-radius:12px;background:var(--card,#fff);margin-top:6px;margin-bottom:76px}
+.mg-lst-h{padding:8px 12px;font-size:13px;background:#eff6ff;color:#1e3a8a;border-radius:10px 10px 0 0}
 .mg-op{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;touch-action:manipulation}
 .mg-op.on{background:#f0fdf4}
 .mg-ck{width:28px;height:28px;border:2px solid #94a3b8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:#fff;flex:0 0 28px}
 .mg-op.on .mg-ck{background:#16a34a;border-color:#16a34a}
-.mg-listo{position:sticky;bottom:0;width:100%;min-height:52px;font-size:17px;font-weight:800;border-radius:0}
+.mg-listo{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:500;min-height:56px;font-size:18px;font-weight:800;border-radius:14px;box-shadow:0 6px 20px rgba(37,99,235,.45)}
 .mg-lst-t{font-weight:800;font-size:14px;margin:4px 0 8px}
 .mg-sug{padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer}
 .mg-sug:active,.mg-sug:hover{background:var(--bg)}
