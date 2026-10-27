@@ -9839,7 +9839,9 @@ async function pcPlCalc() {
   var ids = pcPlIds(), box = $id('pc-pl-res'); if (!box) return;
   if (!ids.length) { box.innerHTML = ''; PC_.plR = null; return; }
   box.innerHTML = '<div class="card"><div class="card-body tdim">Calculando el plan…</div></div>';
+  var tk = PC_.plTk = (PC_.plTk || 0) + 1;
   var r; try { r = await gsRun('gsPC_PlanCalc', ids, PC_.plDia); } catch (e) { box.innerHTML = '<div class="al al-r">' + pcEsc(e.message) + '</div>'; return; }
+  if (tk !== PC_.plTk) return; // llegó una cuenta vieja: se tildó otra cubierta mientras calculaba
   if (!r || !r.ok) { box.innerHTML = '<div class="al al-r">' + pcEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
   PC_.plR = r;
   var f3 = function(n) { return (Math.round((+n || 0) * 1000) / 1000).toLocaleString('es-AR'); }, M = r.MATERIALES, E = r.ESTACIONES;
