@@ -20,6 +20,9 @@ img.pv { width: 100%; border-radius: 10px; margin-top: 12px; border: 1px solid #
 .ok { color: var(--ok); font-size: 22px; font-weight: 700; text-align: center; margin: 18px 0 6px; }
 .err { color: var(--err); font-size: 16px; margin-top: 12px; }
 .logo { font-weight: 700; color: var(--acc); margin-bottom: 10px; }
+.lst { margin: 0 0 14px; border-top: 1px solid #e5e7eb; }
+.cub { padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-size: 15px; }
+.lb { font-size: 11px; color: var(--dim); text-transform: uppercase; }
 </style>
 </head>
 <body>
@@ -48,7 +51,8 @@ function comprimir(img, maxLado, calidad) {
 }
 function pintar(r) {
   if (!r || !r.ok) { $('caja').innerHTML = '<h1>No se encontró el remito</h1><div class="err">' + esc((r && r.error) || 'El código no es válido.') + '</div>'; return; }
-  var cab = '<h1>Remito ' + esc(r.nro) + '</h1><div class="dat"><b>' + esc(r.cliente) + '</b><br>' + esc(r.n) + (r.n == 1 ? ' cubierta' : ' cubiertas') + '</div>';
+  var lis = (r.items || []).map(function(x) { return '<div class="cub"><span class="lb">Marca grabada</span> <b>' + esc(x.marca) + '</b> · <span class="lb">DOT</span> <b>' + (x.dot ? esc(x.dot) : 'sin DOT') + '</b><br><span class="dim">' + esc(x.medida) + (x.resultado && x.resultado !== 'TERMINADA' ? ' · se devuelve sin trabajo' : ' · terminada') + '</span></div>'; }).join('');
+  var cab = '<h1>Remito ' + esc(r.nro) + '</h1><div class="dat"><b>' + esc(r.cliente) + '</b><br>' + esc(r.n) + (r.n == 1 ? ' cubierta' : ' cubiertas') + '</div>' + (lis ? '<div class="lst">' + lis + '</div>' : '');
   if (r.entregado) { $('caja').innerHTML = cab + '<div class="ok">✓ Ya está entregado</div><div class="dim" style="text-align:center">La foto del remito firmado ya se cargó.</div>'; return; }
   $('caja').innerHTML = cab +
     '<div class="dim">Sacale una foto al remito <b>firmado por el cliente</b>, que se lea bien la firma.</div>' +
