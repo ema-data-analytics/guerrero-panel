@@ -15592,7 +15592,7 @@ function agPintar() {
   d.ITEMS.forEach(function(it) { n[it.ESTADO] = (n[it.ESTADO] || 0) + 1; });
   var areas = {}; d.ITEMS.forEach(function(it) { areas[it.AREA] = 1; });
   var h = '<div class="ag-wrap"><div class="ag-top"><h2>📋 Agenda del proyecto</h2><span style="font-size:12px;color:var(--dim)">Qué se hizo cada día y en qué estado está cada cosa. Solo la ve el usuario SUPER.</span><div class="ag-acc">' +
-    '<button class="btn btn-sm btn-p" onclick="agForm(0)">+ Agregar un punto</button><button class="btn btn-sm" onclick="renderAgenda()">↻</button></div></div>';
+    '<button class="btn btn-sm btn-p" onclick="agInfForm()">📄 Informe del día (PDF)</button><button class="btn btn-sm btn-p" onclick="agForm(0)">+ Agregar un punto</button><button class="btn btn-sm" onclick="renderAgenda()">↻</button></div></div>';
   h += '<div class="ag-cont">' + d.ESTADOS.map(function(e) { return '<div class="ag-c' + (AG_.est === e ? ' on' : '') + '" onclick="AG_.est=(AG_.est===\'' + e + '\'?\'\':\'' + e + '\');agPintar()"><b>' + (n[e] || 0) + '</b>' + agBadge(e) + '</div>'; }).join('') +
     '<div class="ag-c" onclick="AG_.est=\'\';AG_.area=\'\';AG_.q=\'\';agPintar()"><b>' + d.ITEMS.length + '</b><span>Total (ver todo)</span></div></div>';
   h += '<div class="ag-tabs">' + [['dia', 'Día por día'], ['area', 'Estado actual por área'], ['falta', 'Lo que falta']].map(function(t) { return '<button class="ag-tab' + (AG_.tab === t[0] ? ' on' : '') + '" onclick="AG_.tab=\'' + t[0] + '\';agPintar()">' + t[1] + '</button>'; }).join('') + '</div>';
@@ -15635,6 +15635,67 @@ function agFalta() {
   var l = AG_.d.ITEMS.filter(function(it) { return orden[it.ESTADO] !== undefined && agPasa(it); }).sort(function(a, b) { return orden[a.ESTADO] - orden[b.ESTADO] || (a.AREA < b.AREA ? -1 : 1); });
   if (!l.length) return '<div class="al">No queda nada pendiente con ese filtro.</div>';
   return '<div class="as-caja" style="background:#fff6ee;border-left:4px solid #E8792B;padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:13px">Primero lo que no funciona, después lo hecho sin probar, lo que falta hacer y lo que se va a agregar.</div>' + agTabla(l);
+}
+// ── Informe para el dueño: lo que se hizo en el período (día por día, en detalle), cómo está cada área y lo que sigue. Sale en PDF. ──
+function agInfForm() {
+  var h = AG_.d.HOY || agHoy();
+  showModal('<div class="mh"><span class="mt">📄 Informe de avance</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div style="font-size:13px;margin-bottom:8px">Lo que se hizo en esos días (con el detalle de cada punto), cómo está cada área y lo que sigue. Se guarda en PDF para mandarlo.</div>' +
+    '<div class="fr"><div class="fg"><label class="fl">Desde</label><input class="fi" type="date" id="ag-i-d" value="' + h + '"></div><div class="fg"><label class="fl">Hasta</label><input class="fi" type="date" id="ag-i-h" value="' + h + '"></div></div>' +
+    '<div class="fg"><label class="fl">Para</label><input class="fi" id="ag-i-p" value="Gustavo Guerrero"></div>' +
+    '<div class="fg"><label class="fl">Comentario al principio (opcional)</label><textarea class="fi" id="ag-i-c" rows="3" placeholder="Ej: hoy cerramos el control de materiales antes de armar la carga"></textarea></div>' +
+    '<label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" id="ag-i-e" checked> Incluir cómo está cada área</label>' +
+    '<label style="display:flex;gap:6px;align-items:center;font-size:13px;margin-top:4px"><input type="checkbox" id="ag-i-f" checked> Incluir lo que sigue (pendientes)</label>' +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="agInforme()">Armar el informe</button></div>');
+}
+function agInforme() {
+  var d = AG_.d, desde = $v('ag-i-d'), hasta = $v('ag-i-h') || desde, para = $v('ag-i-p'), com = $v('ag-i-c'), conEst = $id('ag-i-e').checked, conFal = $id('ag-i-f').checked;
+  if (!desde) { toast('Elegí desde qué día', 'r2'); return; }
+  if (hasta < desde) { var x = desde; desde = hasta; hasta = x; }
+  var E = function(s) { return agEsc(s).replace(/\n/g, '<br>'); };
+  var col = { PROBADO: '#166534', SIN_PROBAR: '#854d0e', NO_FUNCIONA: '#b91c1c', FALTA: '#374151', A_AGREGAR: '#1e40af', ANULADO: '#9ca3af' };
+  var est = function(e) { return '<b style="color:' + (col[e] || '#111') + '">' + agEsc(AG_EST[e] || e) + '</b>'; };
+  var cs = d.CAMBIOS.filter(function(c) { return c.FECHA >= desde && c.FECHA <= hasta && agItem(c.ID_ITEM); }).sort(function(a, b) { return a.FECHA < b.FECHA ? -1 : a.FECHA > b.FECHA ? 1 : a.ID_CAMBIO - b.ID_CAMBIO; });
+  var n = {}; cs.forEach(function(c) { n[c.ESTADO] = (n[c.ESTADO] || 0) + 1; });
+  var nuevos = cs.filter(function(c) { return !c.ESTADO_ANT; }).length;
+  var periodo = desde === hasta ? agFechaTxt(desde) : 'del ' + agFechaTxt(desde) + ' al ' + agFechaTxt(hasta);
+  var h = pcEncImp('INFORME DE AVANCE DEL SISTEMA', desde === hasta ? desde.split('-').reverse().join('/') : desde.split('-').reverse().slice(0, 2).join('/') + ' al ' + hasta.split('-').reverse().join('/')) +
+    '<div class="dat"><div><b>Para</b>' + agEsc(para || '—') + '</div><div><b>Período</b>' + agEsc(periodo) + '</div><div><b>Movimientos</b>' + cs.length + '</div><div><b>Preparó</b>EMA Data Analytics</div></div>' +
+    (com ? '<div style="border-left:4px solid #E8792B;background:#fff6ee;padding:8px 10px;margin:6px 0 10px;font-size:12px">' + E(com) + '</div>' : '') +
+    '<h2>Resumen</h2><div style="font-size:12px">' + (cs.length ? cs.length + ' movimiento' + (cs.length === 1 ? '' : 's') + ' en el período' + (nuevos ? ' (' + nuevos + ' punto' + (nuevos === 1 ? '' : 's') + ' nuevo' + (nuevos === 1 ? '' : 's') + ')' : '') + ': ' +
+      Object.keys(n).map(function(e) { return est(e) + ' ' + n[e]; }).join(' · ') : 'No hubo movimientos en la agenda en el período.') + '</div>';
+  if (cs.length) {
+    var dias = []; cs.forEach(function(c) { if (dias.indexOf(c.FECHA) === -1) dias.push(c.FECHA); });
+    h += '<h2>Lo que se hizo, día por día</h2>' + dias.map(function(f) {
+      var l = cs.filter(function(c) { return c.FECHA === f; }), por = {};
+      l.forEach(function(c) { var a = agItem(c.ID_ITEM).AREA; (por[a] = por[a] || []).push(c); });
+      return '<div style="font-weight:700;font-size:13px;margin:10px 0 4px;border-bottom:1px solid #999">' + agEsc(agFechaTxt(f)) + ' · ' + l.length + ' movimiento' + (l.length === 1 ? '' : 's') + '</div>' +
+        '<table class="det"><thead><tr><th style="width:16%">Área</th><th style="width:30%">Qué</th><th style="width:18%">Estado</th><th>Detalle</th></tr></thead><tbody>' +
+        Object.keys(por).sort().map(function(a) { return por[a].map(function(c, k) { var it = agItem(c.ID_ITEM), det = [];
+          if (c.NOTA && c.NOTA !== 'Alta') det.push(E(c.NOTA));
+          if (it.DETALLE && (!c.ESTADO_ANT || !c.NOTA)) det.push('<span style="color:#444">' + E(it.DETALLE) + '</span>');
+          return '<tr><td>' + (k ? '' : '<b>' + agEsc(a) + '</b>') + '</td><td><b>' + agEsc(it.TITULO) + '</b></td><td>' + (c.ESTADO_ANT ? '<span style="color:#666">' + agEsc(AG_EST[c.ESTADO_ANT] || c.ESTADO_ANT) + ' →</span> ' : '<span style="color:#666">Nuevo:</span> ') + est(c.ESTADO) + '</td><td>' + (det.join('<br>') || '—') + '</td></tr>'; }).join(''); }).join('') +
+        '</tbody></table>';
+    }).join('');
+  }
+  if (conEst) {
+    var por = {}; d.ITEMS.forEach(function(it) { var a = it.AREA; por[a] = por[a] || {}; por[a][it.ESTADO] = (por[a][it.ESTADO] || 0) + 1; });
+    var es = d.ESTADOS, tot = {};
+    h += '<h2>Cómo está cada área (hoy)</h2><table class="res"><thead><tr><th style="width:28%">Área</th>' + es.map(function(e) { return '<th class="n">' + agEsc(AG_EST[e]) + '</th>'; }).join('') + '<th class="n">Avance</th></tr></thead><tbody>' +
+      Object.keys(por).sort().map(function(a) { var t = 0; es.forEach(function(e) { t += por[a][e] || 0; tot[e] = (tot[e] || 0) + (por[a][e] || 0); }); var p = t ? Math.round((por[a].PROBADO || 0) / t * 100) : 0;
+        return '<tr><td><b>' + agEsc(a) + '</b></td>' + es.map(function(e) { return '<td class="n">' + (por[a][e] || '') + '</td>'; }).join('') + '<td class="n"><b>' + p + '%</b></td></tr>'; }).join('') +
+      (function() { var t = 0; es.forEach(function(e) { t += tot[e] || 0; }); return '<tr class="tot"><td><b>TOTAL</b></td>' + es.map(function(e) { return '<td class="n"><b>' + (tot[e] || 0) + '</b></td>'; }).join('') + '<td class="n"><b>' + (t ? Math.round((tot.PROBADO || 0) / t * 100) : 0) + '%</b></td></tr>'; })() +
+      '</tbody></table><div class="nota">Avance = puntos probados y funcionando sobre el total de puntos del área.</div>';
+  }
+  if (conFal) {
+    var orden = { NO_FUNCIONA: 0, SIN_PROBAR: 1, FALTA: 2, A_AGREGAR: 3 };
+    var pend = d.ITEMS.filter(function(it) { return orden[it.ESTADO] !== undefined; }).sort(function(a, b) { return orden[a.ESTADO] - orden[b.ESTADO] || (a.AREA < b.AREA ? -1 : a.AREA > b.AREA ? 1 : 0); });
+    h += '<h2>Lo que sigue</h2>' + (pend.length ? '<table class="det"><thead><tr><th style="width:18%">Estado</th><th style="width:16%">Área</th><th style="width:30%">Qué</th><th>Detalle</th></tr></thead><tbody>' +
+      pend.map(function(it) { return '<tr><td>' + est(it.ESTADO) + '</td><td>' + agEsc(it.AREA) + '</td><td><b>' + agEsc(it.TITULO) + '</b><div style="color:#666;font-size:9px">desde ' + agEsc(agFechaTxt(it.FECHA)) + '</div></td><td>' + (it.DETALLE ? E(it.DETALLE) : '—') + '</td></tr>'; }).join('') + '</tbody></table>' : '<div>No queda nada pendiente.</div>');
+  }
+  h += '<div class="nota">Estados: Probado y funciona = se probó en el sistema y anda · Hecho, sin probar = está hecho pero falta probarlo · No funciona = se probó y falla · Falta hacer · A agregar = mejora pedida.</div>';
+  closeModal();
+  pcImprimir('Informe de avance ' + (desde === hasta ? desde : desde + ' al ' + hasta), h, false);
 }
 function agForm(id) {
   var it = id ? agItem(id) : { FECHA: agHoy(), AREA: AG_.area || '', TITULO: '', DETALLE: '', ESTADO: 'SIN_PROBAR', ORIGEN: '' };
