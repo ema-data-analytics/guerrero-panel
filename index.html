@@ -1425,7 +1425,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271907';
+var EMA_BUILD = '202610271910';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -11956,7 +11956,7 @@ function pnHoja() {
   var h = '<div class="pn-hoja" onclick="event.stopPropagation()"><div class="pn-hc"><h3>🧾 Cotización</h3><button class="x" onclick="pnHojaCerrar()">✕</button></div>' +
     '<div id="pn-ci-list"></div>' +
     '<div class="pn-dbox"><div class="tl">DESCUENTO AL CLIENTE · tocá el número y escribilo</div>' +
-    '<div class="pn-dctl"><button type="button" onclick="pnDesc(-1)">−1</button><div class="pn-dw"><input id="pn-dsc" type="text" inputmode="decimal" autocomplete="off" value="' + String(PN_.desc || 0).replace('.', ',') + '" onfocus="this.select()" oninput="pnDescTxt(this.value)" onblur="pnDesc(PN_.desc,true)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b></div><button type="button" onclick="pnDesc(1)">+1</button></div>' +
+    '<div class="pn-dctl"><button type="button" onclick="pnDesc(-1)">−1</button><div class="pn-dw"><input id="pn-dsc" type="text" inputmode="decimal" autocomplete="off" value="' + String(PN_.desc || 0).replace('.', ',') + '" onfocus="this.select()" oninput="pnDescTxt(this.value)" onblur="this.value=String(PN_.desc||0).replace(\'.\',\',\')" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b></div><button type="button" onclick="pnDesc(1)">+1</button></div>' +
     '<div class="pn-dctl">' + [0, 5, 10, 15].map(function(v) { return '<button type="button" class="q" onclick="pnDesc(' + v + ',true)">' + v + '%</button>'; }).join('') + '</div>' +
     '<div id="pn-sem"></div></div>' +
     '<div class="pn-tot"><span>Total (IVA incluido)</span><b id="pn-tot-v"></b></div>' +
@@ -16337,7 +16337,14 @@ function mgEnter() {
 function mgSumar(c) { var it = MG_.items.filter(function(i) { return i.c === c; })[0]; if (it) it.n++; else MG_.items.push({ c: c, n: 1 }); }
 function mgAgregar(c) { mgSumar(c); mgBuscar(); mgPintar(); }
 function mgCant(k, v) { var it = MG_.items[k]; if (!it) return; it.n = Math.max(1, Math.min(999, it.n + v)); MG_.escribeCant = false; mgPintar(); }
-function mgCantTxt(k, t, vivo) { var it = MG_.items[k]; if (!it) return; var v = parseInt(String(t).replace(/\D/g, ''), 10); if (vivo && isNaN(v)) return; it.n = Math.max(1, Math.min(999, isNaN(v) ? 1 : v)); MG_.escribeCant = !!vivo; mgPintar(); MG_.escribeCant = false; }
+// Al escribir se recalcula sin rearmar la lista; al salir de la casilla solo se acomoda el número (si se rearmara, el toque en + o − se perdería)
+function mgCantTxt(k, t, vivo, el) {
+  var it = MG_.items[k]; if (!it) return; var v = parseInt(String(t).replace(/\D/g, ''), 10);
+  if (vivo && isNaN(v)) return;
+  v = Math.max(1, Math.min(999, isNaN(v) ? 1 : v));
+  if (!vivo) { if (el) el.value = v; if (v === it.n) return; }
+  it.n = v; MG_.escribeCant = true; mgPintar(); MG_.escribeCant = false;
+}
 function mgQuitar(k) { MG_.items.splice(k, 1); MG_.escribeCant = false; mgPintar(); }
 // Descuento escrito a mano (acepta coma): 12, 12,5, 7.5
 function mgDescTxt(t, vivo) { var v = parseFloat(String(t).replace(',', '.')); if (isNaN(v)) v = 0; mgDesc(v, true, vivo ? 'txt' : ''); }
@@ -16378,13 +16385,13 @@ function mgPintar() {
   if (!MG_.escribeCant) L.innerHTML = '<div class="mg-lst-t">🧾 En la cotización: ' + its.length + ' cubierta' + (its.length === 1 ? '' : 's') + ' · para agregar otra, buscala arriba</div>' + its.map(function(x, k) { var a = x.a, n = x.i.n, g = mgGan(a.R, d), col = mgColor(g);
     return '<div class="mg-it" style="border-left:6px solid ' + col[0] + '"><div style="flex:1;min-width:0"><b style="font-size:14px">' + pcEsc(a.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc(a.CODIGO) + ' · lista $' + mgM(a.CON_IVA) + ' · con descuento <b>$' + mgM(a.CON_IVA * (1 - d)) + '</b></div>' +
       '<div style="font-size:12px;margin-top:2px">' + (g < 0 ? 'Pierde' : 'Gana') + ' <b style="color:' + col[0] + '">' + mgPct(Math.abs(g)) + '</b> · verde hasta ' + mgPct(mgTope(a.R, MG_.d.VERDE)) + ' · no gana nada en ' + mgPct(mgTope(a.R, 0)) + '</div></div>' +
-      '<div class="mg-cant"><span class="tdim">Cantidad</span><button type="button" onclick="mgCant(' + k + ',-1)">−</button><input type="text" inputmode="numeric" value="' + n + '" onfocus="this.select()" oninput="mgCantTxt(' + k + ',this.value,true)" onblur="mgCantTxt(' + k + ',this.value,false)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><button type="button" onclick="mgCant(' + k + ',1)">+</button><button type="button" class="q" onclick="mgQuitar(' + k + ')">Quitar</button></div></div>'; }).join('');
+      '<div class="mg-cant"><span class="tdim">Cantidad</span><button type="button" onclick="mgCant(' + k + ',-1)">−</button><input type="text" inputmode="numeric" value="' + n + '" onfocus="this.select()" oninput="mgCantTxt(' + k + ',this.value,true)" onblur="mgCantTxt(' + k + ',this.value,false,this)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><button type="button" onclick="mgCant(' + k + ',1)">+</button><button type="button" class="q" onclick="mgQuitar(' + k + ')">Quitar</button></div></div>'; }).join('');
   var R = cosT / sinT, g = mgGan(R, d), col = mgColor(g), cob = conT * (1 - d), ganP = sinT * (1 - d) * (1 - MG_.d.IMP) - cosT;
   // Los controles del descuento se arman una sola vez: así no se pierde el dedo en la barra ni el teclado en la casilla
   if (!$id('mg-d')) D.innerHTML = '<div class="card"><div class="card-body">' +
     '<div class="tdim" style="font-size:12px;text-align:center;margin-bottom:6px">DESCUENTO · tocá el número y escribilo</div>' +
     '<div class="mg-ctl"><button type="button" class="btn btn-s mg-b" onclick="mgDesc(-1)">−1</button>' +
-    '<div class="mg-dw"><input id="mg-d" class="mg-d" type="text" inputmode="decimal" autocomplete="off" value="' + String(MG_.desc).replace('.', ',') + '" onfocus="this.select()" oninput="mgDescTxt(this.value,true)" onblur="mgDesc(MG_.desc,true)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b></div>' +
+    '<div class="mg-dw"><input id="mg-d" class="mg-d" type="text" inputmode="decimal" autocomplete="off" value="' + String(MG_.desc).replace('.', ',') + '" onfocus="this.select()" oninput="mgDescTxt(this.value,true)" onblur="this.value=String(MG_.desc).replace(\'.\',\',\')" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b></div>' +
     '<button type="button" class="btn btn-s mg-b" onclick="mgDesc(1)">+1</button></div>' +
     '<div class="mg-ctl" style="margin-top:8px">' + [0, 5, 10, 15, 20].map(function(v) { return '<button type="button" class="btn btn-s mg-r" onclick="mgDesc(' + v + ',true)">' + v + '%</button>'; }).join('') + '</div>' +
     '<input id="mg-rng" class="mg-rng" type="range" min="0" max="30" step="0.5" value="' + MG_.desc + '" oninput="mgDesc(+this.value,true,\'rng\')" onchange="mgDesc(+this.value,true,\'rng\')"></div></div>';
