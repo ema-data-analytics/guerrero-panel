@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "23b8a6591028"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "c306b39cd538"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -721,6 +721,8 @@ function tienePermiso(modulo, accion) {
 function puedeVerPagina(page) {
   if (page === 'inicio-movil') return !!SES;
   if (page === 'avance') { var rA = String((SES && SES.rol) || '').toUpperCase(); return rA === 'SUPER' || rA.indexOf('ADMIN') !== -1; }
+  // Recetas: solo administradores (el resto carga a ciegas lo que pesa o mide)
+  if (page === 'recetas') { var rR = String((SES && SES.rol) || '').toUpperCase(); return rR === 'SUPER' || rR.indexOf('ADMIN') !== -1; }
   // Las pantallas de la planta de recapado no se muestran a los usuarios de una sucursal sin planta (el servidor también lo frena)
   if (SES && SES.planta === false && moduloDePagina(page) === 'PRODUCCION') return false;
   return tienePermiso(moduloDePagina(page), 'VER');
@@ -1425,7 +1427,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271959';
+var EMA_BUILD = '202610272010';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -9472,7 +9474,7 @@ async function pcMateriales() {
 }
 function pcMatPintar(r) {
   var el = $id('pc-mat-res'); if (!el) return;
-  var f = function(n) { return String(Math.round(n * 1000) / 1000).replace('.', ','); };
+  var f = function(n) { return n === null || n === undefined ? '—' : n === true ? 'falta' : String(Math.round(n * 1000) / 1000).replace('.', ','); };
   el.innerHTML = '<div class="al ' + (r.FALTAN ? 'al-r' : 'al-g') + ' mt3"><b>' + (r.FALTAN ? '⛔ Faltan ' + r.FALTAN + (r.FALTAN === 1 ? ' material' : ' materiales') + ' para esta carga: elegí la alternativa de cada uno o conseguilo. Sin eso no se arma.' : '✓ Alcanzan los materiales para esta carga' + ((r.USADAS || []).length ? ' (con las alternativas elegidas)' : '')) + '</b> <span class="tdim" style="font-size:12px">(receta de cada cubierta contra el stock de hoy)</span></div>' +
     '<div class="tw"><table style="font-size:12px"><thead><tr><th>Material</th><th class="tr">Hace falta</th><th class="tr">Hay</th><th class="tr">Falta</th><th>Alternativa</th></tr></thead><tbody>' +
     r.LINEAS.map(function(x) {
@@ -9928,7 +9930,7 @@ async function pcPlCalc() {
   if (tk !== PC_.plTk) return; // llegó una cuenta vieja: se tildó otra cubierta mientras calculaba
   if (!r || !r.ok) { box.innerHTML = '<div class="al al-r">' + pcEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
   PC_.plR = r;
-  var f3 = function(n) { return (Math.round((+n || 0) * 1000) / 1000).toLocaleString('es-AR'); }, M = r.MATERIALES, E = r.ESTACIONES;
+  var f3 = function(n) { return n === null || n === undefined ? '—' : n === true ? 'falta' : (Math.round((+n || 0) * 1000) / 1000).toLocaleString('es-AR'); }, M = r.MATERIALES, E = r.ESTACIONES;
   var pes = E.filter(function(x) { return x.PESA; }), herr = E.filter(function(x) { return x.HERRAMENTAL; });
   var faltaPes = pes.filter(function(x) { return x.PESADO + 1e-9 < x.RETIRAR; }).length;
   var resumen = [[M.FALTAN ? '⛔ Faltan ' + M.FALTAN + ' materiales' : '✓ Alcanzan los materiales', M.FALTAN ? 'b-red' : 'b-green'],
@@ -9964,7 +9966,7 @@ function pcPlPesar() {
 }
 function pcPlImp() {
   var r = PC_.plR; if (!r) { toast('Tildá las cubiertas del plan', 'r2'); return; }
-  var f3 = function(n) { return (Math.round((+n || 0) * 1000) / 1000).toLocaleString('es-AR'); }, ids = pcPlIds(), dia = String(r.DIA).split('-').reverse().join('/');
+  var f3 = function(n) { return n === null || n === undefined ? '—' : n === true ? 'falta' : (Math.round((+n || 0) * 1000) / 1000).toLocaleString('es-AR'); }, ids = pcPlIds(), dia = String(r.DIA).split('-').reverse().join('/');
   var cubs = PC_.d.cubiertas.filter(function(c) { return PC_.plSel[c.ID_CUB]; }), E = r.ESTACIONES, ests = [];
   E.forEach(function(x) { if (ests.indexOf(x.ESTACION) === -1) ests.push(x.ESTACION); });
   var h = pcEncImp('PLAN DEL DÍA ' + dia, ids.length + ' cubiertas') +
@@ -10003,7 +10005,7 @@ async function pcPsCalc() {
   var r; try { r = await gsRun('gsPC_PesajeSel', ids, PC_.psDia || ''); } catch (e) { box.innerHTML = '<div class="al al-r">' + pcEsc(e.message) + '</div>'; return; }
   if (!r || !r.ok) { box.innerHTML = '<div class="al al-r">' + pcEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
   PC_.psR = r;
-  var f3 = function(n) { return (Math.round((+n || 0) * 1000) / 1000).toLocaleString('es-AR'); };
+  var f3 = function(n) { return n === null || n === undefined ? '—' : n === true ? 'falta' : (Math.round((+n || 0) * 1000) / 1000).toLocaleString('es-AR'); };
   var h = '<div class="tdim mb2" style="font-size:12px">' + ids.length + ' cubierta' + (ids.length === 1 ? '' : 's') + ' tildada' + (ids.length === 1 ? '' : 's') + '. Receta de cada una (las que ya están en la línea, sin las estaciones que ya pasaron). Retirar = receta + ' + r.MARGEN + '% de margen. Cada vez que pesás o medís se suma a lo ya cargado ese día.</div>';
   if (!r.LINEAS.length) h += '<div class="tdim">Lo tildado no lleva nada que vaya por peso o volumen (o ya pasó por esas estaciones).</div>';
   else h += '<div class="tw"><table id="pc-tbl-ps" style="font-size:13px"><thead><tr><th>Estación</th><th>Material</th><th class="tr">Receta</th><th class="tr">Retirar</th><th class="tr">Ya cargado</th><th class="tr">Falta</th><th>Pesado / medido ahora</th></tr></thead><tbody>' +
@@ -10669,7 +10671,7 @@ function puRetirar() {
   // Una sola ventana de retiro aunque se toque dos veces el botón
   document.querySelectorAll('#modals .mo').forEach(function(x) { if (x.querySelector('#pu-ret-ok')) x.remove(); });
   var m = showModal('<div class="mh"><span class="mt">📦 ¿Cuánto retirás del depósito?</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
-    '<div class="tdim" style="font-size:14px;margin-bottom:8px">Viene puesto lo de la receta. Cambialo si llevás más o menos. Lo que no uses vuelve al stock cuando confirmes el paso.</div>' +
+    '<div class="tdim" style="font-size:14px;margin-bottom:8px">' + (puCiego() ? 'Poné cuánto llevás.' : 'Viene puesto lo de la receta. Cambialo si llevás más o menos.') + ' Lo que no uses vuelve al stock cuando confirmes el paso.</div>' +
     filas.map(function(f) { return '<label style="display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:17px">' + puEsc(f.nom) + ' <span class="tdim" style="font-size:12px">(hay ' + puF(st[f.id] || 0) + ')</span>' +
       '<span style="display:flex;align-items:center;gap:6px"><input class="pu-ret-c" data-id="' + puEsc(f.id) + '" inputmode="decimal" value="' + puEsc(f.sug === '' ? '' : puF(f.sug)) + '" style="width:110px;font-size:18px">' + puEsc(f.un) + '</span></label>'; }).join('') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pu-ret-ok">Retirar</button></div>');
@@ -10694,10 +10696,11 @@ async function puRetDevolver() {
 function puNuevaFila(l) { return { l: l, real: '', ok: false, no: false, motivo: '', pieza: '', sinNro: false, idReal: '', reemp: false, pa: '', pz: '' }; }
 function puDif(r) { var v = puN(r.real); return r.l.CANTIDAD ? (v - r.l.CANTIDAD) / r.l.CANTIDAD : 0; }
 // Insumo a medir (sin cantidad en la receta, de un trabajo extra o agregado fuera de receta): hay que poner cuánto se usó; solo un SUPER lo deja en 0
-function puMedir(l) { return !!(PU_.f && PU_.f.medirObligatorio && l.TIPO_LINEA !== 'HERRAMENTAL' && l.ID_INSUMO && (l.EXTRA || l.ADIC || !l.CANTIDAD)); }
+function puCiego() { return !!(PU_.f && PU_.f.ciego); }
+function puMedir(l) { if (puCiego()) return l.TIPO_LINEA !== 'HERRAMENTAL' && !!l.ID_INSUMO; return !!(PU_.f && PU_.f.medirObligatorio && l.TIPO_LINEA !== 'HERRAMENTAL' && l.ID_INSUMO && (l.EXTRA || l.ADIC || !l.CANTIDAD)); }
 function puSuper() { return !!(PU_.f && PU_.f.soySuper); }
 function puResuelta(r) {
-  if (r.no) return !!r.motivo && (!puMedir(r.l) || puSuper());
+  if (r.no) return !!r.motivo && (!puMedir(r.l) || puSuper() || puCiego());
   if (r.l.TIPO_LINEA === 'HERRAMENTAL') return !!(r.pieza || r.sinNro);
   if (!r.ok) return false;
   if (puPesarCub(r) && !puPesoOk(r)) return false;
@@ -10712,7 +10715,7 @@ function puFilaHTML(r, k) {
   var nombre = r.reemp && r.idReal ? puNomIns(r.idReal) : l.NOMBRE;
   var h = '<div class="pu-row ' + cls + '" data-k="' + k + '"><div><div class="n">' + puEsc(nombre) + '</div>' +
     '<div class="c">' + puEsc(r.reemp ? 'REEMPLAZA A ' + l.NOMBRE : (l.ID_INSUMO || 'sin vincular')) + (l.STOCK !== null && l.TIPO_LINEA !== 'HERRAMENTAL' ? ' · stock ' + puF(l.STOCK) + ' ' + puEsc(l.UNIDAD) : '') + '</div>' +
-    '<div class="rec">' + (l.ADIC ? '<b>Agregado fuera de la receta</b>: poné cuánto usaste' : (puMedir(l) ? '<b>Medí lo que usaste</b> (obligatorio' + (puSuper() ? '; como SUPER podés dejarlo en 0' : ': solo un usuario SUPER puede dejarlo en 0') + ')' : (l.TIPO_LINEA !== 'HERRAMENTAL' && !l.CANTIDAD ? '<b>Sin cantidad todavía: medí lo que usaste</b> (si no se usó, poné 0)' : 'Receta: <b>' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : puF(l.CANTIDAD) + ' ' + puEsc(l.UNIDAD)) + '</b>'))) +
+    '<div class="rec">' + (l.ADIC ? '<b>Agregado fuera de la receta</b>: poné cuánto usaste' : (puCiego() ? '<b>Pesá o medí lo que usaste y escribilo</b>' : puMedir(l) ? '<b>Medí lo que usaste</b> (obligatorio' + (puSuper() ? '; como SUPER podés dejarlo en 0' : ': solo un usuario SUPER puede dejarlo en 0') + ')' : (l.TIPO_LINEA !== 'HERRAMENTAL' && !l.CANTIDAD ? '<b>Sin cantidad todavía: medí lo que usaste</b> (si no se usó, poné 0)' : 'Receta: <b>' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : puF(l.CANTIDAD) + ' ' + puEsc(l.UNIDAD)) + '</b>'))) +
     (!l.ID_ESTACION && l.SUGERIDA === puE() ? ' <span class="pu-star">★ suele usarse acá</span>' : '') + '</div></div><div class="pu-act">';
   if (r.no) h += '<button class="pu-btn pu-min" data-a="deshacer">Deshacer</button>';
   else if (l.TIPO_LINEA === 'HERRAMENTAL') {
@@ -10739,7 +10742,7 @@ function puFilaHTML(r, k) {
       PU_MOTIVOS.map(function(m) { return '<button class="pu-chip ' + (r.motivo === m ? 'sel' : '') + '" data-a="motivo" data-v="' + puEsc(m) + '">' + puEsc(m) + '</button>'; }).join('');
   } else if (puResuelta(r)) h += '<span style="color:var(--success);font-weight:700">✓ ' + (l.TIPO_LINEA === 'HERRAMENTAL' ? (r.sinNro ? 'Sin número de pieza' : 'Pieza ' + puEsc(puCodPieza(r.pieza))) : puF(puN(r.real)) + ' ' + puEsc(l.UNIDAD)) + '</span>';
   if (l.ADIC) h += '<button class="pu-btn pu-min" data-a="quitar">Quitar</button>';
-  else if (!r.no && (!puMedir(l) || puSuper())) h += '<button class="pu-btn pu-min" data-a="nouso">No se usó</button>';
+  else if (!r.no && (!puMedir(l) || puSuper() || puCiego())) h += '<button class="pu-btn pu-min" data-a="nouso">No se usó</button>';
   if (!r.no && !l.ID_ESTACION) h += '<button class="pu-btn pu-min" data-a="volver">No es de acá</button>';
   if (!r.no && r.ok && puMedir(l) && !(puN(r.real) > 0) && !puSuper()) h += '<span style="color:var(--danger);font-weight:700">Poné la cantidad que usaste (mayor a 0)</span>';
   return h + '</div></div>';
@@ -10799,7 +10802,7 @@ function puFicha() {
       '<span style="display:flex;gap:8px;align-items:center"><span class="badge ' + (listos === PU_.rows.length ? 'b-green' : 'b-red') + '">' + listos + ' de ' + PU_.rows.length + ' insumos listos</span>' +
       (PU_.rows.some(function(r) { return !r.no && !r.ok && (!r.reemp || r.plan) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && (r.plan || !puSinStock(r.l)); }) ? '<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="puTodoReceta()">✓ Todo como la receta</button>' : '') +
       (PU_.pend.length ? '<button class="btn btn-p btn-sm" onclick="PU_.verOtros=true;puFicha()"><i class="fas fa-plus"></i> Agregar</button>' : '') + '</span></div>' +
-      '<div class="tw"><table><thead><tr><th>#</th><th>Insumo</th><th class="tr">Receta</th><th class="tr">Usado</th><th>Estado</th><th></th></tr></thead><tbody>' +
+      '<div class="tw"><table><thead><tr><th>#</th><th>Insumo</th><th class="tr">' + (puCiego() ? 'Cargar' : 'Receta') + '</th><th class="tr">Usado</th><th>Estado</th><th></th></tr></thead><tbody>' +
       PU_.rows.map(puLinHTML).join('') + '</tbody></table></div></div>';
   }
   // El resto de la receta queda escondido detrás de un botón (para no confundir ni obligar a bajar)
@@ -10808,7 +10811,7 @@ function puFicha() {
   } else if (PU_.pend.length) {
     h += '<div class="pu-otros"><div style="font-weight:700">Otros insumos de la receta que todavía no se usaron</div>' + PU_.pend.map(function(l, i) {
       var donde = l.ID_ESTACION ? 'va en ' + puNomEst(l.ID_ESTACION) : (l.SUGERIDA ? 'suele usarse en ' + puNomEst(l.SUGERIDA) : 'sin estación definida');
-      return '<div class="pu-otro"><div><div style="font-size:18px;font-weight:700">' + puEsc(l.NOMBRE) + '</div><div class="tdim" style="font-size:13px">' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : puF(l.CANTIDAD) + ' ' + puEsc(l.UNIDAD)) + ' · ' + puEsc(donde) + '</div></div>' +
+      return '<div class="pu-otro"><div><div style="font-size:18px;font-weight:700">' + puEsc(l.NOMBRE) + '</div><div class="tdim" style="font-size:13px">' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : (puCiego() ? 'pesar o medir' : puF(l.CANTIDAD) + ' ' + puEsc(l.UNIDAD))) + ' · ' + puEsc(donde) + '</div></div>' +
         '<button class="pu-btn pu-add" onclick="puAgregar(' + i + ')">+ Lo uso acá</button></div>';
     }).join('') + '</div>';
   }
@@ -11050,7 +11053,7 @@ function puLinHTML(r, k) {
     '<td class="mono tc" style="font-size:11px">' + (k + 1) + '</td>' +
     '<td style="font-size:12px"><span class="n">' + puEsc(nombre) + '</span>' + (l.ADIC ? '<div class="tdim" style="font-size:10px">+ fuera de receta</div>' : '') + (r.reemp ? '<div class="tdim" style="font-size:10px">↺ reemplaza a ' + puEsc(l.NOMBRE) + '</div>' : '') +
     (!l.ID_ESTACION && l.SUGERIDA === puE() ? '<div style="font-size:10px"><span class="pu-star" style="font-size:10px">★ suele usarse acá</span></div>' : '') + '</td>' +
-    '<td class="mono tr" style="white-space:nowrap">' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : (l.ADIC ? '—' : (puMedir(l) ? 'medir' : puF(l.CANTIDAD) + ' ' + puEsc(l.UNIDAD)))) + '</td>' +
+    '<td class="mono tr" style="white-space:nowrap">' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : (l.ADIC ? '—' : (puMedir(l) ? (puCiego() ? 'pesar / medir' : 'medir') : puF(l.CANTIDAD) + ' ' + puEsc(l.UNIDAD)))) + '</td>' +
     '<td class="mono tr' + (res && !r.no ? ' tgreen' : '') + '" style="white-space:nowrap">' + usado + '</td>' +
     '<td>' + est + '</td>' +
     '<td style="white-space:nowrap"><button class="btn btn-xs btn-s" onclick="event.stopPropagation();puAbrirFila(' + k + ')" title="Modificar"><i class="fas fa-edit"></i></button></td></tr>';
