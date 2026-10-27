@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f29af7873bb9"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "3fb47c7f6699"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -8205,7 +8205,7 @@ function recPrecioDe(l) {
 
 function recPintarLineas() {
   var ed = REC_.ed, d = REC_.d, dis = ed.soloVer ? ' disabled' : '';
-  var estOpt = function(v) { return '<option value="">General</option>' + d.estaciones.map(function(e) { return '<option value="' + e.ID_ESTACION + '"' + (String(e.ID_ESTACION) === String(v) ? ' selected' : '') + '>' + e.ORDEN + '. ' + recEsc(e.NOMBRE) + '</option>'; }).join(''); };
+  var estOpt = function(v) { return '<option value="">General</option>' + d.estaciones.map(function(e) { return '<option value="' + e.ID_ESTACION + '"' + (String(e.ID_ESTACION) === String(v) ? ' selected' : '') + '>' + (e.NRO || e.ORDEN) + '. ' + recEsc(e.NOMBRE) + '</option>'; }).join(''); };
   $id('rece-body').innerHTML = ed.lineas.map(function(l, i) {
     var x = l.ID_INSUMO ? recIns(l.ID_INSUMO) : null;
     var txt = x ? x.ID_INSUMO + ' — ' + x.NOMBRE_INSUMO : (l.DESCRIPCION || '');
@@ -8675,7 +8675,7 @@ function pcCubIdent(c) { var x = []; x.push('DOT: ' + pcDotTxt(c.DOT)); if (c.FA
 function pcCubIdentLinea(c) { var x = []; if (c.FABRICANTE) x.push('Marca de fábrica: ' + pcEsc(c.FABRICANTE)); x.push('DOT: ' + pcDotTxt(c.DOT)); if (c.ID_CASCO) x.push('N° interno: ' + pcEsc(c.ID_CASCO)); if (c.NRO_MANUAL) x.push('Boleta: ' + pcEsc(c.NRO_MANUAL)); return x.length ? '<div style="font-size:11px;color:#333;margin-top:2px">' + x.join(' · ') + '</div>' : ''; }
 function pcImpOSInforme(r, o) {
   var d = PC_.d, ests = pcEstLin(o && o.LINEA).slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; });
-  var nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = e.ORDEN + '. ' + e.NOMBRE; });
+  var nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = (e.NRO || e.ORDEN) + '. ' + e.NOMBRE; });
   var nomI = {}; (d.insumos || []).forEach(function(x) { nomI[x.ID_INSUMO] = x.NOMBRE_INSUMO; });
   var cub = {}; d.cubiertas.forEach(function(c) { cub[String(c.ID_CUB)] = c; });
   var $$ = function(n) { return '$ ' + Math.round(+n || 0).toLocaleString('es-AR'); };
@@ -8718,9 +8718,9 @@ async function pcImpOS(id) {
   var h = pcEncImp('ORDEN DE SERVICIO · HOJA DE CARGA', o.NRO_OT) +
     '<div class="dat"><div><b>Línea</b>' + pcEsc(o.LINEA) + '</div><div><b>Fecha</b>' + fmtD(o.FECHA) + '</div><div><b>Responsable</b>' + pcEsc(o.RESPONSABLE || '—') + '</div><div><b>Cubiertas</b>' + r.items.filter(function(i) { return i.ROL === 'TITULAR'; }).length + ' titulares · ' + r.items.filter(function(i) { return i.ROL === 'SUPLENTE'; }).length + ' suplentes</div>' +
     (o.OBSERVACIONES ? '<div style="grid-column:span 4"><b>Observaciones</b>' + pcEsc(o.OBSERVACIONES) + '</div>' : '') + '</div>' +
-    '<table><thead><tr><th>#</th><th>Marca grabada</th><th>Rol</th><th>Cliente</th><th>OT · boleta</th><th>Medida</th><th>Trabajo</th>' + ests.map(function(e) { return '<th class="ck" title="' + pcEsc(e.NOMBRE) + '">' + e.ORDEN + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    '<table><thead><tr><th>#</th><th>Marca grabada</th><th>Rol</th><th>Cliente</th><th>OT · boleta</th><th>Medida</th><th>Trabajo</th>' + ests.map(function(e) { return '<th class="ck" title="' + pcEsc(e.NOMBRE) + '">' + (e.NRO || e.ORDEN) + '</th>'; }).join('') + '</tr></thead><tbody>' +
     r.items.map(function(i, k) { var c = cub[String(i.ID_CUB)] || {}; return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(i.MARCA) + '</b>' + pcCubIdent(c) + '</td><td>' + (i.ROL === 'SUPLENTE' ? 'Suplente' : 'Titular') + '</td><td>' + pcEsc(c.CLIENTE || '') + '</td><td>' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + (c.NRO_MANUAL ? ' · ' + pcEsc(c.NRO_MANUAL) : '') + '</td><td>' + pcEsc(c.MEDIDA || '') + '</td><td>' + pcEsc(c.TRABAJO || '') + '</td>' + ests.map(function() { return '<td class="ck"></td>'; }).join('') + '</tr>'; }).join('') +
-    '</tbody></table><div class="nota">Estaciones: ' + ests.map(function(e) { return e.ORDEN + ' ' + pcEsc(e.NOMBRE); }).join(' · ') + '</div>' +
+    '</tbody></table><div class="nota">Estaciones: ' + ests.map(function(e) { return (e.NRO || e.ORDEN) + ' ' + pcEsc(e.NOMBRE); }).join(' · ') + '</div>' +
     '<div class="firmas"><div>Responsable de la carga</div><div>Encargado de línea</div></div>';
   pcImprimir('Orden de servicio ' + o.NRO_OT, h, true);
 }
@@ -9070,7 +9070,7 @@ function pcVidaTiempo(k, v) {
   add(v.FECHA_RECEPCION, 'Planta', 'Entró a la planta: recepción de la boleta' + (v.OTRAB ? ' · orden de trabajo ' + pcEsc(v.OTRAB) : '') + (v.NRO_MANUAL ? ' · boleta ' + pcEsc(v.NRO_MANUAL) : ''), pcEsc([v.TIPO, v.MEDIDA, v.FABRICANTE, v.TRABAJO].filter(Boolean).join(' · ')) + (v.DOT ? ' · DOT ' + pcDotTxt(v.DOT) : ''));
   (v.CAMBIOS || []).forEach(function(c) { add(c.FECHA, 'Inspección', 'Trabajo cambiado de ' + pcEsc(c.ANTES) + ' a ' + pcEsc(c.DESPUES), pcEsc(c.MOTIVO) + ' · decidió ' + pcEsc(c.DECIDE)); });
   dets.forEach(function(x) {
-    var ests = pcEstLin(x.os.LINEA), nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = e.ORDEN + '. ' + e.NOMBRE; });
+    var ests = pcEstLin(x.os.LINEA), nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = (e.NRO || e.ORDEN) + '. ' + e.NOMBRE; });
     add(x.osF, 'Carga', 'Entró a la orden de servicio ' + pcEsc(x.os.NRO_OT) + ' (línea ' + pcEsc(x.os.LINEA) + ')' + (x.it.ROL === 'SUPLENTE' ? ' como suplente' : ''), x.it.PASADA > 1 ? 'Corrección: ' + pcEsc(x.it.MOTIVO_REPROCESO || '') : '');
     (x.it.REGISTROS || []).forEach(function(g) { var ins1 = /^1\./.test(nomE[g.ID_ESTACION] || '') && x.it.PASADA <= 1 ? [v.INSPECCION === 'APTA' ? 'Apta' : v.INSPECCION === 'NO_APTA' ? 'No apta' : '', v.BANDA ? 'banda ' + v.BANDA : '', (v.PARCHES || []).length ? 'parches: ' + v.PARCHES.join(', ') : '', (v.EXTRAS || []).length ? 'extras: ' + v.EXTRAS.join(', ') : ''].filter(Boolean).join(' · ') : '';
       var nomI = {}; (PC_.d.insumos || []).forEach(function(q) { nomI[q.ID_INSUMO] = q.NOMBRE_INSUMO; });
@@ -9091,7 +9091,7 @@ function pcVidaTiempo(k, v) {
   var ahora = { EN_ESPERA: 'Esperando entrar a una carga', EN_OT: 'En la línea', TERMINADA: 'Terminada', RECHAZADA: 'No apta', ANULADA: 'Anulada' }[v.ESTADO] || v.ESTADO;
   var ult = dets.length ? dets[dets.length - 1] : null;
   if (v.ESTADO === 'EN_OT' && ult) { var hh = {}; (ult.it.HECHAS || []).forEach(function(q) { hh[String(q.ID_ESTACION)] = 1; }); var sig = pcEstLin(ult.os.LINEA).slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; }).filter(function(e) { return !hh[String(e.ID_ESTACION)]; })[0];
-    ahora = 'En la línea · ' + pcEsc(ult.os.NRO_OT) + (sig ? ' · está en la estación ' + pcEsc(sig.ORDEN + '. ' + sig.NOMBRE) : ' · pasó todas las estaciones'); }
+    ahora = 'En la línea · ' + pcEsc(ult.os.NRO_OT) + (sig ? ' · está en la estación ' + pcEsc((sig.NRO || sig.ORDEN) + '. ' + sig.NOMBRE) : ' · pasó todas las estaciones'); }
   var ent = ev.filter(function(e) { return e.q === 'Entrega'; }).length;
   if (v.ESTADO === 'TERMINADA') ahora += ent ? ' y entregada al cliente' : ' · falta entregarla';
   return '<div class="al al-b" style="font-size:14px;margin:6px 0"><b>Ahora:</b> ' + ahora + '</div>' +
@@ -9148,7 +9148,7 @@ function pcVidaImprimir(k) {
     (v.CAMBIOS || []).map(function(c) { return '<div class="emp">Trabajo cambiado en la inspección de ' + pcEsc(c.ANTES) + ' a ' + pcEsc(c.DESPUES) + ' (' + fmtD(c.FECHA) + '): ' + pcEsc(c.MOTIVO) + '.</div>'; }).join('');
   dets.forEach(function(x) {
     var i = x.it, ests = pcEstLin(x.os.LINEA).slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; });
-    var nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = e.ORDEN + '. ' + e.NOMBRE; });
+    var nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = (e.NRO || e.ORDEN) + '. ' + e.NOMBRE; });
     var regs = (i.REGISTROS || []).slice().sort(function(a, b) { return (+a.FECHA || 0) - (+b.FECHA || 0); });
     var cons = (i.CONSUMOS || []).filter(function(c) { return String(c.ESTADO) !== 'ANULADO' && +c.NO_USO !== 1 && +c.REAL > 0; });
     var ac = (x.auto || []).filter(function(a) { try { var p = JSON.parse(a.POSICIONES || '{}'); return Object.keys(p).some(function(q) { return String(p[q]) === String(i.ID_CUB); }); } catch (e) { return false; } })[0];
@@ -9194,13 +9194,13 @@ function pcVidaFalta(i, ests, nomI, n3) {
   if (!falta.length) return '<div class="al al-g mt2" style="font-size:12px">Pasó todas las estaciones: falta terminarla en la oficina.</div>';
   return '<div style="font-weight:700;margin:10px 0 4px">Lo que falta hacer</div><div class="tw"><table style="font-size:11.5px"><thead><tr><th>Estación</th><th></th><th>Lo que prevé la receta</th></tr></thead><tbody>' +
     falta.map(function(e, k) { var ls = porEst[String(e.ID_ESTACION)] || [];
-      return '<tr' + (k ? '' : ' style="background:#fff7ed"') + '><td>' + pcEsc(e.ORDEN + '. ' + e.NOMBRE) + '</td><td>' + (k ? '<span class="tdim">después</span>' : '<b style="color:#c2410c">ACÁ ESTÁ (sigue esta)</b>') + '</td><td>' +
+      return '<tr' + (k ? '' : ' style="background:#fff7ed"') + '><td>' + pcEsc((e.NRO || e.ORDEN) + '. ' + e.NOMBRE) + '</td><td>' + (k ? '<span class="tdim">después</span>' : '<b style="color:#c2410c">ACÁ ESTÁ (sigue esta)</b>') + '</td><td>' +
         (ls.length ? ls.map(function(l) { var nm = nomI[l.ID_INSUMO] || l.DESCRIPCION || l.ID_INSUMO; return pcEsc(nm) + ': ' + (l.TIPO_LINEA === 'HERRAMENTAL' ? '1 pieza' : n3(l.CANTIDAD) + ' ' + pcEsc(l.UNIDAD || '')); }).join(' · ') : '<span class="tdim">sin insumos</span>') + '</td></tr>'; }).join('') +
     '</tbody></table></div>';
 }
 function pcVidaDet(i, os, d0) {
   var d = PC_.d, ests = pcEstLin(os.LINEA).slice().sort(function(a, b) { return a.ORDEN - b.ORDEN; });
-  var nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = e.ORDEN + '. ' + e.NOMBRE; });
+  var nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = (e.NRO || e.ORDEN) + '. ' + e.NOMBRE; });
   var nomI = {}; (d.insumos || []).forEach(function(x) { nomI[x.ID_INSUMO] = x.NOMBRE_INSUMO; });
   var n3 = function(x) { return (Math.round((+x || 0) * 1000) / 1000).toString().replace('.', ','); };
   var regs = (i.REGISTROS || []).slice().sort(function(a, b) { return (+a.FECHA || 0) - (+b.FECHA || 0); });
@@ -9563,7 +9563,7 @@ function pcEstacionesOT() {
   var ot = PC_.ot, est = pcEstLin(ot.ot && ot.ot.LINEA).slice(), usadas = {};
   ot.items.forEach(function(i) { i.LINEAS.forEach(function(l) { usadas[l.ID_ESTACION] = true; }); });
   var todas = +((PC_.d.param || {}).ESTACIONES_OBLIGATORIAS) === 1;
-  var cols = est.filter(function(e) { return todas || usadas[String(e.ID_ESTACION)]; }).map(function(e) { return { id: String(e.ID_ESTACION), nombre: e.ORDEN + '. ' + e.NOMBRE }; });
+  var cols = est.filter(function(e) { return todas || usadas[String(e.ID_ESTACION)]; }).map(function(e) { return { id: String(e.ID_ESTACION), nombre: (e.NRO || e.ORDEN) + '. ' + e.NOMBRE }; });
   if (usadas[''] && !todas) cols.unshift({ id: '', nombre: 'General' });
   return cols;
 }
@@ -9896,7 +9896,7 @@ async function pcPesaje() {
     '<b>Inicio y fin del día</b>: obligatorio en toda estación que usa alguno. <b>Por cubierta</b>: se elige acá; con el tilde, la tablet pide peso de antes y de después en cada cubierta.</div>' +
     '<div class="tw"><table><thead><tr><th>Estación</th><th>Línea</th><th>Usa</th><th>Inicio y fin del día</th><th>Por cubierta</th></tr></thead><tbody>' +
     cfg.ESTACIONES.filter(function(e) { return e.DIA || e.CUB; }).map(function(e) {
-      return '<tr><td>' + pcEsc(e.ORDEN + ' · ' + e.NOMBRE) + '</td><td>' + pcEsc(e.LINEA || '') + '</td><td style="font-size:11px">' + pcEsc(e.INSUMOS.join(', ')) + '</td><td>' + (e.DIA ? '<span class="badge b-green">Obligatorio</span>' : '—') + '</td>' +
+      return '<tr><td>' + pcEsc((e.NRO || e.ORDEN) + ' · ' + e.NOMBRE) + '</td><td>' + pcEsc(e.LINEA || '') + '</td><td style="font-size:11px">' + pcEsc(e.INSUMOS.join(', ')) + '</td><td>' + (e.DIA ? '<span class="badge b-green">Obligatorio</span>' : '—') + '</td>' +
         '<td><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="pc-pes-cub" value="' + pcEsc(e.ID_ESTACION) + '"' + (e.CUB ? ' checked' : '') + '> pesar cada cubierta</label></td></tr>';
     }).join('') + '</tbody></table></div>' +
     '<div class="flex gap2 mt2" style="align-items:center">Margen de diferencia permitido <input class="fi" id="pc-pes-mg" style="width:70px" value="' + pcEsc(cfg.MARGEN) + '"> % <button class="btn btn-p" onclick="pcPesGuardar()">Guardar</button></div></div></div>';
@@ -10232,7 +10232,7 @@ function puLeer(k) { try { return localStorage.getItem(k) || ''; } catch (e) { r
 function puE() { return PU_.est === 'TODAS' ? (PU_.estF || '') : PU_.est; }
 function puTodas() { return PU_.est === 'TODAS'; }
 function puEl() { return $id('page-puesto-estacion'); }
-function puNomEst(id) { var e = PU_.d && PU_.d.estaciones.filter(function(x) { return String(x.ID_ESTACION) === String(id); })[0]; return e ? e.ORDEN + ' · ' + e.NOMBRE : 'Estación ' + id; }
+function puNomEst(id) { var e = PU_.d && PU_.d.estaciones.filter(function(x) { return String(x.ID_ESTACION) === String(id); })[0]; return e ? (e.NRO || e.ORDEN) + ' · ' + e.NOMBRE : 'Estación ' + id; }
 
 async function renderPuesto() {
   var el = puEl(); if (!el) return;
@@ -10258,7 +10258,7 @@ function puMarcarHecha(idCub, est) {
   var c = puCubD(idCub); if (!c) return;
   c.ESTACIONES_HECHAS = (c.ESTACIONES_HECHAS || []).map(String); if (c.ESTACIONES_HECHAS.indexOf(String(est)) === -1) c.ESTACIONES_HECHAS.push(String(est));
   var sig = PU_.d.estaciones.filter(function(e) { return c.ESTACIONES_HECHAS.indexOf(String(e.ID_ESTACION)) === -1; })[0] || null;
-  c.SIGUIENTE = sig ? { ID_ESTACION: String(sig.ID_ESTACION), ORDEN: sig.ORDEN, NOMBRE: sig.NOMBRE } : null;
+  c.SIGUIENTE = sig ? { ID_ESTACION: String(sig.ID_ESTACION), ORDEN: sig.ORDEN, NRO: sig.NRO, NOMBRE: sig.NOMBRE } : null;
 }
 function puPie(show) { var p = $id('pu-pie'); if (p) p.style.display = show ? '' : 'none'; }
 function puPintar() {
@@ -10305,7 +10305,7 @@ function puMapa(c, mini) {
   var hechas = (c.ESTACIONES_HECHAS || []).map(String), sig = c.SIGUIENTE ? String(c.SIGUIENTE.ID_ESTACION) : '';
   return '<div class="pu-mapa' + (mini ? ' mini' : '') + '" aria-label="Recorrido por las estaciones">' + puEstLin(c).map(function(e) {
     var id = String(e.ID_ESTACION), cls = hechas.indexOf(id) !== -1 ? 'ok' : (id === sig ? 'aca' : '');
-    return '<div class="p ' + cls + '" title="' + puEsc(e.ORDEN + ' · ' + e.NOMBRE) + '"><b>' + (cls === 'ok' ? '✓' : e.ORDEN) + '</b><span>' + (cls === 'aca' ? '▲ ACÁ<br>' : '') + puEsc(e.NOMBRE) + '</span></div>';
+    return '<div class="p ' + cls + '" title="' + puEsc((e.NRO || e.ORDEN) + ' · ' + e.NOMBRE) + '"><b>' + (cls === 'ok' ? '✓' : (e.NRO || e.ORDEN)) + '</b><span>' + (cls === 'aca' ? '▲ ACÁ<br>' : '') + puEsc(e.NOMBRE) + '</span></div>';
   }).join('') + '</div>';
 }
 // ── Panel grande de las 10 estaciones de una cubierta: dónde está parada, qué ya se hizo y qué falta ──
@@ -10319,22 +10319,22 @@ function puPintarPanel() {
   var h = '<div class="pu-panel-hd"><div style="min-width:0">' + puMk(c, 'div') + puFabDot(c) + '<div class="tdim" style="font-size:13px">' + puEsc(c.TIPO + ' ' + c.MEDIDA + ' · ' + c.NRO_OT) + '</div></div>' +
     '<button class="pu-btn pu-back" onclick="puVolver()">← Otra cubierta</button></div>';
   h += '<div class="pu-aca-txt" style="color:' + (sig ? 'var(--accent)' : 'var(--success)') + '">' +
-    (sig ? 'ESTÁS ACÁ: ' + puEsc(c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE) : '✓ PASÓ POR TODAS LAS ESTACIONES') + '</div>';
+    (sig ? 'ESTÁS ACÁ: ' + puEsc((c.SIGUIENTE.NRO || c.SIGUIENTE.ORDEN) + ' · ' + c.SIGUIENTE.NOMBRE) : '✓ PASÓ POR TODAS LAS ESTACIONES') + '</div>';
   h += '<div class="pu-panel">' + puEstLin(c).map(function(e) {
     var id = String(e.ID_ESTACION), cls = hechas.indexOf(id) !== -1 ? 'ok' : (id === sig ? 'aca pu-aqui' : 'falta');
     var st = cls === 'ok' ? '✓ Hecha' : (id === sig ? 'Estás acá' : 'Falta');
-    return '<button class="pu-tile ' + cls + '" data-est="' + puEsc(id) + '" onclick="puPanelToca(\'' + puEsc(id) + '\')"><span class="num">' + (cls === 'ok' ? '✓' : e.ORDEN) + '</span>' +
+    return '<button class="pu-tile ' + cls + '" data-est="' + puEsc(id) + '" onclick="puPanelToca(\'' + puEsc(id) + '\')"><span class="num">' + (cls === 'ok' ? '✓' : (e.NRO || e.ORDEN)) + '</span>' +
       '<span class="nom">' + puEsc(e.NOMBRE) + '</span><span class="st">' + st + '</span></button>';
   }).join('') + '</div>';
   h += '<div class="pu-ley"><span><b style="background:var(--success)"></b>Hecha</span><span><b style="background:var(--accent)"></b>Estás acá</span><span><b style="background:#e5e7eb;border:1px solid #cbd5e1"></b>Falta</span></div>';
-  if (sig) h += '<button class="pu-btn pu-ir" onclick="puPanelToca(\'' + sig + '\')">▶ ENTRAR A ' + puEsc(c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE) + '</button>';
+  if (sig) h += '<button class="pu-btn pu-ir" onclick="puPanelToca(\'' + sig + '\')">▶ ENTRAR A ' + puEsc((c.SIGUIENTE.NRO || c.SIGUIENTE.ORDEN) + ' · ' + c.SIGUIENTE.NOMBRE) + '</button>';
   else h += '<div class="pu-reg"><div style="font-size:17px;font-weight:700;color:var(--success)">Pasó por todas las estaciones. El encargado la termina en la oficina.</div></div>';
   $id('pu-body').innerHTML = h;
 }
 function puPanelToca(id) {
   var c = puCubD(PU_.pan.cub); if (!c) return;
   var hechas = (c.ESTACIONES_HECHAS || []).map(String), sig = c.SIGUIENTE ? String(c.SIGUIENTE.ID_ESTACION) : '';
-  if (id !== sig && hechas.indexOf(id) === -1) { toast('Todavía no: primero ' + (c.SIGUIENTE ? c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE : ''), 'r2'); return; }
+  if (id !== sig && hechas.indexOf(id) === -1) { toast('Todavía no: primero ' + (c.SIGUIENTE ? (c.SIGUIENTE.NRO || c.SIGUIENTE.ORDEN) + ' · ' + c.SIGUIENTE.NOMBRE : ''), 'r2'); return; }
   if (id === sig && c.AUTOCLAVE) return puAutoclave(PU_.pan.ot);
   puAbrir(PU_.pan.ot, PU_.pan.cub, id);
 }
@@ -10384,7 +10384,7 @@ function puLista() {
   if (!d.cubiertas.length) h += '<div class="card"><div class="card-body tdim">No hay cubiertas en OT abiertas. Se arma la OT en Producción por cubierta › Armar OT.</div></div>';
   if (puTodas()) {
     h += '<div class="pu-cubs">' + cs.map(function(c) {
-      var tag = c.SIGUIENTE ? '<span class="pu-tag aca">→ Está en: ' + puEsc(c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE) + '</span>' : '<span class="pu-tag ok">✓ Pasó por todas: lista para terminar</span>';
+      var tag = c.SIGUIENTE ? '<span class="pu-tag aca">→ Está en: ' + puEsc((c.SIGUIENTE.NRO || c.SIGUIENTE.ORDEN) + ' · ' + c.SIGUIENTE.NOMBRE) + '</span>' : '<span class="pu-tag ok">✓ Pasó por todas: lista para terminar</span>';
       if (c.PASADA > 1) tag += '<span class="pu-tag sup">' + (c.PULIR ? '✂ Repulir (exceso de material)' : '↻ Corrección') + '</span>';
       if (c.REPROCESO) tag += '<span class="pu-tag sup">Viene de reproceso</span>';
       return '<button class="pu-cub aca" onclick="' + (c.AUTOCLAVE ? 'puAutoclave(' + c.ID_OT + ')' : 'puPanel(' + c.ID_OT + ',' + c.ID_CUB + ')') + '">' + puMk(c) + puFabDot(c) +
@@ -10397,12 +10397,12 @@ function puLista() {
   h += '<div class="pu-cubs">' + cs.map(function(c) {
     var cls = c.HECHA ? 'hecha' : (c.BLOQUEADA ? 'hecha' : (c.ACA || c.LE_TOCA ? 'aca' : '')), tag;
     if (c.HECHA) tag = '<span class="pu-tag ok">✓ Ya pasó por acá</span>';
-    else if (c.BLOQUEADA) tag = '<span class="pu-tag esp">Todavía en ' + puEsc(c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE) + '</span>';
+    else if (c.BLOQUEADA) tag = '<span class="pu-tag esp">Todavía en ' + puEsc((c.SIGUIENTE.NRO || c.SIGUIENTE.ORDEN) + ' · ' + c.SIGUIENTE.NOMBRE) + '</span>';
     else if (c.ACA) tag = '<span class="pu-tag aca">→ Le toca acá · ' + c.ACA + ' insumo' + (c.ACA === 1 ? '' : 's') + '</span>';
     else if (c.LE_TOCA) tag = '<span class="pu-tag aca">→ Le toca acá · registrá tiempo y resultado</span>';
     else if (c.PENDIENTES) tag = '<span class="pu-tag esp">Le faltan ' + c.PENDIENTES + ' insumos en otras estaciones</span>';
     else tag = '<span class="pu-tag esp">Sin insumos para cargar acá</span>';
-    return '<button class="pu-cub ' + cls + '" onclick="' + (c.BLOQUEADA ? 'toast(\'Primero tiene que pasar por ' + puEsc(c.SIGUIENTE.ORDEN + ' · ' + c.SIGUIENTE.NOMBRE) + '\',\'r2\')' : 'puAbrir(' + c.ID_OT + ',' + c.ID_CUB + ')') + '">' + puMk(c) + puFabDot(c) +
+    return '<button class="pu-cub ' + cls + '" onclick="' + (c.BLOQUEADA ? 'toast(\'Primero tiene que pasar por ' + puEsc((c.SIGUIENTE.NRO || c.SIGUIENTE.ORDEN) + ' · ' + c.SIGUIENTE.NOMBRE) + '\',\'r2\')' : 'puAbrir(' + c.ID_OT + ',' + c.ID_CUB + ')') + '">' + puMk(c) + puFabDot(c) +
       '<span class="d">' + puEsc(c.TIPO + ' ' + c.MEDIDA + ' · ' + c.TRABAJO) + '</span><span class="d">' + puEsc(c.CLIENTE || '') + ' · ' + puEsc(c.NRO_OT) + '</span>' + tag +
       (c.ROL === 'SUPLENTE' ? '<span class="pu-tag sup">Suplente</span>' : '') + '</button>';
   }).join('') + '</div>';
@@ -10600,7 +10600,7 @@ function puFicha() {
   if (f.faltaAntes && f.faltaAntes.length) {
     h += '<button class="pu-btn pu-back" onclick="puVolver()">← Otra cubierta</button></div>';
     h += '<div class="pu-reg" style="border-color:var(--danger)"><div style="font-size:20px;font-weight:700;color:var(--danger)">Todavía no le toca esta estación</div>' +
-      '<div style="font-size:17px">Primero tiene que pasar por <b>' + puEsc(f.faltaAntes[0].ORDEN + ' · ' + f.faltaAntes[0].NOMBRE) + '</b>' + (f.faltaAntes.length > 1 ? ' (le faltan ' + f.faltaAntes.length + ' estaciones antes)' : '') + '.</div></div>';
+      '<div style="font-size:17px">Primero tiene que pasar por <b>' + puEsc((f.faltaAntes[0].NRO || f.faltaAntes[0].ORDEN) + ' · ' + f.faltaAntes[0].NOMBRE) + '</b>' + (f.faltaAntes.length > 1 ? ' (le faltan ' + f.faltaAntes.length + ' estaciones antes)' : '') + '.</div></div>';
     $id('pu-body').innerHTML = h; puPie(false); return;
   }
   if (PU_.res === 'NO_APLICA') {
@@ -10613,9 +10613,9 @@ function puFicha() {
   if (PU_.d.tiempoOperario) timer = '<div class="pu-timer"><span class="pu-clock" id="pu-clock">' + puReloj(PU_.seg) + '</span>' +
     (PU_.operF ? '<span class="pu-tag" style="font-size:15px">👷 ' + puEsc(PU_.operF) + '</span>' : '') + (PU_.corriendo ? '<button class="pu-btn pu-stop" onclick="puTermine()">■ TERMINÉ</button>' : (PU_.t0 === null ? '<button class="pu-btn pu-go" onclick="puEmpezar()">▶ EMPEZAR</button>' : '<span class="pu-tag ok">✓ ' + puDur(PU_.seg) + '</span> <button class="pu-btn pu-min" onclick="puEmpezar(true)">Seguir</button>')) + (PU_.t0 !== null ? ' <button class="pu-btn pu-min" onclick="puRelCancelar()" title="Borrar el tiempo y empezar de cero">↺ Cero</button>' : '') + '</div>';
   h += timer + '<button class="pu-btn pu-back" onclick="puVolver()">← Otra cubierta</button></div>';
-  if (f.cub.PASADA > 1 && f.cub.PULIR) h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:19px;font-weight:700;color:var(--warn)">✂ Exceso de material: repulir en ' + puEsc((f.cub.REHACER || []).map(function(e) { return e.ORDEN + ' · ' + e.NOMBRE; }).join(', ')) + '</div>' +
+  if (f.cub.PASADA > 1 && f.cub.PULIR) h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:19px;font-weight:700;color:var(--warn)">✂ Exceso de material: repulir en ' + puEsc((f.cub.REHACER || []).map(function(e) { return (e.NRO || e.ORDEN) + ' · ' + e.NOMBRE; }).join(', ')) + '</div>' +
     '<div style="font-size:15px">' + puEsc(f.cub.MOTIVO_REPROCESO) + '</div><div class="tdim" style="font-size:14px">Después de repulir va directo a Pintura. No vuelve al autoclave.</div></div>';
-  else if (f.cub.PASADA > 1) h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:19px;font-weight:700;color:var(--warn)">↻ Corrección: vuelve a ' + puEsc((f.cub.REHACER || []).map(function(e) { return e.ORDEN + ' · ' + e.NOMBRE; }).join(', ')) + '</div>' +
+  else if (f.cub.PASADA > 1) h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:19px;font-weight:700;color:var(--warn)">↻ Corrección: vuelve a ' + puEsc((f.cub.REHACER || []).map(function(e) { return (e.NRO || e.ORDEN) + ' · ' + e.NOMBRE; }).join(', ')) + '</div>' +
     '<div style="font-size:15px">' + puEsc(f.cub.MOTIVO_REPROCESO) + '</div><div class="tdim" style="font-size:14px">Cuando termine la corrección, espera la próxima carga del autoclave (entra ocupando un lugar).</div></div>';
   if (f.cub.REPROCESO_DE) h += '<div><span class="pu-tag sup">Viene de reproceso de ' + puEsc(f.cub.REPROCESO_DE) + '</span>' + (f.cub.MOTIVO_ORIGEN ? '<div style="font-size:15px;margin-top:4px"><b>Qué se corrigió:</b> ' + puEsc(f.cub.MOTIVO_ORIGEN) + '</div>' : '') + '</div>';
   if (PU_.ctrl) h += puControlHTML();
@@ -10666,10 +10666,10 @@ function puControlHTML() {
   if (C.dec === 'REPROCESO') {
     h += '<div style="font-weight:700">¿A qué estación vuelve? (se puede elegir más de una)</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + X.estaciones.map(function(e) {
       var on = C.ests.indexOf(e.ID_ESTACION) !== -1;
-      return '<button class="pu-chip" style="' + (on ? 'background:var(--warn);color:#fff;border-color:var(--warn)' : '') + '" data-e="' + puEsc(e.ID_ESTACION) + '" onclick="puCtrlEst(this.dataset.e)">' + puEsc(e.ORDEN + ' · ' + e.NOMBRE) + '</button>';
+      return '<button class="pu-chip" style="' + (on ? 'background:var(--warn);color:#fff;border-color:var(--warn)' : '') + '" data-e="' + puEsc(e.ID_ESTACION) + '" onclick="puCtrlEst(this.dataset.e)">' + puEsc((e.NRO || e.ORDEN) + ' · ' + e.NOMBRE) + '</button>';
     }).join('') + '</div><div class="tdim" style="font-size:14px">Si hay que volver a armarla, elegí también la de innerlope y envelope. Después de la corrección entra en la próxima carga del autoclave.</div>';
   }
-  if (C.dec === 'PULIR') h += '<div style="font-size:16px">Sale de la inspección final y vuelve a <b>' + puEsc(X.pulido.ORDEN + ' · ' + X.pulido.NOMBRE) + '</b> para repulir. De ahí va <b>directo a Pintura</b> y termina. No vuelve al autoclave y no cuenta como reproceso.</div>' +
+  if (C.dec === 'PULIR') h += '<div style="font-size:16px">Sale de la inspección final y vuelve a <b>' + puEsc((X.pulido.NRO || X.pulido.ORDEN) + ' · ' + X.pulido.NOMBRE) + '</b> para repulir. De ahí va <b>directo a Pintura</b> y termina. No vuelve al autoclave y no cuenta como reproceso.</div>' +
     '<input class="pu-q" id="pu-ctrl-txt" style="font-size:17px;text-transform:none" placeholder="Detalle (opcional): dónde sobra material" value="' + puEsc(C.txt) + '" autocomplete="off">';
   if (C.dec === 'REPROCESO' || C.dec === 'RECHAZO') {
     h += '<div style="font-weight:700">' + (C.dec === 'REPROCESO' ? '¿Qué hay que corregir?' : '¿Por qué no tiene arreglo?') + '</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + X.motivos.map(function(m) {
@@ -10699,7 +10699,7 @@ async function puCtrlConfirmar() {
     if ($id('pu-aut-c')) $id('pu-aut-c').value = '';
     b.textContent = '✓ Confirmar paso';
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); b.disabled = false; return; }
-    var sigue = C.dec === 'OK' ? 'Pasa a Pintura' : C.dec === 'PULIR' ? 'Vuelve a ' + (r.VUELVE_A || []).map(function(e) { return e.ORDEN + ' · ' + e.NOMBRE; }).join(', ') + ' para repulir. Después va directo a Pintura (no vuelve al autoclave).' : (C.dec === 'REPROCESO' ? 'Vuelve a ' + (r.VUELVE_A || []).map(function(e) { return e.ORDEN + ' · ' + e.NOMBRE; }).join(', ') + ' para corregirla. Después espera la próxima carga del autoclave.' : 'Rechazo final: queda para devolver al cliente.');
+    var sigue = C.dec === 'OK' ? 'Pasa a Pintura' : C.dec === 'PULIR' ? 'Vuelve a ' + (r.VUELVE_A || []).map(function(e) { return (e.NRO || e.ORDEN) + ' · ' + e.NOMBRE; }).join(', ') + ' para repulir. Después va directo a Pintura (no vuelve al autoclave).' : (C.dec === 'REPROCESO' ? 'Vuelve a ' + (r.VUELVE_A || []).map(function(e) { return (e.NRO || e.ORDEN) + ' · ' + e.NOMBRE; }).join(', ') + ' para corregirla. Después espera la próxima carga del autoclave.' : 'Rechazo final: queda para devolver al cliente.');
     puRelQuitar(f.ot.ID_OT, f.cub.ID_CUB, puE());
     PU_.fin = { marca: f.cub.MARCA, dot: f.cub.DOT || '', min: r.MINUTOS, n: cons.filter(function(c) { return !c.NO_USO; }).length, desvios: r.DESVIOS || [], sinStock: r.SIN_STOCK || [], reemplazos: r.REEMPLAZOS || [], sigue: sigue, ot: f.ot.ID_OT, cub: f.cub.ID_CUB, dec: C.dec };
     try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e2) {}
@@ -11093,7 +11093,7 @@ async function puConfirmar() {
       // Corrección: se pide de nuevo dónde sigue (la próxima estación a rehacer o la próxima carga del autoclave)
       try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e2) {}
       var cdx = puCubD(f.cub.ID_CUB);
-      PU_.fin.sigue = r.A_AUTOCLAVE ? 'Corrección terminada: espera la próxima carga del autoclave (entra ocupando un lugar)' : (cdx && cdx.SIGUIENTE ? 'Sigue en: ' + cdx.SIGUIENTE.ORDEN + ' · ' + cdx.SIGUIENTE.NOMBRE : PU_.fin.sigue);
+      PU_.fin.sigue = r.A_AUTOCLAVE ? 'Corrección terminada: espera la próxima carga del autoclave (entra ocupando un lugar)' : (cdx && cdx.SIGUIENTE ? 'Sigue en: ' + (cdx.SIGUIENTE.NRO || cdx.SIGUIENTE.ORDEN) + ' · ' + cdx.SIGUIENTE.NOMBRE : PU_.fin.sigue);
     } else puMarcarHecha(f.cub.ID_CUB, puE());
     PU_.vista = 'listo'; puListo();
   } catch (e) { toast(e.message, 'r2'); b.disabled = false; b.textContent = '✓ Confirmar paso'; }
@@ -11114,13 +11114,13 @@ function puSiguiente() {
     var todas = (PU_.f.estaciones || []).filter(function(e) { return sal.indexOf(String(e.ID_ESTACION)) === -1; });
     var act = todas.filter(function(e) { return String(e.ID_ESTACION) === String(puE()); })[0];
     var prox = act ? todas.filter(function(e) { return Number(e.ORDEN) > Number(act.ORDEN); })[0] : null;
-    if (prox) return 'Sigue en: ' + prox.ORDEN + ' · ' + prox.NOMBRE;
+    if (prox) return 'Sigue en: ' + (prox.NRO || prox.ORDEN) + ' · ' + prox.NOMBRE;
     return quedan.length ? 'Pasó por todas las estaciones. Le quedan ' + quedan.length + ' insumos sin confirmar' : 'Pasó por todas las estaciones: lista para terminar';
   }
   if (!quedan.length) return 'Ya tiene todos los insumos confirmados: lista para terminar';
   var ests = {}; quedan.forEach(function(l) { var e = l.ID_ESTACION || l.SUGERIDA; if (e) ests[e] = true; });
   var ord = PU_.f.estaciones.filter(function(e) { return ests[String(e.ID_ESTACION)]; });
-  return ord.length ? 'Sigue en: ' + ord[0].ORDEN + ' · ' + ord[0].NOMBRE : 'Le quedan ' + quedan.length + ' insumos por usar en otras estaciones';
+  return ord.length ? 'Sigue en: ' + (ord[0].NRO || ord[0].ORDEN) + ' · ' + ord[0].NOMBRE : 'Le quedan ' + quedan.length + ' insumos por usar en otras estaciones';
 }
 function puListo() {
   var wrap = document.querySelector('#page-puesto-estacion .pu-wrap'); if (wrap) wrap.classList.remove('pu-enficha');
@@ -11133,7 +11133,7 @@ function puListo() {
     ((x.devuelto || []).filter(function(v) { return v.VUELVE > 0; }).length ? '<div style="font-size:18px;color:var(--success);font-weight:700">↩ Volvió al stock: ' + x.devuelto.filter(function(v) { return v.VUELVE > 0; }).map(function(v) { return puF(v.VUELVE) + ' ' + puEsc(v.UNIDAD) + ' de ' + puEsc(v.NOMBRE); }).join(' · ') + '</div>' : '') +
     ((x.devuelto || []).filter(function(v) { return v.QUEDA > 0; }).length ? '<div style="font-size:18px;color:var(--accent);font-weight:700">📍 Quedó en la estación: ' + x.devuelto.filter(function(v) { return v.QUEDA > 0; }).map(function(v) { return puF(v.QUEDA) + ' ' + puEsc(v.UNIDAD) + ' de ' + puEsc(v.NOMBRE); }).join(' · ') + '</div>' : '') +
     '<div style="font-size:20px"><b>' + puEsc(x.sigue) + '</b></div>' + puMapa(cd) +
-    (puTodas() && cd && cd.SIGUIENTE ? '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puAbrir(' + x.ot + ',' + x.cub + ',\'' + cd.SIGUIENTE.ID_ESTACION + '\')">→ Seguir con ' + puEsc(puIdTxt(x.marca, x.dot)) + ' en ' + puEsc(cd.SIGUIENTE.ORDEN + ' · ' + cd.SIGUIENTE.NOMBRE) + '</button>' : '') +
+    (puTodas() && cd && cd.SIGUIENTE ? '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puAbrir(' + x.ot + ',' + x.cub + ',\'' + cd.SIGUIENTE.ID_ESTACION + '\')">→ Seguir con ' + puEsc(puIdTxt(x.marca, x.dot)) + ' en ' + puEsc((cd.SIGUIENTE.NRO || cd.SIGUIENTE.ORDEN) + ' · ' + cd.SIGUIENTE.NOMBRE) + '</button>' : '') +
     '<button class="pu-btn" style="min-width:260px;' + (puTodas() && cd && cd.SIGUIENTE ? '' : 'background:var(--accent);color:#fff') + '" onclick="puVolver()">' + (puTodas() ? 'Ver todas las cubiertas' : 'Siguiente cubierta') + '</button></div>';
 }
 
@@ -12431,7 +12431,7 @@ var PQ_ = { d: null, mes: '', sub: 'herr', fFalt: 'PENDIENTE', fCargo: 'PENDIENT
 var PQ_NIVEL = { r: ['var(--danger)', 'var(--danger-light)', 'ROJO'], y: ['var(--warn)', 'var(--warn-light)', 'AMARILLO'], g: ['var(--success)', 'var(--success-light)', 'VERDE'] };
 var PQ_EST_H = { EN_USO: 'En uso', EN_REPARACION: 'En reparación', BAJA: 'Baja', PERDIDA: 'Perdida' };
 function pqFecha(ms) { return ms ? fmtD(ms) : '—'; }
-function pqEst(id) { var e = (PQ_.d ? PQ_.d.estaciones : PC_.d.estaciones).filter(function(x) { return String(x.ID_ESTACION) === String(id); })[0]; return e ? e.ORDEN + ' · ' + e.NOMBRE : (id || '—'); }
+function pqEst(id) { var e = (PQ_.d ? PQ_.d.estaciones : PC_.d.estaciones).filter(function(x) { return String(x.ID_ESTACION) === String(id); })[0]; return e ? (e.NRO || e.ORDEN) + ' · ' + e.NOMBRE : (id || '—'); }
 
 // ── Alarmas ──
 async function pcAlarmas() {
@@ -12469,7 +12469,7 @@ async function pcEquipos() {
   if (PQ_.sub === 'falt') { el.innerHTML = top + pqFaltantes(); return; }
   if (PQ_.sub === 'cargos') { el.innerHTML = top + pqCargos(); return; }
   if (PQ_.sub === 'serv') { el.innerHTML = top + pqServicios(); return; }
-  var estOpt = function(v) { return d.estaciones.map(function(e) { return '<option value="' + e.ID_ESTACION + '"' + (String(v) === String(e.ID_ESTACION) ? ' selected' : '') + '>' + e.ORDEN + ' · ' + pcEsc(e.NOMBRE) + '</option>'; }).join(''); };
+  var estOpt = function(v) { return d.estaciones.map(function(e) { return '<option value="' + e.ID_ESTACION + '"' + (String(v) === String(e.ID_ESTACION) ? ' selected' : '') + '>' + (e.NRO || e.ORDEN) + ' · ' + pcEsc(e.NOMBRE) + '</option>'; }).join(''); };
   // 1. Herramientas
   var hs = d.herramientas.slice().sort(function(a, b) { return String(a.ID_ESTACION).localeCompare(String(b.ID_ESTACION), undefined, { numeric: true }) || String(a.CODIGO).localeCompare(String(b.CODIGO)); });
   var h = '<div class="card mb3"><div class="card-hd"><span class="card-title">Herramientas de cada estación (' + hs.filter(function(x) { return x.ESTADO !== 'BAJA' && x.ESTADO !== 'PERDIDA'; }).length + ')</span><span class="flex gap2">' +
@@ -12523,7 +12523,7 @@ function pqHerrForm(id) {
   showModal('<div class="mh"><span class="mt">' + (id ? 'Editar ' + pcEsc(x.CODIGO) : 'Nueva herramienta') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     '<div class="fr"><div class="fg"><label class="fl">Nombre *</label><input class="fi" id="pq-h-n" value="' + pcEsc(x.NOMBRE || '') + '" placeholder="Ej: Pulidora neumática"/></div>' +
     '<div class="fg"><label class="fl">Código</label><input class="fi" id="pq-h-c" value="' + pcEsc(x.CODIGO || '') + '" ' + (id ? 'disabled' : 'placeholder="Vacío = automático"') + '/></div></div>' +
-    '<div class="fr"><div class="fg"><label class="fl">Estación *</label><select class="fs" id="pq-h-e"><option value="">—</option>' + PQ_.d.estaciones.map(function(e) { return '<option value="' + e.ID_ESTACION + '"' + (String(x.ID_ESTACION) === String(e.ID_ESTACION) ? ' selected' : '') + '>' + e.ORDEN + ' · ' + pcEsc(e.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fr"><div class="fg"><label class="fl">Estación *</label><select class="fs" id="pq-h-e"><option value="">—</option>' + PQ_.d.estaciones.map(function(e) { return '<option value="' + e.ID_ESTACION + '"' + (String(x.ID_ESTACION) === String(e.ID_ESTACION) ? ' selected' : '') + '>' + (e.NRO || e.ORDEN) + ' · ' + pcEsc(e.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
     '<div class="fg"><label class="fl">Responsable</label><input class="fi" id="pq-h-r" list="pq-pers" placeholder="Elegí de la lista" value="' + pcEsc(x.RESPONSABLE || '') + '"/>' + pqPersList() + '</div></div>' +
     '<div class="fr"><div class="fg"><label class="fl">Próximo service</label><input class="fi" type="date" id="pq-h-s" value="' + ps + '"/></div><div class="fg"><label class="fl">Valor ($)</label><input class="fi" type="number" id="pq-h-v" value="' + (x.VALOR || '') + '"/></div></div>' +
     '<div class="fg"><label class="fl">Observaciones</label><input class="fi" id="pq-h-o" value="' + pcEsc(x.OBSERVACIONES || '') + '"/></div></div>' +
@@ -12539,7 +12539,7 @@ function pqAccion(id, a) {
   if (a === 'EDITAR') return pqHerrForm(id);
   var x = PQ_.d.herramientas.filter(function(h) { return h.ID_HERR === id; })[0];
   var campo = '', tit = { ENTREGA: 'Entregar ' + x.NOMBRE + ' a una persona', PRESTAMO: 'Prestar ' + x.NOMBRE, DEVOLUCION: 'Devolver ' + x.NOMBRE + ' a su estación', SERVICE: 'Service de ' + x.NOMBRE, REPARACION: 'Mandar a reparar ' + x.NOMBRE, VUELVE: x.NOMBRE + ' volvió de reparación', PERDIDA: x.NOMBRE + ' se perdió', BAJA: 'Dar de baja ' + x.NOMBRE }[a];
-  if (a === 'PRESTAMO') campo = '<div class="fg"><label class="fl">A qué estación va</label><select class="fs" id="pq-m-h">' + PQ_.d.estaciones.filter(function(e) { return String(e.ID_ESTACION) !== String(x.ID_ESTACION); }).map(function(e) { return '<option value="' + e.ID_ESTACION + '">' + e.ORDEN + ' · ' + pcEsc(e.NOMBRE) + '</option>'; }).join('') + '</select></div>';
+  if (a === 'PRESTAMO') campo = '<div class="fg"><label class="fl">A qué estación va</label><select class="fs" id="pq-m-h">' + PQ_.d.estaciones.filter(function(e) { return String(e.ID_ESTACION) !== String(x.ID_ESTACION); }).map(function(e) { return '<option value="' + e.ID_ESTACION + '">' + (e.NRO || e.ORDEN) + ' · ' + pcEsc(e.NOMBRE) + '</option>'; }).join('') + '</select></div>';
   if (a === 'ENTREGA') campo = '<div class="fg"><label class="fl">A quién se le entrega (queda responsable desde hoy)</label><input class="fi" id="pq-m-h" list="pq-pers" value="' + pcEsc(x.RESPONSABLE || '') + '"/>' + pqPersList() + '</div>';
   if (a === 'SERVICE') campo = '<div class="fg"><label class="fl">Próximo service</label><input class="fi" type="date" id="pq-m-h"/></div>';
   showModal('<div class="mh"><span class="mt">' + pcEsc(tit) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' + campo +
@@ -12634,7 +12634,7 @@ function pqKitForm(id) {
   var k = id ? PQ_.d.ent.kit.filter(function(x) { return String(x.ID_KIT) === String(id); })[0] : { ID_ESTACION: '', ID_INSUMO: '', NOMBRE: '', CANTIDAD: 1, ACTIVO: 1 };
   if (!k) return;
   showModal('<div class="mh"><span class="mt">' + (id ? 'Modificar ' + pcEsc(k.NOMBRE) : 'Agregar a la lista de una estación') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
-    '<div class="fg"><label class="fl">Estación *</label><select class="fs" id="pq-k-e"><option value="">—</option>' + PQ_.d.estaciones.map(function(e) { return '<option value="' + e.ID_ESTACION + '"' + (String(k.ID_ESTACION) === String(e.ID_ESTACION) ? ' selected' : '') + '>' + e.ORDEN + ' · ' + pcEsc(e.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Estación *</label><select class="fs" id="pq-k-e"><option value="">—</option>' + PQ_.d.estaciones.map(function(e) { return '<option value="' + e.ID_ESTACION + '"' + (String(k.ID_ESTACION) === String(e.ID_ESTACION) ? ' selected' : '') + '>' + (e.NRO || e.ORDEN) + ' · ' + pcEsc(e.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
     '<div class="fr"><div class="fg"><label class="fl">Elemento * <span class="tdim">(si está en el stock, elegilo de la lista: se descuenta al entregar)</span></label><input class="fi" id="pq-k-n" list="pq-k-list" value="' + pcEsc(k.ID_INSUMO || k.NOMBRE) + '" placeholder="Ej: Guantes de trabajo"/><datalist id="pq-k-list">' +
     (PQ_.d.consumibles || []).map(function(x) { return '<option value="' + pcEsc(x.ID_INSUMO) + '">' + pcEsc(x.NOMBRE_INSUMO) + '</option>'; }).join('') + '</datalist></div>' +
     '<div class="fg" style="max-width:150px"><label class="fl">Por semana *</label><input class="fi" type="number" min="0" step="any" id="pq-k-c" value="' + pcEsc(k.CANTIDAD) + '"/></div></div>' +
@@ -12653,7 +12653,7 @@ function pqEntForm(idEmp) {
   var prev = en.entregas.filter(function(x) { return String(x.ID_EMPLEADO) === String(idEmp) && x.ESTADO !== 'ANULADA'; })[0];
   PQ_.ef = { emp: p, est: prev ? String(prev.ID_ESTACION) : '' };
   showModal('<div class="mh"><span class="mt">Entregar a ' + pcEsc(p.NOMBRE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
-    '<div class="fr"><div class="fg"><label class="fl">Estación donde trabaja *</label><select class="fs" id="pq-ef-e"><option value="">— elegí —</option>' + PQ_.d.estaciones.map(function(e) { return '<option value="' + e.ID_ESTACION + '"' + (PQ_.ef.est === String(e.ID_ESTACION) ? ' selected' : '') + '>' + e.ORDEN + ' · ' + pcEsc(e.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fr"><div class="fg"><label class="fl">Estación donde trabaja *</label><select class="fs" id="pq-ef-e"><option value="">— elegí —</option>' + PQ_.d.estaciones.map(function(e) { return '<option value="' + e.ID_ESTACION + '"' + (PQ_.ef.est === String(e.ID_ESTACION) ? ' selected' : '') + '>' + (e.NRO || e.ORDEN) + ' · ' + pcEsc(e.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
     '<div class="fg" style="max-width:180px"><label class="fl">Fecha</label><input class="fi" type="date" id="pq-ef-f" value="' + fechaISO(new Date()) + '"/></div></div>' +
     '<div id="pq-ef-lista"></div><div class="fg mt2"><label class="fl">Observaciones</label><input class="fi" id="pq-ef-o"/></div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pq-ef-ok"><i class="fas fa-hand-holding"></i> Registrar entrega</button></div>', 'md-lg');
