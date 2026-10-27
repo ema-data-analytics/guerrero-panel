@@ -1414,7 +1414,40 @@ async function seedData() {
 }
 
 
+</script><script>
+// ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
+// Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
+var EMA_BUILD = '202610271834';
+function emaVersionNueva(cb) {
+  if (EMA_BUILD.indexOf('__') === 0) return;
+  fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
+    var m = /var EMA_BUILD = '(\d+)'/.exec(t);
+    if (m && m[1] !== EMA_BUILD && Number(m[1]) > Number(EMA_BUILD)) cb(m[1]);
+  }).catch(function() {});
+}
+function emaActualizar(v) {
+  try { sessionStorage.setItem('ema_recarga_' + v, '1'); } catch (e) {}
+  location.replace(location.pathname + '?v=' + v + location.hash);
+}
+function emaChequearVersion() {
+  emaVersionNueva(function(v) {
+    var ya = false; try { ya = sessionStorage.getItem('ema_recarga_' + v) === '1'; } catch (e) {}
+    if (typeof SES === 'undefined' || !SES) { if (!ya) emaActualizar(v); return; }
+    if ($id('ema-ver-nueva')) return;
+    var b = document.createElement('div'); b.id = 'ema-ver-nueva';
+    b.innerHTML = '🔄 Hay una versión nueva del sistema <button class="btn btn-p btn-sm" onclick="emaActualizar(\'' + v + '\')">Actualizar</button>';
+    document.body.appendChild(b);
+  });
+}
+setTimeout(emaChequearVersion, 1500);
+setInterval(emaChequearVersion, 120000);
+document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') emaChequearVersion(); });
 </script>
+<style>
+#ema-ver-nueva{position:fixed;left:8px;right:8px;bottom:10px;z-index:9999;background:#111827;color:#fff;border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+#ema-ver-nueva .btn{min-height:42px}
+</style>
+
 <script>
 var _dsPeriodo = 'mes';
 async function renderDashboard() {
