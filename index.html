@@ -16193,8 +16193,8 @@ function mgSumar(c) { var it = MG_.items.filter(function(i) { return i.c === c; 
 function mgAgregar(c) { mgSumar(c); $id('mg-q').value = ''; $id('mg-sug').innerHTML = ''; mgPintar(); }
 function mgCant(k, v) { var it = MG_.items[k]; if (!it) return; it.n = Math.max(0, it.n + v); if (!it.n) MG_.items.splice(k, 1); mgPintar(); }
 // Descuento escrito a mano (acepta coma): 12, 12,5, 7.5
-function mgDescTxt(t) { var v = parseFloat(String(t).replace(',', '.')); if (isNaN(v)) v = 0; mgDesc(v, true); }
-function mgDesc(v, abs) { MG_.desc = Math.max(0, Math.min(90, Math.round((abs ? v : MG_.desc + v) * 10) / 10)); mgPintar(); }
+function mgDescTxt(t, vivo) { var v = parseFloat(String(t).replace(',', '.')); if (isNaN(v)) v = 0; mgDesc(v, true, vivo ? 'txt' : ''); }
+function mgDesc(v, abs, de) { MG_.desc = Math.max(0, Math.min(90, Math.round((abs ? v : MG_.desc + v) * 10) / 10)); MG_.desdeRng = de === 'rng'; mgPintar(); }
 function mgM(n) { n = Math.round(n); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('es-AR'); }
 function mgArt(c) { return MG_.d.ARTICULOS.filter(function(a) { return a.CODIGO === c; })[0]; }
 // Ganancia sobre lo cobrado (sin IVA) con el descuento d (0 a 1): (1 − impuestos) − costo / precio con descuento
@@ -16212,11 +16212,20 @@ function mgPintar() {
       '<div style="font-size:12px;margin-top:2px">' + (g < 0 ? 'Pierde' : 'Gana') + ' <b style="color:' + col[0] + '">' + mgPct(Math.abs(g)) + '</b> · verde hasta ' + mgPct(mgTope(a.R, MG_.d.VERDE)) + ' · no gana nada en ' + mgPct(mgTope(a.R, 0)) + '</div></div>' +
       '<div class="mg-cant"><button class="btn btn-s" onclick="mgCant(' + k + ',-1)">−</button><b>' + n + '</b><button class="btn btn-s" onclick="mgCant(' + k + ',1)">+</button></div></div>'; }).join('');
   var R = cosT / sinT, g = mgGan(R, d), col = mgColor(g), cob = conT * (1 - d), ganP = sinT * (1 - d) * (1 - MG_.d.IMP) - cosT;
-  D.innerHTML = '<div class="card"><div class="card-body"><div style="display:flex;align-items:center;gap:8px;justify-content:center">' +
-    '<button class="btn btn-s mg-b" onclick="mgDesc(-5)">−5</button><button class="btn btn-s mg-b" onclick="mgDesc(-1)">−1</button>' +
-    '<div style="text-align:center;min-width:110px"><div class="tdim" style="font-size:11px">DESCUENTO (tocá y escribí)</div><div style="display:flex;align-items:center;justify-content:center"><input id="mg-d" class="mg-d" inputmode="decimal" value="' + String(MG_.desc).replace('.', ',') + '" onfocus="this.select()" onchange="mgDescTxt(this.value)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b style="font-size:30px">%</b></div></div>' +
-    '<button class="btn btn-s mg-b" onclick="mgDesc(1)">+1</button><button class="btn btn-s mg-b" onclick="mgDesc(5)">+5</button></div>' +
-    '<input type="range" min="0" max="30" step="0.5" value="' + MG_.desc + '" style="width:100%;margin-top:8px" oninput="mgDesc(+this.value,true)"></div></div>';
+  // Los controles del descuento se arman una sola vez: así no se pierde el dedo en la barra ni el teclado en la casilla
+  if (!$id('mg-d')) D.innerHTML = '<div class="card"><div class="card-body">' +
+    '<div class="tdim" style="font-size:12px;text-align:center;margin-bottom:6px">DESCUENTO · tocá el número y escribilo</div>' +
+    '<div class="mg-ctl"><button type="button" class="btn btn-s mg-b" onclick="mgDesc(-1)">−1</button>' +
+    '<div class="mg-dw"><input id="mg-d" class="mg-d" type="text" inputmode="decimal" autocomplete="off" value="' + String(MG_.desc).replace('.', ',') + '" onfocus="this.select()" oninput="mgDescTxt(this.value,true)" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b></div>' +
+    '<button type="button" class="btn btn-s mg-b" onclick="mgDesc(1)">+1</button></div>' +
+    '<div class="mg-ctl" style="margin-top:8px">' + [0, 5, 10, 15, 20].map(function(v) { return '<button type="button" class="btn btn-s mg-r" onclick="mgDesc(' + v + ',true)">' + v + '%</button>'; }).join('') + '</div>' +
+    '<input id="mg-rng" class="mg-rng" type="range" min="0" max="30" step="0.5" value="' + MG_.desc + '" oninput="mgDesc(+this.value,true,\'rng\')"></div></div>';
+  else {
+    var di = $id('mg-d'), rg = $id('mg-rng');
+    if (document.activeElement !== di) di.value = String(MG_.desc).replace('.', ',');
+    if (rg && MG_.desdeRng !== true) rg.value = Math.min(30, MG_.desc);
+  }
+  MG_.desdeRng = false;
   S.innerHTML = '<div class="mg-sem" style="border-color:' + col[0] + ';background:' + col[1] + '">' +
     '<div class="mg-luces">' + ['#dc2626', '#d97706', '#16a34a'].map(function(c) { return '<span style="background:' + (c === col[0] ? c : '#e5e7eb') + (c === col[0] ? ';box-shadow:0 0 14px ' + c : '') + '"></span>'; }).join('') + '</div>' +
     '<div style="flex:1"><div style="font-size:13px;font-weight:800;color:' + col[0] + '">' + col[2] + ' · ' + col[3] + '</div><div style="font-size:30px;font-weight:800;color:' + col[0] + '">' + (g < 0 ? 'Pierde ' + mgPct(-g) : 'Gana ' + mgPct(g)) + '</div>' +
@@ -16234,8 +16243,14 @@ function mgPintar() {
 .mg-it{display:flex;gap:8px;align-items:center;background:var(--card,#fff);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px}
 .mg-cant{display:flex;flex-direction:column;align-items:center;gap:2px}
 .mg-cant .btn{min-width:40px;min-height:34px;padding:0}
-.mg-d{width:86px;font-size:32px;font-weight:800;text-align:center;border:2px solid var(--border);border-radius:10px;padding:2px 4px}
-.mg-b{min-width:46px;min-height:46px;font-size:16px;font-weight:700}
+.mg-d{width:100px;min-height:56px;font-size:32px;font-weight:800;text-align:center;border:2px solid var(--border);border-radius:10px;padding:2px 4px}
+.mg-b{min-width:64px;min-height:56px;font-size:20px;font-weight:800;touch-action:manipulation}
+.mg-ctl{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.mg-r{min-width:54px;min-height:46px;font-size:15px;font-weight:700;touch-action:manipulation}
+.mg-dw{display:flex;align-items:center;gap:2px}.mg-dw b{font-size:30px}
+.mg-rng{-webkit-appearance:none;appearance:none;width:100%;margin:22px 0 10px;height:12px;border-radius:6px;background:#dbeafe;outline:none;touch-action:none}
+.mg-rng::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:40px;height:40px;border-radius:50%;background:#2563eb;border:4px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.35);cursor:pointer}
+.mg-rng::-moz-range-thumb{width:34px;height:34px;border-radius:50%;background:#2563eb;border:4px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.35);cursor:pointer}
 .mg-sem{display:flex;gap:14px;align-items:center;border:3px solid;border-radius:14px;padding:14px}
 .mg-luces{display:flex;flex-direction:column;gap:6px;background:#111827;padding:8px;border-radius:12px}
 .mg-luces span{width:30px;height:30px;border-radius:50%;display:block}
