@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f4661978f3ae"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a9d272413140"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1429,7 +1429,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610272027';
+var EMA_BUILD = '202610272033';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16409,7 +16409,7 @@ function mvCompleto() { document.body.classList.remove('modo-puesto'); document.
 </script>
 <script>
 // ── 📊 Margen con descuento (celular): se ponen las cubiertas y el semáforo dice cuánto se gana con el descuento que se va dando ──
-var MG_ = { d: null, items: [], desc: 0, rubro: '', div: 'CUB' };
+var MG_ = { d: null, items: [], desc: 0, rubro: '', div: 'CUB', cat: '', fam: '' };
 async function renderMargen() {
   var el = $id('page-margen'); if (!el) return;
   if (!MG_.d) {
@@ -16426,21 +16426,32 @@ async function renderMargen() {
 // Tipo de cubierta: achica la búsqueda (Auto, Camioneta, Camión, Agrícola…)
 function mgChips() {
   var insV = MG_.div === 'INS';
-  var seg = '<div class="pn-div" style="width:100%"><button class="' + (!insV ? 'on' : '') + '" onclick="MG_.div=\'CUB\';MG_.rubro=\'\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">🚗 Cubiertas</button><button class="' + (insV ? 'on' : '') + '" onclick="MG_.div=\'INS\';MG_.rubro=\'\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">🔧 Insumos y accesorios</button></div>';
-  if (insV) return seg;
+  var seg = '<div class="pn-div" style="width:100%"><button class="' + (!insV ? 'on' : '') + '" onclick="MG_.div=\'CUB\';MG_.rubro=\'\';MG_.cat=\'\';MG_.fam=\'\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">🚗 Cubiertas</button><button class="' + (insV ? 'on' : '') + '" onclick="MG_.div=\'INS\';MG_.rubro=\'\';MG_.cat=\'\';MG_.fam=\'\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">🔧 Insumos y accesorios</button></div>';
+  if (insV) return seg + mgChipsIns();
   var rs = []; MG_.d.ARTICULOS.forEach(function(a) { if (a.RUBRO && a.RUBRO !== 'INSUMOS' && rs.indexOf(a.RUBRO) === -1) rs.push(a.RUBRO); });
   var ord = ['AUTO', 'CAMIONETA', 'CAMION', 'AGRICOLA', 'INDUSTRIAL', 'INSUMOS']; rs.sort(function(a, b) { var x = ord.indexOf(a), y = ord.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
   var nom = { AUTO: '🚗 Auto', CAMIONETA: '🚙 Camioneta', CAMION: '🚛 Camión', AGRICOLA: '🚜 Agrícola', INDUSTRIAL: '🏗 Industrial', INSUMOS: '🔧 Insumos' };
   return seg + [''].concat(rs).map(function(r) { return '<button class="btn btn-sm ' + (MG_.rubro === r ? 'btn-p' : 'btn-s') + '" onclick="MG_.rubro=\'' + r + '\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">' + (r ? (nom[r] || r) : 'Todas') + '</button>'; }).join('');
+}
+// Insumos: primero la categoría, después la familia (así la lista es corta y no hay que bajar)
+function mgTit(s) { s = String(s || '').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
+function mgChipsIns() {
+  var cats = {}, fams = {};
+  MG_.d.ARTICULOS.forEach(function(a) { if (a.RUBRO !== 'INSUMOS') return; var c = a.CAT || 'OTROS'; cats[c] = (cats[c] || 0) + 1; if (MG_.cat === c) fams[a.MARCA] = (fams[a.MARCA] || 0) + 1; });
+  var b = function(on, txt, js) { return '<button class="btn btn-sm ' + (on ? 'btn-p' : 'btn-s') + '" onclick="' + js + ';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">' + txt + '</button>'; };
+  var h = '<div class="mg-fil">' + Object.keys(cats).sort().map(function(c) { return b(MG_.cat === c, pcEsc(mgTit(c)) + ' <small>(' + cats[c] + ')</small>', "MG_.cat=(MG_.cat===\'" + c + "\'?\'\':\'" + c + "\');MG_.fam=\'\'"); }).join('') + '</div>';
+  if (MG_.cat) h += '<div class="mg-fil mg-fam">' + Object.keys(fams).sort().map(function(f) { return b(MG_.fam === f, pcEsc(mgTit(f)) + ' <small>(' + fams[f] + ')</small>', "MG_.fam=(MG_.fam===\'" + f.replace(/'/g, '') + "\'?\'\':\'" + f.replace(/'/g, '') + "\')"); }).join('') + '</div>';
+  return h;
 }
 function mgNorm(t) { return String(t || '').toUpperCase().replace(/[\s\/\-.,R]/g, ''); }
 // Lista para tildar varias: cada toque agrega o saca la cubierta (✓). La lista queda abierta hasta «Listo».
 function mgBuscar() {
   if ($id('mg-q')) $id('mg-q').placeholder = MG_.div === 'INS' ? 'Nombre o código: parche, raspa, AA0775…' : 'Medida, marca o código: 185/65R15, giti…';
   var q = $v('mg-q').trim(), box = $id('mg-sug'); if (!box) return;
+  if (MG_.div === 'INS' && q.length < 2 && !MG_.fam) { box.innerHTML = '<div class="tdim" style="font-size:14px;padding:10px 4px">' + (MG_.cat ? 'Elegí la familia de arriba o escribí el nombre o código.' : 'Elegí una categoría y después la familia, o escribí el nombre o código.') + '</div>'; return; }
   if (q.length < 2 && !MG_.rubro && MG_.div !== 'INS') { box.innerHTML = ''; return; }
   var qs = q.toUpperCase().split(/\s+/).filter(function(w) { return w; }), qn = mgNorm(q);
-  var r = MG_.d.ARTICULOS.filter(function(a) { if ((MG_.div === 'INS') !== (a.RUBRO === 'INSUMOS')) return false; if (MG_.rubro && a.RUBRO !== MG_.rubro) return false; if (q.length < 2) return true; var n = a.NOMBRE.toUpperCase() + ' ' + a.CODIGO + ' ' + a.MARCA.toUpperCase(); return a.CODIGO.toUpperCase() === q.toUpperCase() || mgNorm(a.NOMBRE).indexOf(qn) !== -1 || qs.every(function(w) { return n.indexOf(w) !== -1; }); }).slice(0, 30);
+  var r = MG_.d.ARTICULOS.filter(function(a) { if ((MG_.div === 'INS') !== (a.RUBRO === 'INSUMOS')) return false; if (MG_.div === 'INS' && MG_.cat && (a.CAT || 'OTROS') !== MG_.cat) return false; if (MG_.div === 'INS' && MG_.fam && String(a.MARCA).replace(/'/g, '') !== MG_.fam) return false; if (MG_.rubro && a.RUBRO !== MG_.rubro) return false; if (q.length < 2) return true; var n = a.NOMBRE.toUpperCase() + ' ' + a.CODIGO + ' ' + a.MARCA.toUpperCase(); return a.CODIGO.toUpperCase() === q.toUpperCase() || mgNorm(a.NOMBRE).indexOf(qn) !== -1 || qs.every(function(w) { return n.indexOf(w) !== -1; }); }).slice(0, 30);
   MG_.sug = r;
   if (!r.length) { box.innerHTML = '<div class="tdim" style="font-size:13px;padding:8px">No encontré esa cubierta.</div>'; return; }
   var n = MG_.items.reduce(function(a, i) { return a + i.n; }, 0);
@@ -16574,8 +16585,11 @@ function mgPintar() {
 </script>
 <style>
 .mg-wrap{max-width:640px;margin:0 auto}
+@media(min-width:900px){.mg-wrap{max-width:980px}}
 .mg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.mg-chips .btn{min-height:38px}
 .mg-lst{border:2px solid var(--accent,#2563eb);border-radius:12px;background:var(--card,#fff);margin-top:6px;margin-bottom:76px}
+.mg-fil{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px}.mg-fil .btn small{opacity:.75;font-weight:400}.mg-fam{padding:6px;border-radius:10px;background:#f1f5f9}
+@media(min-width:900px){.mg-lst{display:grid;grid-template-columns:1fr 1fr;margin-bottom:12px}.mg-lst-h{grid-column:1 / -1}.mg-op{border-right:1px solid var(--border)}.mg-listo{position:sticky;left:auto;right:auto;bottom:8px;grid-column:1 / -1;margin:8px}}
 .mg-lst-h{padding:8px 12px;font-size:13px;background:#eff6ff;color:#1e3a8a;border-radius:10px 10px 0 0}
 .mg-op{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;touch-action:manipulation}
 .mg-op.on{background:#f0fdf4}
