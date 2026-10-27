@@ -10134,11 +10134,11 @@ function puLista() {
   var q = PU_.q.trim().toUpperCase(), d = PU_.d;
   // Una carga a la vez: se elige la orden de servicio y se ven solo sus cubiertas
   var ots = {}, ids = [];
-  d.cubiertas.forEach(function(c) { var k = String(c.ID_OT); if (!ots[k]) { ots[k] = { nro: c.NRO_OT, n: 0 }; ids.push(k); } ots[k].n++; });
+  d.cubiertas.forEach(function(c) { var k = String(c.ID_OT); if (!ots[k]) { ots[k] = { nro: c.NRO_OT, n: 0, sup: 0 }; ids.push(k); } if (c.ROL === 'SUPLENTE') ots[k].sup++; else ots[k].n++; });
   if (!PU_.os) PU_.os = puLeer('pu_os');
   if (ids.length === 1) PU_.os = ids[0];
   if (ids.length > 1 && !ots[PU_.os]) return puElegirOS(ots, ids);
-  var cs = d.cubiertas.filter(function(c) { return String(c.ID_OT) === String(PU_.os) && (!q || String(c.MARCA).toUpperCase().indexOf(q) !== -1); });
+  var cs = d.cubiertas.filter(function(c) { return String(c.ID_OT) === String(PU_.os) && c.ROL !== 'SUPLENTE' && (!q || String(c.MARCA).toUpperCase().indexOf(q) !== -1); });
   var peso = function(c) { return c.HECHA ? 4 : (c.BLOQUEADA ? 3 : (c.LE_TOCA || c.ACA ? 0 : (c.PENDIENTES ? 1 : 2))); };
   cs.sort(function(a, b) { return peso(a) - peso(b) || String(a.NRO_OT).localeCompare(String(b.NRO_OT)) || a.ORDEN - b.ORDEN; });
   var eq = PU_.eq, h = '';
