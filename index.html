@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "c189b47b1d24"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "0890d35d5387"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1268,9 +1268,10 @@ async function appInit() {
   else if (!adminP && (window.EMA_MODO_PUESTO || rolP.indexOf('OPERA') !== -1) && puedeVerPagina('puesto-estacion')) { document.body.classList.add('modo-puesto'); inicio = 'puesto-estacion'; document.title = 'Vulcan Estaciones'; }
   // Lista de precios sola (link ?precios o rol vendedor). El administrador entra a la misma pantalla pero con el menú.
   else if (window.EMA_MODO_PRECIOS && puedeVerPagina('precios-nuevos')) { if (!adminP) document.body.classList.add('modo-puesto'); inicio = 'precios-nuevos'; document.title = 'Vulcan Precios'; }
-  else if (!adminP && rolP.indexOf('VENDE') !== -1 && puedeVerPagina('precios-nuevos')) { document.body.classList.add('modo-puesto'); inicio = 'precios-nuevos'; document.title = 'Vulcan Precios'; }
+  else if (!adminP && rolP.indexOf('VENDE') !== -1 && window.innerWidth >= 760 && puedeVerPagina('precios-nuevos')) { document.body.classList.add('modo-puesto'); inicio = 'precios-nuevos'; document.title = 'Vulcan Precios'; }
   // Celular: un solo link para todo. Si no entró por un acceso directo, arranca en el menú del celular (botones grandes según sus permisos)
-  if (!window.EMA_MODO_FICHAJE && !window.EMA_MODO_DOCS && !window.EMA_MODO_CASCOS && !window.EMA_MODO_PRECIOS && !window.EMA_MODO_PUESTO && window.innerWidth < 760) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-movil'); inicio = 'inicio-movil'; }
+  // El operario va directo a sus estaciones (ya quedó en modo puesto): el menú es para los demás
+  if (!document.body.classList.contains('modo-puesto') && !window.EMA_MODO_FICHAJE && !window.EMA_MODO_DOCS && !window.EMA_MODO_CASCOS && !window.EMA_MODO_PRECIOS && !window.EMA_MODO_PUESTO && window.innerWidth < 760) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-movil'); inicio = 'inicio-movil'; }
   _hist.pagina = null;
   histReplace({ ema: 1, base: 1 });
   if (inicio) navTo(inicio);
@@ -15460,7 +15461,7 @@ function segEditarUsuario(id) {
 
 function segModalUsuario(u) {
   var titulo = u ? 'Editar usuario' : 'Nuevo usuario';
-  var roles = ['SUPER','ADMINISTRADOR','ENCARGADO_SUCURSAL','VENDEDOR','FACTURACION','OPERADOR'];
+  var roles = ['SUPER','ADMINISTRADOR','ENCARGADO_PLANTA','RECEPCION','OPERADOR','ENCARGADO_SUCURSAL','VENDEDOR','FACTURACION'];
   var sucs = (window._segSucs || []).map(function(x) { return x.CODIGO; });
   var sucAct = u ? (u.SUCURSAL || 'PLANTA') : 'PLANTA';
   var sucOpts = ['TODAS'].concat(sucs).map(function(c) { var x = (window._segSucs || []).filter(function(y) { return y.CODIGO === c; })[0]; return '<option value="' + c + '"' + (c === sucAct ? ' selected' : '') + '>' + (x ? x.NOMBRE : 'TODAS (solo SUPER y ADMINISTRADOR)') + '</option>'; }).join('');
@@ -16020,28 +16021,36 @@ async function docsCert(marca) {
 
 // ── Menú del celular: una sola entrada (el link del sistema) y botones grandes según los permisos del usuario ──
 var MV_OPC = [
-  // [clave, ícono, título, explicación, página, pestaña de producción o filtro]
-  ['cascos', '📥', 'Recibir cascos', 'Boleta del cliente con su firma', 'produccion-cubiertas', 'cascos'],
-  ['documentos', '📄', 'Documentos', 'Orden, remito o certificado en PDF', 'documentos', ''],
-  ['cubierta', '🔎', 'Buscar cubierta', 'Dónde está y toda su vida', 'documentos', 'CUB'],
-  ['cargas', '🏭', 'Cargas en la línea', 'Cada orden de servicio y sus cubiertas', 'produccion-cubiertas', 'os'],
-  ['puesto-estacion', '🛠', 'Estaciones', 'Trabajo en la línea', 'puesto-estacion', ''],
-  ['pesaje', '⚖', 'Pesaje y medición', 'Lo que se retira para la carga', 'produccion-cubiertas', 'pesaje'],
-  ['entregas', '🚚', 'Entregas y remitos', 'Remitos y foto firmada', 'produccion-cubiertas', 'entregas'],
-  ['rech', '↩', 'Rechazadas', 'Cubiertas para devolver', 'produccion-cubiertas', 'rech'],
-  ['alarmas', '⚠', 'Alarmas', 'Stock bajo y cosas atrasadas', 'produccion-cubiertas', 'alarmas'],
-  ['stock', '📦', 'Stock de insumos', 'Cuánto hay de cada insumo', 'stock-insumos', ''],
-  ['precios-nuevos', '🏷', 'Precios', 'Cubiertas nuevas y promos', 'precios-nuevos', ''],
-  ['fichaje', '🕘', 'Fichaje', 'Entrada y salida del personal', 'fichaje', ''],
-  ['asistencia', '👥', 'Asistencia', 'Quién vino, faltas y certificados', 'asistencia', ''],
-  ['avance', '📈', 'Avance del sistema', 'Qué se hizo y qué sigue', 'avance', ''],
-  ['agenda', '📋', 'Agenda (cargar)', 'Puntos y estados', 'agenda', '']
+  // [clave, ícono, título, explicación, página, pestaña o filtro, roles que lo ven (además de SUPER y ADMINISTRADOR)]
+  ['cascos', '📥', 'Recibir cascos', 'Boleta del cliente con su firma', 'produccion-cubiertas', 'cascos', 'RECEPCION ENCARGADO_PLANTA VENDEDOR'],
+  ['documentos', '📄', 'Documentos', 'Orden, remito o certificado en PDF', 'documentos', '', 'RECEPCION ENCARGADO_PLANTA VENDEDOR FACTURACION'],
+  ['cubierta', '🔎', 'Buscar cubierta', 'Dónde está y toda su vida', 'documentos', 'CUB', 'RECEPCION ENCARGADO_PLANTA VENDEDOR FACTURACION'],
+  ['cargas', '🏭', 'Cargas en la línea', 'Cada orden de servicio y sus cubiertas', 'produccion-cubiertas', 'os', 'ENCARGADO_PLANTA'],
+  ['puesto-estacion', '🛠', 'Estaciones', 'Trabajo en la línea', 'puesto-estacion', '', 'ENCARGADO_PLANTA OPERADOR'],
+  ['pesaje', '⚖', 'Pesaje y medición', 'Lo que se retira para la carga', 'produccion-cubiertas', 'pesaje', 'ENCARGADO_PLANTA'],
+  ['entregas', '🚚', 'Entregas y remitos', 'Remitos y foto firmada', 'produccion-cubiertas', 'entregas', 'RECEPCION ENCARGADO_PLANTA'],
+  ['rech', '↩', 'Rechazadas', 'Cubiertas para devolver', 'produccion-cubiertas', 'rech', 'RECEPCION ENCARGADO_PLANTA'],
+  ['alarmas', '⚠', 'Alarmas', 'Stock bajo y cosas atrasadas', 'produccion-cubiertas', 'alarmas', 'ENCARGADO_PLANTA'],
+  ['stock', '📦', 'Stock de insumos', 'Cuánto hay de cada insumo', 'stock-insumos', '', 'ENCARGADO_PLANTA'],
+  ['precios-nuevos', '🏷', 'Precios', 'Cubiertas nuevas y promos', 'precios-nuevos', '', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
+  ['fichaje', '🕘', 'Fichaje', 'Entrada y salida del personal', 'fichaje', '', ''],
+  ['asistencia', '👥', 'Asistencia', 'Quién vino, faltas y certificados', 'asistencia', '', ''],
+  ['avance', '📈', 'Avance del sistema', 'Qué se hizo y qué sigue', 'avance', '', ''],
+  ['agenda', '📋', 'Agenda (cargar)', 'Puntos y estados', 'agenda', '', 'SOLO_SUPER']
 ];
+// Botones que ve cada rol: SUPER todo; ADMINISTRADOR todo menos la agenda; el resto, lo de su trabajo (y que su permiso deje ver la pantalla)
+function mvOpciones(rol) {
+  return MV_OPC.filter(function(o) {
+    if (o[6] === 'SOLO_SUPER') return rol === 'SUPER';
+    if (rol === 'SUPER' || rol === 'ADMINISTRADOR') return o[0] === 'avance' || puedeVerPagina(o[4]);
+    return (' ' + o[6] + ' ').indexOf(' ' + rol + ' ') !== -1 && puedeVerPagina(o[4]);
+  });
+}
 function renderInicioMovil() {
   var el = $id('page-inicio-movil'); if (!el) return;
   document.body.classList.add('modo-movil'); document.body.classList.add('en-inicio-movil');
   var rol = String((SES && SES.rol) || '').toUpperCase(), admin = rol.indexOf('SUPER') !== -1 || rol.indexOf('ADMIN') !== -1;
-  var ops = MV_OPC.filter(function(o) { return o[0] === 'avance' ? (rol === 'SUPER' || rol.indexOf('ADMIN') !== -1) : puedeVerPagina(o[4]) && (o[0] !== 'agenda' || rol === 'SUPER'); });
+  var ops = mvOpciones(rol);
   el.innerHTML = '<div class="mv-wrap"><div style="display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-size:20px;font-weight:800">Hola, ' + pcEsc(((SES && SES.nombre) || '').split(' ')[0]) + '</div><div class="tdim" style="font-size:13px">¿Qué vas a hacer?</div></div>' +
     '<button class="btn btn-s btn-sm" onclick="doLogout()">Salir</button></div>' +
     '<div class="mv-tiles">' + ops.map(function(o) { return '<div class="mv-tile" onclick="mvAbrir(\'' + o[0] + '\')"><span class="ic">' + o[1] + '</span>' + o[2] + '<small>' + o[3] + '</small></div>'; }).join('') +
