@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e1814d2cfb50"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "78faec2ad951"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -930,6 +930,34 @@ function showModal(html, cls) {
 }
 
 function closeModal(){const m=document.querySelector('.mo');if(m)m.remove();}
+// Pregunta y confirmación con ventana propia (no se usan las del navegador: en la tablet traban la pantalla)
+// uiPedir(titulo, opciones) → promesa con el texto escrito, o null si cancela. opciones: { obligatorio, ayuda, valor }
+function uiPedir(titulo, o) {
+  o = o || {};
+  return new Promise(function(res) {
+    var cerrar = function(v) { var m = document.getElementById('ui-pedir-mo'); if (m) m.remove(); res(v); };
+    var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'ui-pedir-mo';
+    mo.innerHTML = '<div class="md"><div class="mh"><span class="mt"></span><button class="mc" data-x="1">×</button></div><div class="mb2"><textarea class="fi" id="ui-pedir-t" rows="3" style="width:100%;font-size:16px"></textarea><div id="ui-pedir-e" style="color:var(--danger);font-size:13px;display:none">Escribí el motivo</div></div><div class="mf"><button class="btn btn-s" data-x="1">Cancelar</button><button class="btn btn-p" id="ui-pedir-ok">Aceptar</button></div></div>';
+    mo.querySelector('.mt').textContent = titulo;
+    document.body.appendChild(mo);
+    var t = document.getElementById('ui-pedir-t'); t.value = o.valor || ''; if (o.ayuda) t.placeholder = o.ayuda; setTimeout(function() { t.focus(); }, 50);
+    mo.querySelectorAll('[data-x]').forEach(function(b) { b.onclick = function() { cerrar(null); }; });
+    document.getElementById('ui-pedir-ok').onclick = function() { var v = t.value.trim(); if (o.obligatorio && !v) { document.getElementById('ui-pedir-e').style.display = ''; return; } cerrar(v); };
+  });
+}
+// uiConfirmar(texto, botonSi) → promesa true / false
+function uiConfirmar(texto, si) {
+  return new Promise(function(res) {
+    var cerrar = function(v) { var m = document.getElementById('ui-conf-mo'); if (m) m.remove(); res(v); };
+    var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'ui-conf-mo';
+    mo.innerHTML = '<div class="md"><div class="mh"><span class="mt">Confirmar</span><button class="mc" data-x="1">×</button></div><div class="mb2" style="font-size:16px"></div><div class="mf"><button class="btn btn-s" data-x="1">No</button><button class="btn btn-p" id="ui-conf-ok"></button></div></div>';
+    mo.querySelector('.mb2').textContent = texto;
+    document.body.appendChild(mo);
+    document.getElementById('ui-conf-ok').textContent = si || 'Sí';
+    mo.querySelectorAll('[data-x]').forEach(function(b) { b.onclick = function() { cerrar(false); }; });
+    document.getElementById('ui-conf-ok').onclick = function() { cerrar(true); };
+  });
+}
 
 function filterTable(inp,tid){
   const q=inp.value.toLowerCase();
@@ -8746,7 +8774,7 @@ async function pcCasGrabar() {
   } catch (e) { pcCasErr(e.message); } finally { b.disabled = false; }
 }
 async function pcCasAnular(id) {
-  var m = prompt('¿Por qué se anula el casco ' + id + '?'); if (m === null) return;
+  var m = await uiPedir('¿Por qué se anula el casco ' + id + '?', { obligatorio: true }); if (m === null) return;
   var r = await gsRun('gsPC_CascoAnular', id, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   toast('Anulado ✓', 'g'); pcRecargar();
 }
@@ -8808,7 +8836,7 @@ async function pcOTrabGrabar() {
   } catch (e) { toast(e.message, 'r2'); } finally { b.disabled = false; }
 }
 async function pcOTrabAnular(id) {
-  var m = prompt('¿Por qué se anula la orden de trabajo?'); if (m === null) return;
+  var m = await uiPedir('¿Por qué se anula la orden de trabajo?', { obligatorio: true }); if (m === null) return;
   var r = await gsRun('gsPC_OTrabAnular', id, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   toast('Anulada: los cascos vuelven a "sin orden" ✓', 'g'); pcRecargar();
 }
@@ -8906,7 +8934,7 @@ async function pcRecibir() {
   finally { b.disabled = false; }
 }
 async function pcAnularCub(id) {
-  if (!confirm('¿Anular esta recepción? No se borra.')) return;
+  if (!(await uiConfirmar('¿Anular esta recepción? No se borra.', 'Sí, anular'))) return;
   var r = await gsRun('gsPC_AnularCubierta', id, 'anulada desde recepción');
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   toast('Anulada ✓', 'g'); pcRecargar();
@@ -9490,20 +9518,20 @@ function pcRegistro(idCub, est) {
   });
 }
 async function pcAnularRegistro(idReg) {
-  var motivo = prompt('Motivo de la anulación:') || '';
+  var motivo = await uiPedir('Motivo de la anulación:', { obligatorio: true }); if (motivo === null) return;
   var r = await gsRun('gsPC_AnularRegistro', idReg, motivo);
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   toast('Registro anulado: se devolvió el stock ✓', 'g'); closeModal(); pcAbrirOT(PC_.ot.ot.ID_OT);
 }
 async function pcTerminar(idCub, res) {
-  var obs = res === 'RECHAZADA' ? (prompt('Motivo del rechazo:') || '') : '';
+  var obs = ''; if (res === 'RECHAZADA') { obs = await uiPedir('Motivo del rechazo:', { obligatorio: true }); if (obs === null) return; }
   var r = await gsRun('gsPC_TerminarCubierta', PC_.ot.ot.ID_OT, idCub, res, obs);
-  if (r && !r.ok && /observaci/.test(r.error)) { obs = prompt(r.error) || ''; if (obs) r = await gsRun('gsPC_TerminarCubierta', PC_.ot.ot.ID_OT, idCub, res, obs); }
+  if (r && !r.ok && /observaci/.test(r.error)) { obs = (await uiPedir(r.error, { obligatorio: true })) || ''; if (obs) r = await gsRun('gsPC_TerminarCubierta', PC_.ot.ot.ID_OT, idCub, res, obs); }
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   toast((res === 'TERMINADA' ? 'Terminada' : 'Rechazada') + ' · costo ' + fmt(r.costo.COSTO_TOTAL) + ' ✓', 'g'); pcAbrirOT(PC_.ot.ot.ID_OT);
 }
 async function pcPromover(idCub) { var r = await gsRun('gsPC_PromoverSuplente', PC_.ot.ot.ID_OT, idCub); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Pasó a titular ✓', 'g'); pcAbrirOT(PC_.ot.ot.ID_OT); }
-async function pcRetirar(idCub) { if (!confirm('¿Sacar la cubierta de la OT? Vuelve a espera.')) return; var r = await gsRun('gsPC_RetirarCubierta', PC_.ot.ot.ID_OT, idCub, 'sacada de la OT'); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Volvió a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
+async function pcRetirar(idCub) { if (!(await uiConfirmar('¿Sacar la cubierta de la orden de servicio? Vuelve a espera.', 'Sí, sacar'))) return; var r = await gsRun('gsPC_RetirarCubierta', PC_.ot.ot.ID_OT, idCub, 'sacada de la OT'); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Volvió a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
 async function pcCerrarOT() { var id = PC_.ot.ot.ID_OT, r = await gsRun('gsPC_CerrarOT', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT cerrada ✓ · ' + ((r.REMITOS || []).length) + ' remito(s) de entrega', 'g'); await pcRecargar(); await pcAbrirOT(id); if ((r.REMITOS || []).length) pcRemitosLista(r.REMITOS); }
 // ── Remitos de entrega: uno por cliente, se arman solos al cerrar la orden de servicio ──
 async function pcRemitos(idOt) { var r = await gsRun('gsPC_Remitos', idOt); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } if (!(r.REMITOS || []).length) { toast('Esta orden no tiene remitos', 'r2'); return; } pcRemitosLista(r.REMITOS); }
@@ -9583,7 +9611,7 @@ async function pcImpRemito(i) {
     (qr ? '<div style="display:flex;gap:12px;align-items:center;margin-top:18px;border:1px dashed #999;border-radius:8px;padding:8px;page-break-inside:avoid"><div style="width:110px;height:110px">' + qr + '</div><div style="font-size:11px"><b>Al entregar:</b> con el remito firmado, escaneá este código con el celular y sacale una foto. Queda cargado en el sistema.</div></div>' : '');
   pcImprimir('Remito ' + x.NRO + ' ' + x.CLIENTE, h);
 }
-async function pcAnularOT() { var m = prompt('Motivo de la anulación de la OT:'); if (m === null) return; var r = await gsRun('gsPC_AnularOT', PC_.ot.ot.ID_OT, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT anulada: las cubiertas volvieron a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
+async function pcAnularOT() { var m = await uiPedir('Motivo de la anulación de la orden de servicio:', { obligatorio: true }); if (m === null) return; var r = await gsRun('gsPC_AnularOT', PC_.ot.ot.ID_OT, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT anulada: las cubiertas volvieron a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
 function pcVerCosto(idCub) {
   var i = PC_.ot.items.filter(function(x) { return String(x.ID_CUB) === String(idCub); })[0], c = i.COSTO;
   showModal('<div class="mh"><span class="mt">Costo real — ' + pcMkDot(i) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
@@ -9652,7 +9680,7 @@ async function pcPesGuardar() {
   try { var r = await gsRun('gsPC_PesajeGuardarConfig', { CUB: cub, MARGEN: $v('pc-pes-mg') }); if (!r.ok) return toast(r.error, 'r2'); toast('Guardado ✓', 'g'); pcPesaje(); } catch (e) { toast(e.message, 'r2'); }
 }
 async function pcPesAnular(id) {
-  var m = prompt('¿Por qué se anula este pesaje?'); if (!m) return;
+  var m = await uiPedir('¿Por qué se anula este pesaje?', { obligatorio: true }); if (!m) return;
   try { var r = await gsRun('gsPC_PesajeAnular', id, m); if (!r.ok) return toast(r.error, 'r2'); toast('Anulado', 'g'); pcPesaje(); } catch (e) { toast(e.message, 'r2'); }
 }
 async function pcHerramental() {
@@ -10200,7 +10228,7 @@ function puEnEstHTML() {
     '<div><button class="pu-btn pu-min" onclick="puEstDevolver()">↩ Devolver al depósito</button></div></div>';
 }
 async function puEstDevolver() {
-  if (!confirm('¿Devolver al depósito todo lo que hay guardado en esta estación?')) return;
+  if (!(await uiConfirmar('¿Devolver al depósito todo lo que hay guardado en esta estación?', 'Sí, devolver'))) return;
   try {
     var r = await gsRun('gsPC_EstDevolver', { ID_ESTACION: puE(), OPERARIO: PU_.operF || PU_.oper });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
@@ -10721,7 +10749,7 @@ async function puTermine() {
   PU_.dt = r.AHORA - Date.now(); puRelGuardar(r.RELOJ); puRelAplicar(); puFicha();
 }
 async function puRelCancelar() {
-  var f = PU_.f; if (!f || !confirm('¿Borrar el tiempo de esta cubierta y empezar de cero?')) return;
+  var f = PU_.f; if (!f || !(await uiConfirmar('¿Borrar el tiempo de esta cubierta y empezar de cero?', 'Sí, borrar'))) return;
   try { await gsRun('gsPC_RelojAnular', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE() }); } catch (e) { toast(e.message, 'r2'); return; }
   puRelQuitar(f.ot.ID_OT, f.cub.ID_CUB, puE()); puRelAplicar(); puFicha();
 }
