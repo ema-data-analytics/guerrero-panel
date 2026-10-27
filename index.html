@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f1d456114ab3"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "cb53a01dc9d8"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -9174,7 +9174,7 @@ function pcArmar() {
     '<div class="fr mt3" style="border-top:1px solid var(--border);padding-top:12px"></div>' +
     '<div class="fr"><div class="fg" id="pc-tope-wrap" style="display:none"><label class="fl">Carga mezclada: tope</label><select class="fs" id="pc-tope">' + d.lineas.filter(function(l) { return l.ACTIVO != 0; }).map(function(l) { return '<option value="' + l.LINEA + '">' + l.LINEA + ' (' + l.CAPACIDAD + ' + ' + l.SUPLENTES + ')</option>'; }).join('') + '</select></div>' +
     '<div class="fg"><label class="fl">Responsable de la carga *</label><select class="fs" id="pc-resp"><option value="">— elegí —</option>' + (d.empleados || []).map(function(e) { return '<option' + (PC_.resp === e ? ' selected' : '') + '>' + pcEsc(e) + '</option>'; }).join('') + '</select><div class="tdim" style="font-size:11px">Sale de Maestros › Empleados</div></div><div class="fg"><label class="fl">Observaciones (opcional)</label><input class="fi" id="pc-obs" placeholder="Solo si hay algo para aclarar"/></div></div>' +
-    '<button class="btn btn-p mt3" id="pc-crear" onclick="pcCrearOT()"><i class="fas fa-fire"></i> Crear orden de servicio</button></div></div>';
+    '<div class="flex gap2 mt3" style="flex-wrap:wrap"><button class="btn btn-s" id="pc-mat" onclick="pcMateriales()"><i class="fas fa-boxes-stacked"></i> ¿Alcanzan los materiales?</button><button class="btn btn-p" id="pc-crear" onclick="pcCrearOT()"><i class="fas fa-fire"></i> Crear orden de servicio</button></div><div id="pc-mat-res"></div></div></div>';
   $id('pc-body').innerHTML = h;
   document.querySelectorAll('#pc-body .pc-mk').forEach(function(e) { e.addEventListener('input', function() { PC_.mk[this.dataset.id] = this.value.toUpperCase().replace(/\s+/g, ''); }); });
   // Tildar NO redibuja: solo cambia la casilla y el contador (la pantalla no se mueve)
@@ -9255,6 +9255,22 @@ function pcContador() {
     if (mezcla) { g.innerHTML = 'Carga mezclada (' + pcEsc(lu.join(' + ')) + '): no se puede armar'; g.style.background = '#fee2e2'; }
   }
 }
+// ¿Alcanzan los materiales para las titulares tildadas? (receta de cada cubierta contra el stock de hoy)
+async function pcMateriales() {
+  var tit = Object.keys(PC_.sel).filter(function(i) { return PC_.sel[i] === 'TITULAR'; });
+  if (!tit.length) { toast('Marcá las cubiertas titulares', 'r2'); return; }
+  var b = $id('pc-mat'); if (b) b.disabled = true;
+  try { var r = await gsRun('gsPC_MaterialesCarga', tit); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } pcMatPintar(r); }
+  catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
+}
+function pcMatPintar(r) {
+  var el = $id('pc-mat-res'); if (!el) return;
+  var f = function(n) { return String(Math.round(n * 1000) / 1000).replace('.', ','); };
+  el.innerHTML = '<div class="al ' + (r.FALTAN ? 'al-r' : 'al-g') + ' mt3"><b>' + (r.FALTAN ? '⛔ Faltan ' + r.FALTAN + (r.FALTAN === 1 ? ' material' : ' materiales') + ' para esta carga' : '✓ Alcanzan los materiales para esta carga') + '</b> <span class="tdim" style="font-size:12px">(receta de cada cubierta contra el stock de hoy)</span></div>' +
+    '<div class="tw"><table style="font-size:12px"><thead><tr><th>Material</th><th class="tr">Hace falta</th><th class="tr">Hay</th><th class="tr">Falta</th></tr></thead><tbody>' +
+    r.LINEAS.map(function(x) { return '<tr' + (x.FALTA ? ' style="background:#fee2e2"' : '') + '><td>' + pcEsc(x.NOMBRE) + (x.TIPO === 'HERRAMENTAL' ? ' <span class="tdim">(piezas)</span>' : '') + '</td><td class="tr">' + f(x.NECESITA) + ' ' + pcEsc(x.UNIDAD) + '</td><td class="tr">' + f(x.HAY) + '</td><td class="tr">' + (x.FALTA ? '<b style="color:#b91c1c">' + f(x.FALTA) + '</b>' : '—') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  el.scrollIntoView({ block: 'nearest' });
+}
 async function pcCrearOT() {
   var ids = Object.keys(PC_.sel);
   var tit = ids.filter(function(i) { return PC_.sel[i] === 'TITULAR'; }), sup = ids.filter(function(i) { return PC_.sel[i] === 'SUPLENTE'; });
@@ -9267,7 +9283,18 @@ async function pcCrearOT() {
   var b = $id('pc-crear'); b.disabled = true;
   try {
     var marcas = {}; tit.concat(sup).forEach(function(i) { if (PC_.mk[i]) marcas[i] = PC_.mk[i]; });
-    var r = await gsRun('gsPC_CrearOT', { TITULARES: tit, SUPLENTES: sup, LINEA: linea, TOPE: l ? l.CAPACIDAD : '', RESPONSABLE: $v('pc-resp'), OBSERVACIONES: $v('pc-obs'), MARCAS: marcas });
+    var dat = { TITULARES: tit, SUPLENTES: sup, LINEA: linea, TOPE: l ? l.CAPACIDAD : '', RESPONSABLE: $v('pc-resp'), OBSERVACIONES: $v('pc-obs'), MARCAS: marcas };
+    var r = await gsRun('gsPC_CrearOT', dat);
+    if (r && !r.ok && r.FALTAN_MATERIALES) {
+      // Faltan materiales: se ve qué falta antes de armar. Opción: no armar, o armar igual diciendo por qué
+      pcMatPintar(r.FALTAN_MATERIALES);
+      var si = await uiConfirmar('Faltan materiales para esta carga (' + r.FALTAN_MATERIALES.FALTAN + ' en rojo, abajo del botón). ¿Armarla igual?', 'Armar igual');
+      if (!si) { toast('No se armó: conseguí o reemplazá lo que falta y volvé a armarla', 'r2'); return; }
+      var mot = await uiPedir('¿Por qué se arma igual? (con qué se reemplaza o cuándo llega)', { obligatorio: true });
+      if (!mot) return;
+      dat.ARMAR_CON_FALTANTES = true; dat.MOTIVO_FALTANTES = mot;
+      r = await gsRun('gsPC_CrearOT', dat);
+    }
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
     PC_.mk = {};
     toast('Orden de servicio ' + r.NRO_OT + ' creada (' + r.LINEA + ', tope ' + r.TOPE + ') ✓', 'g');
