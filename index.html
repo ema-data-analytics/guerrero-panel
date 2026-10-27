@@ -1417,7 +1417,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271846';
+var EMA_BUILD = '202610271847';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -1443,7 +1443,7 @@ setInterval(emaChequearVersion, 60000);
 document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') emaChequearVersion(); });
 </script>
 <style>
-#ema-ver-nueva{position:fixed;left:50%;transform:translateX(-50%);top:8px;z-index:100000;background:#2563eb;color:#fff;border:0;border-radius:999px;padding:14px 22px;font-size:17px;font-weight:800;box-shadow:0 6px 20px rgba(37,99,235,.55);cursor:pointer;white-space:nowrap;max-width:calc(100vw - 16px);animation:emaLatido 1.6s ease-in-out infinite;touch-action:manipulation}
+#ema-ver-nueva{position:fixed;left:50%;transform:translateX(-50%);top:8px;z-index:100000;background:#2563eb;color:#fff;border:0;border-radius:999px;padding:12px 20px;font-size:16px;line-height:1.25;font-weight:800;box-shadow:0 6px 20px rgba(37,99,235,.55);cursor:pointer;white-space:normal;text-align:center;width:max-content;max-width:calc(100vw - 16px);animation:emaLatido 1.6s ease-in-out infinite;touch-action:manipulation}
 @keyframes emaLatido{0%,100%{box-shadow:0 6px 20px rgba(37,99,235,.55)}50%{box-shadow:0 6px 28px rgba(37,99,235,.95)}}
 </style>
 
