@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "89b1983d8272"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "99425ea9d096"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -9005,9 +9005,15 @@ function pcVidaTiempo(k, v) {
     var ests = pcEstLin(x.os.LINEA), nomE = {}; ests.forEach(function(e) { nomE[String(e.ID_ESTACION)] = e.ORDEN + '. ' + e.NOMBRE; });
     add(x.osF, 'Carga', 'Entró a la orden de servicio ' + pcEsc(x.os.NRO_OT) + ' (línea ' + pcEsc(x.os.LINEA) + ')' + (x.it.ROL === 'SUPLENTE' ? ' como suplente' : ''), x.it.PASADA > 1 ? 'Corrección: ' + pcEsc(x.it.MOTIVO_REPROCESO || '') : '');
     (x.it.REGISTROS || []).forEach(function(g) { var ins1 = /^1\./.test(nomE[g.ID_ESTACION] || '') && x.it.PASADA <= 1 ? [v.INSPECCION === 'APTA' ? 'Apta' : v.INSPECCION === 'NO_APTA' ? 'No apta' : '', v.BANDA ? 'banda ' + v.BANDA : '', (v.PARCHES || []).length ? 'parches: ' + v.PARCHES.join(', ') : '', (v.EXTRAS || []).length ? 'extras: ' + v.EXTRAS.join(', ') : ''].filter(Boolean).join(' · ') : '';
-      add(g.FECHA, 'Estación', pcEsc(nomE[g.ID_ESTACION] || g.ID_ESTACION) + ' · ' + pcEsc(g.RESULTADO || 'OK'), pcEsc([g.OPERARIO || g.USUARIO, g.OBSERVACION, ins1].filter(Boolean).join(' · '))); });
+      var nomI = {}; (PC_.d.insumos || []).forEach(function(q) { nomI[q.ID_INSUMO] = q.NOMBRE_INSUMO; });
+      var us = (x.it.CONSUMOS || []).filter(function(c) { return String(c.ID_REG) === String(g.ID_REG) && String(c.ESTADO) !== 'ANULADO'; }).map(function(c) { var nm = nomI[c.ID_INSUMO] || nomI[c.ID_INSUMO_RECETA] || c.ID_INSUMO; return +c.NO_USO === 1 ? nm + ': no se usó' : nm + ': ' + (Math.round((+c.REAL || 0) * 1000) / 1000).toString().replace('.', ',') + ' ' + (c.UNIDAD || '') + (+c.REEMPLAZO === 1 ? ' (reemplazo)' : ''); });
+      var hz = (x.it.HERRAMENTAL || []).filter(function(p) { return String(p.ID_REG || '') === String(g.ID_REG); }).map(function(p) { return 'pieza ' + p.CODIGO; });
+      add(g.FECHA, 'Estación', pcEsc(nomE[g.ID_ESTACION] || g.ID_ESTACION) + ' · ' + pcEsc(g.RESULTADO || 'OK') + (g.PASADA > 1 ? ' (' + g.PASADA + 'ª pasada)' : ''), pcEsc([g.OPERARIO || g.USUARIO, g.OBSERVACION, ins1].filter(Boolean).join(' · ')) + (us.length || hz.length ? '<div style="color:#555">' + pcEsc(us.concat(hz).join(' · ')) + '</div>' : '')); });
+    if (x.it.ESTADO === 'RETIRADA') add(x.osF, 'Carga', 'Salió de la orden de servicio ' + pcEsc(x.os.NRO_OT) + ' (volvió a esperar otra carga)', pcEsc(x.it.OBSERVACIONES || ''));
+    if (x.it.ESTADO === 'RECHAZADA') add((x.it.REGISTROS || []).reduce(function(m, g) { return Math.max(m, +g.FECHA || 0); }, +x.osF || 0), 'Rechazo', 'No apta / rechazada en ' + pcEsc(x.os.NRO_OT), pcEsc(v.MOTIVO_RECHAZO || ''));
     var ac = pcAcDeCub(x.auto, x.it.ID_CUB);
-    if (ac) { add(ac.INICIO, 'Autoclave', 'Empezó la cocción', x.it.POS_AUTOCLAVE ? 'lugar ' + pcEsc(x.it.POS_AUTOCLAVE) : ''); if (ac.FIN) add(ac.FIN, 'Autoclave', 'Terminó la cocción', +ac.MINUTOS ? Math.round(+ac.MINUTOS) + ' min' : ''); }
+    if (ac) { (ac.LECTURAS || []).forEach(function(l) { add(l.FECHA, 'Autoclave', 'Lectura ' + String(l.TEMP).replace('.', ',') + ' °C · ' + String(l.PRESION).replace('.', ',') + ' ' + pcEsc(l.UNIDAD || ''), pcEsc([l.OPERARIO, l.FOTO_ID ? 'con foto' : 'sin foto', l.FUERA, l.JUSTIFICACION ? 'explicación: ' + l.JUSTIFICACION : ''].filter(Boolean).join(' · '))); });
+      add(ac.INICIO, 'Autoclave', 'Empezó la cocción', x.it.POS_AUTOCLAVE ? 'lugar ' + pcEsc(x.it.POS_AUTOCLAVE) : ''); if (ac.FIN) add(ac.FIN, 'Autoclave', 'Terminó la cocción', +ac.MINUTOS ? Math.round(+ac.MINUTOS) + ' min' : ''); }
     (x.rem || []).forEach(function(r) { if (!(r.ITEMS || []).some(function(t) { return String(t.ID_CUB) === String(v.ID_CUB); })) return;
       add(r.FECHA, 'Remito', 'Remito ' + pcEsc(r.NRO) + (r.TIPO ? ' (' + pcEsc(r.TIPO) + ')' : ''), '');
       if (r.ESTADO === 'ENTREGADO') add(r.FECHA_ENTREGA, 'Entrega', 'Entregada al cliente · remito firmado', ''); });
