@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "6241bb8913da"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f1d456114ab3"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -10298,7 +10298,8 @@ function puResuelta(r) {
   if (puMedir(r.l) && !(puN(r.real) > 0) && !puSuper()) return false;
   return Math.abs(puDif(r)) <= (PU_.d.tolerancia || 0) + 1e-9 || !!r.motivo;
 }
-function puSinStock(l) { return l.TIPO_LINEA !== 'HERRAMENTAL' && l.ID_INSUMO && l.STOCK !== null && l.STOCK !== undefined && Number(l.STOCK) <= 0; }
+// Sin stock = no hay o no alcanza para lo que pide la receta (en ese caso el reemplazo no pide clave)
+function puSinStock(l) { return l.TIPO_LINEA !== 'HERRAMENTAL' && l.ID_INSUMO && l.STOCK !== null && l.STOCK !== undefined && (Number(l.STOCK) <= 0 || Number(l.STOCK) < (Number(l.CANTIDAD) || 0) - 1e-9); }
 function puHayReemplazo() { return PU_.rows.some(function(r) { return !r.no && r.reemp && !puSinStock(r.l); }); }
 function puFilaHTML(r, k) {
   var l = r.l, cls = r.no ? 'no' : (puResuelta(r) ? 'ok' : (r.ok ? 'warn' : ''));
