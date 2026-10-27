@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "1c93067ec53e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "6241bb8913da"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -9305,7 +9305,7 @@ async function pcHistCargar() {
 // Etapa de una cubierta para el historial: [clave, clase, texto]
 function pcHistEtapa(c) {
   if (c.ESTADO === 'ANULADA') return ['ANULADA', 'b-gray', 'Anulada'];
-  if (c.ESTADO === 'RECHAZADA') { var rf = /^Rechazo final/i.test(String(c.MOTIVO_RECHAZO || '')) ? 'Rechazo final' : 'No apta'; return ['NOAPTA', 'b-red', c.FECHA_DEVOLUCION || c.REMITO_ESTADO === 'ENTREGADO' ? rf + ' · devuelta' : rf]; }
+  if (c.ESTADO === 'RECHAZADA') { var rf = /^Rechazo final/i.test(String(c.MOTIVO_RECHAZO || '')) ? 'Rechazo final' : (c.INSPECCION === 'APTA' ? 'Rechazada' : 'No apta'); return ['NOAPTA', 'b-red', c.FECHA_DEVOLUCION || c.REMITO_ESTADO === 'ENTREGADO' ? rf + ' · devuelta' : rf]; }
   if (c.REMITO_ESTADO === 'ENTREGADO') return ['ENTREGADA', 'b-green', 'Entregada'];
   if (c.ESTADO === 'TERMINADA' || c.ESTADO === 'ENTREGADA') return ['TERMINADA', 'b-purple', c.REMITO ? 'Terminada · remito sin firmar' : 'Terminada'];
   if (c.ESTADO === 'EN_OT') return ['LINEA', 'b-blue', 'En la línea' + (c.ESTACION ? ' · ' + c.ESTACION : '')];
