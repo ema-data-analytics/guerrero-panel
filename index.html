@@ -1427,7 +1427,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610272022';
+var EMA_BUILD = '202610272024';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -11877,10 +11877,10 @@ function pnPintar() {
   var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
   var marcas = {}; (d.PRECIOS || []).forEach(function(p) { marcas[p.MARCA] = 1; });
   var h = '<div class="pn-wrap">' +
-    '<div class="pn-top"><img src="' + pnEsc(logo) + '" alt="Vulcan Tread"/><div><h2>Precios cubiertas nuevas</h2><div class="pn-sub">' + (d.PRECIOS || []).length + ' medidas · precios de venta con IVA</div></div>' +
+    '<div class="pn-top"><img src="' + pnEsc(logo) + '" alt="Vulcan Tread"/><div><h2>' + (PN_.div === 'INS' ? 'Lista de precios · Insumos y accesorios' : 'Lista de precios · Cubiertas nuevas') + '</h2><div class="pn-sub">' + (d.PRECIOS || []).filter(function(p) { return (PN_.div === 'INS') === (p.RUBRO === 'INSUMOS'); }).length + (PN_.div === 'INS' ? ' productos' : ' medidas') + ' · precios de venta con IVA</div></div>' +
     '<div class="pn-acc"><button class="btn btn-sm" onclick="PN_.lpdf=null;pnListasHoja()">📄 Listas PDF</button><button class="btn btn-sm" onclick="pcAyuda(\'precios\')">❓ Ayuda</button>' +
     (document.body.classList.contains('modo-puesto') ? '<button class="btn btn-sm" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Salir</button>' : '') + '</div></div>';
-  if ((d.PROMOS || []).length) {
+  if ((d.PROMOS || []).length && PN_.div !== 'INS') {
     h += '<div class="pn-promos" id="pn-promos">';
     d.PROMOS.forEach(function(p) {
       var n = (d.ITEMS || []).filter(function(it) { return it.ID_PROMO === p.ID_PROMO; }).length;
@@ -16417,7 +16417,7 @@ async function renderMargen() {
     try { MG_.d = await gsRun('gsPN_Margen'); } catch (e) { el.innerHTML = '<div class="al al-r">' + pcEsc(e.message) + '</div>'; return; }
     if (!MG_.d || !MG_.d.ok) { el.innerHTML = '<div class="al al-r">' + pcEsc((MG_.d && MG_.d.error) || 'No se pudo') + '</div>'; MG_.d = null; return; }
   }
-  el.innerHTML = '<div class="mg-wrap"><div style="font-size:20px;font-weight:800;margin-bottom:2px">📊 Margen con descuento</div><div class="tdim" style="font-size:13px;margin-bottom:10px">Poné las cubiertas (código o medida) y mové el descuento: el semáforo te dice si conviene.</div>' +
+  el.innerHTML = '<div class="mg-wrap"><div style="font-size:20px;font-weight:800;margin-bottom:2px">📊 Margen con descuento</div><div class="tdim" style="font-size:13px;margin-bottom:10px">Elegí lo que vas a vender y mové el descuento: el semáforo te dice si conviene.</div>' +
     '<div id="mg-rub" class="mg-chips">' + mgChips() + '</div><div style="position:relative"><input class="fi" id="mg-q" autocomplete="off" placeholder="Medida, marca o código: 185/65R15, giti…" style="font-size:16px;min-height:46px;width:100%" oninput="mgBuscar()" onkeydown="if(event.key===\'Enter\')mgEnter()"><div id="mg-sug"></div></div>' +
     '<div id="mg-lista" class="mt2"></div><div id="mg-desc" class="mt2"></div><div id="mg-sem" class="mt2"></div>' +
     '<div class="tdim mt3" style="font-size:11px">Verde: queda 10 o más de cada 100 pesos. Amarillo: entre 5 y 10. Rojo: menos de 5 (no conviene). Cuenta: costo de la cubierta + flete + Ingresos Brutos e impuesto al cheque. No incluye tarjeta, descuento de cheques ni gastos del negocio: si paga con tarjeta, quedarse en verde.</div></div>';
@@ -16436,6 +16436,7 @@ function mgChips() {
 function mgNorm(t) { return String(t || '').toUpperCase().replace(/[\s\/\-.,R]/g, ''); }
 // Lista para tildar varias: cada toque agrega o saca la cubierta (✓). La lista queda abierta hasta «Listo».
 function mgBuscar() {
+  if ($id('mg-q')) $id('mg-q').placeholder = MG_.div === 'INS' ? 'Nombre o código: parche, raspa, AA0775…' : 'Medida, marca o código: 185/65R15, giti…';
   var q = $v('mg-q').trim(), box = $id('mg-sug'); if (!box) return;
   if (q.length < 2 && !MG_.rubro && MG_.div !== 'INS') { box.innerHTML = ''; return; }
   var qs = q.toUpperCase().split(/\s+/).filter(function(w) { return w; }), qn = mgNorm(q);
