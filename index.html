@@ -778,6 +778,7 @@ async function doLogin() {
   if (btn) { btn.textContent = 'Ingresar →'; btn.disabled = false; }
 
   if (!data || !data.ok) {
+    if (data && data.error && data.error.indexOf('versión nueva del sistema') !== -1 && typeof emaBotonNueva === 'function') emaBotonNueva('');
     errEl.textContent = (data && data.error) ? data.error : 'Usuario o contraseña incorrectos';
     errEl.style.display = 'block'; return;
   }
@@ -855,7 +856,7 @@ function sbLlamar(fn, args) {
   return fetch(window.EMA_SB.url + '/functions/v1/gs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'apikey': window.EMA_SB.key },
-    body: JSON.stringify({ esquema: window.EMA_SB.esquema, v: window.EMA_SB.v || '', fn: fn, args: args })
+    body: JSON.stringify({ esquema: window.EMA_SB.esquema, v: window.EMA_SB.v || '', pv: (typeof EMA_BUILD !== 'undefined' && EMA_BUILD.indexOf('__') !== 0) ? EMA_BUILD : '', fn: fn, args: args })
   }).then(function(r) {
     return r.text().then(function(t) {
       var d = null;
@@ -876,6 +877,13 @@ function gsRun(fnName) {
         var limpio = msg.substring(msg.indexOf('SESION:') + 7).trim();
         if (SES) doLogout(limpio);
         return;   // la pantalla anterior se descarta: no se propaga el error
+      }
+      // El servidor no deja trabajar con una versión vieja de la página: aparece el botón azul para actualizar
+      if (msg.indexOf('versión nueva del sistema') !== -1) {
+        if (typeof emaBotonNueva === 'function') emaBotonNueva('');
+        toast('🔄 Hay una versión nueva: tocá el botón azul de arriba', 'w');
+        reject(new Error(msg));
+        return;
       }
       if (msg.indexOf('PERMISO:') !== -1) {
         var txt = msg.substring(msg.indexOf('PERMISO:') + 8).trim();
@@ -1417,7 +1425,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271856';
+var EMA_BUILD = '202610271902';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -1453,13 +1461,16 @@ function emaActualizar(v) {
   try { sessionStorage.setItem('ema_recarga_' + v, '1'); sessionStorage.setItem('ema_actualizado', v); } catch (e) {}
   location.replace(location.pathname + '?v=' + v + location.hash);
 }
+// Siempre un botón azul a la vista (en la entrada, en el celular, en la tablet y en la PC) hasta que lo tocan
+function emaBotonNueva(v) {
+  var b = $id('ema-ver-nueva');
+  if (!b) { b = document.createElement('button'); b.id = 'ema-ver-nueva'; b.type = 'button'; document.body.appendChild(b); }
+  b.onclick = function() { emaActualizar(v || String(Date.now())); };
+  b.innerHTML = '🔄 Hay una versión nueva · <u>Actualizar</u>';
+}
 function emaChequearVersion() {
   emaVersionNueva(function(v) {
-    // Siempre un botón azul a la vista (en la entrada, en el celular, en la tablet y en la PC) hasta que lo tocan
-    var b = $id('ema-ver-nueva');
-    if (!b) { b = document.createElement('button'); b.id = 'ema-ver-nueva'; b.type = 'button'; document.body.appendChild(b); }
-    b.onclick = function() { emaActualizar(v); };
-    b.innerHTML = '🔄 Hay una versión nueva · <u>Actualizar</u>';
+    emaBotonNueva(v);
   });
 }
 setTimeout(function() { emaVersionPintar(); emaAvisoActualizado(); emaChequearVersion(); }, 1500);
