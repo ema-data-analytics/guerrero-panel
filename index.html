@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a9d272413140"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "2eeb2ebee854"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1429,7 +1429,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610272049';
+var EMA_BUILD = '202610272057';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3704,7 +3704,9 @@ async function renderCargaCompras() {
 
   el.innerHTML =
   '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-cart-plus" style="color:var(--accent)"></i> Compras</div>'+
-  '<div class="page-sub">FACTURAS Y NOTAS DE CRÉDITO DE PROVEEDORES · CON IVA DISCRIMINADO</div></div></div>'+
+  '<div class="page-sub">FACTURAS Y NOTAS DE CRÉDITO DE PROVEEDORES · CON IVA DISCRIMINADO</div></div>'+
+  '<div><button class="btn btn-s" onclick="lppAbrir()"><i class="fas fa-list"></i> Listas de precios de proveedores</button></div></div>'+
+  '<div class="al mb3" style="margin:0 16px;font-size:12px">El <b>costo</b> de cada insumo y artículo sale de la <b>lista vigente del proveedor</b>. La factura no lo cambia: si el precio de la factura es distinto, queda marcada la diferencia (P. Lista contra P. Factura).</div>'+
   '<div class="content"><div class="g2">'+
 
   // ── COLUMNA IZQUIERDA ──
@@ -4254,6 +4256,74 @@ async function compraAnular(id, btn) {
     histCompras();
   } catch(e){toast('Error: '+e.message,'r2');}
   finally { delete _compAnulando[id]; if(btn) btn.disabled=false; }
+}
+
+// ── Listas de precios de los proveedores: una vigente por proveedor, las anteriores quedan vencidas ──
+var LPP_ = { d: null, filas: [] };
+function lppEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+async function lppAbrir() {
+  showModal('<div class="mh"><span class="mt">📋 Listas de precios de proveedores</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" id="lpp-box"><div class="tdim">Cargando…</div></div>', 'md-lg');
+  try { LPP_.d = await gsRun('gsLPP_Datos'); } catch (e) { $id('lpp-box').innerHTML = '<div class="al al-r">' + lppEsc(e.message) + '</div>'; return; }
+  lppPintar();
+}
+function lppPintar() {
+  var d = LPP_.d, box = $id('lpp-box'); if (!box) return;
+  var est = function(e) { return e === 'VIGENTE' ? '<span class="badge b-green">VIGENTE</span>' : '<span class="badge b-gray">' + lppEsc(e) + '</span>'; };
+  var h = '<div class="al mb3" style="font-size:12px">Cada proveedor tiene <b>una sola lista vigente</b>. Al grabar una nueva, la anterior queda <b>vencida</b> (guardada) y el costo de cada insumo o artículo que coincide por código pasa a ser el de la lista nueva (precio de lista menos el descuento que nos hacen).</div>' +
+    '<div class="tw" style="max-height:220px"><table style="font-size:12px"><thead><tr><th>Proveedor</th><th>Lista</th><th>Vigencia</th><th class="tr">Desc.</th><th class="tr">Ítems</th><th>Estado</th><th></th></tr></thead><tbody>' +
+    (d.LISTAS.length ? d.LISTAS.map(function(l) { return '<tr><td>' + lppEsc(l.PROVEEDOR) + '</td><td>' + lppEsc(l.NOMBRE) + '</td><td class="mono">' + lppEsc(l.FECHA_VIGENCIA.split('-').reverse().join('/')) + '</td><td class="mono tr">' + l.DESCUENTO + '%</td><td class="mono tr">' + l.ITEMS + '</td><td>' + est(l.ESTADO) + '</td><td><button class="btn btn-xs btn-info" onclick="lppVer(' + l.ID_LPP + ')"><i class="fas fa-eye"></i></button></td></tr>'; }).join('') : '<tr><td colspan="7" class="tdim tc">Todavía no hay listas cargadas.</td></tr>') +
+    '</tbody></table></div><div id="lpp-det"></div>';
+  if (d.PUEDE) h += '<div class="sec-div mt3">CARGAR UNA LISTA NUEVA</div>' +
+    '<div class="fr2"><div class="fg"><label class="fl">Proveedor *</label><select id="lpp-prov" class="fs"><option value="">Elegí…</option>' + d.PROVEEDORES.map(function(p) { return '<option value="' + lppEsc(p.ID_PROVEEDOR) + '">' + lppEsc(p.PROVEEDOR) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Nombre o número de la lista *</label><input id="lpp-nom" class="fi" placeholder="Ej: Lista N°199"></div></div>' +
+    '<div class="fr2"><div class="fg"><label class="fl">Vigente desde *</label><input id="lpp-fec" type="date" class="fi"></div>' +
+    '<div class="fg"><label class="fl">Descuento que nos hacen (%)</label><input id="lpp-desc" class="fi" inputmode="decimal" placeholder="Ej: 33,33"></div></div>' +
+    '<div class="fg"><label class="fl">Renglones: código y precio de lista sin IVA</label><input type="file" id="lpp-arch" accept=".csv,.txt" class="fi" onchange="lppArchivo(this)">' +
+    '<textarea id="lpp-txt" class="fi" style="min-height:90px;font-family:monospace;font-size:12px" placeholder="Pegá desde Excel o el CSV del proveedor: código;descripción;precio (o código;precio), un renglón por producto" oninput="lppLeer()"></textarea><div id="lpp-cnt" class="tdim" style="font-size:12px"></div></div>' +
+    '<div class="fg"><label class="fl">Observación</label><input id="lpp-obs" class="fi" placeholder="Opcional"></div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="lppEnviar(1)"><i class="fas fa-search"></i> Ver qué cambia</button><button class="btn btn-p" id="lpp-ok" onclick="lppEnviar(0)"><i class="fas fa-check"></i> Grabar lista (queda vigente)</button></div><div id="lpp-res" class="mt3"></div>';
+  else h += '<div class="tdim mt3" style="font-size:12px">Las listas nuevas las carga un administrador.</div>';
+  box.innerHTML = h;
+}
+function lppArchivo(inp) {
+  var f = inp.files && inp.files[0]; if (!f) return;
+  var r = new FileReader(); r.onload = function() { $id('lpp-txt').value = String(r.result || ''); lppLeer(); };
+  r.readAsText(f, /\.csv$/i.test(f.name) ? 'windows-1252' : 'utf-8');
+}
+function lppLeer() {
+  var t = $v('lpp-txt'), filas = [];
+  String(t || '').split(/\r?\n/).forEach(function(l) {
+    if (!l.trim()) return; var c = l.split(/\t|;/).map(function(x) { return x.trim(); });
+    if (c.length < 2) return;
+    var cod = c[0], pre = c[c.length - 1], des = c.length > 2 ? c.slice(1, -1).join(' ') : '';
+    if (!/[0-9]/.test(pre) || /^(sku|c[oó]digo|cod)$/i.test(cod)) return;
+    filas.push({ COD: cod, DESC: des, PRECIO: pre });
+  });
+  LPP_.filas = filas;
+  var e = $id('lpp-cnt'); if (e) e.textContent = filas.length ? filas.length + ' renglones leídos' : '';
+}
+async function lppEnviar(ver) {
+  lppLeer();
+  var o = { ID_PROVEEDOR: $v('lpp-prov'), NOMBRE: $v('lpp-nom'), FECHA_VIGENCIA: $v('lpp-fec'), DESCUENTO: String($v('lpp-desc') || '0').replace(',', '.'), OBS: $v('lpp-obs'), FILAS: LPP_.filas, VER: ver ? 1 : 0 };
+  if (!ver) { var ok = await uiConfirmar('¿Grabar la lista? Pasa a ser la vigente de ese proveedor (la anterior queda vencida) y cambia el costo de los productos que coinciden.'); if (!ok) return; }
+  var res = $id('lpp-res'); res.innerHTML = '<div class="tdim">' + (ver ? 'Calculando…' : 'Grabando…') + '</div>';
+  var r; try { r = await gsRun('gsLPP_Grabar', o); } catch (e) { res.innerHTML = '<div class="al al-r">' + lppEsc(e.message) + '</div>'; return; }
+  if (!r || !r.ok) { res.innerHTML = '<div class="al al-r">' + lppEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
+  var R = r.RESUMEN;
+  var txt = '<b>' + R.n + '</b> coinciden (' + R.ins + ' insumos · ' + R.art + ' artículos) · <b style="color:#b91c1c">' + R.sube + ' suben</b> · <b style="color:#15803d">' + R.baja + ' bajan</b> · ' + R.nuevo + ' sin costo antes';
+  if (!ver) { res.innerHTML = '<div class="al al-g">✓ Lista grabada y vigente. ' + txt + (r.SIN ? ' · ' + r.SIN + ' códigos no están en el sistema' : '') + '</div>'; toast('Lista grabada ✓', 'g'); LPP_.d = await gsRun('gsLPP_Datos'); var keep = res.innerHTML; lppPintar(); $id('lpp-res').innerHTML = keep; return; }
+  var pc = function(x) { return x.COSTO_ANTERIOR > 0 ? Math.round((x.COSTO / x.COSTO_ANTERIOR - 1) * 1000) / 10 : null; };
+  var L = r.LINEAS.slice().sort(function(a, b) { return Math.abs(pc(b) || 0) - Math.abs(pc(a) || 0); });
+  res.innerHTML = '<div class="al">' + txt + (r.SIN.length ? ' · <b>' + r.SIN.length + '</b> códigos no están en el sistema' : '') + '</div>' +
+    '<div class="tw" style="max-height:300px"><table style="font-size:11px"><thead><tr><th>Código</th><th>Qué es</th><th class="tr">Lista</th><th class="tr">Costo antes</th><th class="tr">Costo nuevo</th><th class="tr">Cambio</th></tr></thead><tbody>' +
+    L.slice(0, 300).map(function(x) { var p = pc(x); return '<tr><td class="mono">' + lppEsc(x.COD) + '</td><td>' + lppEsc(x.DESCRIPCION) + ' <span class="tdim">(' + (x.TIPO === 'INSUMO' ? 'insumo' : 'artículo') + ')</span></td><td class="mono tr">' + fmt(x.PRECIO_LISTA) + '</td><td class="mono tr">' + (x.COSTO_ANTERIOR ? fmt(x.COSTO_ANTERIOR) : '—') + '</td><td class="mono tr" style="font-weight:700">' + fmt(x.COSTO) + '</td><td class="mono tr" style="color:' + (p > 0 ? '#b91c1c' : (p < 0 ? '#15803d' : '#555')) + '">' + (p === null ? 'nuevo' : (p > 0 ? '+' : '') + String(p).replace('.', ',') + '%') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+    (L.length > 300 ? '<div class="tdim" style="font-size:11px">Se muestran los 300 con más cambio de ' + L.length + '.</div>' : '');
+}
+async function lppVer(id) {
+  var box = $id('lpp-det'); if (!box) return; box.innerHTML = '<div class="tdim">Cargando…</div>';
+  var r; try { r = await gsRun('gsLPP_Detalle', id); } catch (e) { box.innerHTML = '<div class="al al-r">' + lppEsc(e.message) + '</div>'; return; }
+  box.innerHTML = '<div class="sec-div mt3">RENGLONES DE LA LISTA</div><div class="tw" style="max-height:260px"><table style="font-size:11px"><thead><tr><th>Código</th><th>Qué es</th><th class="tr">Lista</th><th class="tr">Costo</th><th class="tr">Costo anterior</th></tr></thead><tbody>' +
+    r.DET.map(function(x) { return '<tr><td class="mono">' + lppEsc(x.COD) + '</td><td>' + lppEsc(x.DESCRIPCION) + '</td><td class="mono tr">' + fmt(x.PRECIO_LISTA) + '</td><td class="mono tr">' + fmt(x.COSTO) + '</td><td class="mono tr tdim">' + (x.COSTO_ANTERIOR ? fmt(x.COSTO_ANTERIOR) : '—') + '</td></tr>'; }).join('') + '</tbody></table></div>';
 }
 </script>
 
