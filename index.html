@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "560553fb4d2f"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "bc180533046d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -3613,7 +3613,7 @@ async function renderCargaCompras() {
 
   el.innerHTML =
   '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-cart-plus" style="color:var(--accent)"></i> Compras</div>'+
-  '<div class="page-sub">CON DISCRIMINACIÓN DE IVA · COMPRAS_ENC / COMPRAS_DET</div></div></div>'+
+  '<div class="page-sub">FACTURAS Y NOTAS DE CRÉDITO DE PROVEEDORES · CON IVA DISCRIMINADO</div></div></div>'+
   '<div class="content"><div class="g2">'+
 
   // ── COLUMNA IZQUIERDA ──
@@ -3724,11 +3724,8 @@ async function renderCargaCompras() {
 
   // Tipo recepción y botón confirmar
   '<div class="card mb4"><div class="card-body">'+
-  '<div class="fg mb3"><label class="fl">Tipo de Recepción *</label>'+
-  '<select id="comp-tipo-recepcion" class="fs">'+
-  '<option value="INMEDIATA">Recepción inmediata — suma stock ahora</option>'+
-  '<option value="REMITO">Con remito de entrada — suma stock al ingresar</option>'+
-  '</select></div>'+
+  '<input type="hidden" id="comp-tipo-recepcion" value="REMITO">'+
+  '<div class="al al-b mb3" style="font-size:12px"><b>📦 La factura no suma stock.</b> La mercadería entra con el <b>remito del proveedor</b> (botón 🚚 en el historial o en Stock). Si el proveedor no mandó remito, se genera un <b>remito interno</b> desde la factura y lo aprueba un administrador.</div>'+
   '<button id="comp-btn-ok" class="btn btn-p btn-xl" style="width:100%;justify-content:center" onclick="confirmarCompra()">'+
   '<i class="fas fa-check-circle"></i> Confirmar Compra</button>'+
   '</div></div>'+
@@ -4057,7 +4054,7 @@ async function confirmarCompra() {
   if(tipo!=='COMPRA'&&!$v('comp-nc-origen')){toast('Elegí la factura de origen','r2');return;}
   var datos={
     TIPO_COMP:tipo, FECHA:$v('ce-fecha'), NRO:$v('ce-nro'), ID_PROVEEDOR:provId,
-    ID_METODO_PAGO:$v('ce-metodo'), ID_CAJA:$v('ce-caja'), TIPO_RECEPCION:$v('comp-tipo-recepcion')||'INMEDIATA',
+    ID_METODO_PAGO:$v('ce-metodo'), ID_CAJA:$v('ce-caja'), TIPO_RECEPCION:'REMITO',
     ID_COMP_ORIGEN:$v('comp-nc-origen')||'', NC_IMPORTE:$v('comp-nc-importe'), NC_CONCEPTO:$v('comp-nc-concepto'), NC_IVA:$v('comp-nc-iva'),
     ITEMS: tipo==='NC_PROV_IMP'?[]:cartCompra.map(function(it){ return {TIPO:it.TIPO,ID:it.ID_ARTICULO,CANT:it.CANT_COMPRA,NETO:it.NETO,DTO:it.DTO,IVA:it.IVA_ALICUOTA,POR:it.POR,PRECIO_LISTA:it.PRECIO_LISTA}; })
   };
@@ -4066,9 +4063,11 @@ async function confirmarCompra() {
     var r=await gsRun('gsCOMP_Grabar',datos);
     if(!r||!r.ok){ toast((r&&r.error)||'No se pudo grabar','r2'); return; }
     ['compras_enc','compras_det','cta_cte_proveedores','bd_articulos','m_insumos','stock_movimientos','movimientos_caja'].forEach(function(k){_mcDel(k);});
-    toast((tipo==='COMPRA'?'Compra':'NC Proveedor')+' registrada — '+fmt(r.TOTAL)+(r.CONTADO?' (pagada contado)':'')+(r.PIEZAS?' · '+r.PIEZAS+' pieza(s) de herramental dadas de alta':'')+' ✓','g');
+    toast((tipo==='COMPRA'?'Compra':'NC Proveedor')+' registrada — '+fmt(r.TOTAL)+(r.CONTADO?' (pagada contado)':'')+' ✓','g');
     cartCompra=[];_compraImpuestos=[];
-    renderCargaCompras();
+    await renderCargaCompras();
+    // Si hay mercadería, se pide el remito en el momento
+    if(tipo==='COMPRA'&&r.ESTADO_RECEPCION==='PENDIENTE'&&typeof stIngresarRemitoCompra==='function') stIngresarRemitoCompra(r.ID_COMPRA_ENC);
   } catch(e){toast('Error: '+e.message,'r2');}
   finally { _compGrabando=false; if(btn) btn.disabled=false; }
 }
@@ -4108,7 +4107,7 @@ async function histCompras() {
       '<td>'+(rec&&rec!=='N/A'?'<span class="badge '+(pendRec?'b-orange':'b-gray')+'" style="font-size:9px">'+rec+'</span>':'')+'</td>'+
       '<td style="white-space:nowrap">'+
       '<button class="btn btn-xs btn-info" onclick="verDetalleCompra(\''+c.ID_COMPRA_ENC+'\')" title="Ver detalle"><i class="fas fa-eye"></i></button> '+
-      (pendRec&&typeof stIngresarRemitoCompra==='function'?'<button class="btn btn-xs btn-p" onclick="stIngresarRemitoCompra(\''+c.ID_COMPRA_ENC+'\')" title="Recibir mercadería"><i class="fas fa-dolly"></i></button> ':'')+
+      (pendRec&&typeof stIngresarRemitoCompra==='function'?'<button class="btn btn-xs btn-p" onclick="stIngresarRemitoCompra(\''+c.ID_COMPRA_ENC+'\')" title="Cargar el remito (entra al stock)"><i class="fas fa-truck"></i> Remito</button> ':'')+
       (anulado?'':'<button class="btn btn-xs btn-d" onclick="compraAnular(\''+c.ID_COMPRA_ENC+'\',this)" title="Anular"><i class="fas fa-ban"></i></button>')+
       '</td></tr>';
   }).join('');
@@ -5656,6 +5655,7 @@ async function renderStock() {
   '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-boxes" style="color:var(--accent)"></i> Control de Stock</div>'+
   '<div class="page-sub">INVENTARIO · REMITOS · MOVIMIENTOS</div></div></div>'+
   '<div class="content">'+
+  '<div id="st-rem-aprob"></div>'+
 
   // KPIs
   '<div class="g4 mb4">'+
@@ -5682,7 +5682,7 @@ async function renderStock() {
   '<div id="st-panel-inventario">'+
   '<div class="card"><div class="card-hd"><span class="card-title">Inventario Actual</span>'+
   '<div style="display:flex;gap:8px">'+
-  '<button class="btn btn-sm btn-p" onclick="stNuevoRemito()"><i class="fas fa-plus"></i> Nuevo Remito</button>'+
+  '<button class="btn btn-sm btn-p" onclick="stNuevoRemito()"><i class="fas fa-plus"></i> Remito interno (a aprobar)</button>'+
   '</div></div>'+
   '<div class="fbar" style="gap:8px">'+
   '<input id="st-buscar" class="fi" style="max-width:260px" placeholder="Buscar artículo..." oninput="stFiltrarInv()"/>'+
@@ -5744,7 +5744,7 @@ async function renderStock() {
 
   // Remitos generados
   '<div class="card"><div class="card-hd"><span class="card-title">Remitos Generados</span>'+
-  '<button class="btn btn-sm btn-p" onclick="stNuevoRemito()"><i class="fas fa-plus"></i> Nuevo Remito Manual</button></div>'+
+  '<button class="btn btn-sm btn-p" onclick="stNuevoRemito()"><i class="fas fa-plus"></i> Remito interno (a aprobar)</button></div>'+
   buildFiltroFechas('strem','stRefreshRemitos()')+
   '<div class="fbar" style="gap:8px">'+
   '<select id="strem-filtro-tipo" class="fs" style="max-width:180px" onchange="stRefreshRemitos()">'+
@@ -5774,7 +5774,7 @@ async function renderStock() {
 
   '</div>';
 
-  setTimeout(function(){ stRefreshRemitos(); stRefreshMovs(); stRefreshPendientes(); }, 50);
+  setTimeout(function(){ stRefreshRemitos(); stRefreshMovs(); stRefreshPendientes(); stRemAprobarCard(); }, 50);
 }
 
 function stTab(el, panel) {
@@ -5898,7 +5898,7 @@ function stNuevoRemito() {
     .map(function(a){ return '<option value="'+a.ID_ARTICULO+'" data-nom="'+encodeURIComponent(a.NOMBRE_ARTICULO||'')+'" data-stock="'+(a.STOCK||0)+'">'+a.NOMBRE_ARTICULO+' [stock: '+(a.STOCK||0)+']</option>'; }).join('');
 
   showModal(
-    '<div class="mh"><span class="mt">Nuevo Remito</span><button class="mc" onclick="closeModal()">×</button></div>'+
+    '<div class="mh"><span class="mt">Remito interno (lo aprueba un administrador)</span><button class="mc" onclick="closeModal()">×</button></div>'+
     '<div class="mb2">'+
     '<div class="fr mb3">'+
     '<div class="fg"><label class="fl">Fecha *</label><input id="rem-fecha" class="fi" type="date" value="'+fechaISO(new Date())+'"/></div>'+
@@ -5909,7 +5909,7 @@ function stNuevoRemito() {
     '</select></div></div>'+
     '<div class="fr mb3">'+
     '<div class="fg"><label class="fl">Comprobante asociado</label><input id="rem-comp" class="fi" placeholder="Ej: Factura #00001-00000001 (opcional)"/></div>'+
-    '<div class="fg"><label class="fl">Observación</label><input id="rem-obs" class="fi" placeholder="Opcional..."/></div>'+
+    '<div class="fg"><label class="fl">Motivo *</label><input id="rem-obs" class="fi" placeholder="Ej: ajuste por conteo, devolución de cliente…"/></div>'+
     '</div>'+
     '<div class="sec-div">ÍTEMS DEL REMITO</div>'+
     '<div class="fr mb3">'+
@@ -5961,71 +5961,22 @@ function remRenderItems() {
     }).join('')+'</tbody></table></div>';
 }
 
+// Remito interno: queda esperando aprobación de un administrador; recién ahí mueve el stock
+var _remGrabando=false;
 async function remGuardar() {
-  var fecha  = $v('rem-fecha');
-  var tipo   = $v('rem-tipo');
-  var comp   = $v('rem-comp');
-  var obs    = $v('rem-obs');
-  if (!fecha||!tipo) { toast('Completá fecha y tipo','r2'); return; }
+  if (_remGrabando) return;
+  var tipo=$v('rem-tipo'), obs=$v('rem-obs');
   if (!window._remItems||!window._remItems.length) { toast('Agregá al menos un artículo','r2'); return; }
-
-  var idRemito = await nextId('remitos_enc','ID_REMITO');
-  var nroRemito= 'REM-'+String(idRemito).padStart(6,'0');
-
+  if (String(obs).trim().length<5) { toast('Escribí el motivo del remito interno','r2'); $id('rem-obs').focus(); return; }
+  _remGrabando=true;
   try {
-    await ADB.put('remitos_enc',{
-      ID_REMITO:     idRemito,
-      FECHA:         new Date(fecha+'T00:00:00').getTime(),
-      TIPO:          tipo,
-      ID_COMPROBANTE:comp||'',
-      TIPO_COMP:     comp?'MANUAL':'',
-      NRO_REMITO:    nroRemito,
-      ID_TERCERO:    '',
-      ESTADO:        'CONFIRMADO',
-      OBSERVACION:   obs
-    });
-
-    for (var i=0; i<window._remItems.length; i++) {
-      var it = window._remItems[i];
-      var idDet = await nextId('remitos_det','ID_DET_REMITO');
-      await ADB.put('remitos_det',{
-        ID_DET_REMITO:  idDet,
-        ID_REMITO:      idRemito,
-        ID_ARTICULO:    it.ID_ARTICULO,
-        NOMBRE_ARTICULO:it.NOMBRE_ARTICULO,
-        CANTIDAD:       it.CANTIDAD,
-        UNIDAD_MEDIDA:  'UN'
-      });
-      // Mover stock
-      if (isGsMode()) {
-        await gsRun('gsMoverStock', it.ID_ARTICULO, it.CANTIDAD, tipo, 'REMITO', idRemito, nroRemito);
-      } else {
-        var art = await ADB.get('bd_articulos', it.ID_ARTICULO);
-        if (art) {
-          var stAntes = parseFloat(art.STOCK)||0;
-          art.STOCK = tipo==='ENTRADA' ? stAntes+it.CANTIDAD : stAntes-it.CANTIDAD;
-          await ADB.put('bd_articulos', art);
-          await ADB.put('stock_movimientos',{
-            ID_STOCK_MOV:  await nextId('stock_movimientos','ID_STOCK_MOV'),
-            FECHA:         new Date(fecha+'T00:00:00').getTime(),
-            ID_ARTICULO:   it.ID_ARTICULO,
-            NOMBRE_ARTICULO:it.NOMBRE_ARTICULO,
-            TIPO_MOV:      tipo,
-            CANTIDAD:      it.CANTIDAD,
-            STOCK_ANTES:   stAntes,
-            STOCK_DESPUES: art.STOCK,
-            ORIGEN:        'REMITO_MANUAL',
-            ID_ORIGEN:     idRemito,
-            NRO_REMITO:    nroRemito
-          });
-        }
-      }
-    }
-    _mcDel('bd_articulos'); _mcDel('remitos_enc'); _mcDel('stock_movimientos');
-    toast(nroRemito+' confirmado — '+(tipo==='ENTRADA'?'Entró':'Salió')+' stock ✓','g');
-    closeModal();
-    renderStock();
+    var r = await gsRun('gsREM_Interno', { FECHA:$v('rem-fecha'), TIPO:tipo, MOTIVO:obs, COMP:$v('rem-comp'), ITEMS: window._remItems.map(function(i){ return { ID_ARTICULO:i.ID_ARTICULO, CANT:i.CANTIDAD }; }) });
+    if (!r||!r.ok) { toast((r&&r.error)||'No se pudo','r2'); return; }
+    _mcDel('remitos_enc'); _mcDel('remitos_det');
+    toast(r.NRO_REMITO+' cargado: falta que lo apruebe un administrador (todavía no movió el stock)','b');
+    closeModal(); renderStock();
   } catch(e) { toast('Error: '+e.message,'r2'); }
+  finally { _remGrabando=false; }
 }
 
 async function stVerRemito(idRemito) {
@@ -6245,10 +6196,12 @@ async function stIngresarRemitoCompra(idCompra) {
     showModal(
       '<div class="mh"><span class="mt">Ingresar Remito de Entrada — '+(r.compra.NRO_FACTURA||idCompra)+'</span><button class="mc" onclick="closeModal()">×</button></div>'+
       '<div class="mb2">'+
-      '<div class="al al-b mb3" style="font-size:12px">Cargá lo que llegó. Si llegó menos, poné la cantidad real: lo que falta queda pendiente.</div>'+
-      '<div class="fr"><div class="fg mb3"><label class="fl">N° Remito del Proveedor</label><input id="rem-comp-nro" class="fi" placeholder="Ej: R-0001"/></div>'+
+      '<div class="flex gap2 mb3" style="flex-wrap:wrap"><label class="rem-or"><input type="radio" name="rem-or" value="PROVEEDOR" checked onchange="stRemOrigen()"> <b>🚚 Vino el remito del proveedor</b><small>Entra al stock al confirmar</small></label>'+
+      '<label class="rem-or"><input type="radio" name="rem-or" value="INTERNO" onchange="stRemOrigen()"> <b>📝 No vino remito</b><small>Se genera un remito interno desde la factura y lo aprueba un administrador</small></label></div>'+
+      '<div class="al al-b mb3" style="font-size:12px" id="rem-or-txt">Cargá lo que llegó. Si llegó menos, poné la cantidad real: lo que falta queda pendiente.</div>'+
+      '<div class="fr"><div class="fg mb3" id="rem-comp-nro-wrap"><label class="fl">N° Remito del Proveedor *</label><input id="rem-comp-nro" class="fi" placeholder="Ej: R-0001-00001234"/></div>'+
       '<div class="fg mb3"><label class="fl">Fecha de recepción</label><input id="rem-comp-fecha" class="fi" type="date" value="'+fechaISO(new Date())+'"/></div></div>'+
-      '<div class="fg mb3"><label class="fl">Observación</label><input id="rem-comp-obs" class="fi" placeholder="Opcional..."/></div>'+
+      '<div class="fg mb3"><label class="fl" id="rem-comp-obs-l">Observación</label><input id="rem-comp-obs" class="fi" placeholder="Opcional..."/></div>'+
       '<div class="tw"><table style="font-size:12px"><thead><tr><th>Artículo</th><th class="tc">Comprado</th><th class="tc">Ya recibido</th><th class="tc">Recibe ahora</th></tr></thead><tbody>'+
       rows.join('')+'</tbody></table></div>'+
       '</div>'+
@@ -6260,6 +6213,33 @@ async function stIngresarRemitoCompra(idCompra) {
   } catch(e) { toast('Error: '+e.message,'r2'); }
 }
 
+function stRemOrigen() {
+  var org = (document.querySelector('input[name="rem-or"]:checked')||{}).value||'PROVEEDOR', w=$id('rem-comp-nro-wrap'), t=$id('rem-or-txt'), l=$id('rem-comp-obs-l'), o=$id('rem-comp-obs');
+  if (w) w.style.display = org==='INTERNO' ? 'none' : '';
+  if (t) t.innerHTML = org==='INTERNO' ? '<b>Remito interno:</b> no entra al stock hasta que lo apruebe un administrador. Explicá por qué no vino el remito del proveedor.' : 'Cargá lo que llegó. Si llegó menos, poné la cantidad real: lo que falta queda pendiente.';
+  if (l) l.textContent = org==='INTERNO' ? 'Motivo (por qué no vino el remito) *' : 'Observación';
+  if (o) o.placeholder = org==='INTERNO' ? 'Ej: el proveedor lo manda la semana que viene' : 'Opcional...';
+}
+// ── Remitos internos para aprobar (solo administrador aprueba; hasta entonces no se mueve el stock) ──
+async function stRemAprobarCard() {
+  var box = $id('st-rem-aprob'); if (!box) return;
+  var r; try { r = await gsRun('gsREM_Pendientes'); } catch(e) { box.innerHTML=''; return; }
+  if (!r || !r.ok || !r.REMITOS.length) { box.innerHTML=''; return; }
+  box.innerHTML = '<div class="card mb4" style="border:2px solid var(--warn)"><div class="card-hd"><span class="card-title">📝 Remitos internos para aprobar</span><span class="badge b-warn">'+r.REMITOS.length+'</span></div><div class="card-body">'+
+    '<div class="tdim mb2" style="font-size:12px">'+(r.PUEDE_APROBAR?'Al aprobar entra (o sale) del stock. Si se rechaza, no se mueve nada.':'Los aprueba un administrador. Hasta entonces no se mueve el stock.')+'</div>'+
+    r.REMITOS.map(function(x){ return '<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px"><div class="flex" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><div><b class="mono">'+x.NRO_REMITO+'</b> · '+(x.TIPO==='SALIDA'?'Salida':'Entrada')+' · '+fmtD(x.FECHA)+(x.COMPRA?' · factura <b>'+x.COMPRA+'</b> de '+x.PROVEEDOR:' · remito interno')+'<div class="tdim" style="font-size:12px">Motivo: '+(x.OBS||'—')+' · cargó '+(x.USUARIO||'—')+'</div></div>'+
+      (r.PUEDE_APROBAR?'<div class="flex gap2"><button class="btn btn-g btn-sm" onclick="stRemAprobar('+x.ID_REMITO+',true)">✓ Aprobar</button><button class="btn btn-d btn-sm" onclick="stRemAprobar('+x.ID_REMITO+',false)">✗ Rechazar</button></div>':'<span class="badge b-warn">Esperando aprobación</span>')+'</div>'+
+      '<div style="font-size:12px;margin-top:6px">'+x.ITEMS.map(function(i){ return i.CANT+' × '+i.NOMBRE; }).join('<br>')+'</div></div>'; }).join('')+'</div></div>';
+}
+async function stRemAprobar(id, ok) {
+  var motivo='';
+  if (!ok) { motivo = await uiPedir('¿Por qué se rechaza el remito interno?', { obligatorio: true }); if (!motivo) return; }
+  else if (!(await uiConfirmar('¿Aprobar el remito? La mercadería entra (o sale) del stock ahora.'))) return;
+  try { var r = await gsRun('gsREM_Aprobar', id, ok, motivo); if (!r||!r.ok) return toast((r&&r.error)||'No se pudo','r2');
+    ['compras_enc','compras_det','remitos_enc','remitos_det','stock_movimientos','bd_articulos','m_insumos'].forEach(function(k){_mcDel(k);});
+    toast(ok?'Remito aprobado: entró al stock ✓':'Remito rechazado','g'); stRemAprobarCard(); if (typeof stRefreshCompPendientes==='function') stRefreshCompPendientes(); if (typeof stRefreshRemitos==='function') stRefreshRemitos();
+  } catch(e) { toast(e.message,'r2'); }
+}
 var _stRecibiendo=false;
 async function stConfirmarRemitoCompra(idCompra, nDets) {
   if (_stRecibiendo) return;
@@ -6271,10 +6251,12 @@ async function stConfirmarRemitoCompra(idCompra, nDets) {
   if (!items.length) { toast('No hay cantidades para ingresar','r2'); return; }
   _stRecibiendo=true; var b=$id('rem-comp-ok'); if(b) b.disabled=true;
   try {
-    var r = await gsRun('gsCOMP_Recibir', String(idCompra), $v('rem-comp-nro'), $v('rem-comp-obs'), items, $v('rem-comp-fecha'));
+    var org = (document.querySelector('input[name="rem-or"]:checked')||{}).value||'PROVEEDOR';
+    var r = await gsRun('gsCOMP_Recibir', String(idCompra), $v('rem-comp-nro'), $v('rem-comp-obs'), items, $v('rem-comp-fecha'), org);
     if (!r || !r.ok) { toast((r&&r.error)||'No se pudo registrar','r2'); return; }
     ['compras_enc','compras_det','remitos_enc','remitos_det','stock_movimientos','bd_articulos','m_insumos'].forEach(function(k){_mcDel(k);});
-    toast(r.NRO_REMITO+' — Recepción confirmada ('+(r.ESTADO_RECEPCION==='RECIBIDO'?'completa':'parcial')+') ✓','g');
+    if (r.PENDIENTE_APROBACION) toast(r.NRO_REMITO+' — Remito interno cargado: falta que lo apruebe un administrador (todavía no entra al stock)','b');
+    else toast(r.NRO_REMITO+' — Recepción confirmada ('+(r.ESTADO_RECEPCION==='RECIBIDO'?'completa':'parcial')+') ✓','g');
     closeModal();
     if (typeof stRefreshPendientes==='function') stRefreshPendientes();
     if (typeof stRefreshRemitos==='function') stRefreshRemitos();
@@ -6284,6 +6266,8 @@ async function stConfirmarRemitoCompra(idCompra, nDets) {
   finally { _stRecibiendo=false; if(b) b.disabled=false; }
 }
 </script>
+
+<style>.rem-or{flex:1;min-width:200px;border:2px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;display:flex;flex-direction:column;gap:2px}.rem-or small{color:var(--dim);font-size:11px}.rem-or:has(input:checked){border-color:var(--accent);background:var(--bg)}</style>
 
 <script>
 // ── GLOBALS DEL MÓDULO MAESTROS ─────────────────────────────────────
