@@ -1427,9 +1427,17 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610272010';
+var EMA_BUILD = '202610272011';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
+  // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
+  try {
+    fetch(window.EMA_SB.url + '/functions/v1/gs?pb=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(j) {
+      var v = j && j.panel ? String(j.panel) : '';
+      if (v && v !== EMA_BUILD && Number(v) > Number(EMA_BUILD)) cb(v);
+    }).catch(function() {});
+  } catch (e) {}
+  // 2) Y además mira la página publicada
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
     var m = /var EMA_BUILD = '(\d+)'/.exec(t);
     if (m && m[1] !== EMA_BUILD && Number(m[1]) > Number(EMA_BUILD)) cb(m[1]);
@@ -1470,15 +1478,23 @@ function emaBotonNueva(v) {
   b.onclick = function() { emaActualizar(v || String(Date.now())); };
   b.innerHTML = '🔄 Hay una versión nueva · <u>Actualizar</u>';
 }
+var EMA_ULT_CHK = 0;
 function emaChequearVersion() {
+  EMA_ULT_CHK = Date.now();
   emaVersionNueva(function(v) {
     emaBotonNueva(v);
   });
 }
 setTimeout(function() { emaVersionPintar(); emaAvisoActualizado(); emaChequearVersion(); }, 1500);
 setInterval(emaVersionPintar, 5000);
-setInterval(emaChequearVersion, 60000);
+setInterval(emaChequearVersion, 30000);
 document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') emaChequearVersion(); });
+// El celular a veces "despierta" la página sin avisar (al volver a la app o al desbloquear): se vuelve a mirar en todos esos casos y en cada toque (como mucho cada 15 s)
+window.addEventListener('pageshow', function() { emaChequearVersion(); });
+window.addEventListener('focus', function() { emaChequearVersion(); });
+window.addEventListener('online', function() { emaChequearVersion(); });
+document.addEventListener('click', function() { if (Date.now() - EMA_ULT_CHK > 15000) emaChequearVersion(); }, true);
+document.addEventListener('touchstart', function() { if (Date.now() - EMA_ULT_CHK > 15000) emaChequearVersion(); }, { capture: true, passive: true });
 </script>
 <style>
 #ema-ver-nueva{position:fixed;left:50%;transform:translateX(-50%);top:8px;z-index:100000;background:#2563eb;color:#fff;border:0;border-radius:999px;padding:12px 20px;font-size:16px;line-height:1.25;font-weight:800;box-shadow:0 6px 20px rgba(37,99,235,.55);cursor:pointer;white-space:normal;text-align:center;width:max-content;max-width:calc(100vw - 16px);animation:emaLatido 1.6s ease-in-out infinite;touch-action:manipulation}
