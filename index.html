@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "c306b39cd538"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f4661978f3ae"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1427,7 +1427,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610272011';
+var EMA_BUILD = '202610272017';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -5746,73 +5746,15 @@ async function renderStock() {
   '<div class="content">'+
   '<div id="st-rem-aprob"></div>'+
 
-  // KPIs
-  '<div class="g4 mb4">'+
-  '<div class="stat" style="border-top:3px solid var(--accent)"><div class="stat-label">Total Artículos</div><div class="stat-val sv-blue">'+totalArticulos+'</div><div class="stat-sub">en catálogo</div></div>'+
-  '<div class="stat" style="border-top:3px solid var(--success)"><div class="stat-label">Con Stock</div><div class="stat-val sv-green">'+enStock+'</div><div class="stat-sub">artículos disponibles</div></div>'+
-  '<div class="stat" style="border-top:3px solid var(--danger)"><div class="stat-label">Sin Stock</div><div class="stat-val sv-red">'+sinStock+'</div><div class="stat-sub">artículos agotados</div></div>'+
-  '<div class="stat" style="border-top:3px solid var(--warn)"><div class="stat-label">Alertas Mínimo</div><div class="stat-val sv-warn">'+alertas.length+'</div><div class="stat-sub">bajo stock mínimo</div></div>'+
-  '</div>'+
-
-  // Alertas
-  (alertas.length>0?
-  '<div class="al al-r mb4"><strong><i class="fas fa-exclamation-triangle"></i> '+alertas.length+' artículo(s) bajo stock mínimo:</strong> '+
-  alertas.map(function(a){ return '<span class="badge b-red" style="margin:2px">'+a.NOMBRE_ARTICULO+' (stock: '+a.STOCK+' / mín: '+a.STOCK_MINIMO+')</span>'; }).join('')+
-  '</div>':'')+
-
   // Tabs
   '<div class="tabs mb4">'+
-  '<div class="tab active" onclick="stTab(this,\'inventario\')">Inventario</div>'+
+  '<div class="tab active" onclick="stTab(this,\'inventario\')">📦 Stock</div>'+
   '<div class="tab" onclick="stTab(this,\'remitos\')">Remitos</div>'+
   '<div class="tab" onclick="stTab(this,\'movimientos\')">Movimientos</div>'+
   '</div>'+
 
-  // Panel inventario
-  '<div id="st-panel-inventario">'+
-  '<div class="card"><div class="card-hd"><span class="card-title">Inventario Actual</span>'+
-  '<div style="display:flex;gap:8px">'+
-  '<button class="btn btn-sm btn-p" onclick="stNuevoRemito()"><i class="fas fa-plus"></i> Remito interno (a aprobar)</button>'+
-  '</div></div>'+
-  '<div class="fbar" style="gap:8px">'+
-  '<input id="st-buscar" class="fi" style="max-width:260px" placeholder="Buscar artículo..." oninput="stFiltrarInv()"/>'+
-  '<select id="st-filtro-tipo" class="fs" style="max-width:160px" onchange="stFiltrarInv()">'+
-  '<option value="">Todos los tipos</option>'+
-  '<option value="PRODUCTO">Producto</option>'+
-  '<option value="RECAPADO">Recapado</option>'+
-  '<option value="SERVICIO">Servicio</option>'+
-  '</select>'+
-  '<select id="st-filtro-stock" class="fs" style="max-width:160px" onchange="stFiltrarInv()">'+
-  '<option value="">Todos</option>'+
-  '<option value="ok">Con stock</option>'+
-  '<option value="sin">Sin stock</option>'+
-  '<option value="alerta">Bajo mínimo</option>'+
-  '</select>'+
-  '</div>'+
-  '<div class="tw"><table id="st-inv-table"><thead><tr>'+
-  '<th>Artículo</th><th>Tipo</th><th>Marca</th><th>Medida</th>'+
-  '<th class="tr">Stock Actual</th><th class="tr">Stock Mín.</th><th>Estado</th><th></th>'+
-  '</tr></thead><tbody id="st-inv-body">'+
-  articulos.map(function(a){
-    var stock = parseFloat(a.STOCK)||0;
-    var min   = parseFloat(a.STOCK_MINIMO)||0;
-    var estado = stock<=0?'SIN_STOCK':(min>0&&stock<=min?'ALERTA':'OK');
-    return '<tr data-tipo="'+(a.TIPO_ARTICULO||'')+'" data-stock="'+estado+'">'+
-      '<td style="font-size:12px;font-weight:600">'+a.NOMBRE_ARTICULO+'</td>'+
-      '<td><span class="badge b-blue" style="font-size:9px">'+(a.TIPO_ARTICULO||'—')+'</span></td>'+
-      '<td style="font-size:12px">'+(mm[a.ID_MARCA]||'—')+'</td>'+
-      '<td style="font-size:12px">'+(med[a.ID_MEDIDA]||'—')+'</td>'+
-      '<td class="mono tr '+(stock<=0?'tred':min>0&&stock<=min?'twarn':'tgreen')+'" style="font-weight:700">'+stock+'</td>'+
-      '<td class="mono tr tdim">'+(min||'—')+'</td>'+
-      '<td><span class="badge '+(estado==='OK'?'b-green':estado==='ALERTA'?'b-warn':'b-red')+'" style="font-size:9px">'+
-        (estado==='OK'?'OK':estado==='ALERTA'?'MÍNIMO':'SIN STOCK')+'</span></td>'+
-      '<td style="white-space:nowrap">'+
-        '<button class="btn btn-xs btn-info" onclick="stVerMovsArticulo(\''+a.ID_ARTICULO+'\')" title="Ver movimientos"><i class="fas fa-history"></i></button> '+
-        '<button class="btn btn-xs btn-w" onclick="stEditarMinimo(\''+a.ID_ARTICULO+'\',\''+a.NOMBRE_ARTICULO+'\','+(min||0)+')" title="Editar stock mínimo"><i class="fas fa-cog"></i></button>'+
-      '</td>'+
-      '</tr>';
-  }).join('')+
-  '</tbody></table></div></div>'+
-  '</div>'+
+  // Panel stock general (insumos de planta y cubiertas/artículos)
+  '<div id="st-panel-inventario"><div id="st-gen"><div class="card"><div class="card-body tdim"><i class="fas fa-sync-alt fa-spin"></i> Calculando el stock…</div></div></div></div>'+
 
   // Panel remitos
   '<div id="st-panel-remitos" class="hidden">'+
@@ -5863,7 +5805,104 @@ async function renderStock() {
 
   '</div>';
 
-  setTimeout(function(){ stRefreshRemitos(); stRefreshMovs(); stRefreshPendientes(); stRemAprobarCard(); }, 50);
+  setTimeout(function(){ stRefreshRemitos(); stRefreshMovs(); stRefreshPendientes(); stRemAprobarCard(); stGenCargar(); }, 50);
+}
+
+// ── Stock general ──
+var STG_ = { d: null, vista: 'INS', q: '', rubro: '', est: 'MOV', lim: 150 };
+function stgN(n, dec) { if (n === null || n === undefined || n === '') return '—'; var x = Math.round(n * 1000) / 1000; return x.toLocaleString('es-AR', { maximumFractionDigits: dec === undefined ? 3 : dec }); }
+function stgP(n) { return '$ ' + Math.round(n || 0).toLocaleString('es-AR'); }
+function stgE(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+async function stGenCargar() {
+  var el = $id('st-gen'); if (!el) return;
+  try { STG_.d = await gsRun('gsST_General'); } catch (e) { el.innerHTML = '<div class="al al-r">' + stgE(e.message) + '</div>'; return; }
+  if (!STG_.d || !STG_.d.ok) { el.innerHTML = '<div class="al al-r">' + stgE((STG_.d && STG_.d.error) || 'No se pudo calcular el stock') + '</div>'; return; }
+  stGenPintar();
+}
+function stgLista() { return STG_.vista === 'INS' ? STG_.d.INSUMOS : STG_.d.ARTICULOS; }
+function stgEstado(x) {
+  if (x.STOCK <= 0) return 'SIN';
+  if (x.MINIMO > 0 && x.STOCK <= x.MINIMO) return 'MIN';
+  return 'OK';
+}
+function stgFiltrar() {
+  var q = STG_.q.toUpperCase().trim(), ws = q.split(/\s+/).filter(function(w) { return w; });
+  return stgLista().filter(function(x) {
+    if (STG_.rubro && x.RUBRO !== STG_.rubro) return false;
+    var e = stgEstado(x);
+    if (STG_.est === 'MOV' && STG_.vista === 'INS' && !x.MOVIO && !x.POR_RECIBIR && !x.EN_APROBACION && !(x.MINIMO > 0)) return false;
+    if (STG_.est === 'CON' && !(x.STOCK > 0)) return false;
+    if (STG_.est === 'SIN' && e !== 'SIN') return false;
+    if (STG_.est === 'MIN' && e !== 'MIN' && !(x.MINIMO > 0 && x.STOCK <= x.MINIMO)) return false;
+    if (STG_.est === 'REC' && !(x.POR_RECIBIR > 0)) return false;
+    if (STG_.est === 'APR' && !(x.EN_APROBACION > 0)) return false;
+    if (!ws.length) return true;
+    var t = (x.NOMBRE + ' ' + x.ID + ' ' + (x.CODIGO || '') + ' ' + (x.MARCA || '') + ' ' + x.RUBRO).toUpperCase();
+    return ws.every(function(w) { return t.indexOf(w) !== -1; });
+  });
+}
+function stGenPintar() {
+  var el = $id('st-gen'), d = STG_.d; if (!el || !d) return;
+  var I = d.INSUMOS, A = d.ARTICULOS, sum = function(l, f) { return l.reduce(function(s, x) { return s + (f(x) || 0); }, 0); };
+  var bajo = function(l) { return l.filter(function(x) { return x.MINIMO > 0 && x.STOCK <= x.MINIMO; }).length; };
+  var k = function(t, v, s, c, on) { return '<div class="stat" style="border-top:3px solid ' + c + (on ? ';cursor:pointer' : '') + '"' + (on ? ' onclick="' + on + '"' : '') + '><div class="stat-label">' + t + '</div><div class="stat-val" style="font-size:22px">' + v + '</div><div class="stat-sub">' + s + '</div></div>'; };
+  var h = '<div class="g4 mb3">' +
+    k('Insumos de planta', I.filter(function(x) { return x.STOCK > 0; }).length + ' con stock', 'valor ' + stgP(sum(I, function(x) { return x.VALOR; })), 'var(--accent)') +
+    k('Cubiertas y artículos', A.filter(function(x) { return x.STOCK > 0; }).length + ' con stock', 'valor ' + stgP(sum(A, function(x) { return x.VALOR; })), 'var(--success)') +
+    k('Bajo el mínimo', bajo(I) + bajo(A), bajo(I) + ' insumos · ' + bajo(A) + ' artículos', 'var(--danger)', "STG_.est='MIN';stGenPintar()") +
+    k('Comprado sin recibir', d.COMPRAS_PENDIENTES + ' compra' + (d.COMPRAS_PENDIENTES === 1 ? '' : 's'), d.REMITOS_A_APROBAR ? d.REMITOS_A_APROBAR + ' remito' + (d.REMITOS_A_APROBAR === 1 ? '' : 's') + ' interno' + (d.REMITOS_A_APROBAR === 1 ? '' : 's') + ' a aprobar' : 'sin remitos internos a aprobar', 'var(--warn)', "STG_.est='REC';stGenPintar()") +
+    '</div>';
+  h += '<div class="al mb3" style="font-size:12px">El stock sube <b>solo con remito</b>: del proveedor, o interno aprobado por un administrador. <b>Por recibir</b> = está en una factura de compra pero todavía no llegó el remito. <b>En aprobación</b> = hay un remito interno esperando que lo apruebe un administrador.</div>';
+  var lista = stgLista(), rubros = []; lista.forEach(function(x) { if (x.RUBRO && rubros.indexOf(x.RUBRO) === -1) rubros.push(x.RUBRO); }); rubros.sort();
+  var chip = function(v, t) { return '<button class="btn btn-sm ' + (STG_.est === v ? 'btn-p' : 'btn-s') + '" onclick="STG_.est=\'' + v + '\';STG_.lim=150;stGenPintar()">' + t + '</button>'; };
+  h += '<div class="card"><div class="card-hd" style="flex-wrap:wrap;gap:8px"><span style="display:flex;gap:6px">' +
+    '<button class="btn ' + (STG_.vista === 'INS' ? 'btn-p' : 'btn-s') + '" onclick="STG_.vista=\'INS\';STG_.rubro=\'\';STG_.lim=150;stGenPintar()">🧪 Insumos de planta</button>' +
+    '<button class="btn ' + (STG_.vista === 'ART' ? 'btn-p' : 'btn-s') + '" onclick="STG_.vista=\'ART\';STG_.rubro=\'\';STG_.lim=150;if(STG_.est===\'MOV\')STG_.est=\'\';stGenPintar()">🛞 Cubiertas y artículos de venta</button></span>' +
+    '<button class="btn btn-sm btn-s" onclick="stGenCargar()">↻ Actualizar</button></div>' +
+    '<div class="fbar" style="gap:8px;flex-wrap:wrap"><input id="stg-q" class="fi" style="max-width:280px" placeholder="Buscar por nombre o código…" value="' + stgE(STG_.q) + '" oninput="STG_.q=this.value;STG_.lim=150;stgTabla()"/>' +
+    '<select class="fs" style="max-width:220px" onchange="STG_.rubro=this.value;STG_.lim=150;stgTabla()"><option value="">Todos los rubros</option>' + rubros.map(function(r) { return '<option' + (STG_.rubro === r ? ' selected' : '') + '>' + stgE(r) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fbar" style="gap:6px;flex-wrap:wrap">' + (STG_.vista === 'INS' ? chip('MOV', 'Los que se usan') : '') + chip('', 'Todos') + chip('CON', 'Con stock') + chip('SIN', 'Sin stock') + chip('MIN', 'Bajo mínimo') + chip('REC', 'Por recibir') + chip('APR', 'En aprobación') + '</div>' +
+    '<div id="stg-tabla"></div></div>';
+  el.innerHTML = h;
+  stgTabla();
+}
+function stgTabla() {
+  var box = $id('stg-tabla'); if (!box) return;
+  var l = stgFiltrar(), ins = STG_.vista === 'INS', n = Math.min(l.length, STG_.lim);
+  var tv = l.reduce(function(s, x) { return s + (x.VALOR || 0); }, 0);
+  var h = '<div class="tdim" style="font-size:12px;padding:4px 2px">' + l.length + ' ítem' + (l.length === 1 ? '' : 's') + ' · valor del stock ' + stgP(tv) + (l.length > n ? ' · se muestran ' + n : '') + '</div>' +
+    '<div class="tw"><table style="font-size:12px"><thead><tr><th>' + (ins ? 'Insumo' : 'Artículo') + '</th><th>Rubro</th><th class="tr">Stock</th>' + (ins ? '' : '<th class="tr">Reservado</th><th class="tr">Disponible</th>') +
+    '<th class="tr">Mínimo</th><th class="tr">Por recibir</th><th class="tr">En aprobación</th><th class="tr">Costo u.</th><th class="tr">Valor</th><th>Última entrada</th><th></th></tr></thead><tbody>';
+  for (var i = 0; i < n; i++) {
+    var x = l[i], e = stgEstado(x), u = ins ? ' ' + stgE(x.UNIDAD) : '';
+    var col = e === 'SIN' ? 'tred' : (e === 'MIN' ? 'twarn' : 'tgreen');
+    h += '<tr><td><b>' + stgE(x.NOMBRE) + '</b><div class="tdim mono" style="font-size:10px">' + stgE(ins ? x.ID : (x.CODIGO || ('#' + x.ID))) + (x.MARCA ? ' · ' + stgE(x.MARCA) : '') + '</div></td>' +
+      '<td style="font-size:11px">' + stgE(x.RUBRO) + '</td>' +
+      '<td class="mono tr ' + col + '" style="font-weight:700;white-space:nowrap">' + stgN(x.STOCK) + u + '</td>' +
+      (ins ? '' : '<td class="mono tr">' + (x.RESERVADO ? stgN(x.RESERVADO) : '—') + '</td><td class="mono tr" style="font-weight:700">' + stgN(Math.max(0, x.STOCK - x.RESERVADO)) + '</td>') +
+      '<td class="mono tr tdim">' + (x.MINIMO ? stgN(x.MINIMO) : '—') + '</td>' +
+      '<td class="mono tr"' + (x.POR_RECIBIR ? ' style="color:#1d4ed8;font-weight:700" title="' + stgE(x.DOCS.join(' / ')) + '"' : '') + '>' + (x.POR_RECIBIR ? stgN(x.POR_RECIBIR) + u : '—') + '</td>' +
+      '<td class="mono tr"' + (x.EN_APROBACION ? ' style="color:#b45309;font-weight:700"' : '') + '>' + (x.EN_APROBACION ? stgN(x.EN_APROBACION) + u : '—') + '</td>' +
+      '<td class="mono tr">' + (x.COSTO ? stgP(x.COSTO) : '—') + '</td><td class="mono tr">' + (x.VALOR ? stgP(x.VALOR) : '—') + '</td>' +
+      '<td style="font-size:11px;white-space:nowrap">' + (x.ULT ? fmtD(x.ULT.FECHA) + ' · ' + stgN(x.ULT.CANT) + '<div class="tdim">' + stgE([x.ULT.REMITO ? 'Rem. ' + x.ULT.REMITO : '', x.ULT.DOC, x.ULT.PROV].filter(function(s) { return s; }).join(' · ')) + '</div>' : '<span class="tdim">—</span>') + '</td>' +
+      '<td style="white-space:nowrap"><button class="btn btn-xs btn-info" title="Ver todos los movimientos" onclick="stgKardex(\'' + (ins ? 'INS' : 'ART') + '\',\'' + stgE(x.ID) + '\')"><i class="fas fa-history"></i></button>' +
+      (ins ? '' : ' <button class="btn btn-xs btn-w" title="Stock mínimo" onclick="stEditarMinimo(\'' + stgE(x.ID) + '\',\'' + stgE(String(x.NOMBRE).replace(/'/g, '')) + '\',' + (x.MINIMO || 0) + ')"><i class="fas fa-cog"></i></button>') + '</td></tr>';
+  }
+  if (!l.length) h += '<tr><td colspan="12" class="tc tdim" style="padding:16px">No hay ítems con ese filtro.</td></tr>';
+  h += '</tbody></table></div>' + (l.length > n ? '<div class="tc mt2"><button class="btn btn-s" onclick="STG_.lim+=300;stgTabla()">Ver más</button></div>' : '');
+  box.innerHTML = h;
+}
+async function stgKardex(tipo, id) {
+  var x = stgLista().filter(function(y) { return String(y.ID) === String(id); })[0] || { NOMBRE: id, UNIDAD: '' };
+  showModal('<div class="mh"><span class="mt">📒 ' + stgE(x.NOMBRE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" id="stg-kx"><div class="tdim">Cargando movimientos…</div></div>', 'md-lg');
+  var r; try { r = await gsRun('gsST_Kardex', tipo, id); } catch (e) { $id('stg-kx').innerHTML = '<div class="al al-r">' + stgE(e.message) + '</div>'; return; }
+  if (!r || !r.ok) { $id('stg-kx').innerHTML = '<div class="al al-r">' + stgE((r && r.error) || 'No se pudo') + '</div>'; return; }
+  var u = tipo === 'INS' ? ' ' + stgE(x.UNIDAD || '') : '';
+  $id('stg-kx').innerHTML = '<div style="margin-bottom:8px">Stock ahora: <b>' + stgN(x.STOCK) + u + '</b>' + (x.POR_RECIBIR ? ' · por recibir <b style="color:#1d4ed8">' + stgN(x.POR_RECIBIR) + u + '</b> (' + stgE(x.DOCS.join(' / ')) + ')' : '') + (x.EN_APROBACION ? ' · en aprobación <b style="color:#b45309">' + stgN(x.EN_APROBACION) + u + '</b>' : '') + '</div>' +
+    (r.MOVS.length ? '<div class="tw" style="max-height:60vh"><table style="font-size:12px"><thead><tr><th>Fecha</th><th>Movimiento</th><th class="tr">Cantidad</th><th class="tr">Saldo</th><th>Comprobante</th><th>Usuario</th></tr></thead><tbody>' +
+    r.MOVS.map(function(m) { return '<tr style="' + (m.ANULADO ? 'opacity:.5;text-decoration:line-through' : '') + '"><td class="mono" style="white-space:nowrap">' + fmtD(m.FECHA) + '</td><td>' + stgE(m.QUE) + (m.ANULADO ? ' (anulado)' : '') + (m.OBS ? '<div class="tdim" style="font-size:10px">' + stgE(m.OBS) + '</div>' : '') + '</td>' +
+      '<td class="mono tr ' + (m.CANT < 0 ? 'tred' : 'tgreen') + '">' + (m.CANT > 0 ? '+' : '') + stgN(m.CANT) + '</td><td class="mono tr" style="font-weight:700">' + stgN(m.SALDO) + '</td><td style="font-size:11px">' + stgE(m.DOC) + '</td><td style="font-size:11px">' + stgE(m.USUARIO) + '</td></tr>'; }).join('') +
+    '</tbody></table></div>' + (r.TOTAL > r.MOVS.length ? '<div class="tdim" style="font-size:11px">Se muestran los últimos ' + r.MOVS.length + ' de ' + r.TOTAL + '.</div>' : '') : '<div class="tdim">Sin movimientos.</div>');
 }
 
 function stTab(el, panel) {
@@ -12000,7 +12039,7 @@ function pnBarra() {
   var n = 0, tot = 0; its.forEach(function(x) { n += x.cant; tot += x.sub; });
   if (!b) { b = document.createElement('div'); b.id = 'pn-bar'; b.className = 'pn-bar'; el.appendChild(b); }
   el.classList.add('con-bar');
-  b.innerHTML = '<div class="t">🧾 <b>' + n + '</b> cubierta' + (n === 1 ? '' : 's') + ' · ' + its.length + ' medida' + (its.length === 1 ? '' : 's') + '<br/><b>' + pnPlata(tot) + '</b> con IVA</div><button onclick="pnHoja()">Ver y mandar</button>';
+  b.innerHTML = '<div class="t">🧾 <b>' + n + '</b> producto' + (n === 1 ? '' : 's') + ' · ' + its.length + ' ítem' + (its.length === 1 ? '' : 's') + '<br/><b>' + pnPlata(tot) + '</b> con IVA</div><button onclick="pnHoja()">Ver y mandar</button>';
 }
 function pnHoja() {
   var its = pnSelItems(); pnHojaCerrar(); PN_.hsig = '';
