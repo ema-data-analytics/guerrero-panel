@@ -1417,7 +1417,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610271851';
+var EMA_BUILD = '202610271855';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
@@ -11886,7 +11886,7 @@ function pnMgR(p, precioCon) { var a = PN_.mg && PN_.mg[p.CODIGO]; if (!a || !(p
 function pnMgGan(R, d) { return (1 - PN_.mgD.IMP) - R / (1 - d); }
 function pnMgTope(R, t) { return Math.max(0, 1 - R / (1 - PN_.mgD.IMP - t)); }
 function pnMgCol(g) { return g >= PN_.mgD.VERDE - 1e-9 ? ['#16a34a', '#f0fdf4', 'VERDE', 'Conviene'] : g >= PN_.mgD.AMARILLO - 1e-9 ? ['#d97706', '#fffbeb', 'AMARILLO', 'Gana poco: solo de contado'] : ['#dc2626', '#fef2f2', 'ROJO', g < 0 ? 'Pierde plata' : 'No gana casi nada: no dar']; }
-function pnPct(x) { return (Math.round(x * 1000) / 10).toLocaleString('es-AR') + '%'; }
+function pnPct(x) { /* se corta para abajo: si dice 10% es porque llega al 10% */ return (Math.floor(x * 1000 + 1e-6) / 10).toLocaleString('es-AR') + '%'; }
 function pnTopesTxt(R) { return R === null || !PN_.mgD ? '' : '🟢 hasta ' + pnPct(pnMgTope(R, PN_.mgD.VERDE)) + ' · 🟡 hasta ' + pnPct(pnMgTope(R, PN_.mgD.AMARILLO)); }
 function pnDesc(v, abs, de) {
   if (de !== 'txt' && document.activeElement && document.activeElement.id === 'pn-dsc') document.activeElement.blur();
@@ -16309,7 +16309,7 @@ async function mgACotizacion() {
 function mgGan(R, d) { return (1 - MG_.d.IMP) - R / (1 - d); }
 function mgTope(R, t) { return Math.max(0, 1 - R / (1 - MG_.d.IMP - t)); }
 function mgColor(g) { return g >= MG_.d.VERDE - 1e-9 ? ['#16a34a', '#f0fdf4', 'VERDE', 'Conviene'] : g >= MG_.d.AMARILLO - 1e-9 ? ['#d97706', '#fffbeb', 'AMARILLO', 'Gana poco: solo de contado'] : ['#dc2626', '#fef2f2', 'ROJO', g < 0 ? 'Pierde plata' : 'No gana casi nada: no dar']; }
-function mgPct(x) { return (Math.round(x * 1000) / 10).toLocaleString('es-AR') + '%'; }
+function mgPct(x) { /* se corta para abajo: si dice 10% es porque llega al 10% */ return (Math.floor(x * 1000 + 1e-6) / 10).toLocaleString('es-AR') + '%'; }
 function mgPintar() {
   var L = $id('mg-lista'), D = $id('mg-desc'), S = $id('mg-sem'); if (!L) return;
   var d = MG_.desc / 100, its = MG_.items.map(function(i) { return { i: i, a: mgArt(i.c) }; }).filter(function(x) { return x.a; });
