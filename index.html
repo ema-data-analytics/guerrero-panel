@@ -1429,7 +1429,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610272034';
+var EMA_BUILD = '202610272049';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -5403,7 +5403,7 @@ function opRefreshHist() {
       '<td style="font-size:11px">' + o.FORMAS.map(function(f) { return OP_FORMA_TXT[f.FORMA] || f.FORMA; }).join(' + ') + '</td>' +
       '<td class="mono tr" style="font-weight:700">' + fmt(o.TOTAL_OP) + '</td>' +
       '<td><span class="badge ' + (an ? 'b-red' : 'b-green') + '" style="font-size:9px">' + (an ? 'ANULADA' : 'PAGADA') + '</span></td>' +
-      '<td style="white-space:nowrap"><button class="btn btn-xs btn-info" onclick="opVerDetalle(\'' + o.ID_OP + '\')" title="Ver"><i class="fas fa-eye"></i></button>' +
+      '<td style="white-space:nowrap"><button class="btn btn-xs btn-info" onclick="opVerDetalle(\'' + o.ID_OP + '\')" title="Ver"><i class="fas fa-eye"></i></button> <button class="btn btn-xs btn-s" onclick="opImprimir(\'' + o.ID_OP + '\')" title="Imprimir o PDF"><i class="fas fa-print"></i></button>' +
       (an ? '' : ' <button class="btn btn-xs btn-s" onclick="opAnularPedir(\'' + o.ID_OP + '\')" title="Anular"><i class="fas fa-ban"></i></button>') + '</td></tr>';
   }).join('');
 }
@@ -5537,7 +5537,7 @@ async function opGuardar() {
       APLICA: ap.map(function(a) { return { ID_COMPRA_ENC: a.ID_COMPRA_ENC, IMPORTE: a.IMPORTE }; }),
       FORMAS: _opFormas.map(function(f) { return { FORMA: f.FORMA, IMPORTE: opFormaImporte(f), ID_CAJA: f.ID_CAJA, DETALLE: f.DETALLE, ID_CHEQUE: f.ID_CHEQUE, NRO_CHEQUE: f.NRO_CHEQUE, ID_BANCO: f.ID_BANCO, FECHA_PAGO: f.FECHA_PAGO, TIPO_CHEQUE: f.TIPO_CHEQUE }; }) });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo grabar', 'r2'); if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Confirmar pago'; } return; }
-    toast('Orden de pago ' + r.NRO_OP + ' — ' + fmt(r.TOTAL) + ' ✓', 'g');
+    toast('Orden de pago ' + r.NRO_OP + ' — ' + fmt(r.TOTAL) + ' ✓ · podés imprimirla con 🖨 en el historial', 'g');
     if (typeof _mcDel === 'function') { ['compras_enc', 'ordenes_pago_enc', 'ordenes_pago_det', 'ordenes_pago_forma', 'cta_cte_proveedores', 'movimientos_caja', 'cheques'].forEach(function(s) { _mcDel(s); }); }
     closeModal();
     renderOrdenesPago();
@@ -5562,7 +5562,25 @@ function opVerDetalle(id) {
     '<div class="div"></div><div class="flex jb" style="font-size:16px;font-weight:700"><span>TOTAL</span><span class="mono">' + fmt(o.TOTAL_OP) + '</span></div>' +
     (o.OBSERVACION ? '<div class="tdim mt2" style="font-size:12px">' + opEsc(o.OBSERVACION) + '</div>' : '') +
     (o.ESTADO === 'ANULADO' ? '<div class="al al-r mt2">Anulada: ' + opEsc(o.MOTIVO_ANULACION) + '</div>' : '') +
-    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-p" onclick="closeModal();opImprimir(\'' + id + '\')"><i class="fas fa-print"></i> Imprimir / PDF</button></div>');
+}
+// Orden de pago impresa: para el proveedor (recibí conforme) y para el archivo
+function opImprimir(id) {
+  var o = opBuscar(id); if (!o) { toast('No encontrada', 'r2'); return; }
+  var p = (_OP.PROVEEDORES || []).filter(function(x) { return String(x.ID_PROVEEDOR) === String(o.ID_PROVEEDOR); })[0] || {};
+  var caja = function(idc) { var c = (_OP.CAJAS || []).filter(function(x) { return String(x.ID_CAJA) === String(idc); })[0]; return c ? c.CAJA_DESC : ''; };
+  var an = o.ESTADO === 'ANULADO';
+  var h = pcEncImp('ORDEN DE PAGO', o.NRO_OP, fmtD(o.FECHA)) +
+    (an ? '<div style="border:2px solid #b91c1c;color:#b91c1c;font-weight:800;padding:6px 10px;margin:6px 0;text-align:center">ANULADA · ' + opEsc(o.MOTIVO_ANULACION || '') + '</div>' : '') +
+    '<div class="dat"><div><b>Proveedor</b>' + opEsc(p.PROVEEDOR || opProvNom(o.ID_PROVEEDOR)) + '</div><div><b>CUIT</b>' + opEsc(p.CUIT || '—') + '</div><div><b>Fecha</b>' + fmtD(o.FECHA) + '</div><div><b>Hizo el pago</b>' + opEsc(o.USUARIO || '—') + '</div></div>' +
+    '<h2>Facturas que se pagan</h2><table><thead><tr><th>Factura N°</th><th class="n">Importe que se paga</th></tr></thead><tbody>' +
+    o.DET.map(function(d) { return '<tr><td>' + opEsc(d.NRO_COMP) + '</td><td class="n">' + fmt(d.IMPORTE) + '</td></tr>'; }).join('') + '</tbody></table>' +
+    '<h2>Forma de pago</h2><table><thead><tr><th>Forma</th><th>Detalle</th><th class="n">Importe</th></tr></thead><tbody>' +
+    o.FORMAS.map(function(f) { return '<tr><td>' + opEsc(OP_FORMA_TXT[f.FORMA] || f.FORMA) + '</td><td>' + opEsc([f.ID_CAJA ? caja(f.ID_CAJA) : '', f.DETALLE || ''].filter(function(x) { return x; }).join(' · ')) + '</td><td class="n">' + fmt(f.IMPORTE) + '</td></tr>'; }).join('') +
+    '<tr class="tot"><td colspan="2"><b>TOTAL PAGADO</b></td><td class="n"><b>' + fmt(o.TOTAL_OP) + '</b></td></tr></tbody></table>' +
+    (o.OBSERVACION ? '<div class="nota">Observaciones: ' + opEsc(o.OBSERVACION) + '</div>' : '') +
+    '<div class="firmas"><div>Entregó · Vulcan Tread</div><div>Recibí conforme · ' + opEsc(p.PROVEEDOR || '') + '<br>Firma, aclaración y DNI</div></div>';
+  pcImprimir('Orden de pago ' + o.NRO_OP, h, false);
 }
 function opAnularPedir(id) {
   var o = opBuscar(id);
@@ -5592,7 +5610,7 @@ async function opAnular(id) {
 async function renderCtaCteProveedores() {
   var el = $id('page-cta-cte-proveedores');
   if (!el) return;
-  var _stores = ['cta_cte_proveedores','proveedores'];
+  var _stores = ['cta_cte_proveedores','proveedores','compras_enc'];
   var _b;
   if (isGsMode()) {
     _b = await gsRun('gsBatchLoad', _stores);
@@ -5605,6 +5623,7 @@ async function renderCtaCteProveedores() {
   var pm = {}; provs.forEach(function(p){ pm[p.ID_PROVEEDOR]=p; });
   window._ctpMovs  = movs;
   window._ctpProvs = provs;
+  window._ctpComp = _b['compras_enc']||[];
 
   // Saldo por proveedor
   var saldos = {};
@@ -5614,8 +5633,9 @@ async function renderCtaCteProveedores() {
     if (m.TIPO==='DEBITO')  saldos[m.ID_PROVEEDOR] -= (parseFloat(m.IMPORTE)||0); // pagamos
   });
 
-  var provConDeuda = provs.filter(function(p){ return saldos[p.ID_PROVEEDOR]&&saldos[p.ID_PROVEEDOR]>0.005; });
-  var totalDeuda   = provConDeuda.reduce(function(s,p){ return s+(saldos[p.ID_PROVEEDOR]||0); },0);
+  var provConDeuda = provs.filter(function(p){ return saldos[p.ID_PROVEEDOR]&&Math.abs(saldos[p.ID_PROVEEDOR])>0.005; });
+  var aFavor = provs.filter(function(p){ return (saldos[p.ID_PROVEEDOR]||0) < -0.005; }).reduce(function(s,p){ return s - saldos[p.ID_PROVEEDOR]; },0);
+  var totalDeuda   = provConDeuda.reduce(function(s,p){ return s+Math.max(0,saldos[p.ID_PROVEEDOR]||0); },0);
   var provOpts = '<option value="">Todos los proveedores</option>'+
     provs.map(function(p){ return '<option value="'+p.ID_PROVEEDOR+'">'+p.PROVEEDOR+'</option>'; }).join('');
 
@@ -5625,21 +5645,22 @@ async function renderCtaCteProveedores() {
   '<div class="content">' +
   '<div class="g3 mb4">' +
   '<div class="stat" style="border-top:3px solid var(--danger)"><div class="stat-label">Total Deuda Proveedores</div><div class="stat-val sv-red">'+fmt(totalDeuda)+'</div><div class="stat-sub">'+provConDeuda.length+(provConDeuda.length===1?' proveedor con saldo':' proveedores con saldo')+'</div></div>' +
-  '<div class="stat" style="border-top:3px solid var(--accent)"><div class="stat-label">Total Movimientos</div><div class="stat-val sv-blue">'+movs.length+'</div><div class="stat-sub">Débitos y créditos</div></div>' +
+  '<div class="stat" style="border-top:3px solid var(--accent)"><div class="stat-label">Saldo a favor nuestro</div><div class="stat-val sv-blue">'+fmt(aFavor)+'</div><div class="stat-sub">Pagamos de más o hay notas de crédito sin usar</div></div>' +
   '<div class="stat" style="border-top:3px solid var(--success)"><div class="stat-label">Proveedores al día</div><div class="stat-val sv-green">'+provs.filter(function(p){return !saldos[p.ID_PROVEEDOR]||saldos[p.ID_PROVEEDOR]<=0;}).length+'</div><div class="stat-sub">Sin deuda pendiente</div></div>' +
   '</div>' +
 
   '<div class="card mb4"><div class="card-hd"><span class="card-title">Saldo por Proveedor</span></div>'+
-  '<div class="tw"><table><thead><tr><th>Proveedor</th><th class="tr">Deuda Total</th><th>Estado</th><th></th></tr></thead><tbody>'+
-  (provConDeuda.length===0?'<tr><td colspan="4" class="tc tdim" style="padding:16px">Ningún proveedor con deuda.</td></tr>':
+  '<div class="tw"><table><thead><tr><th>Proveedor</th><th class="tr">Saldo</th><th>Estado</th><th></th></tr></thead><tbody>'+
+  (provConDeuda.length===0?'<tr><td colspan="4" class="tc tdim" style="padding:16px">Ningún proveedor con saldo.</td></tr>':
   provConDeuda.sort(function(a,b){return (saldos[b.ID_PROVEEDOR]||0)-(saldos[a.ID_PROVEEDOR]||0);}).map(function(p){
     var s = saldos[p.ID_PROVEEDOR]||0;
     return '<tr>'+
       '<td style="font-weight:600">'+p.PROVEEDOR+'</td>'+
-      '<td class="mono tr tred" style="font-weight:700">'+fmt(s)+'</td>'+
-      '<td><span class="badge b-red" style="font-size:9px">CON DEUDA</span></td>'+
-      '<td><button class="btn btn-xs btn-info" onclick="ctpVerProv(\''+p.ID_PROVEEDOR+'\')"><i class="fas fa-eye"></i> Ver</button>' +
-      ' <button class="btn btn-xs btn-p" onclick="ctpPagar(\''+p.ID_PROVEEDOR+'\')"><i class="fas fa-dollar-sign"></i> Pagar</button></td>'+
+      '<td class="mono tr '+(s>0?'tred':'tgreen')+'" style="font-weight:700">'+fmt(Math.abs(s))+'</td>'+
+      '<td>'+(s>0?'<span class="badge b-red" style="font-size:9px">LE DEBEMOS</span>':'<span class="badge b-green" style="font-size:9px">SALDO A FAVOR NUESTRO</span>')+'</td>'+
+      '<td style="white-space:nowrap"><button class="btn btn-xs btn-info" onclick="ctpVerProv(\''+p.ID_PROVEEDOR+'\')"><i class="fas fa-eye"></i> Ver</button>' +
+      ' <button class="btn btn-xs btn-s" onclick="ctpEstadoCuenta(\''+p.ID_PROVEEDOR+'\')"><i class="fas fa-print"></i> Estado de cuenta</button>' +
+      (s>0?' <button class="btn btn-xs btn-p" onclick="ctpPagar(\''+p.ID_PROVEEDOR+'\')"><i class="fas fa-dollar-sign"></i> Pagar</button>':'')+'</td>'+
       '</tr>';
   }).join(''))+
   '</tbody></table></div></div>'+
@@ -5649,6 +5670,7 @@ async function renderCtaCteProveedores() {
   '<div class="fbar" style="gap:8px">'+
   buildFiltroFechas('ctp','ctpRefresh()')+
   '<select id="ctp-prov" class="fs" style="max-width:220px" onchange="ctpRefresh()">'+provOpts+'</select>'+
+  '<button class="btn btn-sm btn-s" onclick="if($v(\'ctp-prov\'))ctpEstadoCuenta($v(\'ctp-prov\'));else toast(\'Elegí el proveedor\',\'r2\')"><i class="fas fa-print"></i> Estado de cuenta</button>'+
   '</div>'+
   '<div class="tw"><table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Tipo</th><th>Concepto</th><th>Comp.</th><th class="tr">Importe</th><th class="tr" id="ctp-th-saldo">Saldo</th></tr></thead>'+
   '<tbody id="ctp-body"></tbody></table></div></div>'+
@@ -5697,6 +5719,35 @@ function ctpRefresh() {
   }).join('');
 }
 
+// Estado de cuenta del proveedor (para mandarle o archivar): saldo anterior, movimientos del período con saldo, saldo final y facturas que quedan por pagar
+function ctpEstadoCuenta(idProv) {
+  var movs = (window._ctpMovs||[]).filter(function(m){ return String(m.ID_PROVEEDOR)===String(idProv); })
+    .sort(function(a,b){ return ((a.FECHA||0)-(b.FECHA||0)) || ((parseFloat(a.ID_MOV_CTP)||0)-(parseFloat(b.ID_MOV_CTP)||0)); });
+  var p = (window._ctpProvs||[]).filter(function(x){ return String(x.ID_PROVEEDOR)===String(idProv); })[0] || {};
+  var desde = ($id('flt-desde-ctp')||{}).value||'', hasta = ($id('flt-hasta-ctp')||{}).value||'';
+  var dMs = desde ? new Date(desde+'T00:00:00-03:00').getTime() : 0, hMs = hasta ? new Date(hasta+'T23:59:59-03:00').getTime() : 9e15;
+  var sAnt = 0, s = 0, filas = '', debe = 0, haber = 0;
+  movs.forEach(function(m){
+    var imp = parseFloat(m.IMPORTE)||0, sg = m.TIPO==='CREDITO' ? 1 : -1, f = Number(m.FECHA)||0;
+    if (f < dMs) { sAnt += sg*imp; s = sAnt; return; }
+    if (f > hMs) return;
+    s += sg*imp; if (sg>0) debe += imp; else haber += imp;
+    filas += '<tr><td>'+fmtD(m.FECHA)+'</td><td>'+opcEsc(m.CONCEPTO||'')+'</td><td>'+opcEsc(m.NRO_COMP||'')+'</td><td class="n">'+(sg>0?fmt(imp):'')+'</td><td class="n">'+(sg<0?fmt(imp):'')+'</td><td class="n"><b>'+fmt(s)+'</b></td></tr>';
+  });
+  var pend = (window._ctpComp||[]).filter(function(c){ return String(c.ID_PROVEEDOR)===String(idProv) && String(c.ESTADO_COMPRA||'')!=='ANULADA' && String(c.TIPO_COMP||'COMPRA')==='COMPRA' && (parseFloat(c.SALDO_PAGO)||0) > 0.005; })
+    .sort(function(a,b){ return (a.FECHA_COMPRA||0)-(b.FECHA_COMPRA||0); });
+  var h = pcEncImp('ESTADO DE CUENTA', p.PROVEEDOR || ('Proveedor '+idProv), (desde||hasta) ? 'Del '+(desde?desde.split('-').reverse().join('/'):'inicio')+' al '+(hasta?hasta.split('-').reverse().join('/'):'hoy') : 'Todos los movimientos') +
+    '<div class="dat"><div><b>Proveedor</b>'+opcEsc(p.PROVEEDOR||'')+'</div><div><b>CUIT</b>'+opcEsc(p.CUIT||'—')+'</div><div><b>Saldo anterior</b>'+fmt(sAnt)+'</div><div><b>Saldo final</b>'+fmt(s)+'</div></div>' +
+    '<table><thead><tr><th>Fecha</th><th>Concepto</th><th>Comprobante</th><th class="n">Debe (compras)</th><th class="n">Haber (pagos y NC)</th><th class="n">Saldo</th></tr></thead><tbody>' +
+    (filas || '<tr><td colspan="6">Sin movimientos en el período.</td></tr>') +
+    '<tr class="tot"><td colspan="3"><b>Totales del período</b></td><td class="n"><b>'+fmt(debe)+'</b></td><td class="n"><b>'+fmt(haber)+'</b></td><td class="n"><b>'+fmt(s)+'</b></td></tr></tbody></table>' +
+    '<div style="margin-top:10px;font-size:13px;font-weight:800">'+(s>0.005?'Saldo a pagar al proveedor: '+fmt(s):(s<-0.005?'Saldo a favor de Vulcan Tread: '+fmt(-s):'Cuenta saldada'))+'</div>' +
+    (pend.length ? '<h2>Facturas que quedan por pagar</h2><table><thead><tr><th>Fecha</th><th>Factura</th><th class="n">Total</th><th class="n">Saldo</th></tr></thead><tbody>' +
+      pend.map(function(c){ return '<tr><td>'+fmtD(c.FECHA_COMPRA)+'</td><td>'+opcEsc(c.NRO_FACTURA||'')+'</td><td class="n">'+fmt(parseFloat(c.TOTAL_COMPRA)||0)+'</td><td class="n"><b>'+fmt(parseFloat(c.SALDO_PAGO)||0)+'</b></td></tr>'; }).join('') + '</tbody></table>' : '') +
+    '<div class="nota">Debe = lo que compramos (facturas). Haber = lo que pagamos y las notas de crédito. El saldo positivo es lo que se le debe al proveedor.</div>';
+  pcImprimir('Estado de cuenta '+(p.PROVEEDOR||idProv), h, false);
+}
+function opcEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function ctpVerProv(idProv) {
   var sel = $id('ctp-prov');
   if (sel) { sel.value=idProv; ctpRefresh(); }
