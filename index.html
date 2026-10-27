@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "0890d35d5387"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "8c0de4181b75"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -8439,7 +8439,7 @@ function pcPintar() {
   var nDev = d.cubiertas.filter(function(c) { return c.ESTADO === 'RECHAZADA' && !c.FECHA_DEVOLUCION; }).length;
   if (PC_.tab === 'armar' || PC_.tab === 'ots') PC_.tab = 'os';
   var tabs = [['cascos', '1 · Carga de cascos'], ['otrab', '2 · Órdenes de trabajo' + (nNuevos ? ' (' + nNuevos + ' cascos sin orden)' : '')], ['os', '3 · Órdenes de servicio (' + abiertas + ' en línea' + (n('EN_ESPERA') ? ' · ' + n('EN_ESPERA') + ' esperando' : '') + ')'], ['entregas', '4 · Entregas (remitos)'],
-    ['rech', 'Rechazadas' + (nDev ? ' (' + nDev + ' a devolver)' : '')], ['costos', 'Costos'], ['herramental', 'Herramental y herramientas'], ['alarmas', '⚠ Alarmas'], ['hist', 'Historial'], ['config', 'Configuración'], ['pesaje', '⚖ Pesaje y medición']];
+    ['rech', 'Rechazadas' + (nDev ? ' (' + nDev + ' a devolver)' : '')], ['costos', 'Costos'], ['herramental', 'Herramental y herramientas'], ['alarmas', '⚠ Alarmas'], ['hist', 'Historial'], ['config', 'Configuración'], ['pesaje', '⚖ Pesaje y medición'], ['plan', '📅 Plan de mañana']];
   el.innerHTML = '<div class="page-hd"><div><div class="page-title">Producción por cubierta</div><div class="page-sub">Cada cubierta con su marca grabada: recepción, carga de autoclave, estaciones, insumos reales y costo.</div></div>' +
     '<div class="flex gap2 no-print"><input class="fi" id="pc-marca-q" placeholder="Buscar marca..." style="width:170px"/><button class="btn btn-s" onclick="pcHistorial($v(\'pc-marca-q\'))"><i class="fas fa-search"></i> Vida de la cubierta</button><button class="btn btn-p" onclick="pcAyuda(pcAyudaClave())">❓ Ayuda</button></div></div>' +
     (document.body.classList.contains('modo-cascos') ? '<div class="flex gap2 mb3" style="flex-wrap:wrap;align-items:center"><b style="font-size:20px;flex:1">' + (PC_.foco ? PC_.foco[1] + ' ' + PC_.foco[2] : '📥 Recibir cascos') + '</b>' + (PC_.tab === 'cascos' ? '<button class="btn btn-s" onclick="mvAbrir(\'documentos\')">📄 Documentos</button>' : '') + '</div>' : '') +
@@ -8448,7 +8448,7 @@ function pcPintar() {
     (PC_.tab === 'herramental' || PC_.tab === 'equipos' ? '<div class="flex gap2 mb3" style="flex-wrap:wrap;row-gap:8px">' + [['herramental', 'Inner y envelope del autoclave (piezas con usos)'], ['equipos', 'Herramientas de las estaciones y entregas al personal']].map(function(x) { return '<button class="btn ' + (PC_.tab === x[0] ? 'btn-p' : 'btn-s') + '" onclick="PC_.tab=PC_.herrSub=\'' + x[0] + '\';pcPintar()">' + x[1] + '</button>'; }).join('') + '</div>' : '') +
     '<div id="pc-body"></div>';
   $id('pc-marca-q').addEventListener('keydown', function(e) { if (e.key === 'Enter') pcHistorial(this.value); });
-  ({ recepcion: pcRecepcion, cascos: pcCascos, otrab: pcOTrab, rech: pcRechazadas, armar: pcOS, ots: pcOS, os: pcOS, entregas: pcEntregas, costos: pcCostos, herramental: pcHerramental, equipos: pcEquipos, alarmas: pcAlarmas, hist: pcHist, config: pcConfig, pesaje: pcPesaje })[PC_.tab]();
+  ({ recepcion: pcRecepcion, cascos: pcCascos, otrab: pcOTrab, rech: pcRechazadas, armar: pcOS, ots: pcOS, os: pcOS, entregas: pcEntregas, costos: pcCostos, herramental: pcHerramental, equipos: pcEquipos, alarmas: pcAlarmas, hist: pcHist, config: pcConfig, pesaje: pcPesaje, plan: pcPlan })[PC_.tab]();
 }
 
 // ================================================================
@@ -9808,6 +9808,86 @@ function pcTiempos() {
   });
 }
 
+
+// ── 📅 Plan del día siguiente: el día anterior se eligen las cubiertas y se deja todo listo (materiales, estaciones, piezas, pesaje) ──
+async function pcPlan(dia) {
+  var b = $id('pc-body'); b.innerHTML = '<div class="card"><div class="card-body tdim">Cargando…</div></div>';
+  var r; try { r = await gsRun('gsPC_PlanDatos', dia || PC_.plDia || ''); } catch (e) { b.innerHTML = '<div class="al al-r">' + pcEsc(e.message) + '</div>'; return; }
+  if (!r || !r.ok) { b.innerHTML = '<div class="al al-r">' + pcEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
+  PC_.plDia = r.DIA; PC_.plInfo = r;
+  PC_.plSel = {}; (r.PLAN ? r.PLAN.CUBIERTAS : []).forEach(function(id) { PC_.plSel[id] = true; });
+  var dd = function(s) { return String(s).split('-').reverse().join('/'); };
+  var g = pcPsCubs(), ks = Object.keys(g).sort(function(a, b) { return (/^Esperando/.test(a) ? 1 : 0) - (/^Esperando/.test(b) ? 1 : 0) || a.localeCompare(b); });
+  var sel = '<div class="tdim">No hay cubiertas en cargas abiertas ni esperando.</div>';
+  if (ks.length) sel = ks.map(function(k, gi) { var cs = g[k], todas = cs.every(function(c) { return PC_.plSel[c.ID_CUB]; });
+    return '<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:8px"><label style="display:flex;gap:8px;align-items:center;padding:6px 10px;background:var(--bg);font-weight:700;cursor:pointer"><input type="checkbox"' + (todas ? ' checked' : '') + ' onchange="pcPlGrupo(' + gi + ',this.checked)"> ' + pcEsc(k) + ' <span class="tdim" style="font-weight:400">(' + cs.length + ')</span></label>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:4px 14px;padding:6px 10px">' + cs.map(function(c) { return '<label style="display:flex;gap:6px;align-items:center;font-size:12px;cursor:pointer"><input type="checkbox" class="pc-pl-c" data-g="' + gi + '" value="' + c.ID_CUB + '"' + (PC_.plSel[c.ID_CUB] ? ' checked' : '') + ' onchange="PC_.plSel[this.value]=this.checked;pcPlCalc()"><b class="mono">' + pcEsc(c.MARCA || c.ID_CUB) + '</b> ' + pcEsc((c.CLIENTE || '') + ' · ' + (c.MEDIDA || '') + ' · ' + (c.TRABAJO || '')) + '</label>'; }).join('') + '</div></div>'; }).join('');
+  b.innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">📅 Plan del ' + dd(r.DIA) + (r.DIA === r.MANANA ? ' (próximo día de trabajo)' : r.DIA === r.HOY ? ' (hoy)' : '') + '</span><span class="flex gap2" style="align-items:center;flex-wrap:wrap">' +
+    '<input type="date" class="fi" id="pc-pl-dia" value="' + pcEsc(r.DIA) + '" min="' + pcEsc(r.HOY) + '" onchange="pcPlan(this.value)"><button class="btn btn-s btn-sm" onclick="pcPlan(PC_.plInfo.MANANA)">Próximo día</button></span></div>' +
+    '<div class="card-body"><div class="al ' + (r.PLAN ? 'al-g' : 'al-y') + ' mb2" style="font-size:12px">' + (r.PLAN ? '✓ Plan guardado' + (r.PLAN.USUARIO ? ' por ' + pcEsc(r.PLAN.USUARIO) : '') + ' · ' + r.PLAN.CUBIERTAS.length + ' cubiertas. Se puede cambiar y volver a guardar.' : 'Todavía no hay plan para este día. Tildá las cubiertas que se van a hacer y tocá «Guardar plan».') + '</div>' +
+    '<div class="tdim mb2" style="font-size:12px">El día anterior: 1) tildá lo que se hace ese día (una carga entera o sueltas), 2) mirá si alcanzan los materiales, 3) lo que tiene que estar en cada estación, 4) las piezas con su marca, 5) lo que hay que pesar o medir. Después imprimí la hoja del plan.</div>' +
+    sel + '<div class="fg mt2"><label class="fl">Notas del plan (opcional)</label><input class="fi" id="pc-pl-obs" maxlength="500" value="' + pcEsc(r.PLAN ? r.PLAN.OBS : '') + '" placeholder="Ej.: arranca la carga a las 7, falta confirmar banda"></div>' +
+    '<div class="flex gap2 mt2" style="flex-wrap:wrap"><button class="btn btn-p" onclick="pcPlGuardar()"><i class="fas fa-save"></i> Guardar plan</button><button class="btn btn-s" onclick="pcPlImp()"><i class="fas fa-print"></i> Hoja del plan (PDF)</button><button class="btn btn-s" onclick="pcPlPesar()">⚖ Ir a pesar para ese día</button></div></div></div><div id="pc-pl-res"></div>';
+  pcPlCalc();
+}
+function pcPlGrupo(gi, v) { document.querySelectorAll('.pc-pl-c[data-g="' + gi + '"]').forEach(function(x) { x.checked = v; PC_.plSel[x.value] = v; }); pcPlCalc(); }
+function pcPlIds() { return Object.keys(PC_.plSel || {}).filter(function(k) { return PC_.plSel[k]; }); }
+async function pcPlCalc() {
+  var ids = pcPlIds(), box = $id('pc-pl-res'); if (!box) return;
+  if (!ids.length) { box.innerHTML = ''; PC_.plR = null; return; }
+  box.innerHTML = '<div class="card"><div class="card-body tdim">Calculando el plan…</div></div>';
+  var r; try { r = await gsRun('gsPC_PlanCalc', ids, PC_.plDia); } catch (e) { box.innerHTML = '<div class="al al-r">' + pcEsc(e.message) + '</div>'; return; }
+  if (!r || !r.ok) { box.innerHTML = '<div class="al al-r">' + pcEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
+  PC_.plR = r;
+  var f3 = function(n) { return (Math.round((+n || 0) * 1000) / 1000).toLocaleString('es-AR'); }, M = r.MATERIALES, E = r.ESTACIONES;
+  var pes = E.filter(function(x) { return x.PESA; }), herr = E.filter(function(x) { return x.HERRAMENTAL; });
+  var faltaPes = pes.filter(function(x) { return x.PESADO + 1e-9 < x.RETIRAR; }).length;
+  var resumen = [[M.FALTAN ? '⛔ Faltan ' + M.FALTAN + ' materiales' : '✓ Alcanzan los materiales', M.FALTAN ? 'b-red' : 'b-green'],
+    [faltaPes ? '⚖ Falta pesar/medir ' + faltaPes : (pes.length ? '✓ Todo pesado' : 'Nada para pesar'), faltaPes ? 'b-orange' : 'b-green'],
+    [herr.length ? herr.length + ' tipo' + (herr.length === 1 ? '' : 's') + ' de pieza' : 'Sin piezas', 'b-blue']];
+  var h = '<div class="card mb3"><div class="card-body"><b>' + ids.length + ' cubiertas en el plan.</b> ' + resumen.map(function(x) { return '<span class="badge ' + x[1] + '" style="margin-left:6px">' + x[0] + '</span>'; }).join('') + '</div></div>';
+  // 1 Materiales
+  h += '<div class="card mb3"><div class="card-hd"><span class="card-title">1 · ¿Alcanzan los materiales?</span><span class="tdim" style="font-size:11px">receta de las tildadas contra el stock de hoy</span></div><div class="card-body"><div class="tw"><table id="pc-pl-mat" style="font-size:13px"><thead><tr><th>Material</th><th class="tr">Necesita</th><th class="tr">Hay</th><th class="tr">Falta</th><th>Qué hacer</th></tr></thead><tbody>' +
+    M.LINEAS.map(function(x) { var q = !x.FALTA ? '✓' : x.TIPO === 'RECETA' ? '<span style="color:#b91c1c">Corregir la receta</span>' : x.TIPO === 'HERRAMENTAL' ? '<span style="color:#b91c1c">Dar de alta piezas o sacar cubiertas</span>' : (x.ALTERNATIVAS && x.ALTERNATIVAS.length ? 'Comprar o usar: ' + x.ALTERNATIVAS.slice(0, 3).map(function(a) { return pcEsc(a.NOMBRE) + ' (' + f3(a.HAY) + ')'; }).join(', ') : '<span style="color:#b91c1c">Comprar</span>');
+      return '<tr' + (x.FALTA ? ' style="background:#fee2e2"' : '') + '><td>' + pcEsc(x.NOMBRE) + '</td><td class="tr mono">' + f3(x.NECESITA) + ' ' + pcEsc(x.UNIDAD) + '</td><td class="tr mono">' + f3(x.HAY) + '</td><td class="tr mono">' + (x.FALTA ? '<b style="color:#b91c1c">' + f3(x.FALTA) + '</b>' : '—') + '</td><td style="font-size:12px">' + q + '</td></tr>'; }).join('') + '</tbody></table></div></div></div>';
+  // 2 Por estación
+  var ests = []; E.forEach(function(x) { if (ests.indexOf(x.ESTACION) === -1) ests.push(x.ESTACION); });
+  h += '<div class="card mb3"><div class="card-hd"><span class="card-title">2 · Lo que tiene que estar listo en cada estación</span></div><div class="card-body"><div class="tw"><table id="pc-pl-est" style="font-size:13px"><thead><tr><th>Estación</th><th>Material</th><th class="tr">Cantidad</th><th class="tr">Cubiertas</th></tr></thead><tbody>' +
+    ests.map(function(e) { return E.filter(function(x) { return x.ESTACION === e; }).map(function(x, k) { return '<tr><td>' + (k ? '' : '<b>' + pcEsc(e) + '</b>') + '</td><td>' + pcEsc(x.NOMBRE) + (x.PESA ? ' <span class="badge b-orange" style="font-size:9px">' + (x.VERBO === 'PESAR' ? 'se pesa' : 'se mide') + '</span>' : '') + (x.HERRAMENTAL ? ' <span class="badge b-blue" style="font-size:9px">pieza</span>' : '') + '</td><td class="tr mono">' + f3(x.CANT) + ' ' + pcEsc(x.UNIDAD) + '</td><td class="tr">' + x.CUBIERTAS + '</td></tr>'; }).join(''); }).join('') + '</tbody></table></div>' +
+    (r.SIN_ESTACION.length ? '<div class="al al-y mt2" style="font-size:12px">Sin estación en la receta: ' + pcEsc(r.SIN_ESTACION.join(', ')) + '.</div>' : '') + '</div></div>';
+  // 3 Piezas
+  h += '<div class="card mb3"><div class="card-hd"><span class="card-title">3 · Inner y envelope: piezas disponibles con su marca</span></div><div class="card-body">' + (herr.length ? herr.map(function(x) { var falta = x.DISPONIBLES.length < x.CANT;
+      return '<div style="margin-bottom:8px"><b>' + pcEsc(x.NOMBRE) + '</b> · ' + pcEsc(x.ESTACION) + ' · hacen falta <b>' + x.CANT + '</b>, disponibles <b style="color:' + (falta ? '#b91c1c' : 'var(--success)') + '">' + x.DISPONIBLES.length + '</b><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' + (x.DISPONIBLES.length ? x.DISPONIBLES.map(function(c) { return '<span class="badge b-gray mono">' + pcEsc(c || 'Sin número') + '</span>'; }).join('') : '<span class="tdim">Ninguna disponible</span>') + '</div></div>'; }).join('') : '<div class="tdim">Lo tildado no lleva inner ni envelope.</div>') + '</div></div>';
+  // 4 Pesaje
+  h += '<div class="card mb3"><div class="card-hd"><span class="card-title">4 · Lo que hay que pesar o medir para el ' + String(r.DIA).split('-').reverse().join('/') + '</span><button class="btn btn-p btn-sm" onclick="pcPlPesar()">⚖ Ir a pesar</button></div><div class="card-body">' + (pes.length ? '<div class="tw"><table id="pc-pl-pes" style="font-size:13px"><thead><tr><th>Estación</th><th>Material</th><th class="tr">Receta</th><th class="tr">Retirar (+' + r.MARGEN + '%)</th><th class="tr">Ya pesado</th><th class="tr">Falta</th></tr></thead><tbody>' +
+    pes.map(function(x) { var u = pcEsc(x.UNIDAD), falta = Math.max(0, Math.round((x.RETIRAR - x.PESADO) * 1000) / 1000); return '<tr><td>' + pcEsc(x.ESTACION) + '</td><td><b>' + pcEsc(x.NOMBRE) + '</b></td><td class="tr mono">' + f3(x.CANT) + ' ' + u + '</td><td class="tr mono"><b>' + f3(x.RETIRAR) + ' ' + u + '</b></td><td class="tr mono">' + (x.PESADO ? f3(x.PESADO) + ' ' + u : '—') + '</td><td class="tr mono" style="color:' + (falta > 0 ? 'var(--danger)' : 'var(--success)') + '">' + (falta > 0 ? f3(falta) + ' ' + u : '✓') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="tdim">Lo tildado no lleva nada que vaya por peso o volumen.</div>') + '</div></div>';
+  box.innerHTML = h;
+}
+async function pcPlGuardar() {
+  var ids = pcPlIds(); if (!ids.length) { toast('Tildá las cubiertas que se hacen ese día', 'r2'); return; }
+  try { var r = await gsRun('gsPC_PlanGuardar', PC_.plDia, ids, $v('pc-pl-obs')); if (!r || !r.ok) return toast((r && r.error) || 'No se pudo', 'r2'); toast('Plan guardado ✓', 'g'); pcPlan(PC_.plDia); } catch (e) { toast(e.message, 'r2'); }
+}
+function pcPlPesar() {
+  var ids = pcPlIds(); if (!ids.length) { toast('Tildá las cubiertas del plan', 'r2'); return; }
+  PC_.psSel = {}; ids.forEach(function(i) { PC_.psSel[i] = true; });
+  PC_.psDia = PC_.plDia === (PC_.plInfo && PC_.plInfo.HOY) ? '' : PC_.plDia; PC_.tab = 'pesaje'; pcPintar();
+  setTimeout(function() { if (typeof pcPsCalc === 'function') pcPsCalc(); }, 400);
+}
+function pcPlImp() {
+  var r = PC_.plR; if (!r) { toast('Tildá las cubiertas del plan', 'r2'); return; }
+  var f3 = function(n) { return (Math.round((+n || 0) * 1000) / 1000).toLocaleString('es-AR'); }, ids = pcPlIds(), dia = String(r.DIA).split('-').reverse().join('/');
+  var cubs = PC_.d.cubiertas.filter(function(c) { return PC_.plSel[c.ID_CUB]; }), E = r.ESTACIONES, ests = [];
+  E.forEach(function(x) { if (ests.indexOf(x.ESTACION) === -1) ests.push(x.ESTACION); });
+  var h = pcEncImp('PLAN DEL DÍA ' + dia, ids.length + ' cubiertas') +
+    ($v('pc-pl-obs') ? '<div class="nota"><b>Notas:</b> ' + pcEsc($v('pc-pl-obs')) + '</div>' : '') +
+    '<h3>Cubiertas</h3><table><thead><tr><th>Marca grabada</th><th>DOT</th><th>Cliente</th><th>Medida</th><th>Trabajo</th></tr></thead><tbody>' + cubs.map(function(c) { return '<tr><td><b>' + pcEsc(c.MARCA) + '</b></td><td>' + pcDotTxt(pcDotDe(c)) + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td>' + pcEsc((c.TIPO || '') + ' ' + (c.MEDIDA || '')) + '</td><td>' + pcEsc(c.TRABAJO) + '</td></tr>'; }).join('') + '</tbody></table>' +
+    '<h3>Materiales</h3><table><thead><tr><th>Material</th><th>Necesita</th><th>Hay</th><th>Falta</th></tr></thead><tbody>' + r.MATERIALES.LINEAS.map(function(x) { return '<tr><td>' + pcEsc(x.NOMBRE) + '</td><td>' + f3(x.NECESITA) + ' ' + pcEsc(x.UNIDAD) + '</td><td>' + f3(x.HAY) + '</td><td>' + (x.FALTA ? '<b>' + f3(x.FALTA) + '</b>' : '—') + '</td></tr>'; }).join('') + '</tbody></table>' +
+    '<h3>Por estación</h3><table><thead><tr><th>Estación</th><th>Material</th><th>Cantidad</th><th>Retirar</th><th>Pesado real</th><th class="ck">Listo</th></tr></thead><tbody>' +
+    ests.map(function(e) { return E.filter(function(x) { return x.ESTACION === e; }).map(function(x, k) { return '<tr><td>' + (k ? '' : '<b>' + pcEsc(e) + '</b>') + '</td><td>' + pcEsc(x.NOMBRE) + (x.PESA ? ' <b>· ' + (x.VERBO === 'PESAR' ? 'PESAR' : 'MEDIR') + '</b>' : '') + (x.HERRAMENTAL ? ' <b>· PIEZA</b> (' + pcEsc(x.DISPONIBLES.join(', ') || 'ninguna disponible') + ')' : '') + '</td><td>' + f3(x.CANT) + ' ' + pcEsc(x.UNIDAD) + '</td><td>' + (x.PESA ? '<b>' + f3(x.RETIRAR) + ' ' + pcEsc(x.UNIDAD) + '</b>' : '') + '</td><td>' + (x.PESA ? (x.PESADO ? f3(x.PESADO) + ' ' + pcEsc(x.UNIDAD) : '') : '—') + '</td><td class="ck"></td></tr>'; }).join(''); }).join('') +
+    '</tbody></table><div class="firmas"><div>Preparó</div><div>Encargado de planta</div></div>';
+  pcImprimir('Plan del día ' + dia, h, false);
+}
+PC_TOUR.plan = [['', '📅 Plan de mañana', 'El día anterior se tildan las cubiertas que se hacen ese día y queda guardado. El sistema dice si alcanzan los materiales, qué tiene que estar en cada estación, qué piezas hay con su marca y qué falta pesar o medir.'], ['#pc-pl-dia', 'El día', 'Por defecto, el próximo día de trabajo.']];
 // ── Herramental ──
 // ── Pesaje de cojín y flux: informe por día y configuración (qué estaciones pesan además cada cubierta) ──
 // ── Pesaje y medición: se tildan las cubiertas que se van a hacer, el sistema suma la receta y se va cargando lo pesado o medido ──
@@ -16027,6 +16107,7 @@ var MV_OPC = [
   ['cubierta', '🔎', 'Buscar cubierta', 'Dónde está y toda su vida', 'documentos', 'CUB', 'RECEPCION ENCARGADO_PLANTA VENDEDOR FACTURACION'],
   ['cargas', '🏭', 'Cargas en la línea', 'Cada orden de servicio y sus cubiertas', 'produccion-cubiertas', 'os', 'ENCARGADO_PLANTA'],
   ['puesto-estacion', '🛠', 'Estaciones', 'Trabajo en la línea', 'puesto-estacion', '', 'ENCARGADO_PLANTA OPERADOR'],
+  ['plan', '📅', 'Plan de mañana', 'Dejar todo listo el día anterior', 'produccion-cubiertas', 'plan', 'ENCARGADO_PLANTA'],
   ['pesaje', '⚖', 'Pesaje y medición', 'Lo que se retira para la carga', 'produccion-cubiertas', 'pesaje', 'ENCARGADO_PLANTA'],
   ['entregas', '🚚', 'Entregas y remitos', 'Remitos y foto firmada', 'produccion-cubiertas', 'entregas', 'RECEPCION ENCARGADO_PLANTA'],
   ['rech', '↩', 'Rechazadas', 'Cubiertas para devolver', 'produccion-cubiertas', 'rech', 'RECEPCION ENCARGADO_PLANTA'],
