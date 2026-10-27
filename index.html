@@ -1427,7 +1427,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610272024';
+var EMA_BUILD = '202610272025';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16352,10 +16352,8 @@ var MV_OPC = [
   ['alarmas', '⚠', 'Alarmas', 'Stock bajo y cosas atrasadas', 'produccion-cubiertas', 'alarmas', 'ENCARGADO_PLANTA'],
   ['stock', '📦', 'Stock de insumos', 'Cuánto hay de cada insumo', 'stock-insumos', '', 'ENCARGADO_PLANTA'],
   ['catalogo', '🛍', 'Catálogo', 'La tienda: cubiertas e insumos con foto', 'precios-nuevos', '', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
-  ['precios-nuevos', '🏷', 'Lista de precios · Cubiertas', 'Cubiertas nuevas y promos', 'precios-nuevos', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
-  ['precios-ins', '🔧', 'Lista de precios · Insumos', 'Insumos y accesorios de gomería', 'precios-nuevos', 'INS', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
-  ['margen', '📊', 'Margen · Cubiertas', 'Semáforo: cuánto se gana con descuento', 'margen', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
-  ['margen-ins', '📊', 'Margen · Insumos', 'Semáforo de los insumos y accesorios', 'margen', 'INS', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
+  ['precios-nuevos', '🏷', 'Lista de precios', 'Cubiertas e insumos (elegís arriba)', 'precios-nuevos', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
+  ['margen', '📊', 'Margen con descuento', 'Cubiertas e insumos (elegís arriba)', 'margen', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
   ['fichaje', '🕘', 'Fichaje', 'Entrada y salida del personal', 'fichaje', '', ''],
   ['asistencia', '👥', 'Asistencia', 'Quién vino, faltas y certificados', 'asistencia', '', ''],
   ['avance', '📈', 'Avance del sistema', 'Qué se hizo y qué sigue', 'avance', '', ''],
