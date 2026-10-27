@@ -16169,7 +16169,7 @@ function mvCompleto() { document.body.classList.remove('modo-puesto'); document.
 </script>
 <script>
 // ── 📊 Margen con descuento (celular): se ponen las cubiertas y el semáforo dice cuánto se gana con el descuento que se va dando ──
-var MG_ = { d: null, items: [], desc: 0 };
+var MG_ = { d: null, items: [], desc: 0, rubro: '' };
 async function renderMargen() {
   var el = $id('page-margen'); if (!el) return;
   if (!MG_.d) {
@@ -16178,17 +16178,24 @@ async function renderMargen() {
     if (!MG_.d || !MG_.d.ok) { el.innerHTML = '<div class="al al-r">' + pcEsc((MG_.d && MG_.d.error) || 'No se pudo') + '</div>'; MG_.d = null; return; }
   }
   el.innerHTML = '<div class="mg-wrap"><div style="font-size:20px;font-weight:800;margin-bottom:2px">📊 Margen con descuento</div><div class="tdim" style="font-size:13px;margin-bottom:10px">Poné las cubiertas (código o medida) y mové el descuento: el semáforo te dice si conviene.</div>' +
-    '<div style="position:relative"><input class="fi" id="mg-q" autocomplete="off" placeholder="Código o medida: N1234, 185/65R15, 2956522…" style="font-size:16px;min-height:46px;width:100%" oninput="mgBuscar()" onkeydown="if(event.key===\'Enter\')mgEnter()"><div id="mg-sug"></div></div>' +
+    '<div id="mg-rub" class="mg-chips">' + mgChips() + '</div><div style="position:relative"><input class="fi" id="mg-q" autocomplete="off" placeholder="Medida, marca o código: 185/65R15, giti…" style="font-size:16px;min-height:46px;width:100%" oninput="mgBuscar()" onkeydown="if(event.key===\'Enter\')mgEnter()"><div id="mg-sug"></div></div>' +
     '<div id="mg-lista" class="mt2"></div><div id="mg-desc" class="mt2"></div><div id="mg-sem" class="mt2"></div>' +
     '<div class="tdim mt3" style="font-size:11px">Verde: queda 10 o más de cada 100 pesos. Amarillo: entre 5 y 10. Rojo: menos de 5 (no conviene). Cuenta: costo de la cubierta + flete + Ingresos Brutos e impuesto al cheque. No incluye tarjeta, descuento de cheques ni gastos del negocio: si paga con tarjeta, quedarse en verde.</div></div>';
   mgPintar();
 }
+// Tipo de cubierta: achica la búsqueda (Auto, Camioneta, Camión, Agrícola…)
+function mgChips() {
+  var rs = []; MG_.d.ARTICULOS.forEach(function(a) { if (a.RUBRO && rs.indexOf(a.RUBRO) === -1) rs.push(a.RUBRO); });
+  var ord = ['AUTO', 'CAMIONETA', 'CAMION', 'AGRICOLA', 'INDUSTRIAL']; rs.sort(function(a, b) { var x = ord.indexOf(a), y = ord.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
+  var nom = { AUTO: '🚗 Auto', CAMIONETA: '🛻 Camioneta', CAMION: '🚛 Camión', AGRICOLA: '🚜 Agrícola', INDUSTRIAL: '🏗 Industrial' };
+  return [''].concat(rs).map(function(r) { return '<button class="btn btn-sm ' + (MG_.rubro === r ? 'btn-p' : 'btn-s') + '" onclick="MG_.rubro=\'' + r + '\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">' + (r ? (nom[r] || r) : 'Todas') + '</button>'; }).join('');
+}
 function mgNorm(t) { return String(t || '').toUpperCase().replace(/[\s\/\-.,R]/g, ''); }
 function mgBuscar() {
   var q = $v('mg-q').trim(), box = $id('mg-sug'); if (!box) return;
-  if (q.length < 2) { box.innerHTML = ''; return; }
-  var qs = q.toUpperCase().split(/\s+/), qn = mgNorm(q);
-  var r = MG_.d.ARTICULOS.filter(function(a) { var n = a.NOMBRE.toUpperCase() + ' ' + a.CODIGO + ' ' + a.MARCA.toUpperCase(); return a.CODIGO.toUpperCase() === q.toUpperCase() || mgNorm(a.NOMBRE).indexOf(qn) !== -1 || qs.every(function(w) { return n.indexOf(w) !== -1; }); }).slice(0, 12);
+  if (q.length < 2 && !MG_.rubro) { box.innerHTML = ''; return; }
+  var qs = q.toUpperCase().split(/\s+/).filter(function(w) { return w; }), qn = mgNorm(q);
+  var r = MG_.d.ARTICULOS.filter(function(a) { if (MG_.rubro && a.RUBRO !== MG_.rubro) return false; if (q.length < 2) return true; var n = a.NOMBRE.toUpperCase() + ' ' + a.CODIGO + ' ' + a.MARCA.toUpperCase(); return a.CODIGO.toUpperCase() === q.toUpperCase() || mgNorm(a.NOMBRE).indexOf(qn) !== -1 || qs.every(function(w) { return n.indexOf(w) !== -1; }); }).slice(0, 12);
   box.innerHTML = r.length ? '<div class="card" style="position:absolute;z-index:20;left:0;right:0;max-height:320px;overflow:auto">' + r.map(function(a) { return '<div class="mg-sug" onclick="mgAgregar(\'' + pcEsc(a.CODIGO) + '\')"><b>' + pcEsc(a.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc(a.CODIGO) + ' · ' + pcEsc(a.RUBRO) + ' · $' + mgM(a.CON_IVA) + '</div></div>'; }).join('') + '</div>' : '<div class="tdim" style="font-size:12px;padding:6px">No encontré esa cubierta.</div>';
 }
 function mgEnter() {
@@ -16235,6 +16242,7 @@ function mgPintar() {
 </script>
 <style>
 .mg-wrap{max-width:640px;margin:0 auto}
+.mg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.mg-chips .btn{min-height:38px}
 .mg-sug{padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer}
 .mg-sug:active,.mg-sug:hover{background:var(--bg)}
 .mg-it{display:flex;gap:8px;align-items:center;background:var(--card,#fff);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px}
