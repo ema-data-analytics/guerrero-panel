@@ -16187,7 +16187,7 @@ async function renderMargen() {
 function mgChips() {
   var rs = []; MG_.d.ARTICULOS.forEach(function(a) { if (a.RUBRO && rs.indexOf(a.RUBRO) === -1) rs.push(a.RUBRO); });
   var ord = ['AUTO', 'CAMIONETA', 'CAMION', 'AGRICOLA', 'INDUSTRIAL']; rs.sort(function(a, b) { var x = ord.indexOf(a), y = ord.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
-  var nom = { AUTO: '🚗 Auto', CAMIONETA: '🛻 Camioneta', CAMION: '🚛 Camión', AGRICOLA: '🚜 Agrícola', INDUSTRIAL: '🏗 Industrial' };
+  var nom = { AUTO: '🚗 Auto', CAMIONETA: '🚙 Camioneta', CAMION: '🚛 Camión', AGRICOLA: '🚜 Agrícola', INDUSTRIAL: '🏗 Industrial' };
   return [''].concat(rs).map(function(r) { return '<button class="btn btn-sm ' + (MG_.rubro === r ? 'btn-p' : 'btn-s') + '" onclick="MG_.rubro=\'' + r + '\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">' + (r ? (nom[r] || r) : 'Todas') + '</button>'; }).join('');
 }
 function mgNorm(t) { return String(t || '').toUpperCase().replace(/[\s\/\-.,R]/g, ''); }
