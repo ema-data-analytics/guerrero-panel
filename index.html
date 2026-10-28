@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "490a18219704"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d5b40ce601fe"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1429,7 +1429,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610281051';
+var EMA_BUILD = '202610281052';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -4280,6 +4280,7 @@ function lppPintar() {
     '<div class="fg"><label class="fl">Nombre o número de la lista *</label><input id="lpp-nom" class="fi" placeholder="Ej: Lista N°199"></div></div>' +
     '<div class="fr2"><div class="fg"><label class="fl">Vigente desde *</label><input id="lpp-fec" type="date" class="fi"></div>' +
     '<div class="fg"><label class="fl">Descuento que nos hacen (%)</label><input id="lpp-desc" class="fi" inputmode="decimal" placeholder="Ej: 33,33"></div></div>' +
+    '<label style="display:flex;gap:8px;align-items:center;font-size:12px;margin:4px 0 10px"><input type="checkbox" id="lpp-solo"> Actualizar solo el costo de los insumos de planta (no el de los artículos de venta)</label>' +
     '<div class="fg"><label class="fl">Renglones: código y precio de lista sin IVA</label><input type="file" id="lpp-arch" accept=".csv,.txt" class="fi" onchange="lppArchivo(this)">' +
     '<textarea id="lpp-txt" class="fi" style="min-height:90px;font-family:monospace;font-size:12px" placeholder="Pegá desde Excel o el CSV del proveedor: código;descripción;precio (o código;precio), un renglón por producto" oninput="lppLeer()"></textarea><div id="lpp-cnt" class="tdim" style="font-size:12px"></div></div>' +
     '<div class="fg"><label class="fl">Observación</label><input id="lpp-obs" class="fi" placeholder="Opcional"></div>' +
@@ -4306,7 +4307,7 @@ function lppLeer() {
 }
 async function lppEnviar(ver) {
   lppLeer();
-  var o = { ID_PROVEEDOR: $v('lpp-prov'), NOMBRE: $v('lpp-nom'), FECHA_VIGENCIA: $v('lpp-fec'), DESCUENTO: String($v('lpp-desc') || '0').replace(',', '.'), OBS: $v('lpp-obs'), FILAS: LPP_.filas, VER: ver ? 1 : 0 };
+  var o = { ID_PROVEEDOR: $v('lpp-prov'), NOMBRE: $v('lpp-nom'), FECHA_VIGENCIA: $v('lpp-fec'), DESCUENTO: String($v('lpp-desc') || '0').replace(',', '.'), OBS: $v('lpp-obs'), FILAS: LPP_.filas, SOLO: ($id('lpp-solo') && $id('lpp-solo').checked) ? 'INSUMOS' : '', VER: ver ? 1 : 0 };
   if (!ver) { var ok = await uiConfirmar('¿Grabar la lista? Pasa a ser la vigente de ese proveedor (la anterior queda vencida) y cambia el costo de los productos que coinciden.'); if (!ok) return; }
   var res = $id('lpp-res'); res.innerHTML = '<div class="tdim">' + (ver ? 'Calculando…' : 'Grabando…') + '</div>';
   var r; try { r = await gsRun('gsLPP_Grabar', o); } catch (e) { res.innerHTML = '<div class="al al-r">' + lppEsc(e.message) + '</div>'; return; }
