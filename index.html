@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d1805e1182c9"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "db56a6140e92"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610281446';
+var EMA_BUILD = '202610281517';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3431,6 +3431,8 @@ async function renderVentas() {
     '<div class="fg"><label class="fl">Precio neto s/IVA</label><input id="vta-precio" class="fi" type="number" step="0.01" min="0"/></div>' +
     '<div class="fg"><label class="fl">Desc. %</label><input id="vta-dto" class="fi" type="number" step="0.01" min="0" value="0"/></div>' +
     '<div class="fg"><label class="fl">IVA %</label><select id="vta-iva" class="fs"><option value="21">21</option><option value="10.5">10,5</option><option value="27">27</option><option value="0">0</option></select></div></div>' +
+    '<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:4px 0 6px;cursor:pointer"><input type="checkbox" id="vta-sc" onchange="vtaScCambio()"/> <span><b>Sin cargo</b> (se entrega pero no se cobra: p. ej. parche incluido en el recapado)</span></label>' +
+    '<div id="vta-sc-mot-w" class="hidden fg"><label class="fl">Motivo</label><input id="vta-sc-mot" class="fi" value="parche incluido en el recapado"/></div>' +
     '<div id="vta-stock-info" class="tdim" style="font-size:11px;min-height:16px"></div>' +
     '<button class="btn btn-p" onclick="vtaAgregarItem()" style="width:100%"><i class="fas fa-plus"></i> Agregar</button></div></div>' +
     '<div class="card mb4 hidden" id="vta-ncimp-card"><div class="card-hd"><span class="card-title">Nota de crédito por importe</span></div><div class="card-body">' +
@@ -3504,15 +3506,20 @@ function vtaProdCambio() {
   $id('vta-iva').value = String(a.IVA);
   if (inf) inf.textContent = ['SERVICIO', 'RECAPADO'].indexOf(a.TIPO) !== -1 ? 'No lleva stock' : 'Stock: ' + a.STOCK;
 }
+function vtaScCambio() { var on = $id('vta-sc').checked; $id('vta-sc-mot-w').className = on ? 'fg' : 'hidden fg'; $id('vta-precio').disabled = on; $id('vta-dto').disabled = on; }
 function vtaAgregarItem() {
   var tipo = $v('vta-it-tipo'), cant = vNum($v('vta-cant')), neto = vNum($v('vta-precio')), dto = vNum($v('vta-dto')), iva = vNum($v('vta-iva'));
+  var sc = !!($id('vta-sc') && $id('vta-sc').checked), mot = ($v('vta-sc-mot') || '').trim();
   if (!(cant > 0)) { toast('Cantidad no válida', 'r2'); return; }
-  if (!(neto > 0)) { toast('Ingresá el precio neto', 'r2'); return; }
+  if (sc) { neto = 0; dto = 0; if (mot.length < 3) { toast('Escribí el motivo del sin cargo', 'r2'); return; } }
+  else if (!(neto > 0)) { toast('Ingresá el precio neto', 'r2'); return; }
   var r = { TIPO: tipo, CANT: cant, NETO: neto, DTO: dto, IVA: iva };
+  if (sc) { r.SIN_CARGO = 1; r.MOTIVO_SC = mot; }
   if (tipo === 'ARTICULO') { var a = vtaArt($v('vta-prod')); if (!a) { toast('Elegí el artículo', 'r2'); return; } r.ID = a.ID; r.NOMBRE = a.NOMBRE; }
   else { r.NOMBRE = ($v('vta-serv') || '').trim(); if (!r.NOMBRE) { toast('Escribí el servicio', 'r2'); return; } }
   ventaItems.push(r);
   $id('vta-cant').value = '1'; $id('vta-precio').value = ''; $id('vta-dto').value = '0'; $id('vta-prod').value = ''; $id('vta-serv').value = ''; $id('vta-stock-info').textContent = '';
+  if ($id('vta-sc')) { $id('vta-sc').checked = false; vtaScCambio(); }
   vtaRenderItems();
 }
 function vtaLinea(r) { var nu = vR2(r.NETO * (1 - r.DTO / 100)), iu = vR2(nu * r.IVA / 100); return { neto: vR2(nu * r.CANT), iva: vR2(iu * r.CANT), sub: vR2((nu + iu) * r.CANT) }; }
@@ -3523,7 +3530,7 @@ function vtaRenderItems() {
   $id('vta-count').textContent = ventaItems.length;
   el.innerHTML = !ventaItems.length ? '<div class="tdim tc" style="padding:16px">Sin renglones.</div>' :
     '<div class="tw"><table style="font-size:12px"><thead><tr><th>Detalle</th><th class="tr">Cant.</th><th class="tr">Neto u.</th><th class="tr">Desc.</th><th class="tc">IVA</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody>' +
-    ventaItems.map(function(r, i) { var l = vtaLinea(r); return '<tr><td>' + vEsc(r.NOMBRE) + '</td><td class="mono tr">' + r.CANT + '</td><td class="mono tr">' + fmt(r.NETO) + '</td><td class="mono tr">' + (r.DTO ? r.DTO + '%' : '') + '</td><td class="tc">' + r.IVA + '%</td><td class="mono tr" style="font-weight:700">' + fmt(l.sub) + '</td><td><button class="btn btn-xs btn-d" onclick="vtaQuitar(' + i + ')"><i class="fas fa-times"></i></button></td></tr>'; }).join('') + '</tbody></table></div>';
+    ventaItems.map(function(r, i) { var l = vtaLinea(r); return '<tr><td>' + vEsc(r.NOMBRE) + (r.SIN_CARGO ? ' <span class="badge b-green">SIN CARGO · ' + vEsc(r.MOTIVO_SC) + '</span>' : '') + '</td><td class="mono tr">' + r.CANT + '</td><td class="mono tr">' + fmt(r.NETO) + '</td><td class="mono tr">' + (r.DTO ? r.DTO + '%' : '') + '</td><td class="tc">' + r.IVA + '%</td><td class="mono tr" style="font-weight:700">' + fmt(l.sub) + '</td><td><button class="btn btn-xs btn-d" onclick="vtaQuitar(' + i + ')"><i class="fas fa-times"></i></button></td></tr>'; }).join('') + '</tbody></table></div>';
   vtaTotales();
 }
 function vtaTotal() {
@@ -3601,7 +3608,7 @@ async function vtaGuardar() {
   }
   if (!(t === 'NC' && d.NC_TIPO === 'IMPORTE')) {
     if (!ventaItems.length) { toast('Agregá al menos un renglón', 'r2'); return; }
-    d.ITEMS = ventaItems.map(function(r) { return { TIPO: r.TIPO, ID: r.ID || '', NOMBRE: r.NOMBRE, CANT: r.CANT, NETO: r.NETO, DTO: r.DTO, IVA: r.IVA }; });
+    d.ITEMS = ventaItems.map(function(r) { return { TIPO: r.TIPO, ID: r.ID || '', NOMBRE: r.NOMBRE, CANT: r.CANT, NETO: r.NETO, DTO: r.DTO, IVA: r.IVA, SIN_CARGO: r.SIN_CARGO || 0, MOTIVO_SC: r.MOTIVO_SC || '' }; });
   }
   var b = $id('vta-btn-ok'); if (b) { b.disabled = true; b.innerHTML = 'Grabando…'; }
   try {
