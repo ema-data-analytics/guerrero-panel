@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610281109';
+var EMA_BUILD = '202610281115';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16644,11 +16644,14 @@ function mgBuscar() {
   if (MG_.div === 'INS' && q.length < 2 && !MG_.fam) { box.innerHTML = '<div class="tdim" style="font-size:14px;padding:10px 4px">' + (MG_.cat ? 'Elegí la familia de arriba o escribí el nombre o código.' : 'Elegí una categoría y después la familia, o escribí el nombre o código.') + '</div>'; return; }
   if (q.length < 2 && !MG_.rubro && MG_.div !== 'INS') { box.innerHTML = ''; return; }
   var qs = q.toUpperCase().split(/\s+/).filter(function(w) { return w; }), qn = mgNorm(q);
-  var r = MG_.d.ARTICULOS.filter(function(a) { if ((MG_.div === 'INS') !== (a.RUBRO === 'INSUMOS')) return false; if (MG_.div === 'INS' && MG_.cat && (a.CAT || 'OTROS') !== MG_.cat) return false; if (MG_.div === 'INS' && MG_.fam && String(a.MARCA).replace(/'/g, '') !== MG_.fam) return false; if (MG_.rubro && a.RUBRO !== MG_.rubro) return false; if (q.length < 2) return true; var n = a.NOMBRE.toUpperCase() + ' ' + a.CODIGO + ' ' + a.MARCA.toUpperCase(); return a.CODIGO.toUpperCase() === q.toUpperCase() || mgNorm(a.NOMBRE).indexOf(qn) !== -1 || qs.every(function(w) { return n.indexOf(w) !== -1; }); }).slice(0, 30);
+  var r = MG_.d.ARTICULOS.filter(function(a) { if ((MG_.div === 'INS') !== (a.RUBRO === 'INSUMOS')) return false; if (MG_.div === 'INS' && MG_.cat && (a.CAT || 'OTROS') !== MG_.cat) return false; if (MG_.div === 'INS' && MG_.fam && String(a.MARCA).replace(/'/g, '') !== MG_.fam) return false; if (MG_.rubro && a.RUBRO !== MG_.rubro) return false; if (q.length < 2) return true; var n = a.NOMBRE.toUpperCase() + ' ' + a.CODIGO + ' ' + a.MARCA.toUpperCase(); return a.CODIGO.toUpperCase() === q.toUpperCase() || mgNorm(a.NOMBRE).indexOf(qn) !== -1 || qs.every(function(w) { return n.indexOf(w) !== -1; }); });
+  // Antes se cortaba en 30 y quedaban afuera marcas enteras (ej. 295/80R22.5: 39 cubiertas, faltaban Mirage y Wanli). Ahora salen todas, de la más barata a la más cara.
+  r.sort(function(a, b) { return (a.CON_IVA || 0) - (b.CON_IVA || 0); });
+  var mgTot = r.length; if (r.length > 200) r = r.slice(0, 200);
   MG_.sug = r;
   if (!r.length) { box.innerHTML = '<div class="tdim" style="font-size:13px;padding:8px">No encontré esa cubierta.</div>'; return; }
   var n = MG_.items.reduce(function(a, i) { return a + i.n; }, 0);
-  box.innerHTML = '<div class="mg-lst"><div class="mg-lst-h">Tocá <b>todas</b> las que quieras: se marcan con ✓</div>' +
+  box.innerHTML = '<div class="mg-lst"><div class="mg-lst-h">' + mgTot + (mgTot === 1 ? ' resultado' : ' resultados') + (mgTot > r.length ? ' (se muestran ' + r.length + ': escribí más para achicar)' : '') + ' · Tocá <b>todas</b> las que quieras: se marcan con ✓</div>' +
     r.map(function(a, k) { var it = MG_.items.filter(function(i) { return i.c === a.CODIGO; })[0];
       return '<div class="mg-op' + (it ? ' on' : '') + '" onclick="mgTildar(' + k + ')"><span class="mg-ck">' + (it ? '✓' : '') + '</span><div style="flex:1;min-width:0"><b>' + pcEsc(a.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc(a.RUBRO) + ' · $' + mgM(a.CON_IVA) + (it && it.n > 1 ? ' · ' + it.n + ' unidades' : '') + '</div></div></div>'; }).join('') +
     '<button type="button" class="btn btn-p mg-listo" onclick="mgListo()">✓ Listo' + (n ? ' · ' + n + ' en la lista' : '') + '</button></div>';
