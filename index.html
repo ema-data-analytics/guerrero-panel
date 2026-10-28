@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "0f4cffce0ee3"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d1805e1182c9"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610281413';
+var EMA_BUILD = '202610281446';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -8387,15 +8387,16 @@ function recPintar() {
 
 function recTabla() {
   var rs = recFiltradas(), edita = recPuede('EDITAR'), agrega = recPuede('AGREGAR'), anula = recPuede('ANULAR');
-  var h = '<table id="tbl-recetas" style="font-size:12px"><thead><tr><th>Tipo</th><th>Medida</th><th>Trabajo</th><th>Banda</th><th class="tr">Renglones</th><th class="tr">Costo materiales</th><th class="tr">Rent.</th><th class="tr">Versión</th><th class="no-print"></th></tr></thead><tbody>';
+  var h = '<table id="tbl-recetas" style="font-size:12px"><thead><tr><th>Tipo</th><th>Medida</th><th>Trabajo</th><th>Marca</th><th>Banda</th><th class="tr">Renglones</th><th class="tr">Costo materiales</th><th class="tr">Rent.</th><th class="tr">Versión</th><th class="no-print"></th></tr></thead><tbody>';
   rs.forEach(function(r) {
-    h += '<tr' + (r.ESTADO === 'ANULADA' ? ' style="opacity:.55"' : '') + '><td>' + recEsc(r.TIPO) + '</td><td class="mono"><b>' + recEsc(r.MEDIDA) + '</b></td><td>' + recEsc(r.TRABAJO) + '</td><td class="mono">' + recEsc(r.ID_BANDA) + '</td>' +
+    h += '<tr' + (r.ESTADO === 'ANULADA' ? ' style="opacity:.55"' : '') + '><td>' + recEsc(r.TIPO) + '</td><td class="mono"><b>' + recEsc(r.MEDIDA) + '</b></td><td>' + recEsc(r.TRABAJO) + '</td><td>' + (r.MARCA ? '<span class="badge b-orange" title="Variante: se usa solo para cubiertas de esta marca">' + recEsc(r.MARCA) + '</span>' : '<span class="tdim">General</span>') + '</td><td class="mono">' + recEsc(r.ID_BANDA) + '</td>' +
       '<td class="tr">' + r.LINEAS + (r.SIN_VINCULAR ? ' <span class="badge b-orange" title="Renglones sin insumo vinculado">' + r.SIN_VINCULAR + ' sin vincular</span>' : '') + '</td>' +
       '<td class="tr mono">' + fmt(r.COSTO) + (r.SIN_PRECIO ? ' <span class="badge b-red" title="Renglones sin precio">' + r.SIN_PRECIO + ' sin precio</span>' : '') + '</td>' +
       '<td class="tr">' + (r.RENTABILIDAD ? Math.round(r.RENTABILIDAD * 100) + '%' : '—') + '</td><td class="tr">' + r.VERSION + '</td>' +
       '<td class="no-print" style="white-space:nowrap">' +
       (edita && r.ESTADO === 'VIGENTE' ? '<button class="btn btn-s btn-sm" onclick="recEditor(' + r.ID_RECETA + ')">Editar</button> ' : '<button class="btn btn-s btn-sm" onclick="recEditor(' + r.ID_RECETA + ',false,true)">Ver</button> ') +
       (agrega ? '<button class="btn btn-s btn-sm" onclick="recEditor(' + r.ID_RECETA + ',true)" title="Crear otra receta partiendo de esta">Copiar</button> ' : '') +
+      (agrega && !r.MARCA && r.ESTADO === 'VIGENTE' ? '<button class="btn btn-s btn-sm" onclick="recEditor(' + r.ID_RECETA + ',\'MARCA\')" title="Misma receta para una marca de cubierta que usa otras cantidades">Variante por marca</button> ' : '') +
       (anula ? (r.ESTADO === 'VIGENTE' ? '<button class="btn btn-s btn-sm" onclick="recAnular(' + r.ID_RECETA + ',false)">Anular</button>' : '<button class="btn btn-s btn-sm" onclick="recAnular(' + r.ID_RECETA + ',true)">Reactivar</button>') : '') +
       '</td></tr>';
   });
@@ -8406,13 +8407,14 @@ function recTabla() {
 
 // ── Editor ───────────────────────────────────────────────────────
 async function recEditor(id, copiar, soloVer) {
-  var ed = { id: null, rec: { TIPO: '', MEDIDA: '', TRABAJO: '', ID_BANDA: '', RENTABILIDAD: '', OBSERVACIONES: '' }, lineas: [], soloVer: !!soloVer };
+  var ed = { id: null, rec: { TIPO: '', MEDIDA: '', TRABAJO: '', ID_BANDA: '', MARCA: '', RENTABILIDAD: '', OBSERVACIONES: '' }, lineas: [], soloVer: !!soloVer };
   if (id) {
     var r = await gsRun('gsREC_Detalle', id);
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo abrir', 'r2'); return; }
     ed.rec = r.receta; ed.lineas = r.lineas.map(function(l) { return { ID_ESTACION: l.ID_ESTACION, TIPO_LINEA: l.TIPO_LINEA, ID_INSUMO: l.ID_INSUMO, DESCRIPCION: l.DESCRIPCION, CANTIDAD: l.CANTIDAD, UNIDAD: l.UNIDAD, PRECIO_REF: l.PRECIO_REF }; });
     ed.version = r.receta.VERSION; ed.versiones = r.versiones;
-    if (copiar) { ed.rec = { TIPO: r.receta.TIPO, MEDIDA: '', TRABAJO: r.receta.TRABAJO, ID_BANDA: r.receta.ID_BANDA, RENTABILIDAD: r.receta.RENTABILIDAD, OBSERVACIONES: 'Copiada de ' + r.receta.MEDIDA }; ed.copiaDe = r.receta; }
+    if (copiar === 'MARCA') { ed.rec = { TIPO: r.receta.TIPO, MEDIDA: r.receta.MEDIDA, TRABAJO: r.receta.TRABAJO, ID_BANDA: r.receta.ID_BANDA, MARCA: '', RENTABILIDAD: r.receta.RENTABILIDAD, OBSERVACIONES: 'Variante de la receta general ' + r.receta.ID_RECETA }; ed.copiaDe = r.receta; ed.variante = true; }
+    else if (copiar) { ed.rec = { TIPO: r.receta.TIPO, MEDIDA: '', TRABAJO: r.receta.TRABAJO, ID_BANDA: r.receta.ID_BANDA, MARCA: r.receta.MARCA || '', RENTABILIDAD: r.receta.RENTABILIDAD, OBSERVACIONES: 'Copiada de ' + r.receta.MEDIDA }; ed.copiaDe = r.receta; }
     else ed.id = id;
   }
   if (!ed.lineas.length) ed.lineas.push({ ID_ESTACION: '', TIPO_LINEA: 'INSUMO', ID_INSUMO: '', DESCRIPCION: '', CANTIDAD: '', UNIDAD: '', PRECIO_REF: '' });
@@ -8421,12 +8423,13 @@ async function recEditor(id, copiar, soloVer) {
   var sel = function(lista, campo, val) { return '<option value="">— Elegir —</option>' + lista.filter(function(x) { return x.ACTIVO != 0 || x[campo] === val; }).map(function(x) { return '<option' + (x[campo] === val ? ' selected' : '') + '>' + recEsc(x[campo]) + '</option>'; }).join(''); };
   var medidas = {}; d.recetas.forEach(function(r) { medidas[r.MEDIDA] = true; });
   var bandas = d.insumos.filter(function(i) { return i.RUBRO === 'BANDAS Y TACOS'; });
-  var titulo = ed.soloVer ? 'Receta ' + ed.id + ' (v' + ed.version + ')' : (ed.id ? 'Editar receta ' + ed.id + ' — se guarda como versión ' + ((ed.version || 1) + 1) : (ed.copiaDe ? 'Nueva receta (copia de ' + recEsc(ed.copiaDe.MEDIDA) + ')' : 'Nueva receta'));
+  var titulo = ed.soloVer ? 'Receta ' + ed.id + ' (v' + ed.version + ')' : (ed.id ? 'Editar receta ' + ed.id + ' — se guarda como versión ' + ((ed.version || 1) + 1) : (ed.variante ? 'Variante por marca de ' + recEsc(ed.copiaDe.TIPO + ' ' + ed.copiaDe.MEDIDA + ' ' + ed.copiaDe.TRABAJO) + ': poné la marca y cambiá las cantidades' : ed.copiaDe ? 'Nueva receta (copia de ' + recEsc(ed.copiaDe.MEDIDA) + ')' : 'Nueva receta'));
   showModal('<div class="mh"><span class="mt">' + titulo + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     '<div class="fr"><div class="fg"><label class="fl">Tipo de cubierta *</label><select id="rece-tipo" class="fs"' + dis + '>' + sel(d.tipos, 'TIPO', ed.rec.TIPO) + '</select></div>' +
     '<div class="fg"><label class="fl">Medida *</label><input id="rece-medida" class="fi" list="rece-medidas" value="' + recEsc(ed.rec.MEDIDA) + '" placeholder="Ej: 18,4-34"' + dis + '/><datalist id="rece-medidas">' + Object.keys(medidas).sort().map(function(m) { return '<option value="' + recEsc(m) + '">'; }).join('') + '</datalist></div>' +
     '<div class="fg"><label class="fl">Trabajo *</label><select id="rece-trab" class="fs"' + dis + '>' + sel(d.trabajos, 'TRABAJO', ed.rec.TRABAJO) + '</select></div></div>' +
     '<div class="fr"><div class="fg"><label class="fl">Banda (si la receta es para una banda)</label><select id="rece-banda" class="fs"' + dis + '><option value="">— Cualquiera / no aplica —</option>' + bandas.map(function(b) { return '<option value="' + recEsc(b.ID_INSUMO) + '"' + (b.ID_INSUMO === ed.rec.ID_BANDA ? ' selected' : '') + '>' + recEsc(b.ID_INSUMO + ' — ' + b.NOMBRE_INSUMO) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Marca de la cubierta (vacío = todas las marcas)</label><input id="rece-marca" class="fi" list="rece-marcas" style="text-transform:uppercase" value="' + recEsc(ed.rec.MARCA || '') + '" placeholder="Ej: CULTO"' + dis + '/><datalist id="rece-marcas">' + (d.marcas || []).map(function(m) { return '<option value="' + recEsc(m) + '">'; }).join('') + '</datalist></div>' +
     '<div class="fg"><label class="fl">Rentabilidad %</label><input id="rece-rent" class="fi" type="number" min="0" step="1" value="' + (ed.rec.RENTABILIDAD ? Math.round(ed.rec.RENTABILIDAD * 100) : '') + '" placeholder="Ej: 50"' + dis + '/></div>' +
     '<div class="fg"><label class="fl">Observaciones</label><input id="rece-obs" class="fi" value="' + recEsc(ed.rec.OBSERVACIONES) + '"' + dis + '/></div></div>' +
     '<datalist id="rece-insumos">' + d.insumos.map(function(i) { return '<option value="' + recEsc(i.ID_INSUMO + ' — ' + i.NOMBRE_INSUMO) + '">'; }).join('') + '</datalist>' +
@@ -8496,9 +8499,10 @@ function recTotales() {
 
 async function recGuardar() {
   var ed = REC_.ed, b = $id('rece-ok');
-  var rec = { ID_RECETA: ed.id || '', TIPO: $v('rece-tipo'), MEDIDA: $v('rece-medida').trim(), TRABAJO: $v('rece-trab'), ID_BANDA: $v('rece-banda'), RENTABILIDAD: $v('rece-rent'), OBSERVACIONES: $v('rece-obs').trim() };
+  var rec = { ID_RECETA: ed.id || '', TIPO: $v('rece-tipo'), MEDIDA: $v('rece-medida').trim(), TRABAJO: $v('rece-trab'), ID_BANDA: $v('rece-banda'), MARCA: ($v('rece-marca') || '').trim().toUpperCase(), RENTABILIDAD: $v('rece-rent'), OBSERVACIONES: $v('rece-obs').trim() };
   var lineas = ed.lineas.filter(function(l) { return l.ID_INSUMO || l.DESCRIPCION || l.CANTIDAD; });
   if (!rec.TIPO || !rec.MEDIDA || !rec.TRABAJO) { toast('Completá tipo, medida y trabajo', 'r2'); return; }
+  if (ed.variante && !rec.MARCA) { toast('Poné la marca de la cubierta para esta variante', 'r2'); return; }
   if (!lineas.length) { toast('Agregá al menos un renglón', 'r2'); return; }
   b.disabled = true;
   try {
@@ -8660,12 +8664,18 @@ function pcEsc(s) { return String(s === undefined || s === null ? '' : s).replac
 function pcBadge(e) { return '<span class="badge ' + (PC_EST_COL[e] || 'b-gray') + '" style="font-size:10px">' + pcEsc(PC_EST_TXT[e] || e) + '</span>'; }
 function pcPuede(a) { return typeof tienePermiso === 'function' ? tienePermiso('PRODUCCION', a) : true; }
 function pcLineaDeTipo(tipo) { var t = (PC_.d.tipos || []).filter(function(x) { return x.TIPO === tipo; })[0]; return t ? t.LINEA : ''; }
-function pcRecetaDe(tipo, medida, trabajo, banda) {
+function pcRecetaDe(tipo, medida, trabajo, banda, marca) {
   var k = function(m) { return String(m || '').toUpperCase().replace(/\s+/g, '').replace(/\./g, ',').replace(/[*X\/]/g, '-'); };
-  var rs = PC_.d.recetas.filter(function(r) { return r.TIPO === tipo && k(r.MEDIDA) === k(medida) && r.TRABAJO === trabajo; });
-  // Igual que el servidor (pcReceta_): si la medida no tiene receta propia, usa la del mismo tipo y trabajo con MEDIDA = TODAS
-  if (!rs.length) rs = PC_.d.recetas.filter(function(r) { return r.TIPO === tipo && k(r.MEDIDA) === 'TODAS' && r.TRABAJO === trabajo; });
-  return rs.filter(function(r) { return banda && r.ID_BANDA === banda; })[0] || rs.filter(function(r) { return !r.ID_BANDA; })[0] || null;
+  var mk = function(m) { return String(m || '').toUpperCase().replace(/\s+/g, ' ').trim(); }, mc = mk(marca);
+  // Igual que el servidor (pcReceta_): primero la variante de la marca de la cubierta (si hay), después la general; dentro de cada una: medida y después MEDIDA = TODAS
+  var marcas = mc ? [mc, ''] : [''];
+  for (var i = 0; i < marcas.length; i++) {
+    var rs = PC_.d.recetas.filter(function(r) { return mk(r.MARCA) === marcas[i] && r.TIPO === tipo && k(r.MEDIDA) === k(medida) && r.TRABAJO === trabajo; });
+    if (!rs.length) rs = PC_.d.recetas.filter(function(r) { return mk(r.MARCA) === marcas[i] && r.TIPO === tipo && k(r.MEDIDA) === 'TODAS' && r.TRABAJO === trabajo; });
+    var x = rs.filter(function(r) { return banda && r.ID_BANDA === banda; })[0] || rs.filter(function(r) { return !r.ID_BANDA; })[0];
+    if (x) return x;
+  }
+  return null;
 }
 
 async function renderProdCub() {
@@ -9059,7 +9069,7 @@ function pcCasFilas() {
       '<td data-l="DOT (si la cubierta lo trae)"><input class="fi" data-i="' + i + '" data-k="DOT" value="' + pcEsc(f.DOT) + '" placeholder="Si no tiene, vacío" style="width:150px;text-transform:uppercase"/></td>' +
       '<td data-l="Medida *"><div class="pc-celda"><input class="fi" list="' + (f.TIPO ? pcMedKey(f.TIPO) : 'pc-medidas') + '" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" placeholder="' + (f.TIPO ? '' : 'Elegí el tipo') + '" style="width:140px"/><button class="btn btn-s btn-xs" title="Medida nueva" onclick="pcAltaRapida(\'MEDIDA\',' + i + ')">＋</button></div></td>' +
       '<td data-l="Marca"><div class="pc-celda"><input class="fi" list="pc-fabricantes" data-i="' + i + '" data-k="MARCA_FAB" value="' + pcEsc(f.MARCA_FAB) + '" style="width:130px;text-transform:uppercase"/><button class="btn btn-s btn-xs" title="Marca nueva" onclick="pcAltaRapida(\'MARCA\',' + i + ')">＋</button></div></td>' +
-      '<td data-l="Trabajo"><select class="fs" data-i="' + i + '" data-k="TRABAJO" style="min-width:150px">' + (f.TIPO && f.MEDIDA ? pcTrabOpts(f.TIPO, f.MEDIDA, f.TRABAJO).replace('— elegí —', '— sin orden —') : optT.replace('<option>' + pcEsc(f.TRABAJO) + '</option>', '<option selected>' + pcEsc(f.TRABAJO) + '</option>')) + '</select></td>' +
+      '<td data-l="Trabajo"><select class="fs" data-i="' + i + '" data-k="TRABAJO" style="min-width:150px">' + (f.TIPO && f.MEDIDA ? pcTrabOpts(f.TIPO, f.MEDIDA, f.TRABAJO, f.MARCA_FAB).replace('— elegí —', '— sin orden —') : optT.replace('<option>' + pcEsc(f.TRABAJO) + '</option>', '<option selected>' + pcEsc(f.TRABAJO) + '</option>')) + '</select></td>' +
       '<td data-l="Observaciones"><input class="fi" data-i="' + i + '" data-k="OBSERVACIONES" value="' + pcEsc(f.OBSERVACIONES) + '" style="min-width:120px"/></td>' +
       '<td>' + (PC_.kf.length > 1 ? '<button class="btn btn-xs btn-d" onclick="PC_.kf.splice(' + i + ',1);pcCasFilas()">✕</button>' : '') + '</td></tr>';
   }).join('');
@@ -9107,7 +9117,7 @@ async function pcCasGrabar() {
   var cli = pcCliId($v('pc-k-cli')); if (!cli) { pcCasErr('Elegí el cliente'); return; }
   var faltan = []; PC_.kf.forEach(function(f, i) { if (!f.TIPO || !f.MEDIDA) faltan.push(i + 1); });
   if (faltan.length) { pcCasErr('Casco ' + faltan.join(', ') + ': falta el tipo o la medida'); return; }
-  var sinR = PC_.kf.filter(function(f) { return f.TRABAJO && !pcRecetaDe(f.TIPO, f.MEDIDA, f.TRABAJO, ''); });
+  var sinR = PC_.kf.filter(function(f) { return f.TRABAJO && !pcRecetaDe(f.TIPO, f.MEDIDA, f.TRABAJO, '', f.MARCA_FAB); });
   if (sinR.length) { pcCasErr('Casco ' + sinR.map(function(f) { return (PC_.kf.indexOf(f) + 1) + ' (' + (f._MK || f.DOT || '?') + ')'; }).join(', ') + ': ese trabajo no tiene receta para esa medida. Elegí uno de los de arriba de la lista (con receta) o dejalo sin orden'); return; }
   if (pcNroFalta('pc-k-man')) return;
   var b = $id('pc-k-ok'); b.disabled = true;
@@ -9158,9 +9168,9 @@ function pcOTrabItems() {
   if (!cli) { el.innerHTML = '<div class="tdim" style="padding:8px 0">Elegí el cliente y se descargan sus cascos nuevos.</div>'; return; }
   var ks = (d.cascos || []).filter(function(k) { return String(k.ID_CLIENTE) === String(cli) && k.ESTADO === 'NUEVO'; }).sort(function(a, b) { return a.ID_CASCO - b.ID_CASCO; });
   if (!ks.length) { el.innerHTML = '<div class="al al-y" style="margin-top:8px">Este cliente no tiene cascos nuevos. Primero cargalos en "1 · Carga de cascos".</div>'; return; }
-  var opt = function(v, k) { return pcTrabOpts(k.TIPO, k.MEDIDA, v); };
+  var opt = function(v, k) { return pcTrabOpts(k.TIPO, k.MEDIDA, v, k.MARCA_FAB); };
   el.innerHTML = '<div class="tw"><table style="font-size:12px" id="pc-o-t"><thead><tr><th style="width:30px"></th><th>N° interno · marca grabada</th><th>DOT</th><th>Tipo</th><th>Medida</th><th>Marca</th><th>Trabajo *</th><th>Receta</th></tr></thead><tbody>' + ks.map(function(k) {
-    var x = PC_.otr[k.ID_CASCO] || (PC_.otr[k.ID_CASCO] = { on: true, tr: 'RECAPADO' }), r = x.tr ? pcRecetaDe(k.TIPO, k.MEDIDA, x.tr, '') : null;
+    var x = PC_.otr[k.ID_CASCO] || (PC_.otr[k.ID_CASCO] = { on: true, tr: 'RECAPADO' }), r = x.tr ? pcRecetaDe(k.TIPO, k.MEDIDA, x.tr, '', k.MARCA_FAB) : null;
     return '<tr><td><input type="checkbox" class="pc-o-on" data-id="' + k.ID_CASCO + '"' + (x.on ? ' checked' : '') + '/></td><td class="mono"><b>' + k.ID_CASCO + '</b>' + (k.MARCA ? '<div style="font-size:11px">Marca grabada <b>' + pcEsc(k.MARCA) + '</b></div>' : '') + '</td><td class="mono">' + pcDotTxt(k.DOT) + '</td><td>' + pcEsc(k.TIPO) + '</td><td class="mono">' + pcEsc(k.MEDIDA) + '</td><td>' + pcEsc(k.MARCA_FAB) + '</td>' +
       '<td><select class="fs pc-o-tr" data-id="' + k.ID_CASCO + '" style="min-width:170px">' + opt(x.tr, k) + '</select></td><td>' + (x.tr ? (r ? '<span class="badge b-green">✓ receta ' + r.ID_RECETA + '</span>' : '<span class="badge b-red">sin receta</span>') : '') + '</td></tr>';
   }).join('') + '</tbody></table></div>';
@@ -9170,7 +9180,7 @@ function pcOTrabItems() {
 async function pcOTrabGrabar() {
   var cli = pcCliId($v('pc-o-cli')); if (!cli) { toast('Elegí el cliente', 'r2'); return; }
   var items = Object.keys(PC_.otr).filter(function(k) { return PC_.otr[k].on && (PC_.d.cascos || []).some(function(c) { return String(c.ID_CASCO) === k && String(c.ID_CLIENTE) === String(cli) && c.ESTADO === 'NUEVO'; }); }).map(function(k) { return { ID_CASCO: k, TRABAJO: PC_.otr[k].tr }; });
-  var sinR = items.filter(function(it) { var k = (PC_.d.cascos || []).filter(function(c) { return String(c.ID_CASCO) === String(it.ID_CASCO); })[0]; return !it.TRABAJO || !k || !pcRecetaDe(k.TIPO, k.MEDIDA, it.TRABAJO, ''); });
+  var sinR = items.filter(function(it) { var k = (PC_.d.cascos || []).filter(function(c) { return String(c.ID_CASCO) === String(it.ID_CASCO); })[0]; return !it.TRABAJO || !k || !pcRecetaDe(k.TIPO, k.MEDIDA, it.TRABAJO, '', k.MARCA_FAB); });
   if (sinR.length) { toast('Casco ' + sinR.map(function(it) { return it.ID_CASCO; }).join(', ') + ': ese trabajo no tiene receta para esa medida. Elegí uno de la lista de arriba (con receta)', 'r2'); return; }
   if (pcNroFalta('pc-o-man')) return;
   var b = $id('pc-o-ok'); b.disabled = true;
@@ -9249,7 +9259,7 @@ function pcFilas() {
   var d = PC_.d;
   var opt = function(lista, campo, v) { return '<option value="">—</option>' + lista.filter(function(x) { return x.ACTIVO != 0; }).map(function(x) { return '<option' + (x[campo] === v ? ' selected' : '') + '>' + pcEsc(x[campo]) + '</option>'; }).join(''); };
   $id('pc-filas').innerHTML = PC_.filas.map(function(f, i) {
-    var r = f.TIPO && f.MEDIDA && f.TRABAJO ? pcRecetaDe(f.TIPO, f.MEDIDA, f.TRABAJO, f.ID_BANDA) : null;
+    var r = f.TIPO && f.MEDIDA && f.TRABAJO ? pcRecetaDe(f.TIPO, f.MEDIDA, f.TRABAJO, f.ID_BANDA, f.FABRICANTE) : null;
     return '<tr><td><input class="fi" data-i="' + i + '" data-k="MARCA" value="' + pcEsc(f.MARCA) + '" style="width:110px;text-transform:uppercase"/></td>' +
       '<td><select class="fs" data-i="' + i + '" data-k="TIPO" style="min-width:115px">' + opt(d.tipos, 'TIPO', f.TIPO) + '</select></td>' +
       '<td><input class="fi" list="' + (f.TIPO ? pcMedKey(f.TIPO) : 'pc-medidas') + '" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" style="width:95px"/></td>' +
@@ -9503,9 +9513,9 @@ function pcVidaDet(i, os, d0) {
 
 // ── Armar OT ──
 // Trabajos para un tipo y medida: arriba los que tienen receta (pueden entrar a la línea), abajo los que no
-function pcTrabOpts(tipo, medida, sel) {
+function pcTrabOpts(tipo, medida, sel, marca) {
   var con = [], sin = [];
-  PC_.d.trabajos.filter(function(x) { return x.ACTIVO != 0; }).forEach(function(x) { (pcRecetaDe(tipo, medida, x.TRABAJO, '') ? con : sin).push(x.TRABAJO); });
+  PC_.d.trabajos.filter(function(x) { return x.ACTIVO != 0; }).forEach(function(x) { (pcRecetaDe(tipo, medida, x.TRABAJO, '', marca) ? con : sin).push(x.TRABAJO); });
   var o = function(t) { return '<option value="' + pcEsc(t) + '"' + (t === sel ? ' selected' : '') + '>' + pcEsc(t) + '</option>'; };
   return '<option value="">— elegí —</option><optgroup label="Con receta para ' + pcEsc(tipo + ' ' + medida) + '">' + con.map(o).join('') + '</optgroup>' +
     (sin.length ? '<optgroup label="Sin receta para esta medida (no pueden entrar a la línea)">' + sin.map(o).join('') + '</optgroup>' : '');
@@ -9515,14 +9525,14 @@ function pcArmTrab(id) {
   var c = PC_.d.cubiertas.filter(function(x) { return String(x.ID_CUB) === String(id); })[0]; if (!c) return;
   showModal('<div class="mh"><span class="mt">Cambiar trabajo · casco ' + pcEsc(c.ID_CASCO || c.ID_CUB) + ' · ' + pcEsc(c.CLIENTE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     '<div class="al al-y mb2">' + pcEsc(c.TIPO + ' ' + c.MEDIDA) + ' · trabajo actual <b>' + pcEsc(c.TRABAJO) + '</b>: no tiene receta, por eso no puede entrar a la línea.</div>' +
-    '<div class="fg"><label class="fl">Trabajo</label><select class="fs" id="pc-at-tr">' + pcTrabOpts(c.TIPO, c.MEDIDA, '') + '</select></div>' +
+    '<div class="fg"><label class="fl">Trabajo</label><select class="fs" id="pc-at-tr">' + pcTrabOpts(c.TIPO, c.MEDIDA, '', c.FABRICANTE) + '</select></div>' +
     '<label style="display:flex;gap:6px;align-items:center;font-size:13px;margin-top:6px"><input type="checkbox" id="pc-at-todas" checked/> Aplicar a todas las de la misma orden de trabajo con el mismo trabajo y medida sin receta</label>' +
     '<button class="btn btn-p mt3" id="pc-at-ok" onclick="pcArmTrabOk(' + c.ID_CUB + ')"><i class="fas fa-save"></i> Guardar</button></div>');
 }
 async function pcArmTrabOk(id) {
   var c = PC_.d.cubiertas.filter(function(x) { return String(x.ID_CUB) === String(id); })[0], tr = $v('pc-at-tr');
   if (!tr) { toast('Elegí el trabajo', 'r2'); return; }
-  if (!pcRecetaDe(c.TIPO, c.MEDIDA, tr, '')) { toast('Ese trabajo tampoco tiene receta para ' + c.TIPO + ' ' + c.MEDIDA, 'r2'); return; }
+  if (!pcRecetaDe(c.TIPO, c.MEDIDA, tr, '', c.FABRICANTE)) { toast('Ese trabajo tampoco tiene receta para ' + c.TIPO + ' ' + c.MEDIDA, 'r2'); return; }
   var lst = $id('pc-at-todas').checked ? PC_.d.cubiertas.filter(function(x) { return x.ESTADO === 'EN_ESPERA' && !x.ID_RECETA && String(x.ID_OTRAB) === String(c.ID_OTRAB) && x.TRABAJO === c.TRABAJO && x.TIPO === c.TIPO && x.MEDIDA === c.MEDIDA; }) : [c];
   var b = $id('pc-at-ok'); b.disabled = true; var ok = 0;
   try {
