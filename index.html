@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d5b40ce601fe"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7725046df72c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -355,6 +355,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
 
       <div class="sb-group">Sistema</div>
       <div class="nav-item" data-page="agenda"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Agenda del proyecto</div>
+      <div class="nav-item" data-page="bitacora"><span class="nav-icon"><i class="fas fa-scroll"></i></span> Bitácora (todo lo que se hizo)</div>
       <div class="nav-item" data-page="avance"><span class="nav-icon"><i class="fas fa-chart-line"></i></span> Avance del sistema</div>
       <div class="nav-item" data-page="seguridad"><span class="nav-icon"><i class="fas fa-shield-alt"></i></span> Seguridad</div>
       <div class="nav-item" data-page="configuracion"><span class="nav-icon"><i class="fas fa-cog"></i></span> Configuración</div>
@@ -421,6 +422,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-rpt-ventas" class="hidden"></div>
     <div id="page-seguridad" class="hidden"></div>
     <div id="page-agenda" class="hidden"></div>
+    <div id="page-bitacora" class="hidden"></div>
     <div id="page-caja" class="hidden"></div>
     <div id="page-cobranzas" class="hidden"></div>
     <div id="page-cta-cte-clientes" class="hidden"></div>
@@ -703,7 +705,7 @@ var PAGINA_MODULO = {
   'estado-resultados':'REPORTES', 'rpt-ventas':'REPORTES', 'rpt-produccion':'REPORTES', 'rpt-gastos':'REPORTES',
   'rpt-costo-cubiertas':'REPORTES', 'rpt-diferencias-precios':'REPORTES', 'inteligencia':'REPORTES',
   'objetivo':'REPORTES', 'clientes-analisis':'REPORTES', 'rentabilidad':'REPORTES', 'iva-control':'REPORTES',
-  'stock':'STOCK', 'recapados':'PRODUCCION', 'seguridad':'SEGURIDAD', 'agenda':'SEGURIDAD',
+  'stock':'STOCK', 'recapados':'PRODUCCION', 'seguridad':'SEGURIDAD', 'agenda':'SEGURIDAD', 'bitacora':'SEGURIDAD',
   'configuracion':'CONFIGURACION', 'gsheets':'CONFIGURACION', 'backup-page':'CONFIGURACION'
 };
 
@@ -731,7 +733,7 @@ function puedeVerPagina(page) {
 
 function aplicarPermisosMenu() {
   document.querySelectorAll('.nav-item').forEach(function(el) {
-    el.style.display = puedeVerPagina(el.dataset.page) && (el.dataset.page !== 'agenda' || String((SES && SES.rol) || '').toUpperCase() === 'SUPER') ? '' : 'none';
+    el.style.display = puedeVerPagina(el.dataset.page) && ((el.dataset.page !== 'agenda' && el.dataset.page !== 'bitacora') || String((SES && SES.rol) || '').toUpperCase() === 'SUPER') ? '' : 'none';
   });
   // Oculta los títulos de grupo que quedaron sin opciones visibles
   document.querySelectorAll('.sb-group').forEach(function(g) {
@@ -1151,6 +1153,7 @@ function getPage(name) {
     'stock': function(){ if(typeof renderStock!=='undefined') renderStock(); },
     'seguridad': typeof renderSeguridad !== 'undefined' ? renderSeguridad : null,
     'agenda': function(){ if(typeof renderAgenda!=='undefined') renderAgenda(); },
+    'bitacora': function(){ if(typeof renderBitacora!=='undefined') renderBitacora(); },
     'configuracion': typeof renderConfiguracion !== 'undefined' ? renderConfiguracion : null,
     'backup-page': typeof renderBackupPage !== 'undefined' ? renderBackupPage : null,
     'gsheets': typeof renderGsheets !== 'undefined' ? renderGsheets : null,
@@ -1429,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610281052';
+var EMA_BUILD = '202610281109';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16382,6 +16385,71 @@ async function agEstGuardar(id) {
 async function agSacar(id) {
   var m = $v('ag-n'); if (m.length < 3) { toast('Escribí en «Nota» por qué se saca', 'r2'); $id('ag-n').focus(); return; }
   try { var r = await gsRun('gsAG_Anular', id, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Sacado de la agenda', 'g'); renderAgenda(); } catch (e) { toast(e.message, 'r2'); }
+}
+</script>
+
+<style>
+#page-bitacora .bt-wrap{max-width:1200px;margin:0 auto;padding:4px 0 40px}
+.bt-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}.bt-top h2{margin:0;font-size:20px}
+.bt-nota{font-size:12.5px;color:var(--dim);margin:0 0 10px}
+.bt-cont{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+.bt-c{border:1px solid var(--border);border-radius:12px;padding:8px 12px;background:var(--surface,#fff);cursor:pointer;min-width:120px}
+.bt-c b{display:block;font-size:22px;line-height:1.1}.bt-c span{font-size:12px;color:var(--dim)}.bt-c.on{outline:3px solid var(--accent)}
+.bt-fil{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin:4px 0 10px}
+.bt-fil label{display:flex;flex-direction:column;font-size:12px;color:var(--dim);gap:3px}
+.bt-fil input,.bt-fil select{font-size:14px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)}
+.bt-l{background:var(--surface,#fff);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.bt-r{padding:7px 12px;border-top:1px solid var(--border);font-size:13px;display:flex;gap:10px;align-items:flex-start}
+.bt-r:first-child{border-top:0}
+.bt-h{font-size:11.5px;color:var(--dim);min-width:92px;font-family:monospace}
+.bt-b{border-radius:8px;padding:1px 8px;font-size:11px;font-weight:700;white-space:nowrap;display:inline-block}
+.bt-PEDIDO{background:#fee2e2;color:#991b1b}.bt-RESPUESTA,.bt-MENSAJE{background:#dbeafe;color:#1e40af}.bt-PASO{background:#eef0f3;color:#374151}
+.bt-BASE{background:#fef9c3;color:#854d0e}.bt-SISTEMA{background:#dcfce7;color:#166534}.bt-INGRESO{background:#ede9fe;color:#5b21b6}
+.bt-tx{flex:1;min-width:0}.bt-tx .bt-q{font-size:11.5px;color:var(--dim)}
+.bt-d{white-space:pre-wrap;word-break:break-word;margin-top:2px}
+.bt-d.corto{max-height:3.2em;overflow:hidden;cursor:pointer}
+</style>
+<script>
+// Bitácora: todo lo que se hizo, de donde venga. Pedidos de Anibal y pasos de Claude (conversación), cambios por SQL directo, auditoría del sistema e ingresos.
+var BT_ = { d: null, f: '', q: '', desde: '', hasta: '' };
+var BT_F = { CHAT: 'Conversación con Claude', BASE: 'Cambios directos en la base', SISTEMA: 'Acciones en el sistema', INGRESO: 'Ingresos al sistema' };
+function btEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function btHoy(n) { var d = new Date(Date.now() - (n || 0) * 86400000); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function btHora(ms) { var d = new Date(ms); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2); }
+async function renderBitacora() {
+  var el = $id('page-bitacora'); if (!el) return;
+  if (!BT_.desde) { BT_.desde = btHoy(2); BT_.hasta = btHoy(0); }
+  el.innerHTML = '<div class="bt-wrap"><div class="al">Cargando la bitácora…</div></div>';
+  try { BT_.d = await gsRun('gsBIT_Datos', BT_.desde, BT_.hasta); } catch (e) { el.innerHTML = '<div class="bt-wrap"><div class="al al-r">' + btEsc(e.message) + '</div></div>'; return; }
+  if (!BT_.d || !BT_.d.ok) { el.innerHTML = '<div class="bt-wrap"><div class="al al-r">' + btEsc((BT_.d && BT_.d.error) || 'No se pudo cargar') + '</div></div>'; return; }
+  btPintar();
+}
+function btPasa(x) {
+  if (BT_.f && x.FUENTE !== BT_.f && !(BT_.f === 'PEDIDO' && x.TIPO === 'PEDIDO')) return false;
+  if (BT_.f === 'PEDIDO' && x.TIPO !== 'PEDIDO') return false;
+  if (BT_.q) { var t = (x.QUIEN + ' ' + x.TIPO + ' ' + x.DONDE + ' ' + x.REG + ' ' + x.DETALLE).toLowerCase(); if (t.indexOf(BT_.q.toLowerCase()) === -1) return false; }
+  return true;
+}
+function btPintar() {
+  var el = $id('page-bitacora'), F = BT_.d.FILAS || [], cnt = { CHAT: 0, BASE: 0, SISTEMA: 0, INGRESO: 0, PEDIDO: 0 };
+  F.forEach(function(x) { cnt[x.FUENTE] = (cnt[x.FUENTE] || 0) + 1; if (x.TIPO === 'PEDIDO') cnt.PEDIDO++; });
+  var c = function(k, t) { return '<div class="bt-c' + (BT_.f === k ? ' on' : '') + '" onclick="BT_.f=(BT_.f===\'' + k + '\'?\'\':\'' + k + '\');btPintar()"><b>' + (k ? cnt[k] : F.length) + '</b><span>' + t + '</span></div>'; };
+  var L = F.filter(btPasa);
+  var h = '<div class="bt-wrap"><div class="bt-top"><h2>📜 Bitácora: todo lo que se hizo</h2></div>' +
+    '<p class="bt-nota">Pedidos de Anibal y cada paso de Claude (conversación), todo cambio hecho directo en la base (se registra solo, con valor anterior y nuevo), las acciones hechas desde el sistema y los ingresos. Lo más nuevo arriba.</p>' +
+    '<div class="bt-fil"><label>Desde<input type="date" value="' + btEsc(BT_.desde) + '" onchange="BT_.desde=this.value;renderBitacora()"></label>' +
+    '<label>Hasta<input type="date" value="' + btEsc(BT_.hasta) + '" onchange="BT_.hasta=this.value;renderBitacora()"></label>' +
+    '<label style="flex:1;min-width:180px">Buscar<input value="' + btEsc(BT_.q) + '" placeholder="tabla, usuario, texto…" oninput="BT_.q=this.value;clearTimeout(window._btT);window._btT=setTimeout(btPintar,300)"></label></div>' +
+    '<div class="bt-cont">' + c('', 'Todo') + c('PEDIDO', 'Pedidos de Anibal') + c('CHAT', BT_F.CHAT) + c('BASE', BT_F.BASE) + c('SISTEMA', BT_F.SISTEMA) + c('INGRESO', BT_F.INGRESO) + '</div>';
+  if (BT_.d.TOTAL > F.length) h += '<div class="al mb3">Se muestran los ' + F.length + ' más nuevos de ' + BT_.d.TOTAL + '. Acortá las fechas para ver el resto.</div>';
+  h += '<div class="bt-l">' + (L.length ? L.slice(0, 1500).map(function(x) {
+    var et = x.FUENTE === 'CHAT' ? x.TIPO : x.FUENTE;
+    return '<div class="bt-r"><div class="bt-h">' + btHora(x.MS) + '</div><div class="bt-tx"><span class="bt-b bt-' + btEsc(et) + '">' + btEsc(x.FUENTE === 'CHAT' ? (x.TIPO === 'PEDIDO' ? 'Pedido' : x.TIPO === 'PASO' ? 'Paso de Claude' : 'Claude respondió') : BT_F[x.FUENTE]) + '</span> ' +
+      '<span class="bt-q">' + btEsc(x.QUIEN) + (x.DONDE ? ' · ' + btEsc(x.DONDE) : '') + (x.FUENTE !== 'CHAT' && x.TIPO ? ' · ' + btEsc(x.TIPO) : '') + (x.REG && x.FUENTE !== 'CHAT' ? ' · ' + btEsc(x.REG) : '') + '</span>' +
+      '<div class="bt-d' + (String(x.DETALLE).length > 220 ? ' corto' : '') + '" onclick="this.classList.remove(\'corto\')">' + btEsc(x.DETALLE) + '</div></div></div>';
+  }).join('') : '<div class="bt-r tdim">No hay nada en esas fechas con ese filtro.</div>') + '</div>';
+  if (L.length > 1500) h += '<div class="al mt2">Se muestran 1500 de ' + L.length + '. Filtrá para ver el resto.</div>';
+  el.innerHTML = h + '</div>';
 }
 </script>
 
