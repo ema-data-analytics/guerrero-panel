@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a66f561600fd"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f5a872970f62"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610281841';
+var EMA_BUILD = '202610281936';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3437,7 +3437,9 @@ function vbLista() {
   el.innerHTML =
     '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-shopping-cart" style="color:var(--accent)"></i> Ventas</div>' +
     '<div class="page-sub">Mostrador: cubiertas nuevas, insumos, recapados armados y servicios · Punto de venta ' + vEsc(_VTA.PUNTO_VENTA) + ' (numeración interna hasta la factura electrónica)</div></div>' +
-    '<button class="btn btn-p" style="font-size:16px;padding:10px 18px" onclick="vbNuevo()"><i class="fas fa-plus"></i> Nuevo comprobante</button></div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" style="font-size:15px;padding:10px 14px" onclick="vrFacturar()"><i class="fas fa-file-invoice"></i> Facturar remitos</button>' +
+    '<button class="btn btn-s" style="font-size:15px;padding:10px 14px" onclick="vrRemitos()"><i class="fas fa-truck"></i> Remitos de venta</button>' +
+    '<button class="btn btn-p" style="font-size:16px;padding:10px 18px" onclick="vbNuevo()"><i class="fas fa-plus"></i> Nuevo comprobante</button></div></div>' +
     '<div class="content"><div class="card mb3"><div class="card-body"><div class="fr" style="align-items:flex-end;flex-wrap:wrap">' +
     '<div class="fg"><label class="fl">Desde</label><input type="date" class="fi" value="' + vEsc(f.desde) + '" onchange="VB_.f.desde=this.value;vbGrilla()"/></div>' +
     '<div class="fg"><label class="fl">Hasta</label><input type="date" class="fi" value="' + vEsc(f.hasta) + '" onchange="VB_.f.hasta=this.value;vbGrilla()"/></div>' +
@@ -3803,6 +3805,126 @@ async function vtaAnular(id) {
     if (typeof _mcDel === 'function') ['ventas_enc', 'cta_cte_clientes', 'cobros_enc', 'movimientos_caja', 'cheques', 'bd_articulos'].forEach(function(s) { _mcDel(s); });
     closeModal(); renderVentas();
   } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; }
+}
+// ═════════ REMITOS Y FACTURACIÓN DESDE REMITOS (28/10/2026) ═════════
+// Facturar remitos: el cliente → sus remitos sin facturar (de producción y de venta) → se tildan → se arma la factura en carga y se abre para revisarla y confirmarla.
+// Remitos de venta: mercadería que sale sin orden de servicio (incluye recapadas propias); el stock sale al entregar y después se factura.
+var VR_ = { cli: '', pend: null, rem: { ID_CLIENTE: '', ITEMS: [], OBS: '' } };
+function vrCliOpts(sel) { return '<option value="">— Elegir cliente —</option>' + (_VTA.CLIENTES || []).map(function(c) { return '<option value="' + c.ID_CLIENTE + '"' + (String(sel) === String(c.ID_CLIENTE) ? ' selected' : '') + '>' + vEsc(c.NOMBRE) + (c.CUIT ? ' · ' + vEsc(c.CUIT) : '') + '</option>'; }).join(''); }
+function vrFecha(ms) { if (!ms) return ''; var d = new Date(Number(ms)); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear(); }
+function vrPlata(n) { return '$ ' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function vrFacturar() {
+  showModal('<div class="mh"><span class="mt"><i class="fas fa-file-invoice" style="color:var(--accent)"></i> Facturar remitos</span><button class="mc" onclick="closeModal()">×</button></div>' +
+    '<div class="mb2"><div class="fg"><label class="fl">Cliente</label><select class="fs" id="vr-cli" onchange="vrPend()" style="font-size:16px">' + vrCliOpts(VR_.cli) + '</select></div>' +
+    '<div class="tdim" style="font-size:13px;margin:6px 0 10px">Se listan los remitos que todavía no están en una factura: los de producción (se factura el servicio de cada cubierta terminada; las devueltas sin trabajo no se cobran) y los remitos de venta.</div>' +
+    '<div id="vr-pend"></div></div>' +
+    '<div class="mf"><select class="fs" id="vr-tipo" style="max-width:170px"><option value="FACTURA">Factura</option><option value="PRESUPUESTO">Presupuesto</option></select>' +
+    '<button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="vr-ok" onclick="vrArmar()" disabled><i class="fas fa-check"></i> Armar la factura</button></div>', 'md-lg');
+  if (VR_.cli) vrPend();
+}
+async function vrPend() {
+  var id = $v('vr-cli'), el = $id('vr-pend'), ok = $id('vr-ok'); VR_.cli = id; VR_.pend = null; if (ok) ok.disabled = true;
+  if (!id) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="tdim tc" style="padding:16px">Buscando remitos…</div>';
+  try {
+    var r = await gsRun('gsFP_Pendientes', id);
+    if (!r || !r.ok) { el.innerHTML = '<div class="al al-r">' + vEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
+    VR_.pend = r.REMITOS;
+    if (!r.REMITOS.length) { el.innerHTML = '<div class="al al-b">Este cliente no tiene remitos pendientes de facturar.</div>'; return; }
+    el.innerHTML = '<div class="tw"><table><thead><tr><th></th><th>Remito</th><th>Fecha</th><th>Qué se factura</th><th class="tr">Neto</th></tr></thead><tbody>' + r.REMITOS.map(function(x, i) {
+      var neto = 0; x.LINEAS.forEach(function(l) { neto += Number(l.NETO || 0) * Number(l.CANT || 0); });
+      var sinP = x.SIN_PRECIO.length, nada = !x.LINEAS.length;
+      return '<tr><td><input type="checkbox" class="vr-chk" data-i="' + i + '"' + (sinP || nada ? ' disabled' : '') + ' onchange="vrMarcar()" style="width:20px;height:20px"/></td>' +
+        '<td><b>' + vEsc(x.NRO) + '</b><div class="tdim" style="font-size:12px">' + (x.ORIGEN === 'PC_REMITO' ? 'Producción' : 'Venta') + '</div></td><td>' + vrFecha(x.FECHA) + '</td><td>' +
+        (nada ? '<span class="tdim">Solo cubiertas devueltas sin trabajo: no hay nada para cobrar</span>' : x.LINEAS.map(function(l) { return '<div>' + vEsc(l.CANT) + ' × ' + vEsc(l.NOMBRE) + (l.NETO ? ' · ' + vrPlata(l.NETO) : ' · <b style="color:var(--danger)">sin precio en la lista</b>') + (l.MARCAS ? '<div class="tdim" style="font-size:12px">' + vEsc(l.MARCAS.join(', ')) + '</div>' : '') + '</div>'; }).join('')) +
+        (x.DEVUELTAS ? '<div class="tdim" style="font-size:12px">' + x.DEVUELTAS + ' devuelta' + (x.DEVUELTAS === 1 ? '' : 's') + ' sin cargo</div>' : '') +
+        (sinP ? '<div style="color:var(--danger);font-size:12px">Falta el precio en la lista vigente: no se puede facturar todavía</div>' : '') + '</td>' +
+        '<td class="tr mono">' + (nada ? '' : vrPlata(neto)) + '</td></tr>';
+    }).join('') + '</tbody></table></div><div class="tr mono" style="margin-top:8px;font-size:15px" id="vr-tot"></div>';
+  } catch (e) { el.innerHTML = '<div class="al al-r">' + vEsc(e.message || e) + '</div>'; }
+}
+function vrMarcar() {
+  var sel = [], neto = 0;
+  document.querySelectorAll('.vr-chk:checked').forEach(function(c) { var x = VR_.pend[+c.dataset.i]; sel.push(x); x.LINEAS.forEach(function(l) { neto += Number(l.NETO || 0) * Number(l.CANT || 0); }); });
+  $id('vr-ok').disabled = !sel.length;
+  $id('vr-tot').innerHTML = sel.length ? sel.length + ' remito' + (sel.length === 1 ? '' : 's') + ' · neto ' + vrPlata(neto) + ' + IVA' : '';
+}
+async function vrArmar() {
+  var sel = []; document.querySelectorAll('.vr-chk:checked').forEach(function(c) { var x = VR_.pend[+c.dataset.i]; sel.push({ ORIGEN: x.ORIGEN, ID: x.ID, NRO: x.NRO }); });
+  if (!sel.length) return;
+  var b = $id('vr-ok'); b.disabled = true;
+  try {
+    var r = await gsRun('gsFP_Facturar', { ID_CLIENTE: VR_.cli, TIPO_COMP: $v('vr-tipo'), REMITOS: sel });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); b.disabled = false; return; }
+    closeModal(); toast('Factura armada con ' + r.REMITOS.join(', ') + ': revisala y confirmala', 'g');
+    if (typeof vbBorrarCache === 'function') vbBorrarCache();
+    vbAbrir(r.ID_BOR);
+  } catch (e) { toast(e.message || e, 'r2'); b.disabled = false; }
+}
+// ── Remitos de venta ──
+async function vrRemitos() {
+  var html = '<div class="mh"><span class="mt"><i class="fas fa-truck" style="color:var(--accent)"></i> Remitos de venta</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" id="vr-rl"><div class="tdim tc" style="padding:16px">Cargando…</div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-p" onclick="vrNuevo()"><i class="fas fa-plus"></i> Nuevo remito</button></div>';
+  showModal(html, 'md-lg');
+  try {
+    var r = await gsRun('gsFP_RemitosVenta'); var el = $id('vr-rl');
+    if (!r || !r.ok) { el.innerHTML = '<div class="al al-r">' + vEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
+    if (!r.REMITOS.length) { el.innerHTML = '<div class="al al-b">Todavía no hay remitos de venta. Con «Nuevo remito» se entrega mercadería sin factura y se factura después.</div>'; return; }
+    el.innerHTML = '<div class="tw"><table><thead><tr><th>Remito</th><th>Fecha</th><th>Cliente</th><th>Qué se entregó</th><th>Estado</th><th></th></tr></thead><tbody>' + r.REMITOS.map(function(x) {
+      var est = x.ESTADO === 'ANULADO' ? '<span class="badge b-red">Anulado</span>' : (x.FACTURA ? '<span class="badge b-green">' + vEsc(x.FACTURA) + '</span>' : '<span class="badge b-yellow">Sin facturar</span>');
+      return '<tr><td><b>' + vEsc(x.NRO) + '</b></td><td>' + vrFecha(x.FECHA) + '</td><td>' + vEsc(x.CLIENTE) + '</td><td>' + x.ITEMS.map(function(i) { return vEsc(i.CANT) + ' × ' + vEsc(i.NOMBRE); }).join('<br>') + '</td><td>' + est + '</td>' +
+        '<td>' + (x.ESTADO !== 'ANULADO' && !x.FACTURA ? '<button class="btn btn-s btn-sm" onclick="vrAnular(' + x.ID_REMITO + ',\'' + vEsc(x.NRO) + '\')">Anular</button>' : '') + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+  } catch (e) { toast(e.message || e, 'r2'); }
+}
+function vrNuevo() {
+  VR_.rem = { ID_CLIENTE: VR_.cli || '', ITEMS: [], OBS: '' }; closeModal();
+  showModal('<div class="mh"><span class="mt"><i class="fas fa-truck" style="color:var(--accent)"></i> Nuevo remito de venta</span><button class="mc" onclick="closeModal()">×</button></div>' +
+    '<div class="mb2"><div class="fg"><label class="fl">Cliente</label><select class="fs" id="vr-rcli" style="font-size:16px">' + vrCliOpts(VR_.rem.ID_CLIENTE) + '</select></div>' +
+    '<div class="fr" style="align-items:flex-end;gap:8px;flex-wrap:wrap"><div class="fg" style="flex:3;min-width:200px"><label class="fl">Código o nombre del producto</label><input class="fi" id="vr-art" list="vr-arts" placeholder="Ej.: NK.0001 o 295/80R22.5" style="font-size:16px"/></div>' +
+    '<div class="fg" style="width:90px"><label class="fl">Cantidad</label><input class="fi" id="vr-cant" type="number" min="1" step="1" value="1" style="font-size:16px"/></div>' +
+    '<button class="btn btn-s" onclick="vrAgregar()"><i class="fas fa-plus"></i> Agregar</button></div>' +
+    '<datalist id="vr-arts">' + (_VTA.ARTICULOS || []).filter(function(a) { return Number(a.STOCK) > 0; }).slice(0, 2000).map(function(a) { return '<option value="' + vEsc(a.CODIGO || a.ID) + ' — ' + vEsc(a.NOMBRE) + '"></option>'; }).join('') + '</datalist>' +
+    '<div id="vr-items" style="margin-top:10px"></div>' +
+    '<div class="fg" style="margin-top:10px"><label class="fl">Observación</label><input class="fi" id="vr-obs" placeholder="Opcional"/></div>' +
+    '<div class="tdim" style="font-size:13px">El stock sale al grabar el remito. Después se factura desde «Facturar remitos».</div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="vr-rok" onclick="vrGrabar()"><i class="fas fa-check"></i> Grabar remito</button></div>', 'md-lg');
+  vrPintarItems();
+}
+function vrAgregar() {
+  var t = ($v('vr-art') || '').split(' — ')[0].trim(), a = vtaArtCod(t), cant = parseInt($v('vr-cant'), 10);
+  if (!a) { toast(vtaArtCuantos(t) > 1 ? 'Hay varios productos con ese nombre: elegí uno de la lista' : 'No encontré ese código ni ese nombre', 'r2'); return; }
+  if (!(cant > 0)) { toast('Cantidad no válida', 'r2'); return; }
+  if (Number(a.STOCK) < cant) { toast(a.NOMBRE + ': hay ' + Number(a.STOCK) + ' en stock', 'r2'); return; }
+  VR_.rem.ITEMS.push({ ID_ARTICULO: a.ID, NOMBRE: a.NOMBRE, CODIGO: a.CODIGO, CANT: cant });
+  $id('vr-art').value = ''; $id('vr-cant').value = 1; vrPintarItems(); $id('vr-art').focus();
+}
+function vrPintarItems() {
+  var el = $id('vr-items'); if (!el) return;
+  el.innerHTML = VR_.rem.ITEMS.length ? '<div class="tw"><table><thead><tr><th>Código</th><th>Producto</th><th class="tr">Cant.</th><th></th></tr></thead><tbody>' + VR_.rem.ITEMS.map(function(i, k) {
+    return '<tr><td class="mono">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + '</td><td class="tr">' + i.CANT + '</td><td><button class="btn btn-s btn-sm" onclick="VR_.rem.ITEMS.splice(' + k + ',1);vrPintarItems()">Quitar</button></td></tr>'; }).join('') + '</tbody></table></div>'
+    : '<div class="tdim" style="font-size:13px">Todavía no agregaste productos.</div>';
+}
+async function vrGrabar() {
+  var cli = $v('vr-rcli'); if (!cli) { toast('Elegí el cliente', 'r2'); return; }
+  if (!VR_.rem.ITEMS.length) { toast('Agregá al menos un producto', 'r2'); return; }
+  var b = $id('vr-rok'); b.disabled = true;
+  try {
+    var r = await gsRun('gsFP_RemitoVenta', { ID_CLIENTE: cli, OBS: $v('vr-obs'), ITEMS: VR_.rem.ITEMS.map(function(i) { return { ID_ARTICULO: i.ID_ARTICULO, CANT: i.CANT }; }) });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); b.disabled = false; return; }
+    VR_.cli = cli; closeModal(); toast('Remito ' + r.NRO_REMITO + ' grabado: salió del stock', 'g');
+    if (typeof vbBorrarCache === 'function') vbBorrarCache();
+    _VTA = await gsRun('gsVTA_Datos'); vrRemitos();
+  } catch (e) { toast(e.message || e, 'r2'); b.disabled = false; }
+}
+async function vrAnular(id, nro) {
+  var m = await uiPedir('Motivo de la anulación del remito ' + nro + ' (la mercadería vuelve al stock):', { obligatorio: true }); if (m === null) return;
+  try {
+    var r = await gsRun('gsFP_RemitoVentaAnular', id, m);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast('Remito ' + nro + ' anulado: volvió al stock', 'g'); if (typeof vbBorrarCache === 'function') vbBorrarCache();
+    _VTA = await gsRun('gsVTA_Datos'); vrRemitos();
+  } catch (e) { toast(e.message || e, 'r2'); }
 }
 </script>
 
@@ -10506,6 +10628,7 @@ async function pcCostos() {
   $id('pc-body').innerHTML = '<div class="card"><div class="fbar no-print" style="gap:8px;flex-wrap:wrap"><label class="fl" style="margin:0">Mes</label><input class="fi" type="month" id="pcc-mes" value="' + mes + '" style="width:160px"/>' +
     '<button class="btn btn-s btn-sm" onclick="pcCostosExcel()"><i class="fas fa-file-download"></i> Excel</button>' +
     (pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" onclick="pcProrratear()"><i class="fas fa-balance-scale"></i> Prorratear gastos fijos del mes</button>' : '') +
+    '<button class="btn btn-s btn-sm" onclick="pcPreciosRec()"><i class="fas fa-tags"></i> Precios de recapado</button>' +
     '<span class="tdim" style="font-size:11px">Reparto: ' + (r.metodo === 'MINUTOS' ? 'según minutos de cada cubierta' : 'igual por cubierta') + '</span></div>' +
     '<div class="tw"><table style="font-size:12px" id="pc-tbl-costos"><thead><tr><th>Terminada</th><th>OT</th><th>Marca grabada · DOT</th><th>Cliente</th><th>Cubierta</th><th class="tr">Materiales</th><th class="tr">Herramental</th><th class="tr">Min</th><th class="tr">Mano de obra</th><th class="tr">Fijos</th><th class="tr">Total</th></tr></thead><tbody>' +
     r.filas.map(function(f) { return '<tr><td>' + fmtD(f.FECHA_FIN) + '</td><td class="mono">' + pcEsc(f.NRO_OT) + '</td><td class="mono"><b>' + pcEsc(f.MARCA) + '</b><div style="font-size:10px">DOT: ' + pcDotTxt(pcDotDe(f)) + '</div></td><td>' + pcEsc(f.CLIENTE) + '</td><td style="font-size:11px">' + pcEsc(f.TIPO + ' ' + f.MEDIDA + ' · ' + f.TRABAJO) + '</td><td class="tr mono">' + fmt(f.MATERIALES) + '</td><td class="tr mono">' + fmt(f.HERRAMENTAL) + '</td><td class="tr">' + f.MINUTOS + '</td><td class="tr mono">' + fmt(f.MO) + '</td><td class="tr mono">' + fmt(f.FIJOS) + '</td><td class="tr mono"><b>' + fmt(f.TOTAL) + '</b></td></tr>'; }).join('') +
@@ -10533,6 +10656,30 @@ async function pcProrratear() {
     var g = await gsRun('gsPC_Prorratear', PC_.mes, true);
     if (!g || !g.grabado) { toast((g && g.error) || 'No se pudo', 'r2'); return; }
     toast('Prorrateo aplicado ✓', 'g'); closeModal(); pcCostos();
+  });
+}
+
+// ── Precios de recapado desde el costo real (28/10/2026) ──
+// Servicio a clientes: promedio del costo de las cubiertas terminadas de cada medida y trabajo. Recapada propia: promedio de las unidades en stock.
+// Precio = costo × (1 + rentabilidad) ÷ (1 − impuestos de venta) + IVA. «Armar la lista» deja una lista de venta nueva en borrador para aprobar en Precios.
+async function pcPreciosRec() {
+  var r; try { r = await gsRun('gsFP_Precios', false); } catch (e) { toast(e.message || e, 'r2'); return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  var g = r.REGLA, pct = function(x) { return (Math.round(x * 10000) / 100).toLocaleString('es-AR') + '%'; };
+  showModal('<div class="mh"><span class="mt"><i class="fas fa-tags" style="color:var(--accent)"></i> Precios de recapado desde el costo real</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<p style="margin-top:0">Regla: costo × (1 + rentabilidad ' + pct(g.RENTABILIDAD) + ') ÷ (1 − impuestos de venta ' + pct(g.IMP_VENTA) + ') + IVA ' + pct(g.IVA) + '. Los parámetros están en Órdenes de Trabajo → Costos.</p>' +
+    '<div class="tw" style="max-height:360px"><table style="font-size:13px"><thead><tr><th>Artículo</th><th>Base</th><th class="tr">Costo</th><th class="tr">Sin IVA</th><th class="tr">Con IVA</th><th class="tr">En la lista hoy</th></tr></thead><tbody>' +
+    (r.FILAS.length ? r.FILAS.map(function(f) { var cambia = Math.round(f.CON_IVA) !== Math.round(f.ACTUAL);
+      return '<tr><td>' + pcEsc(f.NOMBRE) + '<div class="tdim" style="font-size:11px">' + (f.CLASE === 'SERVICIO' ? 'Servicio a clientes' : 'Recapada propia (stock)') + '</div></td><td>' + pcEsc(f.BASE) + '</td><td class="tr mono">' + fmt(f.COSTO) + '</td><td class="tr mono">' + fmt(f.SIN_IVA) + '</td><td class="tr mono"><b>' + fmt(f.CON_IVA) + '</b></td><td class="tr mono"' + (cambia ? ' style="color:var(--warning)"' : '') + '>' + (f.ACTUAL ? fmt(f.ACTUAL) : 'sin precio') + '</td></tr>'; }).join('')
+      : '<tr><td colspan="6" class="tdim">Todavía no hay cubiertas terminadas con costo.</td></tr>') + '</tbody></table></div>' +
+    '<div class="tdim" style="font-size:12px;margin-top:8px">' + r.CAMBIAN + ' precio' + (r.CAMBIAN === 1 ? '' : 's') + ' distinto' + (r.CAMBIAN === 1 ? '' : 's') + ' de la lista vigente. Al armar la lista queda en borrador: la aprueba un administrador en Precios → Versiones de la lista.</div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button>' + (r.CAMBIAN ? '<button class="btn btn-p" id="pcpr-ok"><i class="fas fa-check"></i> Armar la lista nueva con estos precios</button>' : '') + '</div>', 'md-lg');
+  var ok = $id('pcpr-ok'); if (!ok) return;
+  ok.addEventListener('click', async function() {
+    this.disabled = true;
+    try { var c = await gsRun('gsFP_Precios', true); if (!c || !c.ok) { toast((c && c.error) || 'No se pudo', 'r2'); this.disabled = false; return; }
+      closeModal(); toast('Lista de venta N° ' + c.ID_LV + ' en borrador: aprobala en Precios → Versiones de la lista', 'g'); }
+    catch (e) { toast(e.message || e, 'r2'); this.disabled = false; }
   });
 }
 
