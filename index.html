@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "c6068273ef5c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "490a18219704"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1429,7 +1429,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610272111';
+var EMA_BUILD = '202610281051';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3568,8 +3568,9 @@ function cobPintarFormas(arr, p, cont, fQuitar, fRepintar, fTot, cajas) {
     } else if (f.FORMA === 'RETENCION') {
       h += '<div class="fg" style="flex:2"><label class="fl">Retención y N° de certificado *</label><input id="' + id('DETALLE') + '" class="fi" value="' + vEsc(f.DETALLE) + '" placeholder="Ej: IIBB Salta cert. 1234"></div>';
     } else {
-      h += '<div class="fg"><label class="fl">Entra en la caja</label><select id="' + id('ID_CAJA') + '" class="fs"><option value="">— Elegir —</option>' +
-        (cajas || []).map(function(c) { return '<option value="' + c.ID_CAJA + '"' + (String(f.ID_CAJA) === String(c.ID_CAJA) ? ' selected' : '') + '>' + vEsc(c.CAJA_DESC) + '</option>'; }).join('') + '</select></div>' +
+      var esBco = f.FORMA !== 'EFECTIVO', cjs = (cajas || []).filter(function(c) { return esBco ? c.TIPO === 'BANCO' : c.TIPO !== 'BANCO'; });
+      h += '<div class="fg"><label class="fl">' + (esBco ? 'Entra en la cuenta del banco' : 'Entra en la caja') + '</label><select id="' + id('ID_CAJA') + '" class="fs"><option value="">' + (cjs.length ? '— Elegir —' : (esBco ? 'No hay cuenta de banco cargada' : 'No hay caja')) + '</option>' +
+        cjs.map(function(c) { return '<option value="' + c.ID_CAJA + '"' + (String(f.ID_CAJA) === String(c.ID_CAJA) ? ' selected' : '') + '>' + vEsc(c.CAJA_DESC) + '</option>'; }).join('') + '</select></div>' +
         '<div class="fg"><label class="fl">Detalle</label><input id="' + id('DETALLE') + '" class="fi" value="' + vEsc(f.DETALLE) + '" placeholder="' + (f.FORMA === 'EFECTIVO' ? 'Opcional' : 'N° de operación') + '"></div>';
     }
     return h + '</div><div style="text-align:right"><button class="btn btn-xs btn-s" onclick="' + fQuitar + '(' + i + ')"><i class="fas fa-times"></i> Quitar</button></div></div>';
@@ -5563,8 +5564,9 @@ function opPintarFormas() {
           (_OP.BANCOS || []).map(function(b) { return '<option value="' + b.ID_BANCO + '"' + (String(f.ID_BANCO) === String(b.ID_BANCO) ? ' selected' : '') + '>' + opEsc(b.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
           '<div class="fg"><label class="fl">Fecha de pago</label><input id="opf-FECHA_PAGO-' + i + '" type="date" class="fi" value="' + opEsc(f.FECHA_PAGO) + '"></div>';
       } else {
-        h += '<div class="fg"><label class="fl">Sale de la caja</label><select id="opf-ID_CAJA-' + i + '" class="fs"><option value="">— Elegir —</option>' +
-          (_OP.CAJAS || []).map(function(c) { return '<option value="' + c.ID_CAJA + '"' + (String(f.ID_CAJA) === String(c.ID_CAJA) ? ' selected' : '') + '>' + opEsc(c.CAJA_DESC) + '</option>'; }).join('') + '</select></div>' +
+        var esBco = f.FORMA === 'TRANSFERENCIA', cjs = (_OP.CAJAS || []).filter(function(c) { return esBco ? c.TIPO === 'BANCO' : c.TIPO !== 'BANCO'; });
+        h += '<div class="fg"><label class="fl">' + (esBco ? 'Sale de la cuenta del banco' : 'Sale de la caja') + '</label><select id="opf-ID_CAJA-' + i + '" class="fs"><option value="">' + (cjs.length ? '— Elegir —' : (esBco ? 'No hay cuenta de banco cargada' : 'No hay caja')) + '</option>' +
+          cjs.map(function(c) { return '<option value="' + c.ID_CAJA + '"' + (String(f.ID_CAJA) === String(c.ID_CAJA) ? ' selected' : '') + '>' + opEsc(c.CAJA_DESC) + '</option>'; }).join('') + '</select></div>' +
           '<div class="fg"><label class="fl">Detalle</label><input id="opf-DETALLE-' + i + '" class="fi" value="' + opEsc(f.DETALLE) + '" placeholder="' + (f.FORMA === 'TRANSFERENCIA' ? 'N° de operación' : 'Opcional') + '"></div>';
       }
     }
@@ -15903,7 +15905,7 @@ function segEditarUsuario(id) {
 
 function segModalUsuario(u) {
   var titulo = u ? 'Editar usuario' : 'Nuevo usuario';
-  var roles = ['SUPER','ADMINISTRADOR','ENCARGADO_PLANTA','RECEPCION','OPERADOR','ENCARGADO_SUCURSAL','VENDEDOR','FACTURACION'];
+  var roles = ['SUPER','ADMINISTRADOR','ENCARGADO_PLANTA','RECEPCION','OPERADOR','ENCARGADO_SUCURSAL','VENDEDOR','FACTURACION','COMPRAS'];
   var sucs = (window._segSucs || []).map(function(x) { return x.CODIGO; });
   var sucAct = u ? (u.SUCURSAL || 'PLANTA') : 'PLANTA';
   var sucOpts = ['TODAS'].concat(sucs).map(function(c) { var x = (window._segSucs || []).filter(function(y) { return y.CODIGO === c; })[0]; return '<option value="' + c + '"' + (c === sucAct ? ' selected' : '') + '>' + (x ? x.NOMBRE : 'TODAS (solo SUPER y ADMINISTRADOR)') + '</option>'; }).join('');
@@ -16474,7 +16476,7 @@ var MV_OPC = [
   ['entregas', '🚚', 'Entregas y remitos', 'Remitos y foto firmada', 'produccion-cubiertas', 'entregas', 'RECEPCION ENCARGADO_PLANTA'],
   ['rech', '↩', 'Rechazadas', 'Cubiertas para devolver', 'produccion-cubiertas', 'rech', 'RECEPCION ENCARGADO_PLANTA'],
   ['alarmas', '⚠', 'Alarmas', 'Stock bajo y cosas atrasadas', 'produccion-cubiertas', 'alarmas', 'ENCARGADO_PLANTA'],
-  ['stock', '📦', 'Stock de insumos', 'Cuánto hay de cada insumo', 'stock-insumos', '', 'ENCARGADO_PLANTA'],
+  ['stock', '📦', 'Stock de insumos', 'Cuánto hay de cada insumo', 'stock-insumos', '', 'ENCARGADO_PLANTA COMPRAS'],
   ['catalogo', '🛍', 'Catálogo', 'La tienda: cubiertas e insumos con foto', 'precios-nuevos', '', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
   ['precios-nuevos', '🏷', 'Lista de precios', 'Cubiertas e insumos (elegís arriba)', 'precios-nuevos', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
   ['margen', '📊', 'Margen con descuento', 'Cubiertas e insumos (elegís arriba)', 'margen', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
