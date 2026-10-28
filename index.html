@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a7ea7452322a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e41206895691"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610281239';
+var EMA_BUILD = '202610281308';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -4276,7 +4276,7 @@ function lppPintar() {
   var est = function(e) { return e === 'VIGENTE' ? '<span class="badge b-green">VIGENTE</span>' : '<span class="badge b-gray">' + lppEsc(e) + '</span>'; };
   var h = '<div class="al mb3" style="font-size:12px">Cada proveedor tiene <b>una sola lista vigente</b>. Al grabar una nueva, la anterior queda <b>vencida</b> (guardada) y el costo de cada insumo o artículo que coincide por código pasa a ser el de la lista nueva (precio de lista menos el descuento que nos hacen).</div>' +
     '<div class="tw" style="max-height:220px"><table style="font-size:12px"><thead><tr><th>Proveedor</th><th>Lista</th><th>Vigencia</th><th class="tr">Desc.</th><th class="tr">Ítems</th><th>Estado</th><th></th></tr></thead><tbody>' +
-    (d.LISTAS.length ? d.LISTAS.map(function(l) { return '<tr><td>' + lppEsc(l.PROVEEDOR) + '</td><td>' + lppEsc(l.NOMBRE) + '</td><td class="mono">' + lppEsc(l.FECHA_VIGENCIA.split('-').reverse().join('/')) + '</td><td class="mono tr">' + l.DESCUENTO + '%</td><td class="mono tr">' + l.ITEMS + '</td><td>' + est(l.ESTADO) + '</td><td><button class="btn btn-xs btn-info" onclick="lppVer(' + l.ID_LPP + ')"><i class="fas fa-eye"></i></button></td></tr>'; }).join('') : '<tr><td colspan="7" class="tdim tc">Todavía no hay listas cargadas.</td></tr>') +
+    (d.LISTAS.length ? d.LISTAS.map(function(l) { return '<tr><td>' + lppEsc(l.PROVEEDOR) + '</td><td>' + lppEsc(l.NOMBRE) + '</td><td class="mono">' + lppEsc(l.FECHA_VIGENCIA.split('-').reverse().join('/')) + '</td><td class="mono tr">' + (Math.round((parseFloat(l.DESCUENTO) || 0) * 100) / 100).toString().replace('.', ',') + '%</td><td class="mono tr">' + l.ITEMS + '</td><td>' + est(l.ESTADO) + '</td><td><button class="btn btn-xs btn-info" onclick="lppVer(' + l.ID_LPP + ')"><i class="fas fa-eye"></i></button></td></tr>'; }).join('') : '<tr><td colspan="7" class="tdim tc">Todavía no hay listas cargadas.</td></tr>') +
     '</tbody></table></div><div id="lpp-det"></div>';
   if (d.PUEDE) h += '<div class="sec-div mt3">CARGAR UNA LISTA NUEVA</div>' +
     '<div class="fr2"><div class="fg"><label class="fl">Proveedor *</label><select id="lpp-prov" class="fs"><option value="">Elegí…</option>' + d.PROVEEDORES.map(function(p) { return '<option value="' + lppEsc(p.ID_PROVEEDOR) + '">' + lppEsc(p.PROVEEDOR) + '</option>'; }).join('') + '</select></div>' +
@@ -12062,7 +12062,7 @@ function pnResultados() {
   }
   h += '<div class="pn-info">' + lista.length + ' resultado' + (lista.length === 1 ? '' : 's') + (filtros.length ? ' · ' + pnEsc(filtros.join(' · ')) + ' <a href="javascript:void(0)" onclick="pnVerPromo(0)">quitar</a>' : '') + '</div>';
   var hayFiltro = PN_.q || PN_.rubro || PN_.marca || PN_.promo;
-  if (!lista.length) h += '<div class="card"><div class="card-body tdim">No hay cubiertas con esa combinación' + (PN_.q ? ' (búsqueda: <b>' + pnEsc(PN_.q) + '</b>)' : '') + '. ' +
+  if (!lista.length) h += '<div class="card"><div class="card-body tdim">No hay ' + (PN_.div === 'INS' ? 'insumos ni accesorios' : 'cubiertas') + ' con esa combinación' + (PN_.q ? ' (búsqueda: <b>' + pnEsc(PN_.q) + '</b>)' : '') + '. ' +
     (hayFiltro ? '<br/><button class="pn-mas" style="margin-top:8px" onclick="pnLimpiar()">✕ Limpiar filtros y ver todo</button>' : 'Probá escribir solo los números, por ejemplo <b>2958022</b> o <b>175 70 13</b>.') + '</div></div>';
   lista.slice(0, PN_.max).forEach(function(x) { h += pnTarjeta(x.p); });
   if (lista.length > PN_.max) h += '<button class="pn-mas" onclick="PN_.max+=40;pnResultados()">Ver más (' + (lista.length - PN_.max) + ' restantes)</button>';
@@ -16515,7 +16515,7 @@ function btPintar() {
     '<label>Hasta<input type="date" value="' + btEsc(BT_.hasta) + '" onchange="BT_.hasta=this.value;renderBitacora()"></label>' +
     '<label style="flex:1;min-width:180px">Buscar<input value="' + btEsc(BT_.q) + '" placeholder="tabla, usuario, texto…" oninput="BT_.q=this.value;clearTimeout(window._btT);window._btT=setTimeout(btPintar,300)"></label></div>' +
     '<div class="bt-cont">' + c('', 'Todo') + c('PEDIDO', 'Pedidos de Anibal') + c('CHAT', BT_F.CHAT) + c('BASE', BT_F.BASE) + c('SISTEMA', BT_F.SISTEMA) + c('INGRESO', BT_F.INGRESO) + '</div>';
-  if (BT_.d.TOTAL > F.length) h += '<div class="al mb3">Se muestran los ' + F.length + ' más nuevos de ' + BT_.d.TOTAL + '. Acortá las fechas para ver el resto.</div>';
+  if (BT_.d.TOTAL > F.length) h += '<div class="al mb3">Pedidos, conversación, sistema e ingresos: están todos. De los cambios directos en la base se muestran los 4000 más nuevos de ' + (BT_.d.BASE_TOTAL || '') + '. Acortá las fechas para ver el resto.</div>';
   h += '<div class="bt-l">' + (L.length ? L.slice(0, 1500).map(function(x) {
     var et = x.FUENTE === 'CHAT' ? x.TIPO : x.FUENTE;
     return '<div class="bt-r"><div class="bt-h">' + btHora(x.MS) + '</div><div class="bt-tx"><span class="bt-b bt-' + btEsc(et) + '">' + btEsc(x.FUENTE === 'CHAT' ? (x.TIPO === 'PEDIDO' ? 'Pedido' : x.TIPO === 'PASO' ? 'Paso de Claude' : 'Claude respondió') : BT_F[x.FUENTE]) + '</span> ' +
@@ -16549,6 +16549,7 @@ body.modo-movil #mv-home{display:block}
 body.modo-movil #main{padding:56px 12px calc(110px + env(safe-area-inset-bottom))!important}
 body.modo-cascos #page-produccion-cubiertas .page-hd{display:none!important}
 body.modo-movil.en-inicio-movil #mv-home{display:none}
+body.modo-movil:has(#modals .mo) #mv-home{display:none}
 </style>
 <script>
 // ── Documentos para el cliente (pensado para el celular): buscar y bajar o compartir en PDF
