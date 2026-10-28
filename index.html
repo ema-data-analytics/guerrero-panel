@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7725046df72c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "0b83373797ce"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610281115';
+var EMA_BUILD = '202610281150';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12007,8 +12007,8 @@ function pnPintar() {
   var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
   var marcas = {}; (d.PRECIOS || []).forEach(function(p) { marcas[p.MARCA] = 1; });
   var h = '<div class="pn-wrap">' +
-    '<div class="pn-top"><img src="' + pnEsc(logo) + '" alt="Vulcan Tread"/><div><h2>' + (PN_.div === 'INS' ? 'Lista de precios · Insumos y accesorios' : 'Lista de precios · Cubiertas nuevas') + '</h2><div class="pn-sub">' + (d.PRECIOS || []).filter(function(p) { return (PN_.div === 'INS') === (p.RUBRO === 'INSUMOS'); }).length + (PN_.div === 'INS' ? ' productos' : ' medidas') + ' · precios de venta con IVA</div></div>' +
-    '<div class="pn-acc"><button class="btn btn-sm" onclick="PN_.lpdf=null;pnListasHoja()">📄 Listas PDF</button><button class="btn btn-sm" onclick="pcAyuda(\'precios\')">❓ Ayuda</button>' +
+    '<div class="pn-top"><img src="' + pnEsc(logo) + '" alt="Vulcan Tread"/><div><h2>' + (PN_.div === 'INS' ? 'Lista de precios · Insumos y accesorios' : 'Lista de precios · Cubiertas nuevas') + '</h2><div class="pn-sub">' + (d.PRECIOS || []).filter(function(p) { return (PN_.div === 'INS') === (p.RUBRO === 'INSUMOS'); }).length + (PN_.div === 'INS' ? ' productos' : ' medidas') + ' · precios de venta con IVA' + (d.LISTA_VENTA && d.LISTA_VENTA.ID_LV ? ' · <b>' + pnEsc(d.LISTA_VENTA.NOMBRE) + '</b> vigente desde ' + new Date(d.LISTA_VENTA.DESDE).toLocaleDateString('es-AR') : ' · <b style="color:#b91c1c">sin lista de venta vigente</b>') + '</div></div>' +
+    '<div class="pn-acc">' + (lvEsAdmin() ? '<button class="btn btn-sm" onclick="lvAbrir()">🗂 Versiones de la lista</button>' : '') + '<button class="btn btn-sm" onclick="PN_.lpdf=null;pnListasHoja()">📄 Listas PDF</button><button class="btn btn-sm" onclick="pcAyuda(\'precios\')">❓ Ayuda</button>' +
     (document.body.classList.contains('modo-puesto') ? '<button class="btn btn-sm" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Salir</button>' : '') + '</div></div>';
   if ((d.PROMOS || []).length && PN_.div !== 'INS') {
     h += '<div class="pn-promos" id="pn-promos">';
@@ -12412,6 +12412,80 @@ function pnListaImprimir() {
   w.document.close();
   var img = w.document.querySelector('img'), ir = function() { w.focus(); w.print(); };
   if (img && !img.complete) { img.onload = ir; img.onerror = ir; } else setTimeout(ir, 300);
+}
+
+// ── Versiones de la lista única de venta: ver todas, comparar, armar una nueva (borrador) y aprobarla. Nunca se pisa una lista aprobada. ──
+var LV_ = { d: null, cambios: [] };
+function lvEsAdmin() { var r = String((SES && SES.rol) || '').toUpperCase(); return r === 'SUPER' || r.indexOf('ADMIN') !== -1; }
+function lvF(ms) { return ms ? new Date(ms).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'; }
+async function lvAbrir() {
+  if ($id('lv-box')) closeModal();
+  showModal('<div class="mh"><span class="mt">🗂 Lista de venta: versiones</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" id="lv-box"><div class="tdim">Cargando…</div></div>', 'md-lg');
+  try { LV_.d = await gsRun('gsLV_Datos'); } catch (e) { $id('lv-box').innerHTML = '<div class="al al-r">' + pnEsc(e.message) + '</div>'; return; }
+  lvPintar();
+}
+function lvPintar() {
+  var d = LV_.d, box = $id('lv-box'); if (!box) return;
+  var col = { VIGENTE: 'b-green', BORRADOR: 'b-orange', VENCIDA: 'b-gray', ANULADA: 'b-red' };
+  var bor = d.LISTAS.filter(function(l) { return l.ESTADO === 'BORRADOR'; })[0];
+  var h = '<div class="al mb3" style="font-size:12px">Hay <b>una sola lista de venta vigente</b>: de ella salen los precios de la lista de precios, el margen, las cotizaciones, las ventas, el catálogo y el celular. Una lista aprobada <b>no se modifica ni se borra</b>: para cambiar precios se arma una versión nueva, se revisa qué cambia y se aprueba; la anterior queda vencida y guardada.</div>' +
+    '<div class="tw"><table style="font-size:12.5px"><thead><tr><th>N°</th><th>Lista</th><th>Estado</th><th>Vigente desde</th><th class="tr">Precios</th><th>Armó / aprobó</th><th></th></tr></thead><tbody>' +
+    d.LISTAS.map(function(l) { return '<tr><td class="mono">' + l.ID_LV + '</td><td>' + pnEsc(l.NOMBRE) + '<div class="tdim" style="font-size:11px">' + pnEsc(l.ORIGEN) + '</div></td><td><span class="badge ' + (col[l.ESTADO] || '') + '">' + l.ESTADO + '</span></td><td class="mono">' + lvF(l.VIGENTE_DESDE) + (l.VENCIDA ? '<div class="tdim">vencida ' + lvF(l.VENCIDA) + '</div>' : '') + '</td><td class="mono tr">' + l.ITEMS + '</td><td style="font-size:11.5px">' + pnEsc(l.CREADA_POR) + (l.APROBADA_POR ? '<br>✔ ' + pnEsc(l.APROBADA_POR) : '') + '</td><td>' +
+      (l.ESTADO !== 'VIGENTE' ? '<button class="btn btn-xs btn-info" onclick="lvComparar(' + l.ID_LV + ')">Comparar con la vigente</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div><div id="lv-cmp"></div>';
+  if (d.PUEDE) {
+    if (bor) h += '<div class="card mt3"><div class="card-body"><b>Borrador N° ' + bor.ID_LV + '</b> listo para revisar. <button class="btn btn-sm btn-info" onclick="lvComparar(' + bor.ID_LV + ')">Ver qué cambia</button> <button class="btn btn-sm btn-p" onclick="lvAprobar(' + bor.ID_LV + ')">✔ Aprobar y poner vigente</button> <button class="btn btn-sm" onclick="lvAnular(' + bor.ID_LV + ')">Anular borrador</button></div></div>';
+    else h += '<div class="card mt3"><div class="card-body"><b>Armar una versión nueva</b> (copia la vigente y aplica los cambios; queda en borrador hasta que la apruebes)' +
+      '<label style="display:flex;gap:8px;align-items:center;margin:8px 0;font-size:13px"><input type="checkbox" id="lv-ins"> Recalcular los insumos Briomaq con la lista vigente del proveedor y los parámetros (descuento, flete, margen)</label>' +
+      '<div class="fr"><div class="fg" style="flex:2"><label class="fl">Cambiar el precio de un producto</label><input id="lv-q" class="fi" placeholder="Buscá: 295 80 22.5 mirage" oninput="lvBuscar()"></div></div><div id="lv-sug"></div>' +
+      '<div id="lv-cam"></div><div class="fg"><label class="fl">Motivo / observación *</label><input id="lv-obs" class="fi" placeholder="Ej: aumento Goodyear 5% noviembre"></div>' +
+      '<button class="btn btn-p" onclick="lvNueva()">Armar borrador</button></div></div>';
+  }
+  box.innerHTML = h; lvCambios();
+}
+function lvBuscar() {
+  var q = String($v('lv-q') || '').trim(), box = $id('lv-sug'); if (!box) return;
+  if (q.length < 2 || !PN_.idx) { box.innerHTML = ''; return; }
+  var toks = q.split(/\s+/).map(function(t) { return pnNorm(t); }).filter(function(t) { return t; });
+  var r = PN_.idx.filter(function(x) { return toks.every(function(t) { return x.n.indexOf(t) !== -1 || (/^[0-9]+$/.test(t) && x.dig.indexOf(t) !== -1); }); }).slice(0, 60);
+  box.innerHTML = r.length ? '<div class="tw" style="max-height:220px"><table style="font-size:12px"><tbody>' + r.map(function(x) { return '<tr><td>' + pnEsc(x.p.NOMBRE) + '</td><td class="mono tr">' + pnPlata(x.p.PRECIO_CON_IVA) + '</td><td><button class="btn btn-xs" onclick="lvAgregar(' + x.p.ID_PN + ')">Cambiar</button></td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="tdim">No encontré ese producto.</div>';
+}
+function lvAgregar(id) {
+  var x = (PN_.d.PRECIOS || []).filter(function(p) { return p.ID_PN === id; })[0]; if (!x) return;
+  if (!LV_.cambios.some(function(c) { return c.ID_ARTICULO === id; })) LV_.cambios.push({ ID_ARTICULO: id, NOMBRE: x.NOMBRE, ANTES: x.PRECIO_CON_IVA, PRECIO_CON_IVA: x.PRECIO_CON_IVA });
+  lvCambios();
+}
+function lvCambios() {
+  var b = $id('lv-cam'); if (!b) return;
+  b.innerHTML = LV_.cambios.length ? '<div class="tw"><table style="font-size:12.5px"><thead><tr><th>Producto</th><th class="tr">Hoy</th><th class="tr">Precio nuevo (con IVA)</th><th></th></tr></thead><tbody>' + LV_.cambios.map(function(c, i) {
+    return '<tr><td>' + pnEsc(c.NOMBRE) + '</td><td class="mono tr">' + pnPlata(c.ANTES) + '</td><td class="tr"><input class="fi" style="max-width:140px;text-align:right" inputmode="decimal" value="' + c.PRECIO_CON_IVA + '" onchange="LV_.cambios[' + i + '].PRECIO_CON_IVA=parseFloat(String(this.value).replace(/\\./g,\'\').replace(\',\',\'.\'))||0"></td><td><button class="btn btn-xs" onclick="LV_.cambios.splice(' + i + ',1);lvCambios()">✕</button></td></tr>'; }).join('') + '</tbody></table></div>' : '';
+}
+async function lvNueva() {
+  var obs = String($v('lv-obs') || '').trim(), ins = $id('lv-ins') && $id('lv-ins').checked;
+  if (obs.length < 4) { toast('Escribí el motivo de la versión nueva', 'r'); return; }
+  if (!ins && !LV_.cambios.length) { toast('No hay cambios: tildá recalcular insumos o agregá productos', 'r'); return; }
+  var r; try { r = await gsRun('gsLV_Nueva', { OBS: obs, INSUMOS_DESDE_LISTA: ins ? 1 : 0, CAMBIOS: LV_.cambios.map(function(c) { return { ID_ARTICULO: c.ID_ARTICULO, PRECIO_CON_IVA: c.PRECIO_CON_IVA }; }) }); } catch (e) { r = { ok: false, error: e.message }; }
+  if (!r.ok) { $id('lv-cam').insertAdjacentHTML('beforeend', '<div class="al al-r">' + pnEsc(r.error) + '</div>'); return; }
+  LV_.cambios = []; LV_.d = await gsRun('gsLV_Datos'); lvPintar(); lvComparar(r.ID_LV);
+}
+async function lvComparar(id) {
+  var b = $id('lv-cmp'); if (!b) return; b.innerHTML = '<div class="tdim">Comparando…</div>';
+  var r = await gsRun('gsLV_Comparar', id);
+  var cnt = { SUBE: 0, BAJA: 0, NUEVO: 0, SALE: 0 }; r.CAMBIOS.forEach(function(c) { cnt[c.CAMBIO]++; });
+  b.innerHTML = '<div class="card mt3"><div class="card-body"><b>Lista N° ' + id + ' contra la vigente:</b> ' + r.N + ' cambios · ⬆ ' + cnt.SUBE + ' suben · ⬇ ' + cnt.BAJA + ' bajan · ' + cnt.NUEVO + ' nuevos · ' + cnt.SALE + ' salen' +
+    (r.N ? '<div class="tw" style="max-height:300px"><table style="font-size:12px"><thead><tr><th>Producto</th><th class="tr">Antes</th><th class="tr">Ahora</th><th class="tr">%</th></tr></thead><tbody>' + r.CAMBIOS.slice(0, 500).map(function(c) {
+      var p = c.ANTES && c.AHORA ? Math.round((c.AHORA / c.ANTES - 1) * 1000) / 10 : null;
+      return '<tr><td>' + pnEsc(c.NOMBRE) + '</td><td class="mono tr">' + (c.ANTES ? pnPlata(c.ANTES) : '—') + '</td><td class="mono tr">' + (c.AHORA ? pnPlata(c.AHORA) : '—') + '</td><td class="mono tr" style="color:' + (p > 0 ? '#b91c1c' : '#15803d') + '">' + (p === null ? c.CAMBIO : (p > 0 ? '+' : '') + String(p).replace('.', ',') + '%') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '') + '</div></div>';
+}
+async function lvAprobar(id) {
+  var ok = await uiConfirmar('¿Aprobar la lista N° ' + id + '? Pasa a ser la vigente para todo el sistema y la actual queda vencida (guardada).'); if (!ok) return;
+  var r; try { r = await gsRun('gsLV_Aprobar', id); } catch (e) { r = { ok: false, error: e.message }; }
+  if (!r.ok) { $id('lv-cmp').innerHTML = '<div class="al al-r">' + pnEsc(r.error) + '</div>'; return; }
+  LV_.d = await gsRun('gsLV_Datos'); lvPintar(); PN_.d = null; if (typeof renderPrecios === 'function') renderPrecios();
+}
+async function lvAnular(id) {
+  var m = await uiPedir('Motivo para anular el borrador N° ' + id); if (!m) return;
+  var r = await gsRun('gsLV_Anular', id, m); if (!r.ok) { $id('lv-cmp').innerHTML = '<div class="al al-r">' + pnEsc(r.error) + '</div>'; return; }
+  LV_.d = await gsRun('gsLV_Datos'); lvPintar();
 }
 </script>
 
