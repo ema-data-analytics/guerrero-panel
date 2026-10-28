@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "855b55c17a19"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a66f561600fd"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610281750';
+var EMA_BUILD = '202610281841';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -14065,7 +14065,7 @@ async function aplicarRptGastos() {
   var _stores2=['produccion_encabezado','produccion_detalle_serv','consumo_insumos',
     'compras_enc','carga_gastos','carga_gasto_detalle','carga_combustible',
     'concepto_gasto','m_tipo_gastos','gasto_det_financiero',
-    'carga_sueldos','carga_transporte','carga_impositivo','empleados','proveedores'];
+    'carga_sueldos','carga_transporte','carga_impositivo','m_empleados','proveedores'];
   var _b2;
   if(isGsMode()){
     _b2=await gsRun('gsBatchLoad',_stores2);
@@ -14089,7 +14089,7 @@ async function aplicarRptGastos() {
   var sueldos    = _b2['carga_sueldos']||[];
   var transportes= _b2['carga_transporte']||[];
   var impositivos= _b2['carga_impositivo']||[];
-  var empleados  = _b2['empleados']||[];
+  var empleados  = _b2['m_empleados']||[];
   var proveedores= _b2['proveedores']||[];
 
   var cm={}; conceptos.forEach(function(c){cm[c.ID_CONCEPTO_GASTO]=c;});
@@ -17680,7 +17680,7 @@ async function renderCargaSueldos() {
 var _suEmpleados = [];
 
 async function suBuscarEmpleado(q) {
-  if (!_suEmpleados.length) _suEmpleados = await ADB.getAll('empleados');
+  if (!_suEmpleados.length) _suEmpleados = await ADB.getAll('m_empleados');
   var lista = $id('su-emp-lista');
   if (!q.trim()) { lista.style.display = 'none'; return; }
   var q2 = q.trim().toUpperCase();
@@ -17699,7 +17699,7 @@ async function suBuscarEmpleado(q) {
 }
 
 async function suSeleccionarEmp(id) {
-  if (!_suEmpleados.length) _suEmpleados = await ADB.getAll('empleados');
+  if (!_suEmpleados.length) _suEmpleados = await ADB.getAll('m_empleados');
   var emp = _suEmpleados.find(function(e){ return String(e.ID_EMPLEADO)===String(id); });
   if (!emp) return;
   $id('su-emp-id').value = id;
@@ -17810,7 +17810,7 @@ async function suRefreshHist() {
   var periodo = ($id('su-hist-desde')||{}).value||'';
   if (periodo) sueldos = sueldos.filter(function(s){ return (s.PERIODO||'').startsWith(periodo.slice(0,7)); });
 
-  if (!_suEmpleados.length) _suEmpleados = await ADB.getAll('empleados');
+  if (!_suEmpleados.length) _suEmpleados = await ADB.getAll('m_empleados');
   var empMap = {};
   _suEmpleados.forEach(function(e){ empMap[e.ID_EMPLEADO]=e; });
 
