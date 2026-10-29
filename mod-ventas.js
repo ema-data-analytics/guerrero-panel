@@ -595,14 +595,22 @@ async function feImprimir(r) {
 async function feAbrir(tab) {
   FE_.tab = tab || FE_.tab || 'comp';
   try { FE_.cfg = await gsRun('gsFE_Config'); } catch (e) { toast(e.message || e, 'r2'); return; }
+  if ($id('fe-cuerpo') && typeof closeModal === 'function') closeModal();
   var p = {}; (FE_.cfg.PARAM || []).forEach(function(x) { p[x.CLAVE] = x.VALOR; });
   var tabs = [['comp', 'Comprobantes'], ['cfg', 'Configuración'], ['arca', 'Conexión con ARCA']];
   var amb = p.AMBIENTE, ambTxt = { NO: 'Apagada (numeración interna)', SIMULADO: 'SIMULADO · prueba sin ARCA', HOMO: 'HOMOLOGACIÓN de ARCA (sin validez fiscal)', PROD: 'PRODUCCIÓN' }[amb] || amb;
   showModal('<div class="mh"><h3><i class="fas fa-qrcode"></i> Factura electrónica</h3><button class="btn btn-s btn-sm" onclick="closeModal()"><i class="fas fa-times"></i></button></div><div class="mb">' +
     '<div style="padding:8px 12px;border-radius:8px;margin-bottom:10px;background:' + (amb === 'PROD' ? 'rgba(22,163,74,.1)' : 'rgba(217,119,6,.1)') + ';font-size:13px">Modo: <b>' + vEsc(ambTxt) + '</b>' + (p.CUIT ? ' · CUIT ' + vEsc(feCuitF(p.CUIT)) : ' · sin CUIT cargado') + '</div>' +
-    '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">' + tabs.map(function(t) { return '<button class="btn ' + (FE_.tab === t[0] ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="feAbrir(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</div>' +
+    '<div id="fe-tabs" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">' + tabs.map(function(t) { return '<button data-t="' + t[0] + '" class="btn ' + (FE_.tab === t[0] ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="feTab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</div>' +
     '<div id="fe-cuerpo">Cargando…</div></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>', 'md-lg');
-  if (FE_.tab === 'comp') feTabComp(); else if (FE_.tab === 'cfg') feTabCfg(p); else feTabArca(p);
+  feTab(FE_.tab);
+}
+// Cambio de pestaña sin volver a abrir la ventana
+function feTab(t) {
+  FE_.tab = t; var p = {}; ((FE_.cfg && FE_.cfg.PARAM) || []).forEach(function(x) { p[x.CLAVE] = x.VALOR; });
+  var bar = $id('fe-tabs'); if (bar) [].forEach.call(bar.querySelectorAll('button'), function(b) { b.className = 'btn ' + (b.getAttribute('data-t') === t ? 'btn-p' : 'btn-s') + ' btn-sm'; });
+  $id('fe-cuerpo').innerHTML = 'Cargando…';
+  if (t === 'comp') feTabComp(); else if (t === 'cfg') feTabCfg(p); else feTabArca(p);
 }
 async function feTabComp() {
   var c = $id('fe-cuerpo');
@@ -634,7 +642,7 @@ async function feGuardarCfg() {
   var l = (FE_.cfg.PARAM || []).map(function(x) { return { CLAVE: x.CLAVE, VALOR: $v('fe-p-' + x.CLAVE) }; });
   var amb = $v('fe-p-AMBIENTE');
   if (amb === 'PROD' && !(await uiConfirmar('Vas a pasar a PRODUCCIÓN: desde ahora cada factura que se confirme se informa a ARCA con validez fiscal y no se puede anular (solo nota de crédito). ¿Seguir?', 'Sí, producción'))) return;
-  try { var r = await gsRun('gsFE_GuardarParam', l); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); return; } toast(r.CAMBIOS.length ? 'Guardado: ' + r.CAMBIOS.join(' · ') : 'Sin cambios', 'g'); feAbrir('cfg'); }
+  try { var r = await gsRun('gsFE_GuardarParam', l); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); return; } toast(r.CAMBIOS.length ? 'Guardado: ' + r.CAMBIOS.join(' · ') : 'Sin cambios', 'g'); closeModal(); feAbrir('cfg'); }
   catch (e) { toast(e.message || e, 'r2'); }
 }
 function feTabArca(p) {
@@ -647,8 +655,8 @@ function feTabArca(p) {
     '<li>Homologación: en ARCA con clave fiscal → Administrador de Relaciones → adherí <b>WSASS – Autogestión Certificados Homologación</b>. En WSASS: <b>Nuevo certificado</b>, pegá el pedido y descargá el certificado. Después <b>Crear autorización a servicio</b>: el servicio <b>wsfe</b> para el CUIT de la empresa.</li>' +
     '<li>Producción: Administración de Certificados Digitales (clave fiscal de la S.R.L.) y delegar <b>wsfe</b> en el Administrador de Relaciones.</li><li>Pegá acá abajo el certificado y tocá <b>Cargar certificado</b>. Después <b>Probar conexión</b>.</li></ol>' +
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">' + b('csr', 'Generar pedido de certificado', 'key') + '</div>' +
-    '<textarea id="fe-a-csr" class="inp" rows="4" readonly placeholder="Acá aparece el pedido de certificado para copiar" style="font-family:monospace;font-size:11px"></textarea>' +
-    '<textarea id="fe-a-cert" class="inp mt2" rows="4" placeholder="Pegá el certificado que te dio ARCA (-----BEGIN CERTIFICATE----- …)" style="font-family:monospace;font-size:11px"></textarea>' +
+    '<textarea id="fe-a-csr" class="inp" rows="4" readonly style="width:100%;box-sizing:border-box;font-family:monospace;font-size:11px" placeholder="Acá aparece el pedido de certificado para copiar"></textarea>' +
+    '<textarea id="fe-a-cert" class="inp mt2" rows="4" placeholder="Pegá el certificado que te dio ARCA (-----BEGIN CERTIFICATE----- …)" style="width:100%;box-sizing:border-box;font-family:monospace;font-size:11px"></textarea>' +
     '<div class="mt2">' + b('cert', 'Cargar certificado', 'upload') + '</div><div id="fe-a-res" class="mt2" style="font-size:13px"></div>';
 }
 async function feArca(acc) {
