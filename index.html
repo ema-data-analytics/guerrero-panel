@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f5a872970f62"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "83b82f15933e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610281936';
+var EMA_BUILD = '202610290317';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3439,6 +3439,7 @@ function vbLista() {
     '<div class="page-sub">Mostrador: cubiertas nuevas, insumos, recapados armados y servicios · Punto de venta ' + vEsc(_VTA.PUNTO_VENTA) + ' (numeración interna hasta la factura electrónica)</div></div>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" style="font-size:15px;padding:10px 14px" onclick="vrFacturar()"><i class="fas fa-file-invoice"></i> Facturar remitos</button>' +
     '<button class="btn btn-s" style="font-size:15px;padding:10px 14px" onclick="vrRemitos()"><i class="fas fa-truck"></i> Remitos de venta</button>' +
+    '<button class="btn btn-s" style="font-size:15px;padding:10px 14px" onclick="feAbrir()"><i class="fas fa-qrcode"></i> Factura electrónica</button>' +
     '<button class="btn btn-p" style="font-size:16px;padding:10px 18px" onclick="vbNuevo()"><i class="fas fa-plus"></i> Nuevo comprobante</button></div></div>' +
     '<div class="content"><div class="card mb3"><div class="card-body"><div class="fr" style="align-items:flex-end;flex-wrap:wrap">' +
     '<div class="fg"><label class="fl">Desde</label><input type="date" class="fi" value="' + vEsc(f.desde) + '" onchange="VB_.f.desde=this.value;vbGrilla()"/></div>' +
@@ -3603,10 +3604,11 @@ function vbDetalleHtml() {
     '<div class="tw mt2"><table style="font-size:13px"><thead><tr><th>Código</th><th>Detalle</th><th class="tr">Cant.</th><th class="tr">Neto u.</th><th class="tr">Desc.</th><th class="tr">IVA</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody id="vb-lineas"></tbody></table></div>' +
     '</div>' + vbPieHtml() + '</div>';
 }
-function vbPieHtml() { return '<div class="card-hd" style="border-top:1px solid var(--border);gap:22px;justify-content:flex-end;flex-wrap:wrap"><span>Neto <b class="mono" id="vb-neto"></b></span><span>IVA <b class="mono" id="vb-iva"></b></span><span style="font-size:18px">TOTAL <b class="mono" style="color:var(--success)" id="vb-total"></b></span></div>'; }
+function vbPieHtml() { return '<div class="card-hd" style="border-top:1px solid var(--border);gap:22px;justify-content:flex-end;flex-wrap:wrap"><span>Neto <b class="mono" id="vb-neto"></b></span><span>IVA <b class="mono" id="vb-iva"></b></span><span id="vb-perc-w" style="display:none">Percepciones <b class="mono" id="vb-perc"></b></span><span style="font-size:18px">TOTAL <b class="mono" style="color:var(--success)" id="vb-total"></b></span></div>'; }
 function vbPintarLineas() {
   var b = VB_.bor, tb = $id('vb-lineas');
   if ($id('vb-neto')) { $id('vb-neto').textContent = fmt(b.NETO); $id('vb-iva').textContent = fmt(b.IVA_TOTAL); $id('vb-total').textContent = fmt(b.TOTAL); }
+  if ($id('vb-perc')) { $id('vb-perc').textContent = fmt(b.PERCEPCIONES || 0); $id('vb-perc-w').style.display = b.PERCEPCIONES ? '' : 'none'; }
   if (!tb) return;
   $id('vb-nl').textContent = b.LINEAS.length + (b.LINEAS.length === 1 ? ' renglón' : ' renglones');
   tb.innerHTML = !b.LINEAS.length ? '<tr><td colspan="8" class="tc tdim" style="padding:14px">Todavía no hay renglones: cargá el primero arriba.</td></tr>' : b.LINEAS.map(function(l) {
@@ -3665,6 +3667,7 @@ function vbCobroHtml() {
     (nc ? '<div class="tdim mb2">La nota de crédito descuenta de la cuenta corriente del cliente.</div>' :
       '<div class="sec-div">COBRO AHORA (lo que no se cobra queda en la cuenta corriente)</div><div id="vta-formas"></div>' +
       '<button class="btn btn-s btn-sm" onclick="vtaFormaAgregar()"><i class="fas fa-plus"></i> Agregar forma de cobro</button><div id="vta-cobro-res" class="mt2" style="font-size:13px"></div>') +
+    feBannerBor(VB_.bor.FE) +
     '<div class="flex gap2 mt3" style="flex-wrap:wrap"><button class="btn btn-g btn-xl" id="vb-conf" onclick="vbConfirmar()" style="flex:1;justify-content:center"><i class="fas fa-check-double"></i> Confirmar comprobante</button>' +
     '<button class="btn btn-s" onclick="vbDescartarPedir(' + VB_.bor.ID_BOR + ')"><i class="fas fa-times"></i> Descartar</button></div></div></div>';
 }
@@ -3691,8 +3694,9 @@ async function vbConfirmar() {
   var bt = $id('vb-conf'); bt.disabled = true; bt.innerHTML = 'Confirmando…';
   try {
     var r = await gsRun('gsVTB_Confirmar', b.ID_BOR, formas);
-    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo confirmar', 'r2'); bt.disabled = false; bt.innerHTML = '<i class="fas fa-check-double"></i> Confirmar comprobante'; return; }
-    toast((VTA_TIPO_TXT[r.TIPO_COMP] || r.TIPO_COMP) + ' ' + r.NRO_COMP + ' — ' + fmt(r.TOTAL) + (r.COBRO ? ' · cobro ' + r.COBRO.NRO_COBRO : '') + ' ✓', 'g');
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo confirmar', 'r2'); bt.disabled = false; bt.innerHTML = '<i class="fas fa-check-double"></i> Confirmar comprobante'; try { var rb = await gsRun('gsVTB_Ver', b.ID_BOR); if (rb && rb.ok) { VB_.bor = rb.BOR; var bn = $id('fe-banner'); if (bn) bn.outerHTML = feBannerBor(VB_.bor.FE); } } catch (e2) {} return; }
+    toast((VTA_TIPO_TXT[r.TIPO_COMP] || r.TIPO_COMP) + ' ' + r.NRO_COMP + ' — ' + fmt(r.TOTAL) + (r.CAE ? ' · CAE ' + r.CAE + (r.AMBIENTE !== 'PROD' ? ' (' + r.AMBIENTE + ', sin validez fiscal)' : '') : '') + (r.COBRO ? ' · cobro ' + r.COBRO.NRO_COBRO : '') + ' ✓', 'g');
+    if (r.AVISOS) toast(r.AVISOS, 'w');
     vbBorrarCache(); VB_.bor = null; await renderVentas(); vtaImprimir(r.ID_VENTA);
   } catch (e) { toast('Error: ' + (e.message || e), 'r2'); bt.disabled = false; bt.innerHTML = '<i class="fas fa-check-double"></i> Confirmar comprobante'; }
 }
@@ -3709,6 +3713,7 @@ async function vtaImprimir(id) {
   try {
     var r = await gsRun('gsVTA_Detalle', id); if (!r || !r.ok) { toast((r && r.error) || 'No encontrado', 'r2'); return; }
     var v = r.VENTA, an = v.ESTADO === 'ANULADA', tit = (VTA_TIPO_TXT[v.TIPO_COMP] || v.TIPO_COMP).toUpperCase();
+    if (v.FE && v.FE.CAE) { await feImprimir(r); return; }
     var h = pcEncImp(tit + (v.TIPO_COMP === 'PRESUPUESTO' ? ' (X · no válido como factura)' : ''), v.NRO_COMP, fmtD(v.FECHA)) +
       (an ? '<div style="border:2px solid #b91c1c;color:#b91c1c;font-weight:800;padding:6px 10px;margin:6px 0;text-align:center">ANULADA · ' + vEsc(v.MOTIVO_ANULACION || '') + '</div>' : '') +
       '<div class="dat"><div><b>Cliente</b>' + vEsc(v.CLIENTE) + '</div><div><b>CUIT / DNI</b>' + vEsc(v.CUIT || '—') + '</div><div><b>Fecha</b>' + fmtD(v.FECHA) + '</div><div><b>Entrega</b>' + vEsc(v.TIPO_ENTREGA || '—') + '</div></div>' +
@@ -3925,6 +3930,142 @@ async function vrAnular(id, nro) {
     toast('Remito ' + nro + ' anulado: volvió al stock', 'g'); if (typeof vbBorrarCache === 'function') vbBorrarCache();
     _VTA = await gsRun('gsVTA_Datos'); vrRemitos();
   } catch (e) { toast(e.message || e, 'r2'); }
+}
+
+// ═════════ FACTURA ELECTRÓNICA (ARCA) — 29/10/2026 ═════════
+// El CAE lo pide el servidor al confirmar. Acá: estado del envío en la carga, impresión con CAE y QR, y la configuración.
+var FE_ = { cfg: null, tab: 'comp' };
+var FE_EST_COLOR = { REGISTRADO: 'var(--success)', AUTORIZADO: '#b45309', PENDIENTE: '#b45309', ERROR: 'var(--danger)', RECHAZADO: 'var(--danger)', ANULADO: '#6b7280' };
+function feBannerBor(fe) {
+  if (!fe || ['PENDIENTE', 'ERROR', 'AUTORIZADO', 'RECHAZADO'].indexOf(fe.ESTADO) === -1) return '<div id="fe-banner"></div>';
+  var rojo = fe.ESTADO === 'RECHAZADO' || fe.ESTADO === 'ERROR';
+  var txt = fe.ESTADO === 'RECHAZADO' ? 'ARCA rechazó este comprobante: ' + vEsc(fe.ERRORES || '') + '. Corregí lo que indica y confirmá de nuevo.' :
+    (fe.ESTADO === 'AUTORIZADO' ? 'ARCA ya lo autorizó (' + vEsc(fe.NRO_COMP) + ', CAE ' + vEsc(fe.CAE) + ') pero falta grabarlo: tocá Confirmar.' :
+    'Se envió a ARCA y no se supo el resultado' + (fe.ERRORES ? ' (' + vEsc(fe.ERRORES) + ')' : '') + ': tocá Confirmar. Antes de pedir otro número el sistema se fija si ARCA ya lo autorizó.');
+  return '<div id="fe-banner" style="margin-top:10px;padding:10px 12px;border-radius:8px;border:1px solid ' + (rojo ? 'var(--danger)' : '#d97706') + ';background:' + (rojo ? 'rgba(220,38,38,.08)' : 'rgba(217,119,6,.08)') + ';font-size:13px"><i class="fas fa-' + (rojo ? 'circle-xmark' : 'triangle-exclamation') + '"></i> ' + txt + '</div>';
+}
+async function feLibQR() { if (typeof qrcode === 'undefined') await new Promise(function(ok, mal) { var sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'; sc.onload = ok; sc.onerror = mal; document.head.appendChild(sc); }); }
+function feQRsvg(txt, tam) { var q = qrcode(0, 'M'); q.addData(txt); q.make(); return q.createSvgTag({ cellSize: Math.max(2, Math.floor((tam || 120) / (q.getModuleCount() + 8))), margin: 4, scalable: true }); }
+function feF(d) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : (d || ''); }
+function feCuitF(c) { c = String(c || '').replace(/\D/g, ''); return c.length === 11 ? c.slice(0, 2) + '-' + c.slice(2, 10) + '-' + c.slice(10) : c; }
+async function feImprimir(r) {
+  var v = r.VENTA, fe = v.FE, an = v.ESTADO === 'ANULADA', esB = fe.LETRA === 'B', nc = /^NC/.test(v.TIPO_COMP);
+  var tit = (nc ? 'NOTA DE CRÉDITO' : 'FACTURA'), qr = '';
+  try { if (fe.QR) { await feLibQR(); qr = feQRsvg(fe.QR, 120); } } catch (e) { qr = ''; }
+  var prueba = fe.AMBIENTE !== 'PROD';
+  var nro = String(v.NRO_COMP || '').split('-'), em = fe.EMISOR;
+  var h = '<style>.fe-cab{display:grid;grid-template-columns:1fr 90px 1fr;border:2px solid #111}.fe-cab>div{padding:8px 10px}.fe-l{border-left:2px solid #111;border-right:2px solid #111;text-align:center}' +
+      '.fe-l b{display:block;font-size:40px;line-height:44px}.fe-l small{font-size:10px}.fe-k{font-size:10px;color:#444}.fe-k b{color:#111}.fe-rec{border:1px solid #111;border-top:0;padding:6px 10px;display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;font-size:11px;margin-bottom:8px}' +
+      '.fe-pie{display:flex;gap:14px;align-items:center;border:1px solid #111;padding:8px 10px;margin-top:10px}.fe-pie svg{width:110px;height:110px}.fe-ley{font-size:10px;border:1px solid #999;padding:6px 8px;margin-top:6px}' +
+      '.fe-agua{border:3px solid #b91c1c;color:#b91c1c;font-weight:800;text-align:center;padding:6px;margin-bottom:6px;font-size:14px}</style>' +
+    (prueba ? '<div class="fe-agua">COMPROBANTE DE PRUEBA (' + vEsc(fe.AMBIENTE) + ') · SIN VALIDEZ FISCAL</div>' : '') +
+    (an ? '<div class="fe-agua">ANULADA · ' + vEsc(v.MOTIVO_ANULACION || '') + '</div>' : '') +
+    '<div class="fe-cab"><div><div style="font-size:16px;font-weight:800">' + vEsc(em.RAZON_SOCIAL) + '</div><div class="fe-k">' + vEsc(em.DOMICILIO || 'Salta') + '</div><div class="fe-k"><b>' + vEsc(em.COND_IVA) + '</b></div></div>' +
+    '<div class="fe-l"><b>' + vEsc(fe.LETRA) + '</b><small>COD. ' + String(fe.COD_CBTE).padStart(3, '0') + '</small></div>' +
+    '<div><div style="font-size:16px;font-weight:800">' + tit + '</div><div class="fe-k">Punto de venta: <b>' + vEsc(nro[0] || '') + '</b> · Comp. N°: <b>' + vEsc(nro[1] || '') + '</b></div><div class="fe-k">Fecha de emisión: <b>' + fmtD(v.FECHA) + '</b></div>' +
+    '<div class="fe-k">CUIT: <b>' + vEsc(feCuitF(em.CUIT)) + '</b> · IIBB: <b>' + vEsc(em.IIBB || '—') + '</b></div><div class="fe-k">Inicio de actividades: <b>' + vEsc(feF(em.INICIO_ACT) || '—') + '</b></div></div></div>' +
+    '<div class="fe-rec"><div><span class="fe-k">Cliente:</span> <b>' + vEsc(v.CLIENTE) + '</b></div><div><span class="fe-k">CUIT / DNI:</span> <b>' + vEsc(v.CUIT || '—') + '</b></div>' +
+    '<div><span class="fe-k">Condición frente al IVA:</span> <b>' + vEsc(fe.RECEPTOR_COND) + '</b></div><div><span class="fe-k">Domicilio:</span> ' + vEsc(v.DOMICILIO || '—') + '</div>' +
+    '<div><span class="fe-k">Condición de venta:</span> ' + (v.SALDO > 0 ? 'Cuenta corriente' : 'Contado') + '</div><div>' + (v.ORIGEN ? '<span class="fe-k">Comprobante asociado:</span> ' + vEsc(v.ORIGEN) : '') + '</div></div>' +
+    '<table><thead><tr><th>Detalle</th><th class="n">Cant.</th><th class="n">' + (esB ? 'P. unit.' : 'P. unit. neto') + '</th><th class="n">Desc.</th>' + (esB ? '' : '<th class="n">Neto</th><th class="n">IVA</th>') + '<th class="n">Subtotal</th></tr></thead><tbody>' +
+    r.ITEMS.map(function(i) { var pu = i.PRECIO_U !== undefined ? i.PRECIO_U : (i.CANT ? i.NETO / i.CANT : 0); if (esB) pu = vR2(pu * (1 + i.IVA_AL / 100));
+      return '<tr><td>' + vEsc(i.NOMBRE) + '</td><td class="n">' + i.CANT + '</td><td class="n">' + fmt(pu) + '</td><td class="n">' + (i.DTO ? i.DTO + '%' : '') + '</td>' + (esB ? '' : '<td class="n">' + fmt(i.NETO) + '</td><td class="n">' + fmt(i.IVA) + ' (' + i.IVA_AL + '%)</td>') + '<td class="n">' + fmt(esB ? i.SUB : i.NETO) + '</td></tr>'; }).join('') +
+    (esB ? '' : '<tr class="tot"><td colspan="6">Importe neto gravado</td><td class="n">' + fmt(v.NETO) + '</td></tr><tr class="tot"><td colspan="6">IVA</td><td class="n">' + fmt(v.IVA) + '</td></tr>') +
+    (fe.IMPUESTOS || []).map(function(t) { return '<tr class="tot"><td colspan="' + (esB ? 4 : 6) + '">' + vEsc(t.NOMBRE) + '</td><td class="n">' + fmt(t.MONTO) + '</td></tr>'; }).join('') +
+    '<tr class="tot"><td colspan="' + (esB ? 4 : 6) + '"><b>IMPORTE TOTAL</b></td><td class="n"><b>' + fmt(v.TOTAL) + '</b></td></tr></tbody></table>' +
+    (fe.LEYENDAS || []).map(function(l) { return '<div class="fe-ley">' + vEsc(l) + '</div>'; }).join('') +
+    (v.OBS ? '<div class="nota">Observaciones: ' + vEsc(v.OBS) + '</div>' : '') +
+    '<div class="fe-pie">' + (qr || '') + '<div><div style="font-size:12px"><b>CAE N°:</b> ' + vEsc(fe.CAE) + '</div><div style="font-size:12px"><b>Vencimiento del CAE:</b> ' + vEsc(feF(fe.CAE_VTO)) + '</div>' +
+    '<div class="fe-k" style="margin-top:4px">Comprobante autorizado por ARCA' + (prueba ? ' — PRUEBA, SIN VALIDEZ FISCAL' : '') + '</div></div></div>';
+  pcImprimir(tit + ' ' + fe.LETRA + ' ' + v.NRO_COMP, h, false);
+}
+
+// ── Ventana de factura electrónica: comprobantes, configuración y ARCA ──
+async function feAbrir(tab) {
+  FE_.tab = tab || FE_.tab || 'comp';
+  try { FE_.cfg = await gsRun('gsFE_Config'); } catch (e) { toast(e.message || e, 'r2'); return; }
+  if ($id('fe-cuerpo') && typeof closeModal === 'function') closeModal();
+  var p = {}; (FE_.cfg.PARAM || []).forEach(function(x) { p[x.CLAVE] = x.VALOR; });
+  var tabs = [['comp', 'Comprobantes'], ['cfg', 'Configuración'], ['arca', 'Conexión con ARCA']];
+  var amb = p.AMBIENTE, ambTxt = { NO: 'Apagada (numeración interna)', SIMULADO: 'SIMULADO · prueba sin ARCA', HOMO: 'HOMOLOGACIÓN de ARCA (sin validez fiscal)', PROD: 'PRODUCCIÓN' }[amb] || amb;
+  showModal('<div class="mh"><h3><i class="fas fa-qrcode"></i> Factura electrónica</h3><button class="btn btn-s btn-sm" onclick="closeModal()"><i class="fas fa-times"></i></button></div><div class="mb">' +
+    '<div style="padding:8px 12px;border-radius:8px;margin-bottom:10px;background:' + (amb === 'PROD' ? 'rgba(22,163,74,.1)' : 'rgba(217,119,6,.1)') + ';font-size:13px">Modo: <b>' + vEsc(ambTxt) + '</b>' + (p.CUIT ? ' · CUIT ' + vEsc(feCuitF(p.CUIT)) : ' · sin CUIT cargado') + '</div>' +
+    '<div id="fe-tabs" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">' + tabs.map(function(t) { return '<button data-t="' + t[0] + '" class="btn ' + (FE_.tab === t[0] ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="feTab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</div>' +
+    '<div id="fe-cuerpo">Cargando…</div></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>', 'md-lg');
+  feTab(FE_.tab);
+}
+// Cambio de pestaña sin volver a abrir la ventana
+function feTab(t) {
+  FE_.tab = t; var p = {}; ((FE_.cfg && FE_.cfg.PARAM) || []).forEach(function(x) { p[x.CLAVE] = x.VALOR; });
+  var bar = $id('fe-tabs'); if (bar) [].forEach.call(bar.querySelectorAll('button'), function(b) { b.className = 'btn ' + (b.getAttribute('data-t') === t ? 'btn-p' : 'btn-s') + ' btn-sm'; });
+  $id('fe-cuerpo').innerHTML = 'Cargando…';
+  if (t === 'comp') feTabComp(); else if (t === 'cfg') feTabCfg(p); else feTabArca(p);
+}
+async function feTabComp() {
+  var c = $id('fe-cuerpo');
+  try {
+    var r = await gsRun('gsFE_Lista', {});
+    var f = r.filas || [];
+    if (!f.length) { c.innerHTML = '<div class="tdim">Todavía no se envió ningún comprobante.</div>'; return; }
+    c.innerHTML = '<div style="overflow:auto"><table class="tbl" style="width:100%;font-size:13px"><thead><tr><th>Fecha</th><th>Comprobante</th><th>Cliente</th><th class="r">Total</th><th>CAE</th><th>Estado</th><th></th></tr></thead><tbody>' +
+      f.map(function(x) { return '<tr><td>' + fmtD(x.FECHA) + '</td><td>' + vEsc(x.TIPO) + ' ' + vEsc(x.NRO_COMP || '(sin número)') + '<div class="tdim" style="font-size:11px">' + vEsc(x.AMBIENTE) + (x.INTENTOS > 1 ? ' · ' + x.INTENTOS + ' intentos' : '') + '</div></td><td>' + vEsc(x.CLIENTE) + '</td><td class="r mono">' + fmt(x.TOTAL) + '</td>' +
+        '<td class="mono" style="font-size:12px">' + vEsc(x.CAE || '') + (x.CAE_VTO ? '<div class="tdim">vence ' + vEsc(feF(x.CAE_VTO)) + '</div>' : '') + '</td><td><b style="color:' + (FE_EST_COLOR[x.ESTADO] || 'inherit') + '">' + vEsc(x.ESTADO) + '</b>' +
+        (x.ERRORES ? '<div style="font-size:11px;color:var(--danger);max-width:260px">' + vEsc(x.ERRORES) + '</div>' : '') + (x.OBS ? '<div class="tdim" style="font-size:11px;max-width:260px">' + vEsc(x.OBS) + '</div>' : '') + '</td>' +
+        '<td>' + (x.ID_VENTA ? '<button class="btn btn-xs btn-s" onclick="vtaImprimir(\'' + x.ID_VENTA + '\')" title="Imprimir"><i class="fas fa-print"></i></button>' : (['PENDIENTE', 'ERROR', 'AUTORIZADO', 'RECHAZADO'].indexOf(x.ESTADO) !== -1 ? '<button class="btn btn-xs btn-s" onclick="closeModal();vbAbrir(' + x.ID_BOR + ')">Abrir carga</button>' : '')) + '</td></tr>'; }).join('') +
+      '</tbody></table></div>';
+  } catch (e) { c.innerHTML = '<div style="color:var(--danger)">' + vEsc(e.message || e) + '</div>'; }
+}
+function feTabCfg(p) {
+  var ed = FE_.cfg.ADMIN;
+  $id('fe-cuerpo').innerHTML = (ed ? '' : '<div class="tdim mb2">Solo un administrador puede cambiar estos datos.</div>') +
+    (FE_.cfg.PARAM || []).map(function(x) {
+      var inp = x.CLAVE === 'AMBIENTE' ? '<select id="fe-p-AMBIENTE" class="inp"' + (ed ? '' : ' disabled') + '>' + ['NO', 'SIMULADO', 'HOMO', 'PROD'].map(function(o) { return '<option' + (o === x.VALOR ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>' :
+        '<input id="fe-p-' + x.CLAVE + '" class="inp" value="' + vEsc(x.VALOR) + '"' + (ed ? '' : ' disabled') + '>';
+      return '<div style="display:grid;grid-template-columns:180px 1fr;gap:8px;align-items:center;margin-bottom:8px"><label style="font-weight:600;font-size:13px">' + vEsc(x.CLAVE.replace(/_/g, ' ')) + '</label><div>' + inp + '<div class="tdim" style="font-size:11px">' + vEsc(x.DESCRIPCION) + '</div></div></div>';
+    }).join('') +
+    '<div class="sec-div">PUNTOS DE VENTA (por sucursal)</div>' + (FE_.cfg.PV || []).map(function(s) { return '<div style="font-size:13px">' + vEsc(s.NOMBRE) + ': <b>' + (s.PV ? String(s.PV).padStart(5, '0') : 'sin punto de venta') + '</b></div>'; }).join('') +
+    '<div class="tdim" style="font-size:11px;margin-bottom:8px">Tienen que estar dados de alta en ARCA como "RECE / Factura electrónica – Web Services". Se cambian en Sucursales.</div>' +
+    (ed ? '<button class="btn btn-g" onclick="feGuardarCfg()"><i class="fas fa-save"></i> Guardar</button>' : '');
+}
+async function feGuardarCfg() {
+  var l = (FE_.cfg.PARAM || []).map(function(x) { return { CLAVE: x.CLAVE, VALOR: $v('fe-p-' + x.CLAVE) }; });
+  var amb = $v('fe-p-AMBIENTE');
+  if (amb === 'PROD' && !(await uiConfirmar('Vas a pasar a PRODUCCIÓN: desde ahora cada factura que se confirme se informa a ARCA con validez fiscal y no se puede anular (solo nota de crédito). ¿Seguir?', 'Sí, producción'))) return;
+  try { var r = await gsRun('gsFE_GuardarParam', l); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); return; } toast(r.CAMBIOS.length ? 'Guardado: ' + r.CAMBIOS.join(' · ') : 'Sin cambios', 'g'); closeModal(); feAbrir('cfg'); }
+  catch (e) { toast(e.message || e, 'r2'); }
+}
+function feTabArca(p) {
+  var ed = FE_.cfg.ADMIN, b = function(acc, txt, ic) { return '<button class="btn btn-s btn-sm" onclick="feArca(\'' + acc + '\')"' + (ed ? '' : ' disabled') + '><i class="fas fa-' + ic + '"></i> ' + txt + '</button>'; };
+  $id('fe-cuerpo').innerHTML =
+    '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">Ambiente para estas pruebas: <select id="fe-a-amb" class="inp" style="width:auto"><option value="HOMO">Homologación</option><option value="PROD">Producción</option></select></div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' + b('dummy', 'Estado de ARCA', 'heart-pulse') + b('estado', 'Certificado cargado', 'id-card') + b('login', 'Probar conexión con el certificado', 'plug') + b('ultimo', 'Último número autorizado', 'hashtag') + b('param', 'Condiciones IVA (tabla ARCA)', 'table') + '</div>' +
+    '<div class="sec-div">CERTIFICADO</div><ol style="font-size:13px;margin:0 0 8px 18px;padding:0">' +
+    '<li>Cargá y guardá el CUIT en Configuración.</li><li>Tocá <b>Generar pedido de certificado</b>: el sistema crea la clave (queda guardada cifrada en el servidor) y te da el texto del pedido.</li>' +
+    '<li>Homologación: en ARCA con clave fiscal → Administrador de Relaciones → adherí <b>WSASS – Autogestión Certificados Homologación</b>. En WSASS: <b>Nuevo certificado</b>, pegá el pedido y descargá el certificado. Después <b>Crear autorización a servicio</b>: el servicio <b>wsfe</b> para el CUIT de la empresa.</li>' +
+    '<li>Producción: Administración de Certificados Digitales (clave fiscal de la S.R.L.) y delegar <b>wsfe</b> en el Administrador de Relaciones.</li><li>Pegá acá abajo el certificado y tocá <b>Cargar certificado</b>. Después <b>Probar conexión</b>.</li></ol>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">' + b('csr', 'Generar pedido de certificado', 'key') + '</div>' +
+    '<textarea id="fe-a-csr" class="inp" rows="4" readonly style="width:100%;box-sizing:border-box;font-family:monospace;font-size:11px" placeholder="Acá aparece el pedido de certificado para copiar"></textarea>' +
+    '<textarea id="fe-a-cert" class="inp mt2" rows="4" placeholder="Pegá el certificado que te dio ARCA (-----BEGIN CERTIFICATE----- …)" style="width:100%;box-sizing:border-box;font-family:monospace;font-size:11px"></textarea>' +
+    '<div class="mt2">' + b('cert', 'Cargar certificado', 'upload') + '</div><div id="fe-a-res" class="mt2" style="font-size:13px"></div>';
+}
+async function feArca(acc) {
+  var d = { AMBIENTE: $v('fe-a-amb') }, out = $id('fe-a-res');
+  if (acc === 'cert') { d.CERT = $v('fe-a-cert'); if (!d.CERT) { toast('Pegá el certificado', 'r2'); return; } }
+  if (acc === 'ultimo') { var pv = await uiPedir('Punto de venta (número)', ''); if (!pv) return; d.PV = pv; var tp = await uiPedir('Tipo de comprobante: 1 Factura A · 6 Factura B · 3 NC A · 8 NC B', '1'); if (!tp) return; d.TIPO = tp; }
+  if (acc === 'csr' && !(await uiConfirmar('Se genera una clave nueva para ' + (d.AMBIENTE === 'PROD' ? 'PRODUCCIÓN' : 'homologación') + '. Si ya había un certificado cargado para ese ambiente deja de servir y hay que pedir otro a ARCA. ¿Seguir?', 'Sí, generar'))) return;
+  out.innerHTML = 'Consultando a ARCA…';
+  try {
+    var r = await gsRun('gsFE_Arca', acc, d);
+    if (!r || !r.ok) { out.innerHTML = '<span style="color:var(--danger)">' + vEsc((r && r.error) || 'Error') + '</span>'; return; }
+    var x = r.r;
+    if (acc === 'csr') { $id('fe-a-csr').value = x.csr; out.innerHTML = '<span style="color:var(--success)">Pedido de certificado generado: copialo y pegalo en ARCA.</span> <button class="btn btn-xs btn-s" onclick="navigator.clipboard.writeText($v(\'fe-a-csr\'));toast(\'Copiado\',\'g\')">Copiar</button>'; return; }
+    if (acc === 'dummy') { out.innerHTML = 'Servidores de ARCA: aplicación <b>' + vEsc(x.app) + '</b> · base <b>' + vEsc(x.db) + '</b> · autenticación <b>' + vEsc(x.auth) + '</b>'; return; }
+    if (acc === 'estado') { var c = x.cred; out.innerHTML = !c ? 'No hay pedido ni certificado para este ambiente.' : (c.tiene_cert ? '<span style="color:var(--success)">Certificado cargado</span> · válido del ' + fmtD(c.cert_desde) + ' al ' + fmtD(c.cert_hasta) : 'Hay pedido de certificado generado, falta cargar el certificado de ARCA.') + (x.ta_vence ? ' · ticket vigente hasta ' + vEsc(String(x.ta_vence)) : ''); if (c && c.csr) $id('fe-a-csr').value = c.csr; return; }
+    if (acc === 'cert') { out.innerHTML = '<span style="color:var(--success)">Certificado cargado</span> · CUIT ' + vEsc(feCuitF(x.cuit)) + ' · válido hasta ' + fmtD(x.hasta) + ' · emitido por ' + vEsc(x.emisor); return; }
+    if (acc === 'login') { out.innerHTML = '<span style="color:var(--success)">Conexión correcta con ARCA</span> · ticket vigente hasta ' + vEsc(String(x.vence)); return; }
+    if (acc === 'ultimo') { out.innerHTML = 'Último número autorizado: <b>' + vEsc(String(x)) + '</b>'; return; }
+    if (acc === 'param') { var l = (x.datos && x.datos.CondicionIvaReceptor) ? [].concat(x.datos.CondicionIvaReceptor) : []; out.innerHTML = l.length ? '<table class="tbl" style="font-size:12px"><tr><th>Id</th><th>Condición</th><th>Clase</th></tr>' + l.map(function(c) { return '<tr><td>' + vEsc(c.Id) + '</td><td>' + vEsc(c.Desc) + '</td><td>' + vEsc(c.Cmp_Clase) + '</td></tr>'; }).join('') + '</table>' : '<pre style="font-size:11px;white-space:pre-wrap">' + vEsc(JSON.stringify(x, null, 1)) + '</pre>'; return; }
+  } catch (e) { out.innerHTML = '<span style="color:var(--danger)">' + vEsc(e.message || e) + '</span>'; }
 }
 </script>
 
