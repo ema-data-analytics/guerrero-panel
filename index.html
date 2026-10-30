@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e7dcd2041066"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "961e98d391a5"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610301647';
+var EMA_BUILD = '202610301820';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -10884,7 +10884,7 @@ async function pcCostos() {
   $id('pc-body').innerHTML = '<div class="card"><div class="fbar no-print" style="gap:8px;flex-wrap:wrap"><label class="fl" style="margin:0">Mes</label><input class="fi" type="month" id="pcc-mes" value="' + mes + '" style="width:160px"/>' +
     '<button class="btn btn-s btn-sm" onclick="pcCostosExcel()"><i class="fas fa-file-download"></i> Excel</button>' +
     (pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" onclick="pcProrratear()"><i class="fas fa-balance-scale"></i> Prorratear gastos fijos del mes</button>' : '') +
-    '<button class="btn btn-s btn-sm" onclick="pcPreciosRec()"><i class="fas fa-tags"></i> Precios de recapado</button>' +
+    '<button class="btn btn-s btn-sm" onclick="pcPreciosRec()"><i class="fas fa-tags"></i> Precios de servicios</button>' +
     '<span class="tdim" style="font-size:11px">Reparto: ' + (r.metodo === 'MINUTOS' ? 'según minutos de cada cubierta' : 'igual por cubierta') + '</span></div>' +
     '<div class="tw"><table style="font-size:12px" id="pc-tbl-costos"><thead><tr><th>Terminada</th><th>OT</th><th>Marca grabada · DOT</th><th>Cliente</th><th>Cubierta</th><th class="tr">Materiales</th><th class="tr">Herramental</th><th class="tr">Min</th><th class="tr">Mano de obra</th><th class="tr">Fijos</th><th class="tr">Total</th></tr></thead><tbody>' +
     r.filas.map(function(f) { return '<tr><td>' + fmtD(f.FECHA_FIN) + '</td><td class="mono">' + pcEsc(f.NRO_OT) + '</td><td class="mono"><b>' + pcEsc(f.MARCA) + '</b><div style="font-size:10px">DOT: ' + pcDotTxt(pcDotDe(f)) + '</div></td><td>' + pcEsc(f.CLIENTE) + '</td><td style="font-size:11px">' + pcEsc(f.TIPO + ' ' + f.MEDIDA + ' · ' + f.TRABAJO) + '</td><td class="tr mono">' + fmt(f.MATERIALES) + '</td><td class="tr mono">' + fmt(f.HERRAMENTAL) + '</td><td class="tr">' + f.MINUTOS + '</td><td class="tr mono">' + fmt(f.MO) + '</td><td class="tr mono">' + fmt(f.FIJOS) + '</td><td class="tr mono"><b>' + fmt(f.TOTAL) + '</b></td></tr>'; }).join('') +
@@ -10915,20 +10915,20 @@ async function pcProrratear() {
   });
 }
 
-// ── Precios de recapado desde el costo real (28/10/2026) ──
-// Servicio a clientes: promedio del costo de las cubiertas terminadas de cada medida y trabajo. Recapada propia: promedio de las unidades en stock.
+// ── Precios de servicios y recapadas para la lista de venta (28/10/2026, ampliado 30/10/2026) ──
+// Servicio a clientes: promedio del costo de las cubiertas terminadas de cada medida y trabajo; si no hay, el costo de la receta. Recapada propia: promedio de las unidades en stock.
 // Precio = costo × (1 + rentabilidad) ÷ (1 − impuestos de venta) + IVA. «Armar la lista» deja una lista de venta nueva en borrador para aprobar en Precios.
 async function pcPreciosRec() {
   var r; try { r = await gsRun('gsFP_Precios', false); } catch (e) { toast(e.message || e, 'r2'); return; }
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   var g = r.REGLA, pct = function(x) { return (Math.round(x * 10000) / 100).toLocaleString('es-AR') + '%'; };
-  showModal('<div class="mh"><span class="mt"><i class="fas fa-tags" style="color:var(--accent)"></i> Precios de recapado desde el costo real</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
-    '<p style="margin-top:0">Regla: costo × (1 + rentabilidad ' + pct(g.RENTABILIDAD) + ') ÷ (1 − impuestos de venta ' + pct(g.IMP_VENTA) + ') + IVA ' + pct(g.IVA) + '. Los parámetros están en Órdenes de Trabajo → Costos.</p>' +
+  showModal('<div class="mh"><span class="mt"><i class="fas fa-tags" style="color:var(--accent)"></i> Precios de servicios y recapadas para la lista de venta</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<p style="margin-top:0">Costo: el promedio real de las cubiertas terminadas de esa medida y trabajo; si no hay, el de la receta (materiales, herramental, minutos del recorrido de su línea, fijos y garantía). Regla: costo × (1 + rentabilidad de la receta, o la general ' + pct(g.RENTABILIDAD) + ') ÷ (1 − impuestos de venta ' + pct(g.IMP_VENTA) + ') + IVA ' + pct(g.IVA) + '. Los parámetros están en Órdenes de Trabajo → Costos.</p>' +
     '<div class="tw" style="max-height:360px"><table style="font-size:13px"><thead><tr><th>Artículo</th><th>Base</th><th class="tr">Costo</th><th class="tr">Sin IVA</th><th class="tr">Con IVA</th><th class="tr">En la lista hoy</th></tr></thead><tbody>' +
     (r.FILAS.length ? r.FILAS.map(function(f) { var cambia = Math.round(f.CON_IVA) !== Math.round(f.ACTUAL);
-      return '<tr><td>' + pcEsc(f.NOMBRE) + '<div class="tdim" style="font-size:11px">' + (f.CLASE === 'SERVICIO' ? 'Servicio a clientes' : 'Recapada propia (stock)') + '</div></td><td>' + pcEsc(f.BASE) + '</td><td class="tr mono">' + fmt(f.COSTO) + '</td><td class="tr mono">' + fmt(f.SIN_IVA) + '</td><td class="tr mono"><b>' + fmt(f.CON_IVA) + '</b></td><td class="tr mono"' + (cambia ? ' style="color:var(--warning)"' : '') + '>' + (f.ACTUAL ? fmt(f.ACTUAL) : 'sin precio') + '</td></tr>'; }).join('')
-      : '<tr><td colspan="6" class="tdim">Todavía no hay cubiertas terminadas con costo.</td></tr>') + '</tbody></table></div>' +
-    '<div class="tdim" style="font-size:12px;margin-top:8px">' + r.CAMBIAN + ' precio' + (r.CAMBIAN === 1 ? '' : 's') + ' distinto' + (r.CAMBIAN === 1 ? '' : 's') + ' de la lista vigente. Al armar la lista queda en borrador: la aprueba un administrador en Precios → Versiones de la lista.</div></div>' +
+      return '<tr><td>' + pcEsc(f.NOMBRE) + '<div class="tdim" style="font-size:11px">' + (f.CLASE === 'SERVICIO' ? 'Servicio a clientes' : 'Recapada propia (stock)') + '</div></td><td>' + pcEsc(f.BASE) + (f.RENTABILIDAD ? '<div class="tdim" style="font-size:11px">rentab. ' + pct(f.RENTABILIDAD) + '</div>' : '') + '</td><td class="tr mono">' + fmt(f.COSTO) + '</td><td class="tr mono">' + fmt(f.SIN_IVA) + '</td><td class="tr mono"><b>' + fmt(f.CON_IVA) + '</b></td><td class="tr mono"' + (cambia ? ' style="color:var(--warning)"' : '') + '>' + (f.ACTUAL ? fmt(f.ACTUAL) : 'sin precio') + '</td></tr>'; }).join('')
+      : '<tr><td colspan="6" class="tdim">Todavía no hay costos para armar precios.</td></tr>') + '</tbody></table></div>' +
+    '<div class="tdim" style="font-size:12px;margin-top:8px">' + r.CAMBIAN + ' precio' + (r.CAMBIAN === 1 ? '' : 's') + ' distinto' + (r.CAMBIAN === 1 ? '' : 's') + ' de la lista vigente. Al armar la lista queda en borrador: la aprueba un administrador en Precios → Versiones de la lista.' + (r.FUERA && (r.FUERA.MARCA || r.FUERA.APRENDIZAJE) ? '<br/>No entran: ' + [r.FUERA.MARCA ? r.FUERA.MARCA + ' receta' + (r.FUERA.MARCA === 1 ? '' : 's') + ' por marca de cubierta' : '', r.FUERA.APRENDIZAJE ? r.FUERA.APRENDIZAJE + ' receta' + (r.FUERA.APRENDIZAJE === 1 ? '' : 's') + ' en aprendizaje (sin cantidades ni cubiertas terminadas)' : ''].filter(function(x) { return x; }).join(' · ') + '.' : '') + '</div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button>' + (r.CAMBIAN ? '<button class="btn btn-p" id="pcpr-ok"><i class="fas fa-check"></i> Armar la lista nueva con estos precios</button>' : '') + '</div>', 'md-lg');
   var ok = $id('pcpr-ok'); if (!ok) return;
   ok.addEventListener('click', async function() {
@@ -12430,7 +12430,10 @@ async function puRtGuardar() {
 .pn-busca input{width:100%;box-sizing:border-box;font-size:18px;padding:12px 14px;border-radius:12px;border:2px solid var(--border);background:var(--surface,#fff);color:var(--text)}
 .pn-busca input:focus{border-color:var(--accent);outline:none}
 .pn-chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px}
-.pn-div{display:flex;border:1px solid #14213d;border-radius:12px;overflow:hidden;margin:0 0 10px}.pn-div button{flex:1;border:0;background:#fff;color:#14213d;padding:12px 6px;font-size:15px;font-weight:800;cursor:pointer;min-height:48px}.pn-div button.on{background:#14213d;color:#fff}
+.pn-div{display:flex;flex-wrap:wrap;border:1px solid #14213d;border-radius:12px;overflow:hidden;margin:0 0 10px}.pn-div button{flex:1 1 18%;border:0;border-right:1px solid #e2e8f0;background:#fff;color:#14213d;padding:12px 4px;font-size:14.5px;font-weight:800;cursor:pointer;min-height:48px;white-space:nowrap}
+@media (max-width:560px){.pn-div button{flex:1 1 30%;font-size:13.5px;border-bottom:1px solid #e2e8f0}}
+.pn-sel{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.pn-sel select{flex:1;min-width:140px;font-size:15px;padding:9px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text)}
+.pn-uni{font-size:12.5px;margin-top:6px}.pn-uni div{background:var(--bg);border-radius:6px;padding:3px 7px;margin-top:3px}.pn-div button.on{background:#14213d;color:#fff}
 .pn-chip{flex:0 0 auto;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);border-radius:20px;padding:6px 12px;font-size:13.5px;cursor:pointer;white-space:nowrap}
 .pn-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 .pn-info{font-size:12.5px;color:var(--dim);margin:6px 2px}
@@ -12547,6 +12550,7 @@ function pnIndexar() {
   });
 }
 function pnPintar() {
+  if (PN_ANX_DIV[PN_.div]) { pnAnexo(); return; }
   var d = PN_.d, el = pnEl();
   var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
   var marcas = {}; (d.PRECIOS || []).forEach(function(p) { marcas[p.MARCA] = 1; });
@@ -12567,7 +12571,7 @@ function pnPintar() {
     h += '</div>';
   }
   var insV = PN_.div === 'INS', cats = []; if (insV) (PN_.d.PRECIOS || []).forEach(function(p) { if (p.RUBRO === 'INSUMOS' && p.DESCRIPCION && cats.indexOf(p.DESCRIPCION) === -1) cats.push(p.DESCRIPCION); }); cats.sort();
-  h += '<div class="pn-div"><button class="' + (!insV ? 'on' : '') + '" onclick="pnDiv(\'CUB\')">🚗 Cubiertas</button><button class="' + (insV ? 'on' : '') + '" onclick="pnDiv(\'INS\')">🔧 Insumos y accesorios</button></div>' +
+  h += pnDivBar() +
     '<div class="pn-busca"><input id="pn-q" type="search" inputmode="search" autocomplete="off" placeholder="' + (insV ? 'Buscá por nombre o código (ej: parche, raspa, AA0775)' : 'Buscá medida, marca o diseño (ej: 295 80 22.5)') + '" value="' + pnEsc(PN_.q) + '" oninput="pnBuscar(this.value)"/>' +
     '<div class="pn-chips">' + (insV ? [['', 'Todo']].concat(cats.map(function(c) { return [c, c.charAt(0) + c.slice(1).toLowerCase()]; })) : PN_RUBROS).map(function(r) { return '<button class="pn-chip' + (PN_.rubro === r[0] ? ' on' : '') + '" onclick="pnRubro(\'' + r[0] + '\')">' + r[1] + '</button>'; }).join('') + '</div>' +
     (insV ? '' : '<div class="pn-chips"><button class="pn-chip' + (!PN_.marca ? ' on' : '') + '" onclick="pnMarca(\'\')">Todas las marcas</button>' +
@@ -12960,6 +12964,74 @@ function pnListaImprimir() {
 
 // ── Versiones de la lista única de venta: ver todas, comparar, armar una nueva (borrador) y aprobarla. Nunca se pisa una lista aprobada. ──
 var LV_ = { d: null, cambios: [] };
+// ── Anexo de la lista de precios (30/10/2026): cubiertas recapadas, servicios de producción y gomería ──
+// Solo precios de la lista de venta vigente. Los precios de servicios nuevos entran con una versión de la lista
+// (Producción → Costos → «Precios de servicios» arma el borrador; lo aprueba un administrador en «Versiones de la lista»).
+var PN_ANX_DIV = { REC: 'Cubiertas recapadas', SRV: 'Servicios de producción', GOM: 'Servicios de gomería' };
+var PN_ANX = { d: null, q: '', linea: '', trabajo: '', max: 40 };
+function pnDivBar() {
+  var b = [['CUB', '🚗 Nuevas'], ['REC', '♻️ Recapadas'], ['SRV', '🏭 Servicios'], ['GOM', '🔩 Gomería'], ['INS', '🔧 Insumos']];
+  return '<div class="pn-div">' + b.map(function(x) { return '<button class="' + (PN_.div === x[0] ? 'on' : '') + '" onclick="pnDiv(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('') + '</div>';
+}
+async function pnAnexo() {
+  var el = pnEl(); if (!el) return;
+  if (!PN_ANX.d) {
+    el.innerHTML = '<div class="pn-wrap">' + pnAnxTop() + pnDivBar() + '<div class="card"><div class="card-body tdim">Cargando precios…</div></div></div>';
+    try { PN_ANX.d = await gsRun('gsPN_Anexo'); } catch (e) { PN_ANX.d = null; el.innerHTML = '<div class="pn-wrap">' + pnAnxTop() + pnDivBar() + '<div class="al al-r">' + pnEsc(e.message) + '</div></div>'; return; }
+    if (!PN_ANX_DIV[PN_.div]) return;
+  }
+  var d = PN_ANX.d, h = '<div class="pn-wrap">' + pnAnxTop() + pnDivBar();
+  var ph = PN_.div === 'SRV' ? 'Buscá medida o trabajo (ej: 295 80 recapado)' : 'Buscá por nombre o medida';
+  h += '<div class="pn-busca"><input id="pn-q2" type="search" inputmode="search" autocomplete="off" placeholder="' + ph + '" value="' + pnEsc(PN_ANX.q) + '" oninput="PN_ANX.q=this.value;PN_ANX.max=40;clearTimeout(PN_ANX.t);PN_ANX.t=setTimeout(pnAnxRes,150)"/>';
+  if (PN_.div === 'SRV') {
+    var lin = [['', 'Todas'], ['CAMIONES', '🚚 Camiones'], ['AGRICOLA', '🚜 Agrícola']];
+    h += '<div class="pn-chips">' + lin.map(function(r) { return '<button class="pn-chip' + (PN_ANX.linea === r[0] ? ' on' : '') + '" onclick="PN_ANX.linea=\'' + r[0] + '\';PN_ANX.trabajo=\'\';PN_ANX.max=40;pnAnexo()">' + r[1] + '</button>'; }).join('') + '</div>';
+    var tr = {}; d.SERVICIOS.forEach(function(s) { if (!PN_ANX.linea || s.LINEA === PN_ANX.linea) tr[s.TRABAJO] = 1; });
+    h += '<div class="pn-sel"><select onchange="PN_ANX.trabajo=this.value;PN_ANX.max=40;pnAnxRes()"><option value="">Todos los trabajos</option>' + Object.keys(tr).sort().map(function(t) { return '<option' + (PN_ANX.trabajo === t ? ' selected' : '') + ' value="' + pnEsc(t) + '">' + pnEsc(t) + '</option>'; }).join('') + '</select></div>';
+  }
+  h += '</div><div id="pn-res2"></div></div>';
+  el.innerHTML = h;
+  pnAnxRes();
+}
+function pnAnxTop() {
+  var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
+  var L = PN_.d && PN_.d.LISTA_VENTA && PN_.d.LISTA_VENTA.ID_LV ? PN_.d.LISTA_VENTA : null;
+  return '<div class="pn-top"><img src="' + pnEsc(logo) + '" alt="Vulcan Tread"/><div><h2>Lista de precios · ' + pnEsc(PN_ANX_DIV[PN_.div] || '') + '</h2><div class="pn-sub">Precios de venta con IVA' + (L ? ' · <b>' + pnEsc(L.NOMBRE) + '</b> vigente desde ' + new Date(L.DESDE).toLocaleDateString('es-AR') : '') + '</div></div>' +
+    '<div class="pn-acc">' + (lvEsAdmin() ? '<button class="btn btn-sm" onclick="lvAbrir()">🗂 Versiones de la lista</button>' : '') + '</div></div>';
+}
+function pnAnxTok() { return String(PN_ANX.q || '').trim().split(/\s+/).map(function(t) { return pnNorm(t); }).filter(function(t) { return t; }); }
+function pnAnxPasa(txt, toks) { var n = pnNorm(txt), dg = n.replace(/[^0-9]/g, ''); return toks.every(function(t) { return n.indexOf(t) !== -1 || (/^[0-9]+$/.test(t) && dg.indexOf(t) !== -1); }); }
+function pnAnxRes() {
+  var r = $id('pn-res2'), d = PN_ANX.d; if (!r || !d) return;
+  var toks = pnAnxTok(), lista = [], h = '';
+  if (PN_.div === 'SRV') lista = d.SERVICIOS.filter(function(s) {
+    if (PN_ANX.linea && s.LINEA !== PN_ANX.linea) return false;
+    if (PN_ANX.trabajo && s.TRABAJO !== PN_ANX.trabajo) return false;
+    return pnAnxPasa([s.MEDIDA, s.TRABAJO, s.NOMBRE, s.CODIGO].join(' '), toks);
+  });
+  else lista = (PN_.div === 'REC' ? d.RECAPADAS : d.GOMERIA).filter(function(a) { return pnAnxPasa([a.NOMBRE, a.CODIGO].join(' '), toks); });
+  var vacio = PN_.div === 'SRV' ? 'servicios de producción' : PN_.div === 'REC' ? 'cubiertas recapadas' : 'servicios de gomería';
+  h += '<div class="pn-info">' + lista.length + ' resultado' + (lista.length === 1 ? '' : 's') + '</div>';
+  if (!lista.length) h += '<div class="card"><div class="card-body tdim">' + (toks.length || PN_ANX.trabajo || PN_ANX.linea ? 'No hay resultados con esa búsqueda.' : 'La lista vigente todavía no tiene ' + vacio + ' con precio.') + '</div></div>';
+  lista.slice(0, PN_ANX.max).forEach(function(x) { h += PN_.div === 'SRV' ? pnAnxServ(x) : pnAnxArt(x); });
+  if (lista.length > PN_ANX.max) h += '<button class="pn-mas" onclick="PN_ANX.max+=40;pnAnxRes()">Ver más (' + (lista.length - PN_ANX.max) + ' restantes)</button>';
+  r.innerHTML = h;
+}
+function pnAnxServ(s) {
+  return '<div class="pn-item"><div class="pn-l1"><div><div class="pn-med">' + pnEsc(s.MEDIDA === 'TODAS' ? 'Otras medidas' : s.MEDIDA) + '</div>' +
+    '<div class="pn-mar"><b>' + pnEsc(s.TRABAJO) + '</b>' + (s.LINEA ? ' · ' + (s.LINEA === 'AGRICOLA' ? 'Agrícola' : 'Camiones') : '') + '</div></div>' +
+    '<div class="pn-pre"><div class="c">' + pnPlata(s.CON) + '</div><div class="s">' + pnPlata(s.SIN) + ' + IVA</div></div></div>' +
+    '<div class="pn-tags"><span class="pn-tag">' + pnEsc(s.CODIGO) + '</span></div></div>';
+}
+function pnAnxArt(a) {
+  var h = '<div class="pn-item"><div class="pn-l1"><div><div class="pn-med">' + pnEsc(a.NOMBRE) + '</div><div class="pn-mar">' + pnEsc(a.CODIGO) + '</div></div>' +
+    '<div class="pn-pre"><div class="c">' + pnPlata(a.CON) + '</div><div class="s">' + pnPlata(a.SIN) + ' + IVA</div></div></div>';
+  if (PN_.div === 'REC') {
+    h += '<div class="pn-tags">' + (a.VIEJO ? '<span class="pn-tag">Artículo del sistema viejo: revisar con la planta</span>' : '') + '<span class="pn-tag">En stock: ' + a.UNIDADES.length + '</span></div>';
+    if (a.UNIDADES.length) h += '<div class="pn-uni">' + a.UNIDADES.map(function(u) { return '<div>Marca grabada: <b>' + pnEsc(u.MARCA || '—') + '</b> · DOT: <b>' + pnEsc(u.DOT || '—') + '</b></div>'; }).join('') + '</div>';
+  }
+  return h + '</div>';
+}
 function lvEsAdmin() { var r = String((SES && SES.rol) || '').toUpperCase(); return r === 'SUPER' || r.indexOf('ADMIN') !== -1; }
 function lvF(ms) { return ms ? new Date(ms).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'; }
 async function lvAbrir() {
@@ -13024,7 +13096,7 @@ async function lvAprobar(id) {
   var ok = await uiConfirmar('¿Aprobar la lista N° ' + id + '? Pasa a ser la vigente para todo el sistema y la actual queda vencida (guardada).'); if (!ok) return;
   var r; try { r = await gsRun('gsLV_Aprobar', id); } catch (e) { r = { ok: false, error: e.message }; }
   if (!r.ok) { $id('lv-cmp').innerHTML = '<div class="al al-r">' + pnEsc(r.error) + '</div>'; return; }
-  LV_.d = await gsRun('gsLV_Datos'); lvPintar(); PN_.d = null; if (typeof renderPrecios === 'function') renderPrecios();
+  LV_.d = await gsRun('gsLV_Datos'); lvPintar(); PN_.d = null; PN_ANX.d = null; if (typeof renderPrecios === 'function') renderPrecios();
 }
 async function lvAnular(id) {
   var m = await uiPedir('Motivo para anular el borrador N° ' + id); if (!m) return;
