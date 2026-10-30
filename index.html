@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "21db299ed167"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "76a6a7bfc89d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610301910';
+var EMA_BUILD = '202610301944';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12970,6 +12970,7 @@ var LV_ = { d: null, cambios: [] };
 var PN_ANX_DIV = { REC: 'Cubiertas recapadas', SRV: 'Servicios de producción', GOM: 'Servicios de gomería' };
 var PN_ANX = { d: null, q: '', linea: '', trabajo: '', max: 40 };
 function pnDivBar() {
+  if (PN_ANX.div !== PN_.div) { PN_ANX.div = PN_.div; PN_ANX.linea = ''; PN_ANX.trabajo = ''; PN_ANX.q = ''; }
   var b = [['CUB', '🚗 Nuevas'], ['REC', '♻️ Recapadas'], ['SRV', '🏭 Servicios'], ['GOM', '🔩 Gomería'], ['INS', '🔧 Insumos']];
   return '<div class="pn-div">' + b.map(function(x) { return '<button class="' + (PN_.div === x[0] ? 'on' : '') + '" onclick="pnDiv(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('') + '</div>';
 }
@@ -12983,15 +12984,28 @@ async function pnAnexo() {
   var d = PN_ANX.d, h = '<div class="pn-wrap">' + pnAnxTop() + pnDivBar();
   var ph = PN_.div === 'SRV' ? 'Buscá medida o trabajo (ej: 295 80 recapado)' : 'Buscá por nombre o medida';
   h += '<div class="pn-busca"><input id="pn-q2" type="search" inputmode="search" autocomplete="off" placeholder="' + ph + '" value="' + pnEsc(PN_ANX.q) + '" oninput="PN_ANX.q=this.value;PN_ANX.max=40;clearTimeout(PN_ANX.t);PN_ANX.t=setTimeout(pnAnxRes,150)"/>';
-  if (PN_.div === 'SRV') {
-    var lin = [['', 'Todas'], ['CAMIONES', '🚚 Camiones'], ['AGRICOLA', '🚜 Agrícola']];
-    h += '<div class="pn-chips">' + lin.map(function(r) { return '<button class="pn-chip' + (PN_ANX.linea === r[0] ? ' on' : '') + '" onclick="PN_ANX.linea=\'' + r[0] + '\';PN_ANX.trabajo=\'\';PN_ANX.max=40;pnAnexo()">' + r[1] + '</button>'; }).join('') + '</div>';
-    var tr = {}; d.SERVICIOS.forEach(function(s) { if (!PN_ANX.linea || s.LINEA === PN_ANX.linea) tr[s.TRABAJO] = 1; });
-    h += '<div class="pn-sel"><select onchange="PN_ANX.trabajo=this.value;PN_ANX.max=40;pnAnxRes()"><option value="">Todos los trabajos</option>' + Object.keys(tr).sort().map(function(t) { return '<option' + (PN_ANX.trabajo === t ? ' selected' : '') + ' value="' + pnEsc(t) + '">' + pnEsc(t) + '</option>'; }).join('') + '</select></div>';
-  }
+  h += pnAnxChips();
   h += '</div><div id="pn-res2"></div></div>';
   el.innerHTML = h;
   pnAnxRes();
+}
+// Filtros como en Cubiertas nuevas: Servicios por línea (Camiones / Agrícola / Vial) y por trabajo; Recapadas por línea
+var PN_FAMS = ['RECAPADO', 'RETACADO', 'VULCANIZADO', 'REFUERZOS', 'RELLENO', 'OTROS'];
+function pnFam(t) { var b = String(t || '').split(' + ')[0].toUpperCase(); if (/^RECAPADO/.test(b)) return 'RECAPADO'; if (/^RETACADO/.test(b)) return 'RETACADO'; if (/^VULCANIZADO/.test(b)) return 'VULCANIZADO'; if (/^REFUERZO/.test(b)) return 'REFUERZOS'; if (/^RELLENO/.test(b)) return 'RELLENO'; return 'OTROS'; }
+function pnLinRec(a) { return a.LINEA || (/R2[0-4]/.test(a.NOMBRE) ? 'CAMIONES' : ''); }
+function pnAnxChips() {
+  var d = PN_ANX.d, lin = [['CAMIONES', '🚚 Camiones'], ['AGRICOLA', '🚜 Agrícola'], ['VIAL', '🏗 Vial']], cnt = {}, fam = {}, h = '';
+  if (PN_.div === 'SRV') {
+    d.SERVICIOS.forEach(function(s) { cnt[s.LINEA] = (cnt[s.LINEA] || 0) + 1; });
+    if (!PN_ANX.linea || !cnt[PN_ANX.linea]) PN_ANX.linea = cnt.CAMIONES ? 'CAMIONES' : (cnt.AGRICOLA ? 'AGRICOLA' : 'VIAL');
+    d.SERVICIOS.forEach(function(s) { if (s.LINEA === PN_ANX.linea) { var f = pnFam(s.TRABAJO); fam[f] = (fam[f] || 0) + 1; } });
+    h += '<div class="pn-chips">' + lin.filter(function(r) { return cnt[r[0]]; }).map(function(r) { return '<button class="pn-chip' + (PN_ANX.linea === r[0] ? ' on' : '') + '" onclick="PN_ANX.linea=\'' + r[0] + '\';PN_ANX.trabajo=\'\';PN_ANX.max=40;pnAnexo()">' + r[1] + ' (' + cnt[r[0]] + ')</button>'; }).join('') + '</div>';
+    h += '<div class="pn-chips"><button class="pn-chip' + (!PN_ANX.trabajo ? ' on' : '') + '" onclick="PN_ANX.trabajo=\'\';PN_ANX.max=40;pnAnexo()">Todos los trabajos</button>' + PN_FAMS.filter(function(f) { return fam[f]; }).map(function(f) { return '<button class="pn-chip' + (PN_ANX.trabajo === f ? ' on' : '') + '" onclick="PN_ANX.trabajo=\'' + f + '\';PN_ANX.max=40;pnAnexo()">' + f.charAt(0) + f.slice(1).toLowerCase() + ' (' + fam[f] + ')</button>'; }).join('') + '</div>';
+  } else if (PN_.div === 'REC') {
+    d.RECAPADAS.forEach(function(a) { var l = pnLinRec(a); cnt[l] = (cnt[l] || 0) + 1; });
+    h += '<div class="pn-chips"><button class="pn-chip' + (!PN_ANX.linea ? ' on' : '') + '" onclick="PN_ANX.linea=\'\';pnAnexo()">Todo</button>' + lin.map(function(r) { return '<button class="pn-chip' + (PN_ANX.linea === r[0] ? ' on' : '') + '" onclick="PN_ANX.linea=\'' + r[0] + '\';pnAnexo()">' + r[1] + ' (' + (cnt[r[0]] || 0) + ')</button>'; }).join('') + '</div>';
+  }
+  return h;
 }
 function pnAnxTop() {
   var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
@@ -13006,10 +13020,10 @@ function pnAnxRes() {
   var toks = pnAnxTok(), lista = [], h = '';
   if (PN_.div === 'SRV') lista = d.SERVICIOS.filter(function(s) {
     if (PN_ANX.linea && s.LINEA !== PN_ANX.linea) return false;
-    if (PN_ANX.trabajo && s.TRABAJO !== PN_ANX.trabajo) return false;
+    if (PN_ANX.trabajo && pnFam(s.TRABAJO) !== PN_ANX.trabajo) return false;
     return pnAnxPasa([s.MEDIDA, s.TRABAJO, s.NOMBRE, s.CODIGO].join(' '), toks);
   });
-  else lista = (PN_.div === 'REC' ? d.RECAPADAS : d.GOMERIA).filter(function(a) { return pnAnxPasa([a.NOMBRE, a.CODIGO].join(' '), toks); });
+  else lista = (PN_.div === 'REC' ? d.RECAPADAS : d.GOMERIA).filter(function(a) { if (PN_.div === 'REC' && PN_ANX.linea && pnLinRec(a) !== PN_ANX.linea) return false; return pnAnxPasa([a.NOMBRE, a.CODIGO].join(' '), toks); });
   var vacio = PN_.div === 'SRV' ? 'servicios de producción' : PN_.div === 'REC' ? 'cubiertas recapadas' : 'servicios de gomería';
   h += '<div class="pn-info">' + lista.length + ' resultado' + (lista.length === 1 ? '' : 's') + '</div>';
   if (!lista.length) h += '<div class="card"><div class="card-body tdim">' + (toks.length || PN_ANX.trabajo || PN_ANX.linea ? 'No hay resultados con esa búsqueda.' : 'La lista vigente todavía no tiene ' + vacio + ' con precio.') + '</div></div>';
@@ -13019,7 +13033,7 @@ function pnAnxRes() {
 }
 function pnAnxServ(s) {
   return '<div class="pn-item"><div class="pn-l1"><div><div class="pn-med">' + pnEsc(s.MEDIDA === 'TODAS' ? 'Otras medidas' : s.MEDIDA) + '</div>' +
-    '<div class="pn-mar"><b>' + pnEsc(s.TRABAJO) + '</b>' + (s.LINEA ? ' · ' + (s.LINEA === 'AGRICOLA' ? 'Agrícola' : 'Camiones') : '') + '</div></div>' +
+    '<div class="pn-mar"><b>' + pnEsc(s.TRABAJO) + '</b>' + (s.LINEA ? ' · ' + (s.LINEA === 'AGRICOLA' ? 'Agrícola' : s.LINEA === 'VIAL' ? 'Vial' : 'Camiones') : '') + '</div></div>' +
     '<div class="pn-pre"><div class="c">' + pnPlata(s.CON) + '</div><div class="s">' + pnPlata(s.SIN) + ' + IVA</div></div></div>' +
     '<div class="pn-tags"><span class="pn-tag">' + pnEsc(s.CODIGO) + '</span></div></div>';
 }
@@ -17310,12 +17324,30 @@ async function renderMargen() {
 // Tipo de cubierta: achica la búsqueda (Auto, Camioneta, Camión, Agrícola…)
 function mgChips() {
   var insV = MG_.div === 'INS';
-  var seg = '<div class="pn-div" style="width:100%"><button class="' + (!insV ? 'on' : '') + '" onclick="MG_.div=\'CUB\';MG_.rubro=\'\';MG_.cat=\'\';MG_.fam=\'\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">🚗 Cubiertas</button><button class="' + (insV ? 'on' : '') + '" onclick="MG_.div=\'INS\';MG_.rubro=\'\';MG_.cat=\'\';MG_.fam=\'\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">🔧 Insumos y accesorios</button></div>';
+  var dv = [['CUB', '🚗 Cubiertas'], ['REC', '♻️ Recapadas'], ['SRV', '🏭 Servicios'], ['GOM', '🔩 Gomería'], ['INS', '🔧 Insumos']];
+  var seg = '<div class="pn-div" style="width:100%">' + dv.map(function(x) { return '<button class="' + (MG_.div === x[0] ? 'on' : '') + '" onclick="MG_.div=\'' + x[0] + '\';MG_.rubro=\'\';MG_.cat=\'\';MG_.fam=\'\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">' + x[1] + '</button>'; }).join('') + '</div>';
+  if (MG_.div === 'REC' || MG_.div === 'SRV' || MG_.div === 'GOM') return seg + mgChipsExt();
   if (insV) return seg + mgChipsIns();
-  var rs = []; MG_.d.ARTICULOS.forEach(function(a) { if (a.RUBRO && a.RUBRO !== 'INSUMOS' && rs.indexOf(a.RUBRO) === -1) rs.push(a.RUBRO); });
+  var rs = []; MG_.d.ARTICULOS.forEach(function(a) { if (mgDivDe(a) === 'CUB' && a.RUBRO && rs.indexOf(a.RUBRO) === -1) rs.push(a.RUBRO); });
   var ord = ['AUTO', 'CAMIONETA', 'CAMION', 'AGRICOLA', 'INDUSTRIAL', 'INSUMOS']; rs.sort(function(a, b) { var x = ord.indexOf(a), y = ord.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
   var nom = { AUTO: '🚗 Auto', CAMIONETA: '🚙 Camioneta', CAMION: '🚛 Camión', AGRICOLA: '🚜 Agrícola', INDUSTRIAL: '🏗 Industrial', INSUMOS: '🔧 Insumos' };
   return seg + [''].concat(rs).map(function(r) { return '<button class="btn btn-sm ' + (MG_.rubro === r ? 'btn-p' : 'btn-s') + '" onclick="MG_.rubro=\'' + r + '\';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">' + (r ? (nom[r] || r) : 'Todas') + '</button>'; }).join('');
+}
+// Recapadas y servicios: por línea (Camiones / Agrícola / Vial) y los servicios por trabajo, como en la tienda y la lista de precios
+function mgDivDe(a) { return a.DIV || (a.RUBRO === 'INSUMOS' ? 'INS' : 'CUB'); }
+function mgFam(t) { var b = String(t || '').split(' + ')[0].toUpperCase(); if (/^RECAPADO/.test(b)) return 'RECAPADO'; if (/^RETACADO/.test(b)) return 'RETACADO'; if (/^VULCANIZADO/.test(b)) return 'VULCANIZADO'; if (/^REFUERZO/.test(b)) return 'REFUERZOS'; if (/^RELLENO/.test(b)) return 'RELLENO'; return 'OTROS'; }
+function mgChipsExt() {
+  if (MG_.div === 'GOM') return '';
+  var lin = [['CAMIONES', '🚚 Camiones'], ['AGRICOLA', '🚜 Agrícola'], ['VIAL', '🏗 Vial']], cnt = {}, fam = {};
+  MG_.d.ARTICULOS.forEach(function(a) { if (mgDivDe(a) === MG_.div) cnt[a.LINEA] = (cnt[a.LINEA] || 0) + 1; });
+  if (MG_.div === 'SRV' && (!MG_.rubro || !cnt[MG_.rubro])) MG_.rubro = cnt.CAMIONES ? 'CAMIONES' : (cnt.AGRICOLA ? 'AGRICOLA' : 'VIAL');
+  var b = function(on, txt, js) { return '<button class="btn btn-sm ' + (on ? 'btn-p' : 'btn-s') + '" onclick="' + js + ';$id(\'mg-rub\').innerHTML=mgChips();mgBuscar()">' + txt + '</button>'; };
+  var h = '<div class="mg-fil">' + (MG_.div === 'REC' ? b(!MG_.rubro, 'Todo', "MG_.rubro=''") : '') + lin.filter(function(r) { return MG_.div === 'REC' || cnt[r[0]]; }).map(function(r) { return b(MG_.rubro === r[0], r[1] + ' <small>(' + (cnt[r[0]] || 0) + ')</small>', "MG_.rubro='" + r[0] + "';MG_.fam=''"); }).join('') + '</div>';
+  if (MG_.div === 'SRV') {
+    MG_.d.ARTICULOS.forEach(function(a) { if (mgDivDe(a) === 'SRV' && a.LINEA === MG_.rubro) { var f = mgFam(a.TRABAJO); fam[f] = (fam[f] || 0) + 1; } });
+    h += '<div class="mg-fil mg-fam">' + b(!MG_.fam, 'Todos los trabajos', "MG_.fam=''") + ['RECAPADO', 'RETACADO', 'VULCANIZADO', 'REFUERZOS', 'RELLENO', 'OTROS'].filter(function(f) { return fam[f]; }).map(function(f) { return b(MG_.fam === f, f.charAt(0) + f.slice(1).toLowerCase() + ' <small>(' + fam[f] + ')</small>', "MG_.fam='" + f + "'"); }).join('') + '</div>';
+  }
+  return h;
 }
 // Insumos: primero la categoría, después la familia (así la lista es corta y no hay que bajar)
 function mgTit(s) { s = String(s || '').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -17330,12 +17362,13 @@ function mgChipsIns() {
 function mgNorm(t) { return String(t || '').toUpperCase().replace(/[\s\/\-.,R]/g, ''); }
 // Lista para tildar varias: cada toque agrega o saca la cubierta (✓). La lista queda abierta hasta «Listo».
 function mgBuscar() {
-  if ($id('mg-q')) $id('mg-q').placeholder = MG_.div === 'INS' ? 'Nombre o código: parche, raspa, AA0775…' : 'Medida, marca o código: 185/65R15, giti…';
+  if ($id('mg-q')) $id('mg-q').placeholder = MG_.div === 'INS' ? 'Nombre o código: parche, raspa, AA0775…' : MG_.div === 'CUB' ? 'Medida, marca o código: 185/65R15, giti…' : 'Medida o trabajo: 18.4 38, retacado, 295 80…';
   var q = $v('mg-q').trim(), box = $id('mg-sug'); if (!box) return;
   if (MG_.div === 'INS' && q.length < 2 && !MG_.fam) { box.innerHTML = '<div class="tdim" style="font-size:14px;padding:10px 4px">' + (MG_.cat ? 'Elegí la familia de arriba o escribí el nombre o código.' : 'Elegí una categoría y después la familia, o escribí el nombre o código.') + '</div>'; return; }
-  if (q.length < 2 && !MG_.rubro && MG_.div !== 'INS') { box.innerHTML = ''; return; }
+  if (q.length < 2 && !MG_.rubro && MG_.div === 'CUB') { box.innerHTML = ''; return; }
   var qs = q.toUpperCase().split(/\s+/).filter(function(w) { return w; }), qn = mgNorm(q);
-  var r = MG_.d.ARTICULOS.filter(function(a) { if ((MG_.div === 'INS') !== (a.RUBRO === 'INSUMOS')) return false; if (MG_.div === 'INS' && MG_.cat && (a.CAT || 'OTROS') !== MG_.cat) return false; if (MG_.div === 'INS' && MG_.fam && String(a.MARCA).replace(/'/g, '') !== MG_.fam) return false; if (MG_.rubro && a.RUBRO !== MG_.rubro) return false; if (q.length < 2) return true; var n = a.NOMBRE.toUpperCase() + ' ' + a.CODIGO + ' ' + a.MARCA.toUpperCase(); return a.CODIGO.toUpperCase() === q.toUpperCase() || mgNorm(a.NOMBRE).indexOf(qn) !== -1 || qs.every(function(w) { return n.indexOf(w) !== -1; }); });
+  var ext = MG_.div === 'REC' || MG_.div === 'SRV' || MG_.div === 'GOM';
+  var r = MG_.d.ARTICULOS.filter(function(a) { if (mgDivDe(a) !== MG_.div) return false; if (ext) { if (MG_.div !== 'GOM' && MG_.rubro && a.LINEA !== MG_.rubro) return false; if (MG_.div === 'SRV' && MG_.fam && mgFam(a.TRABAJO) !== MG_.fam) return false; } else if (MG_.rubro && a.RUBRO !== MG_.rubro) return false; if (MG_.div === 'INS' && MG_.cat && (a.CAT || 'OTROS') !== MG_.cat) return false; if (MG_.div === 'INS' && MG_.fam && String(a.MARCA).replace(/'/g, '') !== MG_.fam) return false; if (q.length < 2) return true; var n = a.NOMBRE.toUpperCase() + ' ' + a.CODIGO + ' ' + a.MARCA.toUpperCase(); return a.CODIGO.toUpperCase() === q.toUpperCase() || mgNorm(a.NOMBRE).indexOf(qn) !== -1 || qs.every(function(w) { return n.indexOf(w) !== -1; }); });
   // Antes se cortaba en 30 y quedaban afuera marcas enteras (ej. 295/80R22.5: 39 cubiertas, faltaban Mirage y Wanli). Ahora salen todas, de la más barata a la más cara.
   r.sort(function(a, b) { return (a.CON_IVA || 0) - (b.CON_IVA || 0); });
   var mgTot = r.length; if (r.length > 200) r = r.slice(0, 200);
@@ -17344,7 +17377,7 @@ function mgBuscar() {
   var n = MG_.items.reduce(function(a, i) { return a + i.n; }, 0);
   box.innerHTML = '<div class="mg-lst"><div class="mg-lst-h">' + mgTot + (mgTot === 1 ? ' resultado' : ' resultados') + (mgTot > r.length ? ' (se muestran ' + r.length + ': escribí más para achicar)' : '') + ' · Tocá <b>todas</b> las que quieras: se marcan con ✓</div>' +
     r.map(function(a, k) { var it = MG_.items.filter(function(i) { return i.c === a.CODIGO; })[0];
-      return '<div class="mg-op' + (it ? ' on' : '') + '" onclick="mgTildar(' + k + ')"><span class="mg-ck">' + (it ? '✓' : '') + '</span><div style="flex:1;min-width:0"><b>' + pcEsc(a.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc(a.RUBRO) + ' · $' + mgM(a.CON_IVA) + (it && it.n > 1 ? ' · ' + it.n + ' unidades' : '') + '</div></div></div>'; }).join('') +
+      return '<div class="mg-op' + (it ? ' on' : '') + '" onclick="mgTildar(' + k + ')"><span class="mg-ck">' + (it ? '✓' : '') + '</span><div style="flex:1;min-width:0"><b>' + pcEsc(a.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc(a.DIV ? ({ CAMIONES: 'Camiones', AGRICOLA: 'Agrícola', VIAL: 'Vial' }[a.LINEA] || (a.DIV === 'GOM' ? 'Gomería' : 'Recapada')) : a.RUBRO) + ' · $' + mgM(a.CON_IVA) + (it && it.n > 1 ? ' · ' + it.n + ' unidades' : '') + '</div></div></div>'; }).join('') +
     '<button type="button" class="btn btn-p mg-listo" onclick="mgListo()">✓ Listo' + (n ? ' · ' + n + ' en la lista' : '') + '</button></div>';
 }
 function mgTildar(k) {
