@@ -23,11 +23,20 @@ img.pv { width: 100%; border-radius: 10px; margin-top: 12px; border: 1px solid #
 .lst { margin: 0 0 14px; border-top: 1px solid #e5e7eb; }
 .cub { padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-size: 15px; }
 .lb { font-size: 11px; color: var(--dim); text-transform: uppercase; }
+#cam { position: fixed; inset: 0; background: #000; z-index: 50; display: none; flex-direction: column; }
+#cam video { flex: 1; width: 100%; height: 100%; object-fit: cover; background: #000; }
+#cam .guia { position: absolute; left: 4%; right: 4%; top: 8%; bottom: 18%; border: 3px dashed rgba(255,255,255,.85); border-radius: 8px; pointer-events: none; }
+#cam .tx { position: absolute; top: 2%; left: 0; right: 0; text-align: center; color: #fff; font-size: 15px; text-shadow: 0 1px 3px #000; }
+#cam .bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 10px; padding: 14px; background: rgba(0,0,0,.55); }
+#cam .bar button { flex: 1; font-size: 20px; font-weight: 700; padding: 18px; border: 0; border-radius: 12px; }
+#cam .tomar { background: #1d4ed8; color: #fff; }
+.w.ancho { max-width: 900px; padding: 8px; }
 </style>
 </head>
 <body>
 <div class="w">
   <div class="logo">VULCAN TREAD NEUMÁTICOS</div>
+  <div id="cam"><video id="vid" playsinline autoplay muted></video><div class="guia"></div><div class="tx">Encuadrá la hoja firmada dentro del marco</div><div class="bar"><button class="s" id="cam-x" style="background:#e5e7eb">Cancelar</button><button class="tomar" id="cam-ok">📷 Sacar</button></div></div>
   <div class="c" id="caja"><div class="dim">Cargando el remito…</div></div>
 </div>
 <script>
@@ -46,24 +55,38 @@ function comprimir(img, maxLado, calidad) {
   var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   var d = c.toDataURL('image/jpeg', calidad);
-  if (d.length > 590000 && calidad > 0.4) return comprimir(img, maxLado * 0.8, calidad - 0.1);
+  if (d.length > 1450000 && calidad > 0.4) return comprimir(img, maxLado * 0.85, calidad - 0.08);
   return d;
 }
 function pintar(r) {
   if (!r || !r.ok) { $('caja').innerHTML = '<h1>No se encontró el remito</h1><div class="err">' + esc((r && r.error) || 'El código no es válido.') + '</div>'; return; }
-  var lis = (r.items || []).map(function(x) { return '<div class="cub"><span class="lb">Marca grabada</span> <b>' + esc(x.marca) + '</b> · <span class="lb">DOT</span> <b>' + (x.dot ? esc(x.dot) : 'sin DOT') + '</b><br><span class="dim">' + esc(x.medida) + (x.resultado && x.resultado !== 'TERMINADA' ? ' · se devuelve sin trabajo' : ' · terminada') + '</span></div>'; }).join('');
-  var cab = '<h1>Remito ' + esc(r.nro) + '</h1><div class="dat"><b>' + esc(r.cliente) + '</b><br>' + esc(r.n) + (r.n == 1 ? ' cubierta' : ' cubiertas') + '</div>' + (lis ? '<div class="lst">' + lis + '</div>' : '');
+  var lis = (r.items || []).map(function(x) { if (x.art) return '<div class="cub"><b>' + esc(x.marca) + '</b> <span class="dim">× ' + esc(x.cant) + '</span></div>'; return '<div class="cub"><span class="lb">Marca grabada</span> <b>' + esc(x.marca) + '</b> · <span class="lb">DOT</span> <b>' + (x.dot ? esc(x.dot) : 'sin DOT') + '</b><br><span class="dim">' + esc(x.medida) + (x.resultado && x.resultado !== 'TERMINADA' ? ' · se devuelve sin trabajo' : ' · terminada') + '</span></div>'; }).join('');
+  var cab = '<h1>Remito ' + esc(r.nro) + '</h1><div class="dat"><b>' + esc(r.cliente) + '</b><br>' + esc(r.n) + (r.cubs ? (r.n == 1 ? ' cubierta' : ' cubiertas') : (r.n == 1 ? ' artículo' : ' artículos')) + '</div>' + (lis ? '<div class="lst">' + lis + '</div>' : '');
   if (r.entregado) { $('caja').innerHTML = cab + '<div class="ok">✓ Ya está entregado</div><div class="dim" style="text-align:center">La foto del remito firmado ya se cargó.</div>'; return; }
   $('caja').innerHTML = cab +
     '<div class="dim">Sacale una foto al remito <b>firmado por el cliente</b>, que se lea bien la firma.</div>' +
     '<input type="file" id="f" accept="image/*" capture="environment" style="display:none">' +
-    '<button class="big" id="b-foto">📷 Sacar la foto</button><img class="pv" id="pv" style="display:none">' +
+    '<button class="big" id="b-foto">📷 Sacar la foto</button><button class="big s" id="b-arch">Usar la cámara del celular</button><img class="pv" id="pv" style="display:none">' +
     '<button class="big" id="b-env" style="display:none">✓ Enviar</button><div id="msg"></div>';
-  $('b-foto').onclick = function() { $('f').click(); };
+  var mostrar = function(d) { FOTO = d; $('pv').src = FOTO; $('pv').style.display = ''; $('b-env').style.display = ''; $('b-foto').textContent = '📷 Sacar otra'; document.querySelector('.w').classList.add('ancho'); };
+  var cerrarCam = function() { var v = $('vid'); if (v.srcObject) v.srcObject.getTracks().forEach(function(t) { t.stop(); }); v.srcObject = null; $('cam').style.display = 'none'; };
+  $('b-arch').onclick = function() { $('f').click(); };
+  $('b-foto').onclick = function() {
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { $('f').click(); return; }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } }, audio: false }).then(function(st) {
+      $('vid').srcObject = st; $('cam').style.display = 'flex';
+    }, function() { $('f').click(); });
+  };
+  $('cam-x').onclick = cerrarCam;
+  $('cam-ok').onclick = function() {
+    var v = $('vid'), w = v.videoWidth, h = v.videoHeight; if (!w) return;
+    var c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(v, 0, 0, w, h);
+    var im = new Image(); im.onload = function() { mostrar(comprimir(im, 2600, 0.8)); cerrarCam(); }; im.src = c.toDataURL('image/jpeg', 0.92);
+  };
   $('f').onchange = function() {
     var f = this.files && this.files[0]; if (!f) return;
     var rd = new FileReader();
-    rd.onload = function() { var im = new Image(); im.onload = function() { FOTO = comprimir(im, 1600, 0.72); $('pv').src = FOTO; $('pv').style.display = ''; $('b-env').style.display = ''; $('b-foto').textContent = '📷 Sacar otra'; $('b-foto').className = 'big s'; }; im.src = rd.result; };
+    rd.onload = function() { var im = new Image(); im.onload = function() { FOTO = comprimir(im, 2600, 0.8); $('pv').src = FOTO; $('pv').style.display = ''; $('b-env').style.display = ''; $('b-foto').textContent = '📷 Sacar otra'; $('b-foto').className = 'big s'; }; im.src = rd.result; };
     rd.readAsDataURL(f);
   };
   $('b-env').onclick = function() {
