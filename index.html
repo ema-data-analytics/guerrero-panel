@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "c8056684715d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e7dcd2041066"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610301500';
+var EMA_BUILD = '202610301506';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3879,9 +3879,27 @@ async function vrRemitos() {
     el.innerHTML = '<div class="tw"><table><thead><tr><th>Remito</th><th>Fecha</th><th>Cliente</th><th>Qué se entregó</th><th>Estado</th><th></th></tr></thead><tbody>' + r.REMITOS.map(function(x) {
       var est = x.ESTADO === 'ANULADO' ? '<span class="badge b-red">Anulado</span>' : (x.FACTURA ? '<span class="badge b-green">' + vEsc(x.FACTURA) + '</span>' : '<span class="badge b-yellow">Sin facturar</span>');
       return '<tr><td><b>' + vEsc(x.NRO) + '</b></td><td>' + vrFecha(x.FECHA) + '</td><td>' + vEsc(x.CLIENTE) + '</td><td>' + x.ITEMS.map(function(i) { return vEsc(i.CANT) + ' × ' + vEsc(i.NOMBRE); }).join('<br>') + '</td><td>' + est + '</td>' +
-        '<td style="white-space:nowrap">' + (x.ESTADO !== 'ANULADO' ? '<button class="btn btn-s btn-sm" title="Imprimir remito" onclick="vrImprimir(' + x.ID_REMITO + ')"><i class="fas fa-print"></i></button> ' : '') + (x.ESTADO !== 'ANULADO' && !x.FACTURA && x.ORIGEN !== 'PRODUCCION' ? '<button class="btn btn-s btn-sm" onclick="vrAnular(' + x.ID_REMITO + ',\'' + vEsc(x.NRO) + '\')">Anular</button>' : '') + '</td></tr>';
+        '<td style="white-space:nowrap">' + (x.ESTADO !== 'ANULADO' ? '<button class="btn btn-s btn-sm" title="Imprimir remito" onclick="vrImprimir(' + x.ID_REMITO + ')"><i class="fas fa-print"></i></button> ' : '') + (x.ESTADO !== 'ANULADO' && !x.FOTO_FIRMA ? '<button class="btn btn-s btn-sm" title="Cargar foto del remito firmado" onclick="vrFoto(' + x.ID_REMITO + ')"><i class="fas fa-camera"></i></button> ' : '') + (x.FOTO_FIRMA ? '<button class="btn btn-s btn-sm" title="Ver remito firmado" onclick="asVerImg(' + Number(x.FOTO_FIRMA) + ',\'Remito ' + vEsc(x.NRO) + '\')"><i class="fas fa-image"></i></button> ' : '') + (x.ESTADO !== 'ANULADO' && !x.FACTURA && x.ORIGEN !== 'PRODUCCION' ? '<button class="btn btn-s btn-sm" onclick="vrAnular(' + x.ID_REMITO + ',\'' + vEsc(x.NRO) + '\')">Anular</button>' : '') + '</td></tr>';
     }).join('') + '</tbody></table></div>';
   } catch (e) { toast(e.message || e, 'r2'); }
+}
+function vrFoto(id) {
+  var x = (window.VR_LISTA || []).filter(function(r) { return String(r.ID_REMITO) === String(id); })[0]; if (!x) return;
+  var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.setAttribute('capture', 'environment');
+  inp.onchange = function() {
+    var f = inp.files && inp.files[0]; if (!f) return;
+    var rd = new FileReader(); rd.onload = function() { var im = new Image(); im.onload = async function() {
+      try {
+        var data = asComprimir(im, 1600, 0.72);
+        var up = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'REMITO', ref: x.NRO, data: data });
+        if (!up || !up.ok) { toast((up && up.error) || 'No se pudo subir la foto', 'r2'); return; }
+        var r = await gsRun('gsPC_RemitoFoto', x.ID_REMITO, up.id, '');
+        if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+        toast(x.NRO + ' entregado ✓', 'g'); vrRemitos();
+      } catch (e) { toast(e.message, 'r2'); }
+    }; im.src = rd.result; }; rd.readAsDataURL(f);
+  };
+  inp.click();
 }
 async function vrImprimir(id) {
   var x = (window.VR_LISTA || []).filter(function(r) { return String(r.ID_REMITO) === String(id); })[0]; if (!x) return;
@@ -3894,12 +3912,14 @@ async function vrImprimir(id) {
         (ok && t.BANDA ? '<div>' + vEsc(t.BANDA) + '</div>' : '') + '<div class="rs">Marca grabada: <b>' + vEsc(t.MARCA) + '</b> · ' + (t.BOLETA ? 'Boleta ' + vEsc(t.BOLETA) + ' · ' : '') + vEsc(t.OTRAB || '') + (ok ? '' : ' · Motivo: ' + vEsc(t.MOTIVO || '')) + '</div></td><td class="rn">1,00 c/u</td></tr>';
     }).join('');
     x._CAP = 6;
-    try { if (x.TOKEN_FIRMA) { await feLibQR(); x._QR = feQRsvg(location.origin + location.pathname.replace(/[^\/]*$/, '') + 'firma/?t=' + encodeURIComponent(x.TOKEN_FIRMA), 90); } } catch (eq) {}
   } else {
     filas = x.ITEMS.map(function(i) { return '<tr><td class="rk">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + '</td><td class="rn">' + f3(i.CANT) + ' c/u</td></tr>'; }).join('');
     x._CAP = 10;
   }
-  x.REF_TIT = 'Factura:'; x.REF = x.FACTURA || 'Pendiente'; x.OBSERVACIONES = x.OBS;
+  {
+    try { if (x.TOKEN_FIRMA) { await feLibQR(); x._QR = feQRsvg(location.origin + location.pathname.replace(/[^\/]*$/, '') + 'firma/?t=' + encodeURIComponent(x.TOKEN_FIRMA), 90); } } catch (eq) {}
+  }
+  x.REF_TIT = 'Factura:'; x.REF = String(x.FACTURA || 'Pendiente').replace(/^facturado en /, ''); x.OBSERVACIONES = x.OBS;
   remVulcanImp(x, filas, 1);
 }
 function vrNuevo() {
