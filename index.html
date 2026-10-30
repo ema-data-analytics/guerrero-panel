@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "60f2bce14194"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "35b89d1f13ce"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610291841';
+var EMA_BUILD = '20261030132931';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3949,35 +3949,57 @@ function feQRsvg(txt, tam) { var q = qrcode(0, 'M'); q.addData(txt); q.make(); r
 function feF(d) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : (d || ''); }
 function feCuitF(c) { c = String(c || '').replace(/\D/g, ''); return c.length === 11 ? c.slice(0, 2) + '-' + c.slice(2, 10) + '-' + c.slice(10) : c; }
 async function feImprimir(r) {
-  var v = r.VENTA, fe = v.FE, an = v.ESTADO === 'ANULADA', esB = fe.LETRA === 'B', nc = /^NC/.test(v.TIPO_COMP);
-  var tit = (nc ? 'NOTA DE CRÉDITO' : 'FACTURA'), qr = '';
-  try { if (fe.QR) { await feLibQR(); qr = feQRsvg(fe.QR, 120); } } catch (e) { qr = ''; }
-  var prueba = fe.AMBIENTE !== 'PROD';
-  var nro = String(v.NRO_COMP || '').split('-'), em = fe.EMISOR;
-  var h = '<style>.fe-cab{display:grid;grid-template-columns:1fr 90px 1fr;border:2px solid #111}.fe-cab>div{padding:8px 10px}.fe-l{border-left:2px solid #111;border-right:2px solid #111;text-align:center}' +
-      '.fe-l b{display:block;font-size:40px;line-height:44px}.fe-l small{font-size:10px}.fe-k{font-size:10px;color:#444}.fe-k b{color:#111}.fe-rec{border:1px solid #111;border-top:0;padding:6px 10px;display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;font-size:11px;margin-bottom:8px}' +
-      '.fe-pie{display:flex;gap:14px;align-items:center;border:1px solid #111;padding:8px 10px;margin-top:10px}.fe-pie svg{width:110px;height:110px}.fe-ley{font-size:10px;border:1px solid #999;padding:6px 8px;margin-top:6px}' +
-      '.fe-agua{border:3px solid #b91c1c;color:#b91c1c;font-weight:800;text-align:center;padding:6px;margin-bottom:6px;font-size:14px}</style>' +
-    (prueba ? '<div class="fe-agua">COMPROBANTE DE PRUEBA (' + vEsc(fe.AMBIENTE) + ') · SIN VALIDEZ FISCAL</div>' : '') +
-    (an ? '<div class="fe-agua">ANULADA · ' + vEsc(v.MOTIVO_ANULACION || '') + '</div>' : '') +
-    '<div class="fe-cab"><div><div style="font-size:16px;font-weight:800">' + vEsc(em.RAZON_SOCIAL) + '</div><div class="fe-k">' + vEsc(em.DOMICILIO || 'Salta') + '</div><div class="fe-k"><b>' + vEsc(em.COND_IVA) + '</b></div></div>' +
-    '<div class="fe-l"><b>' + vEsc(fe.LETRA) + '</b><small>COD. ' + String(fe.COD_CBTE).padStart(3, '0') + '</small></div>' +
-    '<div><div style="font-size:16px;font-weight:800">' + tit + '</div><div class="fe-k">Punto de venta: <b>' + vEsc(nro[0] || '') + '</b> · Comp. N°: <b>' + vEsc(nro[1] || '') + '</b></div><div class="fe-k">Fecha de emisión: <b>' + fmtD(v.FECHA) + '</b></div>' +
-    '<div class="fe-k">CUIT: <b>' + vEsc(feCuitF(em.CUIT)) + '</b> · IIBB: <b>' + vEsc(em.IIBB || '—') + '</b></div><div class="fe-k">Inicio de actividades: <b>' + vEsc(feF(em.INICIO_ACT) || '—') + '</b></div></div></div>' +
-    '<div class="fe-rec"><div><span class="fe-k">Cliente:</span> <b>' + vEsc(v.CLIENTE) + '</b></div><div><span class="fe-k">CUIT / DNI:</span> <b>' + vEsc(v.CUIT || '—') + '</b></div>' +
-    '<div><span class="fe-k">Condición frente al IVA:</span> <b>' + vEsc(fe.RECEPTOR_COND) + '</b></div><div><span class="fe-k">Domicilio:</span> ' + vEsc(v.DOMICILIO || '—') + '</div>' +
-    '<div><span class="fe-k">Condición de venta:</span> ' + (v.SALDO > 0 ? 'Cuenta corriente' : 'Contado') + '</div><div>' + (v.ORIGEN ? '<span class="fe-k">Comprobante asociado:</span> ' + vEsc(v.ORIGEN) : '') + '</div></div>' +
-    '<table><thead><tr><th>Detalle</th><th class="n">Cant.</th><th class="n">' + (esB ? 'P. unit.' : 'P. unit. neto') + '</th><th class="n">Desc.</th>' + (esB ? '' : '<th class="n">Neto</th><th class="n">IVA</th>') + '<th class="n">Subtotal</th></tr></thead><tbody>' +
-    r.ITEMS.map(function(i) { var pu = i.PRECIO_U !== undefined ? i.PRECIO_U : (i.CANT ? i.NETO / i.CANT : 0); if (esB) pu = vR2(pu * (1 + i.IVA_AL / 100));
-      return '<tr><td>' + vEsc(i.NOMBRE) + '</td><td class="n">' + i.CANT + '</td><td class="n">' + fmt(pu) + '</td><td class="n">' + (i.DTO ? i.DTO + '%' : '') + '</td>' + (esB ? '' : '<td class="n">' + fmt(i.NETO) + '</td><td class="n">' + fmt(i.IVA) + ' (' + i.IVA_AL + '%)</td>') + '<td class="n">' + fmt(esB ? i.SUB : i.NETO) + '</td></tr>'; }).join('') +
-    (esB ? '' : '<tr class="tot"><td colspan="6">Importe neto gravado</td><td class="n">' + fmt(v.NETO) + '</td></tr><tr class="tot"><td colspan="6">IVA</td><td class="n">' + fmt(v.IVA) + '</td></tr>') +
-    (fe.IMPUESTOS || []).map(function(t) { return '<tr class="tot"><td colspan="' + (esB ? 4 : 6) + '">' + vEsc(t.NOMBRE) + '</td><td class="n">' + fmt(t.MONTO) + '</td></tr>'; }).join('') +
-    '<tr class="tot"><td colspan="' + (esB ? 4 : 6) + '"><b>IMPORTE TOTAL</b></td><td class="n"><b>' + fmt(v.TOTAL) + '</b></td></tr></tbody></table>' +
-    (fe.LEYENDAS || []).map(function(l) { return '<div class="fe-ley">' + vEsc(l) + '</div>'; }).join('') +
-    (v.OBS ? '<div class="nota">Observaciones: ' + vEsc(v.OBS) + '</div>' : '') +
-    '<div class="fe-pie">' + (qr || '') + '<div><div style="font-size:12px"><b>CAE N°:</b> ' + vEsc(fe.CAE) + '</div><div style="font-size:12px"><b>Vencimiento del CAE:</b> ' + vEsc(feF(fe.CAE_VTO)) + '</div>' +
-    '<div class="fe-k" style="margin-top:4px">Comprobante autorizado por ARCA' + (prueba ? ' — PRUEBA, SIN VALIDEZ FISCAL' : '') + '</div></div></div>';
-  pcImprimir(tit + ' ' + fe.LETRA + ' ' + v.NRO_COMP, h, false);
+  var v = r.VENTA, fe = v.FE, an = v.ESTADO === 'ANULADA', esA = fe.LETRA === 'A', nc = /^NC/.test(v.TIPO_COMP);
+  var tit = (nc ? 'NOTA DE CREDITO' : 'FACTURA'), qr = '';
+  try { if (fe.QR) { await feLibQR(); qr = feQRsvg(fe.QR, 110); } } catch (e) { qr = ''; }
+  var prueba = fe.AMBIENTE !== 'PROD', em = fe.EMISOR, nro = String(v.NRO_COMP || '').split('-');
+  var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
+  var ini = /^\d{4}-\d{2}-\d{2}/.test(String(em.INICIO_ACT || '')) ? feF(em.INICIO_ACT) : (em.INICIO_ACT || '');
+  var f2 = function(x) { return Number(x || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var f3 = function(x) { return Number(x || 0).toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }); };
+  var hora = ''; try { var dd = new Date(v.FECHA); hora = ('0' + dd.getHours()).slice(-2) + ' ' + ('0' + dd.getMinutes()).slice(-2); } catch (e) {}
+  var n21 = 0, n105 = 0, i21 = 0, i105 = 0, ng = 0;
+  r.ITEMS.forEach(function(i) { if (i.IVA_AL == 21) { n21 += i.NETO; i21 += i.IVA; } else if (i.IVA_AL == 10.5) { n105 += i.NETO; i105 += i.IVA; } else ng += i.NETO; });
+  // Los totales salen del comprobante (lo que se informó a ARCA); la diferencia de redondeo de los renglones va a la alícuota 21%
+  n21 = vR2(n21 + (Number(v.NETO || 0) - vR2(n21 + n105 + ng))); i21 = vR2(i21 + (Number(v.IVA || 0) - vR2(i21 + i105)));
+  var filas = r.ITEMS.map(function(i) {
+    var pu = i.PRECIO_U !== undefined ? i.PRECIO_U : (i.CANT ? i.NETO / i.CANT : 0), imp = i.NETO;
+    if (!esA) { pu = vR2(pu * (1 + i.IVA_AL / 100)); imp = i.SUB; }
+    return '<tr><td>' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + (i.DTO ? ' (desc. ' + i.DTO + '%)' : '') + '</td><td class="n">' + f3(i.CANT) + ' c/u</td><td class="n">' + f2(pu) + '</td><td class="n">' + f2(imp) + '</td></tr>';
+  }).join('');
+  var css = '<style>.vh{position:relative;font-family:Arial,Helvetica,sans-serif;color:#111;page-break-after:always;break-after:page}.vh:last-child{page-break-after:auto;break-after:auto}' +
+    '.vb{border:1.5px solid #111;border-radius:14px;padding:8px 10px;margin-bottom:8px}.vc{display:grid;grid-template-columns:1fr 110px 1fr;gap:6px}.vm{font-family:"Courier New",monospace;font-size:9.5px;font-weight:700}' +
+    '.vl{text-align:center}.vl .le{display:inline-block;border:1.5px solid #111;font-size:34px;font-weight:800;padding:0 16px;line-height:40px}.vl small{display:block;font-size:9px;border:1px solid #111;margin:0 auto;width:56px}' +
+    '.vt{font-size:19px;font-weight:800}.vn{font-size:19px;font-weight:800}.vk{font-family:"Courier New",monospace;font-size:10px;color:#333}.vr{display:grid;grid-template-columns:1fr 260px;gap:4px}' +
+    '.vr .c{font-size:13px}.vr .c span{font-family:"Courier New",monospace;font-size:10px;color:#333;display:inline-block;width:118px;text-align:right}.vi{min-height:420px;position:relative}' +
+    '.vi table{width:100%;border-collapse:collapse}.vi th{font-family:"Courier New",monospace;font-size:10px;border:0;border-bottom:1.5px solid #111;background:none;text-align:left}.vi td{border:0;font-size:12px;padding:2px 4px}.vi .n{text-align:right}' +
+    '.vw{position:absolute;left:0;right:0;top:170px;text-align:center;opacity:.13}.vw img{width:330px}.vtot{display:grid;grid-template-columns:1fr 430px;gap:10px;margin-top:6px}' +
+    '.vtot table{width:100%;border-collapse:collapse}.vtot td,.vtot th{border:0;font-size:12px;padding:2px 6px}.vtot th{border-bottom:1px solid #111;background:none;text-align:right}.vtot .n{text-align:right}' +
+    '.vpie{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px}.vpie svg{width:100px;height:100px}.vag{border:3px solid #b91c1c;color:#b91c1c;font-weight:800;text-align:center;padding:4px;margin-bottom:6px;font-size:13px}</style>';
+  var copia = function(cual) {
+    return '<div class="vh">' + (prueba ? '<div class="vag">COMPROBANTE DE PRUEBA (' + vEsc(fe.AMBIENTE) + ') · SIN VALIDEZ FISCAL</div>' : '') + (an ? '<div class="vag">ANULADA · ' + vEsc(v.MOTIVO_ANULACION || '') + '</div>' : '') +
+      '<div class="vb vc"><div><img src="' + logo + '" crossorigin="anonymous" style="height:62px"/><div class="vm" style="margin-top:6px">' + vEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantread.com</div><div class="vm" style="margin-top:8px;text-decoration:underline">I.V.A. ' + vEsc(em.COND_IVA === 'IVA RESPONSABLE INSCRIPTO' ? 'Responsable Inscripto' : em.COND_IVA) + '</div></div>' +
+      '<div class="vl"><span class="le">' + vEsc(fe.LETRA) + '</span><small>Cod.' + String(fe.COD_CBTE).padStart(3, '0') + '</small>' + (esA ? '<div class="vm" style="margin-top:6px">Operacion Sujeta a Retencion</div>' : '') + '</div>' +
+      '<div><div class="vt">' + tit + '</div><div class="vn">' + vEsc(nro[0] || '') + ' ' + vEsc(nro[1] || '') + ' <span style="font-size:12px;font-weight:400">(' + cual + ')</span></div>' +
+      '<div style="font-size:13px;margin-left:30px"><span class="vk">Fecha:</span> <b style="font-size:15px">' + fmtD(v.FECHA) + '</b> &nbsp; ' + hora + '<br><span class="vk">Hoja:</span> <b>1</b> de <b>1</b></div>' +
+      '<div class="vk" style="margin-top:6px;font-weight:700;text-decoration:underline">C.B.U. N°:</div><div class="vk" style="font-weight:700;text-decoration:underline">Fecha Vcmto. p/Pago:</div>' +
+      '<div style="font-size:11px">C.U.I.T.: ' + vEsc(feCuitF(em.CUIT)) + '<br>Ing.Brutos: ' + vEsc(em.IIBB || '') + '<br>Inicio de Actividades: ' + vEsc(ini) + '</div></div></div>' +
+      '<div class="vb vr"><div class="c"><div><span>Razón Social:</span> <b style="font-size:15px">' + vEsc(v.CLIENTE) + '</b></div><div><span>Domicilio:</span> ' + vEsc(v.CLI_DIR || '') + '</div>' +
+      '<div><span>Localidad:</span> ' + vEsc(v.CLI_LOC || '') + ' &nbsp; &nbsp; ' + vEsc(v.CLI_CP || '') + '</div><div><span>Provincia:</span> ' + vEsc(v.CLI_PROV || '') + '</div>' +
+      '<div><span>C.U.I.T. Nr.:</span> <b>' + vEsc(v.CUIT || '') + '</b> &nbsp; <span style="width:auto">Sit.IVA:</span> <b>' + vEsc(fe.RECEPTOR_COND || '') + '</b></div>' +
+      '<div><span>Condicion Venta:</span> ' + (v.SALDO > 0 ? 'Cuenta Corriente' : 'Contado') + ' &nbsp; <span style="width:auto">Vendedor:</span> ' + vEsc(v.CLI_VEND || 'GERENCIA') + '</div></div>' +
+      '<div style="border-left:1px solid #111;padding-left:8px"><div class="vk" style="text-align:center;border-bottom:1px solid #111">Sub-Cuenta</div><div style="height:60px"></div><div class="vk" style="font-weight:700;text-decoration:underline">Cpbte.Asoc.: ' + vEsc(v.ORIGEN || '') + '</div></div></div>' +
+      '<div class="vb vi"><div class="vw"><img src="' + logo + '" crossorigin="anonymous"/></div><table><thead><tr><th style="width:110px">Código</th><th>Nombre del Articulo</th><th class="n" style="width:90px">Cantidad U.M</th><th class="n" style="width:90px">Prc.Unit</th><th class="n" style="width:100px">Importe</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+      '<div class="vtot"><div class="vk" style="font-size:11px"><div style="text-decoration:underline">Observaciones:</div><div style="font-family:Arial;font-size:11px;color:#111">' + vEsc(v.OBS || '') + (fe.LEYENDAS || []).map(function(l) { return '<div>' + vEsc(l) + '</div>'; }).join('') + '</div><div style="text-decoration:underline;margin-top:14px">Valores Recibidos:</div></div>' +
+      '<div class="vb" style="padding:4px 6px"><table><thead><tr><th></th><th>21.00%</th><th>10.50%</th><th>Total</th></tr></thead><tbody>' +
+      (esA ? '<tr><td><b>Subtotal</b></td><td class="n">' + f2(n21) + '</td><td class="n">' + (n105 ? f2(n105) : '') + '</td><td class="n"><b>' + f2(n21 + n105) + '</b></td></tr><tr><td><b>I.V.A.</b></td><td class="n">' + f2(i21) + '</td><td class="n">' + (i105 ? f2(i105) : '') + '</td><td class="n"><b>' + f2(i21 + i105) + '</b></td></tr>' : '') +
+      (fe.IMPUESTOS || []).map(function(t) { return '<tr><td colspan="3"><b>' + vEsc(t.NOMBRE) + '</b></td><td class="n">' + f2(t.MONTO) + '</td></tr>'; }).join('') +
+      '<tr><td colspan="3" style="padding-top:10px"><b>No Gravado</b></td><td class="n" style="padding-top:10px">' + (ng ? f2(ng) : '') + '</td></tr>' +
+      '<tr><td colspan="3" style="border-top:1px solid #111;font-size:14px"><b>TOTAL Pesos</b></td><td class="n" style="border-top:1px solid #111;font-size:17px"><b>' + f2(v.TOTAL) + '</b></td></tr></tbody></table>' +
+      (!esA ? '<div class="vk" style="font-size:9px;margin-top:4px">Régimen de Transparencia Fiscal al Consumidor (Ley 27.743): IVA contenido ' + f2(i21 + i105) + '</div>' : '') + '</div></div>' +
+      '<div class="vpie"><div>' + (qr || '') + '</div><div class="vk" style="font-size:11px">C.A.E. &nbsp;' + vEsc(fe.CAE) + ' * Vto. ' + vEsc(feF(fe.CAE_VTO)) + (prueba ? '<br>PRUEBA — SIN VALIDEZ FISCAL' : '') + '</div></div></div>';
+  };
+  pcImprimir(tit + ' ' + fe.LETRA + ' ' + v.NRO_COMP, css + copia('Original') + copia('Duplicado'), false);
 }
 
 // ── Ventana de factura electrónica: comprobantes, configuración y ARCA ──
