@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610301507';
+var EMA_BUILD = '202610301521';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3877,7 +3877,8 @@ async function vrRemitos() {
     if (!r.REMITOS.length) { el.innerHTML = '<div class="al al-b">Todavía no hay remitos de venta. Con «Nuevo remito» se entrega mercadería sin factura y se factura después.</div>'; return; }
     window.VR_LISTA = r.REMITOS;
     el.innerHTML = '<div class="tw"><table><thead><tr><th>Remito</th><th>Fecha</th><th>Cliente</th><th>Qué se entregó</th><th>Estado</th><th></th></tr></thead><tbody>' + r.REMITOS.map(function(x) {
-      var est = x.ESTADO === 'ANULADO' ? '<span class="badge b-red">Anulado</span>' : (x.FACTURA ? '<span class="badge b-green">' + vEsc(x.FACTURA) + '</span>' : '<span class="badge b-yellow">Sin facturar</span>');
+      var soloDev = (x.CUBS || []).length && x.CUBS.every(function(t) { return t.RESULTADO !== 'TERMINADA'; });
+      var est = x.ESTADO === 'ANULADO' ? '<span class="badge b-red">Anulado</span>' : (x.FACTURA ? '<span class="badge b-green">' + vEsc(x.FACTURA) + '</span>' : (soloDev ? '<span class="badge">Devolución: no se factura</span>' : '<span class="badge b-yellow">Sin facturar</span>')) + (x.FOTO_FIRMA ? ' <span class="badge b-green">Entregado con foto</span>' : '');
       return '<tr><td><b>' + vEsc(x.NRO) + '</b></td><td>' + vrFecha(x.FECHA) + '</td><td>' + vEsc(x.CLIENTE) + '</td><td>' + x.ITEMS.map(function(i) { return vEsc(i.CANT) + ' × ' + vEsc(i.NOMBRE); }).join('<br>') + '</td><td>' + est + '</td>' +
         '<td style="white-space:nowrap">' + (x.ESTADO !== 'ANULADO' ? '<button class="btn btn-s btn-sm" title="Imprimir remito" onclick="vrImprimir(' + x.ID_REMITO + ')"><i class="fas fa-print"></i></button> ' : '') + (x.ESTADO !== 'ANULADO' && !x.FOTO_FIRMA ? '<button class="btn btn-s btn-sm" title="Cargar foto del remito firmado" onclick="vrFoto(' + x.ID_REMITO + ')"><i class="fas fa-camera"></i></button> ' : '') + (x.FOTO_FIRMA ? '<button class="btn btn-s btn-sm" title="Ver remito firmado" onclick="asVerImg(' + Number(x.FOTO_FIRMA) + ',\'Remito ' + vEsc(x.NRO) + '\')"><i class="fas fa-image"></i></button> ' : '') + (x.ESTADO !== 'ANULADO' && !x.FACTURA && x.ORIGEN !== 'PRODUCCION' ? '<button class="btn btn-s btn-sm" onclick="vrAnular(' + x.ID_REMITO + ',\'' + vEsc(x.NRO) + '\')">Anular</button>' : '') + '</td></tr>';
     }).join('') + '</tbody></table></div>';
@@ -10547,7 +10548,7 @@ function remVulcanImp(x, filas, nItems) {
   var ini = /^\d{4}-\d{2}-\d{2}/.test(em.INICIO_ACT || '') ? fmtD(em.INICIO_ACT) : (em.INICIO_ACT || '');
   var hora = ''; try { var dd = new Date(Number(x.FECHA)); hora = ('0' + dd.getHours()).slice(-2) + ':' + ('0' + dd.getMinutes()).slice(-2); } catch (eh) {}
   var css = '<style>.rh{display:flex;gap:0;align-items:stretch;page-break-after:always;break-after:page}.rh:last-child{page-break-after:auto;break-after:auto}' +
-    '.rv{position:relative;font-family:Arial,Helvetica,sans-serif;color:#111;box-sizing:border-box;width:50%;min-height:188mm;padding:0 4mm;display:flex;flex-direction:column}.rv+.rv{border-left:1px dashed #888}' +
+    '.rhp{min-width:1000px}@media print{.rhp{min-width:0}}.rv{position:relative;font-family:Arial,Helvetica,sans-serif;color:#111;box-sizing:border-box;width:50%;min-height:188mm;padding:0 4mm;display:flex;flex-direction:column}.rv+.rv{border-left:1px dashed #888}' +
     '.rb{border:1.3px solid #111;border-radius:10px;padding:4px 7px;margin-bottom:4px}.rm{font-family:"Courier New",monospace;font-size:10.5px;font-weight:700;line-height:1.3}' +
     '.rk{font-family:"Courier New",monospace;font-size:10.5px;color:#333}.rs{font-size:10.5px;color:#333}.rd div{font-size:13.5px;line-height:1.45}.rd span{font-family:"Courier New",monospace;font-size:10.5px;color:#333}' +
     '.ri{flex:1;position:relative;padding:3px 5px}.ri table{width:100%;border-collapse:collapse;position:relative}.ri th{font-family:"Courier New",monospace;font-size:10.5px;font-style:italic;font-weight:400;border:0;border-bottom:1px solid #111;background:none;text-align:left;padding:1px 2px}' +
