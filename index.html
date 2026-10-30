@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610302004';
+var EMA_BUILD = '202610302012';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17502,7 +17502,7 @@ function mgPintar() {
   var R = cosT / sinT, g = sinD > 0 ? ((sinD * (1 - MG_.d.IMP)) - cosT) / sinD : -1, col = mgColor(g), ganP = sinD * (1 - MG_.d.IMP) - cosT, d = MG_.desc / 100;
   // Los controles del descuento se arman una sola vez: así no se pierde el dedo en la barra ni el teclado en la casilla
   if (!$id('mg-d')) D.innerHTML = '<div class="card"><div class="card-body">' +
-    '<div class="tdim" style="font-size:12px;text-align:center;margin-bottom:6px">DESCUENTO GENERAL (para todas) · tocá el número y escribilo</div>' +
+    '<div class="tdim" style="font-size:12px;text-align:center;margin-bottom:6px">DESCUENTO GENERAL (para todo) · tocá el número y escribilo</div>' +
     '<div class="mg-ctl"><button type="button" class="btn btn-s mg-b" onclick="mgDesc(-1)">−1</button>' +
     '<div class="mg-dw"><input id="mg-d" class="mg-d" type="text" inputmode="decimal" autocomplete="off" value="' + String(MG_.desc).replace('.', ',') + '" onfocus="this.select()" oninput="mgDescTxt(this.value,true)" onblur="this.value=String(MG_.desc).replace(\'.\',\',\')" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b></div>' +
     '<button type="button" class="btn btn-s mg-b" onclick="mgDesc(1)">+1</button></div>' +
