@@ -75,7 +75,7 @@ function pintar(){
   h+='<div class="box"><h2>Pedido '+esc(P.nro)+'</h2><div class="mu">'+fecha(P.fecha)+' · '+esc(P.nombre)+' · '+(P.entrega==='ENVIO'?'Envío a '+esc(P.localidad):'Retiro en el local')+'</div><span class="est '+e[1]+'">'+esc(e[0])+'</span></div>';
   h+='<div class="box"><table>';
   for(var i=0;i<P.items.length;i++){var x=P.items[i];h+='<tr><td>'+x.q+' × '+esc(x.d)+'<div class="mu">'+pesos(x.p)+' c/u</div></td><td class="n">'+pesos(x.p*x.q)+'</td></tr>';}
-  h+='</table><table class="tt" style="margin-top:6px"><tr><td>Cubiertas</td><td class="n">'+pesos(P.subtotal)+'</td></tr>';
+  h+='</table><table class="tt" style="margin-top:6px"><tr><td>Productos</td><td class="n">'+pesos(P.subtotal)+'</td></tr>';
   if(P.entrega==='ENVIO')h+='<tr><td>Envío'+(P.envio_detalle?' <span class="mu">('+esc(P.envio_detalle)+')</span>':'')+'</td><td class="n">'+(P.estado==='A_COTIZAR'?'a calcular':(P.envio_costo>0?pesos(P.envio_costo):(P.envio_modo==='A'?'a cargo del cliente':'$ 0')))+'</td></tr>';
   h+='<tr class="g"><td>Total</td><td class="n">'+(P.estado==='A_COTIZAR'?'a confirmar':pesos(P.total))+'</td></tr></table><div class="mu" style="margin-top:4px">Precios con IVA incluido.</div></div>';
   h+='<div class="box">'+accion()+'</div>';
@@ -84,7 +84,7 @@ function pintar(){
 function avisoTxt(){
   var t='Hola, hice el pedido '+P.nro+' en la tienda web. ';
   for(var i=0;i<P.items.length;i++)t+='\n• '+P.items[i].q+' x '+P.items[i].d;
-  t+='\n'+(P.entrega==='ENVIO'?'Envío a '+P.localidad+'. Cubiertas: '+pesos(P.subtotal)+' + envío.':'Retiro en el local. Total: '+pesos(P.total)+'.');
+  t+='\n'+(P.entrega==='ENVIO'?'Envío a '+P.localidad+'. Productos: '+pesos(P.subtotal)+' + envío.':'Retiro en el local. Total: '+pesos(P.total)+'.');
   return t+'\nMi pedido: '+location.href.split('&')[0].replace('?nuevo=1','');
 }
 function avisado(){NUEVO=false;try{history.replaceState(null,'','pedido.html?t='+T);}catch(e){}setTimeout(pintar,500);}
