@@ -215,18 +215,22 @@ function chips(){
   $('cMar').innerHTML=h;
 }
 function setRub(r){S.rub=r;S.mar='';S.lim=40;chips();filtrar();}
-// Trabajo base de un servicio: «RETACADO + REFUERZO INTERNO» → RETACADO, «RECAPADO OPCION 2» → RECAPADO
-function trabBase(t){return String(t||'').split(' + ')[0].replace(/\s+OPCION\s*\d+$/,'').trim();}
+// Familia del trabajo (filtro de Servicios): Recapado, Retacado, Vulcanizado, Refuerzos, Relleno y Otros. «RETACADO + REFUERZO…» es Retacado.
+var FAMS=['RECAPADO','RETACADO','VULCANIZADO','REFUERZOS','RELLENO','OTROS'];
+function trabBase(t){var b=String(t||'').split(' + ')[0].toUpperCase();if(/^RECAPADO/.test(b))return 'RECAPADO';if(/^RETACADO/.test(b))return 'RETACADO';if(/^VULCANIZADO/.test(b))return 'VULCANIZADO';if(/^REFUERZO/.test(b))return 'REFUERZOS';if(/^RELLENO/.test(b))return 'RELLENO';return 'OTROS';}
 function chipsExt(){
   var lin=[['CAMIONES','🚚 Camiones'],['AGRICOLA','🚜 Agrícola'],['VIAL','🏗 Vial']],cnt={},tr={},h='';
   EXT.forEach(function(a){if(a.k!==S.div)return;cnt[a.li]=(cnt[a.li]||0)+1;});
-  if(S.div!=='GOM'){
-    if(!S.rub||!cnt[S.rub]){S.rub=cnt.CAMIONES?'CAMIONES':(cnt.AGRICOLA?'AGRICOLA':'');}
+  if(S.div==='SRV'){
+    if(!S.rub||!cnt[S.rub])S.rub=cnt.CAMIONES?'CAMIONES':(cnt.AGRICOLA?'AGRICOLA':'VIAL');
     lin.forEach(function(r){if(cnt[r[0]])h+='<button class="chip'+(S.rub===r[0]?' on':'')+'" onclick="setRub(\''+r[0]+'\')">'+r[1]+' ('+cnt[r[0]]+')</button>';});
+  } else if(S.div==='REC'){
+    h='<button class="chip'+(!S.rub?' on':'')+'" onclick="setRub(\'\')">Todo</button>';
+    lin.forEach(function(r){h+='<button class="chip'+(S.rub===r[0]?' on':'')+'" onclick="setRub(\''+r[0]+'\')">'+r[1]+' ('+(cnt[r[0]]||0)+')</button>';});
   }
   $('cRub').innerHTML=h;h='';
   if(S.div==='SRV'){EXT.forEach(function(a){if(a.k==='SRV'&&a.li===S.rub){var b=trabBase(a.tr);tr[b]=(tr[b]||0)+1;}});
-    var ks=Object.keys(tr).sort();if(ks.length>1){h='<button class="chip'+(!S.mar?' on':'')+'" onclick="setMar(\'\')">Todos los trabajos</button>';ks.forEach(function(b){h+='<button class="chip'+(S.mar===b?' on':'')+'" onclick="setMar(\''+b.replace(/'/g,'')+'\')">'+esc(tit(b))+' ('+tr[b]+')</button>';});}}
+    h='<button class="chip'+(!S.mar?' on':'')+'" onclick="setMar(\'\')">Todos los trabajos</button>';FAMS.forEach(function(b){if(tr[b])h+='<button class="chip'+(S.mar===b?' on':'')+'" onclick="setMar(\''+b+'\')">'+tit(b)+' ('+tr[b]+')</button>';});}
   $('cMar').innerHTML=h;
 }
 function setMar(m){S.mar=m;S.lim=40;chips();filtrar();}
