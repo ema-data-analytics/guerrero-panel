@@ -206,7 +206,7 @@ function cargarVivo(){
 
 function chips(){
   if(S.div==='INS'){chipsIns();return;}
-  if(EXTDIV[S.div]){var hx='';if(S.div==='SRV'){[['','Todas'],['CAMIONES','Camiones'],['AGRICOLA','Agrícola']].forEach(function(r){hx+='<button class="chip'+(S.rub===r[0]?' on':'')+'" onclick="setRub(\''+r[0]+'\')">'+r[1]+'</button>';});}$('cRub').innerHTML=hx;$('cMar').innerHTML='';return;}
+  if(EXTDIV[S.div]){chipsExt();return;}
   var h='';for(var i=0;i<RUB.length;i++){h+='<button class="chip'+(S.rub===RUB[i][0]?' on':'')+'" onclick="setRub(\''+RUB[i][0]+'\')">'+RUB[i][1]+'</button>';}
   $('cRub').innerHTML=h;
   var pres={};for(var j=0;j<D.arts.length;j++){var a=D.arts[j];if(esIns(a))continue;if(VIVO&&!a.ok)continue;if(!S.rub||a.r===S.rub)pres[dis(a).m]=1;}
@@ -215,6 +215,20 @@ function chips(){
   $('cMar').innerHTML=h;
 }
 function setRub(r){S.rub=r;S.mar='';S.lim=40;chips();filtrar();}
+// Trabajo base de un servicio: «RETACADO + REFUERZO INTERNO» → RETACADO, «RECAPADO OPCION 2» → RECAPADO
+function trabBase(t){return String(t||'').split(' + ')[0].replace(/\s+OPCION\s*\d+$/,'').trim();}
+function chipsExt(){
+  var lin=[['CAMIONES','🚚 Camiones'],['AGRICOLA','🚜 Agrícola'],['VIAL','🏗 Vial']],cnt={},tr={},h='';
+  EXT.forEach(function(a){if(a.k!==S.div)return;cnt[a.li]=(cnt[a.li]||0)+1;});
+  if(S.div!=='GOM'){
+    if(!S.rub||!cnt[S.rub]){S.rub=cnt.CAMIONES?'CAMIONES':(cnt.AGRICOLA?'AGRICOLA':'');}
+    lin.forEach(function(r){if(cnt[r[0]])h+='<button class="chip'+(S.rub===r[0]?' on':'')+'" onclick="setRub(\''+r[0]+'\')">'+r[1]+' ('+cnt[r[0]]+')</button>';});
+  }
+  $('cRub').innerHTML=h;h='';
+  if(S.div==='SRV'){EXT.forEach(function(a){if(a.k==='SRV'&&a.li===S.rub){var b=trabBase(a.tr);tr[b]=(tr[b]||0)+1;}});
+    var ks=Object.keys(tr).sort();if(ks.length>1){h='<button class="chip'+(!S.mar?' on':'')+'" onclick="setMar(\'\')">Todos los trabajos</button>';ks.forEach(function(b){h+='<button class="chip'+(S.mar===b?' on':'')+'" onclick="setMar(\''+b.replace(/'/g,'')+'\')">'+esc(tit(b))+' ('+tr[b]+')</button>';});}}
+  $('cMar').innerHTML=h;
+}
 function setMar(m){S.mar=m;S.lim=40;chips();filtrar();}
 function match(a,q){
   if(!q)return true;
@@ -239,7 +253,7 @@ function chipsIns(){
 }
 function filtrar(){
   S.q=$('q').value.trim();
-  if(EXTDIV[S.div]){var rx=[],qq=S.q.toUpperCase().split(/\s+/).filter(function(x){return x;});EXT.forEach(function(a){if(a.k!==S.div)return;if(S.rub&&a.li!==S.rub)return;var t=norm(a.n+' '+a.c+' '+a.me+' '+a.tr),td=dig(a.me);for(var i=0;i<qq.length;i++){var w=norm(qq[i]);if(w&&t.indexOf(w)<0&&!(/^[0-9]+$/.test(w)&&td.indexOf(w)>=0))return;}rx.push(a);});S.res=rx;pintar();return;}
+  if(EXTDIV[S.div]){var rx=[],qq=S.q.toUpperCase().split(/\s+/).filter(function(x){return x;});EXT.forEach(function(a){if(a.k!==S.div)return;if(S.div!=='GOM'&&S.rub&&a.li!==S.rub)return;if(S.mar&&trabBase(a.tr)!==S.mar)return;var t=norm(a.n+' '+a.c+' '+a.me+' '+a.tr),td=dig(a.me);for(var i=0;i<qq.length;i++){var w=norm(qq[i]);if(w&&t.indexOf(w)<0&&!(/^[0-9]+$/.test(w)&&td.indexOf(w)>=0))return;}rx.push(a);});S.res=rx;pintar();return;}
   var r=[];for(var i=0;i<D.arts.length;i++){var a=D.arts[i];if(VIVO&&!a.ok)continue;if((S.div==='INS')!==esIns(a))continue;if(esIns(a)){var sc=D.secs[a.g];if(S.rub&&sc[0].replace(/'/g,'')!==S.rub)continue;if(S.mar&&sc[1].replace(/'/g,'')!==S.mar)continue;if(match(a,S.q))r.push(a);continue;}if(S.rub&&a.r!==S.rub)continue;if(S.mar&&dis(a).m!==S.mar)continue;if(match(a,S.q))r.push(a);}
   // Primero lo que tiene stock
   r.sort(function(x,y){return (y.st>0?1:0)-(x.st>0?1:0);});
@@ -277,8 +291,9 @@ function card(a){
 function cardX(a){
   var q=CAR[a.id]||0, srv=a.k!=='REC', sin=!srv&&a.st<=0;
   var ico=a.k==='GOM'?'🔩':a.k==='SRV'?'🏭':'♻️';
-  var tit=a.k==='SRV'&&a.me?(a.me==='TODAS'?'Otras medidas':a.me):a.n;
-  var sub=a.k==='SRV'?'<b>'+esc(a.tr)+'</b>'+(a.li?' · '+(a.li==='AGRICOLA'?'Agrícola':'Camiones'):''):'';
+  var tit=a.me?(a.me==='TODAS'?'Otras medidas':a.me):a.n;
+  var lin=a.li==='AGRICOLA'?'Agrícola':a.li==='VIAL'?'Vial':a.li==='CAMIONES'?'Camiones':'';
+  var sub=a.k==='SRV'?'<b>'+esc(a.tr)+'</b>'+(lin?' · '+lin:''):(a.k==='REC'?'<b>Recapada</b>'+(lin?' · '+lin:'')+'<br>'+esc(a.n):'');
   var est=srv?'<span class="tag2">Servicio: coordinamos la entrega del casco</span>':(sin?'<span class="sinst">Sin stock</span>':(a.st<=4?'<span class="ult">Últimas '+a.st+'</span>':''));
   var acc=sin?'<a class="btn l" style="text-align:center;text-decoration:none" target="_blank" rel="noopener" href="'+waUrl('Hola, quiero saber cuándo hay: '+a.n)+'">Avisame cuando haya</a>':
     '<div class="qty"><button onclick="paso('+a.id+',-1)">−</button><input id="q'+a.id+'" value="'+(q||1)+'" inputmode="numeric"><button onclick="paso('+a.id+',1)">+</button></div>'+
