@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610302012';
+var EMA_BUILD = '202610302326';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3428,6 +3428,9 @@ async function renderVentas() {
   if (!VB_.f.desde) { VB_.f.desde = vbHoy(30); VB_.f.hasta = vbHoy(0); }
   if (VB_.bor && VB_.bor.ESTADO === 'BORRADOR') return vbEditor();
   vbLista();
+  // Botones del celular: Facturar remitos y Remitos de venta abren directo su ventana
+  var acc = VB_.accion || ''; VB_.accion = '';
+  if (acc === 'FACTURAR') vrFacturar(); else if (acc === 'REMITOS') vrRemitos();
 }
 
 // ── Lista de comprobantes ──
@@ -3451,7 +3454,7 @@ function vbLista() {
     [['', 'Todos'], ['CARGA', 'En carga'], ['DEBE', 'Con saldo'], ['COBRADO', 'Cobrados'], ['ANULADA', 'Anulados']].map(function(o) { return '<option value="' + o[0] + '"' + (f.estado === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
     '</div></div></div>' +
     '<div class="card"><div class="card-hd"><span class="card-title">Comprobantes</span><span class="badge b-blue" id="vb-cnt"></span><span class="mono" style="margin-left:auto" id="vb-tot"></span></div>' +
-    '<div class="tw"><table><thead><tr><th>Fecha</th><th>N°</th><th>Tipo</th><th>Cliente</th><th class="tr">Total</th><th class="tr">Debe</th><th>Estado</th><th></th></tr></thead><tbody id="vb-body"></tbody></table></div></div></div>';
+    '<div class="tw tw-cards"><table><thead><tr><th>Fecha</th><th>N°</th><th>Tipo</th><th>Cliente</th><th class="tr">Total</th><th class="tr">Debe</th><th>Estado</th><th></th></tr></thead><tbody id="vb-body"></tbody></table></div></div></div>';
   vbGrilla();
 }
 function vbFilas() {
@@ -3836,7 +3839,7 @@ async function vrPend() {
     if (!r || !r.ok) { el.innerHTML = '<div class="al al-r">' + vEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
     VR_.pend = r.REMITOS;
     if (!r.REMITOS.length) { el.innerHTML = '<div class="al al-b">Este cliente no tiene remitos pendientes de facturar.</div>'; return; }
-    el.innerHTML = '<div class="tw"><table><thead><tr><th></th><th>Remito</th><th>Fecha</th><th>Qué se factura</th><th class="tr">Neto</th></tr></thead><tbody>' + r.REMITOS.map(function(x, i) {
+    el.innerHTML = '<div class="tw tw-cards"><table><thead><tr><th></th><th>Remito</th><th>Fecha</th><th>Qué se factura</th><th class="tr">Neto</th></tr></thead><tbody>' + r.REMITOS.map(function(x, i) {
       var neto = 0; x.LINEAS.forEach(function(l) { neto += Number(l.NETO || 0) * Number(l.CANT || 0); });
       var sinP = x.SIN_PRECIO.length, nada = !x.LINEAS.length;
       return '<tr><td><input type="checkbox" class="vr-chk" data-i="' + i + '"' + (sinP || nada ? ' disabled' : '') + ' onchange="vrMarcar()" style="width:20px;height:20px"/></td>' +
@@ -3876,7 +3879,7 @@ async function vrRemitos() {
     if (!r || !r.ok) { el.innerHTML = '<div class="al al-r">' + vEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
     if (!r.REMITOS.length) { el.innerHTML = '<div class="al al-b">Todavía no hay remitos de venta. Con «Nuevo remito» se entrega mercadería sin factura y se factura después.</div>'; return; }
     window.VR_LISTA = r.REMITOS;
-    el.innerHTML = '<div class="tw"><table><thead><tr><th>Remito</th><th>Fecha</th><th>Cliente</th><th>Qué se entregó</th><th>Estado</th><th></th></tr></thead><tbody>' + r.REMITOS.map(function(x) {
+    el.innerHTML = '<div class="tw tw-cards"><table><thead><tr><th>Remito</th><th>Fecha</th><th>Cliente</th><th>Qué se entregó</th><th>Estado</th><th></th></tr></thead><tbody>' + r.REMITOS.map(function(x) {
       var soloDev = (x.CUBS || []).length && x.CUBS.every(function(t) { return t.RESULTADO !== 'TERMINADA'; });
       var est = x.ESTADO === 'ANULADO' ? '<span class="badge b-red">Anulado</span>' : (x.FACTURA ? '<span class="badge b-green">' + vEsc(x.FACTURA) + '</span>' : (soloDev ? '<span class="badge">Devolución: no se factura</span>' : '<span class="badge b-yellow">Sin facturar</span>')) + (x.FOTO_FIRMA ? ' <span class="badge b-green">Entregado con foto</span>' : '');
       return '<tr><td><b>' + vEsc(x.NRO) + '</b></td><td>' + vrFecha(x.FECHA) + '</td><td>' + vEsc(x.CLIENTE) + '</td><td>' + x.ITEMS.map(function(i) { return vEsc(i.CANT) + ' × ' + vEsc(i.NOMBRE); }).join('<br>') + '</td><td>' + est + '</td>' +
@@ -3947,7 +3950,7 @@ function vrAgregar() {
 }
 function vrPintarItems() {
   var el = $id('vr-items'); if (!el) return;
-  el.innerHTML = VR_.rem.ITEMS.length ? '<div class="tw"><table><thead><tr><th>Código</th><th>Producto</th><th class="tr">Cant.</th><th></th></tr></thead><tbody>' + VR_.rem.ITEMS.map(function(i, k) {
+  el.innerHTML = VR_.rem.ITEMS.length ? '<div class="tw tw-cards"><table><thead><tr><th>Código</th><th>Producto</th><th class="tr">Cant.</th><th></th></tr></thead><tbody>' + VR_.rem.ITEMS.map(function(i, k) {
     return '<tr><td class="mono">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + '</td><td class="tr">' + i.CANT + '</td><td><button class="btn btn-s btn-sm" onclick="VR_.rem.ITEMS.splice(' + k + ',1);vrPintarItems()">Quitar</button></td></tr>'; }).join('') + '</tbody></table></div>'
     : '<div class="tdim" style="font-size:13px">Todavía no agregaste productos.</div>';
 }
@@ -17269,8 +17272,12 @@ var MV_OPC = [
   ['alarmas', '⚠', 'Alarmas', 'Stock bajo y cosas atrasadas', 'produccion-cubiertas', 'alarmas', 'ENCARGADO_PLANTA'],
   ['stock', '📦', 'Stock de insumos', 'Cuánto hay de cada insumo', 'stock-insumos', '', 'ENCARGADO_PLANTA COMPRAS'],
   ['catalogo', '🛍', 'Catálogo', 'La tienda: cubiertas e insumos con foto', 'precios-nuevos', '', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
-  ['precios-nuevos', '🏷', 'Lista de precios', 'Cubiertas e insumos (elegís arriba)', 'precios-nuevos', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
-  ['margen', '📊', 'Margen con descuento', 'Cubiertas e insumos (elegís arriba)', 'margen', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
+  ['precios-nuevos', '🏷', 'Lista de precios', 'Nuevas, recapadas, servicios, gomería e insumos', 'precios-nuevos', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
+  ['margen', '📊', 'Margen con descuento', 'Nuevas, recapadas, servicios, gomería e insumos', 'margen', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
+  ['ventas', '🧾', 'Ventas', 'Facturas, presupuestos y notas de crédito', 'ventas', '', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
+  ['facturar', '💵', 'Facturar remitos', 'Lo entregado que falta facturar', 'ventas', 'FACTURAR', 'FACTURACION ENCARGADO_SUCURSAL'],
+  ['remitos-venta', '📃', 'Remitos de venta', 'Ver, mandar y hacer remitos', 'ventas', 'REMITOS', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL RECEPCION'],
+  ['pedidos-web', '🛒', 'Pedidos web', 'Lo que piden los clientes en la tienda', 'pedidos-web', '', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
   ['fichaje', '🕘', 'Fichaje', 'Entrada y salida del personal', 'fichaje', '', ''],
   ['asistencia', '👥', 'Asistencia', 'Quién vino, faltas y certificados', 'asistencia', '', ''],
   ['avance', '📈', 'Avance del sistema', 'Qué se hizo y qué sigue', 'avance', '', ''],
@@ -17308,6 +17315,7 @@ function mvAbrir(k) {
   if (o[4] === 'documentos') DC_.tipo = o[5] || '';
   if (o[4] === 'precios-nuevos' && typeof PN_ !== 'undefined') { PN_.div = o[5] || 'CUB'; PN_.rubro = ''; PN_.marca = ''; PN_.promo = 0; }
   if (o[4] === 'margen') { MG_.div = o[5] || 'CUB'; MG_.rubro = ''; }
+  if (o[4] === 'ventas' && typeof VB_ !== 'undefined') VB_.accion = o[5] || '';
   navTo(o[4]);
 }
 // QR del sistema: el otro celular lo escanea, entra con su usuario y lo agrega a la pantalla de inicio (queda el ícono «Vulcan»)
@@ -17528,6 +17536,8 @@ function mgPintar() {
 </script>
 <style>
 .mg-wrap{max-width:640px;margin:0 auto}
+/* Celular: las tablas de Ventas y Remitos se ven como tarjetas, una por renglón (30/10/2026) */
+@media(max-width:700px){.tw-cards{overflow:visible}.tw-cards table,.tw-cards tbody,.tw-cards tr,.tw-cards td{display:block;width:auto}.tw-cards thead{display:none}.tw-cards tr{border:1px solid var(--border);border-radius:10px;margin:0 0 10px;padding:8px 10px;background:var(--bg2,transparent)}.tw-cards td{border:0!important;padding:3px 0!important;text-align:left!important;white-space:normal!important}.tw-cards td:empty{display:none}.tw-cards td .btn{min-height:40px;min-width:44px;margin:2px 4px 2px 0}}
 @media(min-width:900px){.mg-wrap{max-width:980px}}
 .mg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.mg-chips .btn{min-height:38px}
 .mg-lst{border:2px solid var(--accent,#2563eb);border-radius:12px;background:var(--card,#fff);margin-top:6px;margin-bottom:76px}
