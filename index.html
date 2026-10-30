@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '20261030140948';
+var EMA_BUILD = '202610301415';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1450,7 +1450,7 @@ function emaVersionNueva(cb) {
 }
 // Texto de la versión: el número es la hora de publicación (UTC) → se muestra en hora de Argentina
 function emaVersionTxt(v) {
-  v = String(v || EMA_BUILD); var m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(v); if (!m) return '';
+  v = String(v || EMA_BUILD); var m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})?$/.exec(v); if (!m) return '';
   var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) - 3 * 3600000);
   var z = function(n) { return ('0' + n).slice(-2); };
   return z(d.getUTCDate()) + '/' + z(d.getUTCMonth() + 1) + ' ' + z(d.getUTCHours()) + ':' + z(d.getUTCMinutes());
@@ -10498,32 +10498,32 @@ function remVulcanImp(x, filas, nItems) {
   var cuitF = function(c) { c = String(c || '').replace(/\D/g, ''); return c.length === 11 ? c.slice(0, 2) + '-' + c.slice(2, 10) + '-' + c.slice(10) : c; };
   var ini = /^\d{4}-\d{2}-\d{2}/.test(em.INICIO_ACT || '') ? fmtD(em.INICIO_ACT) : (em.INICIO_ACT || '');
   var hora = ''; try { var dd = new Date(Number(x.FECHA)); hora = ('0' + dd.getHours()).slice(-2) + ':' + ('0' + dd.getMinutes()).slice(-2); } catch (eh) {}
-  var media = nItems <= 6;
-  var css = '<style>.rv{position:relative;font-family:Arial,Helvetica,sans-serif;color:#111;box-sizing:border-box;padding:2mm 1mm;display:flex;flex-direction:column}' +
-    '.rv.m{height:136mm;overflow:hidden}.rv.f{min-height:270mm;page-break-after:always;break-after:page}.rv.f:last-child{page-break-after:auto}.rcorte{border-top:1px dashed #888;margin:1mm 0;height:0}' +
-    '.rb{border:1.3px solid #111;border-radius:10px;padding:4px 8px;margin-bottom:4px}.rc{display:grid;grid-template-columns:1fr 70px 1fr;gap:6px;align-items:start}.rm{font-family:"Courier New",monospace;font-size:8.5px;font-weight:700}' +
-    '.rl{text-align:center}.rl .le{display:inline-block;border:1.3px solid #111;font-size:24px;font-weight:800;padding:0 10px;line-height:28px}.rl small{display:block;font-size:7px;margin-top:2px}' +
-    '.rk{font-family:"Courier New",monospace;font-size:8.5px;color:#333}.rs{font-size:8.5px;color:#333}.rd{display:grid;grid-template-columns:1fr 1fr;gap:1px 10px;font-size:10.5px}.rd span{font-family:"Courier New",monospace;font-size:8.5px;color:#333}' +
-    '.ri{flex:1;position:relative;padding:3px 6px;overflow:hidden}.ri table{width:100%;border-collapse:collapse}.ri th{font-family:"Courier New",monospace;font-size:8.5px;font-style:italic;border:0;border-bottom:1px solid #111;background:none;text-align:left;padding:1px 3px}' +
-    '.ri td{border:0;font-size:10px;padding:2px 3px;vertical-align:top}.rn{text-align:right;white-space:nowrap}.rw{position:absolute;left:0;right:0;top:30%;text-align:center;opacity:.10}.rw img{width:230px}' +
-    '.rp{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;font-size:8.5px}.rp .fi{display:flex;gap:14px}.rp .fi div{border-top:1px solid #111;width:90px;text-align:center;padding-top:2px}.rp svg,.rp img{width:64px;height:64px}</style>';
+  var css = '<style>.rh{display:flex;gap:0;align-items:stretch;page-break-after:always;break-after:page}.rh:last-child{page-break-after:auto;break-after:auto}' +
+    '.rv{position:relative;font-family:Arial,Helvetica,sans-serif;color:#111;box-sizing:border-box;width:50%;min-height:188mm;padding:0 4mm;display:flex;flex-direction:column}.rv+.rv{border-left:1px dashed #888}' +
+    '.rb{border:1.3px solid #111;border-radius:10px;padding:4px 7px;margin-bottom:4px}.rm{font-family:"Courier New",monospace;font-size:8px;font-weight:700;line-height:1.25}' +
+    '.rk{font-family:"Courier New",monospace;font-size:8px;color:#333}.rs{font-size:8px;color:#333}.rd div{font-size:10px;line-height:1.35}.rd span{font-family:"Courier New",monospace;font-size:8px;color:#333}' +
+    '.ri{flex:1;position:relative;padding:3px 5px}.ri table{width:100%;border-collapse:collapse;position:relative}.ri th{font-family:"Courier New",monospace;font-size:8px;font-style:italic;font-weight:400;border:0;border-bottom:1px solid #111;background:none;text-align:left;padding:1px 2px}' +
+    '.ri td{border:0;font-size:9.5px;padding:2px 2px;vertical-align:top}.rn{text-align:right;white-space:nowrap}.rw{position:absolute;left:0;right:0;top:35%;text-align:center;opacity:.10}.rw img{width:220px}' +
+    '.rp{font-size:8px;margin-top:3px}.rp .fi{display:flex;gap:10px;justify-content:flex-end;margin-top:4px}.rp .fi div{border-top:1px solid #111;width:72px;text-align:center;padding-top:2px}.rp img,.rp svg{width:58px;height:58px}</style>';
   var copia = function(cual) {
-    return '<div class="rv ' + (media ? 'm' : 'f') + '">' +
-      '<div class="rb rc"><div><img src="' + logo + '" crossorigin="anonymous" style="height:40px"/><div class="rm" style="margin-top:3px">' + pcEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantread.com</div><div class="rm" style="text-decoration:underline;margin-top:2px">I.V.A. Responsable Inscripto</div></div>' +
-      '<div class="rl"><span class="le">X</span><small>Documento no válido como factura</small></div>' +
-      '<div style="font-size:10px"><div style="text-align:right;font-size:9px">(' + cual + ')</div><div style="font-size:15px;font-weight:800">REMITO ' + pcEsc(x.NRO) + '</div>' +
-      '<div>Fecha: <b>' + fmtD(x.FECHA) + '</b> &nbsp; Hora: <b>' + hora + '</b></div><div style="font-size:9px;margin-top:2px">C.U.I.T.: ' + pcEsc(cuitF(em.CUIT)) + '<br>Ing.Brutos: ' + pcEsc(em.IIBB || '') + '<br>Inicio de Actividades: ' + pcEsc(ini) + '</div></div></div>' +
-      '<div class="rb rd"><div><span>CUIT o Doc.Ident:</span> <b>' + pcEsc(cuitF(x.CUIT)) + '</b></div><div>' + pcEsc(x.COND_IVA || '') + '</div>' +
-      '<div style="grid-column:1/3"><span>Apellido y Nombres:</span> <b style="font-size:12px">' + pcEsc(x.CLIENTE) + '</b></div>' +
-      '<div><span>Domicilio:</span> ' + pcEsc(x.DIRECCION || '') + '</div><div><span>Provincia:</span> ' + pcEsc(x.PROVINCIA || '') + '</div>' +
-      '<div><span>Localidad:</span> ' + pcEsc(x.LOCALIDAD || '') + ' ' + pcEsc(x.CP || '') + '</div><div><span>Vendedor:</span> ' + pcEsc(x.VENDEDOR || 'GERENCIA') + '</div>' +
-      '<div><span>Condic. de Venta:</span> ' + pcEsc(x.COND_PAGO || 'Cta.Ctes.') + '</div><div><span>' + pcEsc(x.REF_TIT || 'Orden de servicio:') + '</span> ' + pcEsc(x.NRO_OT || x.REF || '') + '</div></div>' +
-      '<div class="rb ri"><div class="rw"><img src="' + logo + '" crossorigin="anonymous"/></div><table><thead><tr><th style="width:80px">Nº Artículo</th><th>Descripción</th><th class="rn" style="width:70px">Cantidad U.M</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
-      '<div class="rp"><div><div style="text-decoration:underline">Observaciones:</div><div>' + pcEsc(x.OBSERVACIONES || '') + '</div><div style="margin-top:3px;max-width:330px">Nota: se recomienda para su GARANTÍA, el uso en los neumáticos radiales y convencionales con arreglo, refuerzo interior o exterior, el uso de CÁMARAS NUEVAS para evitar filtraciones y un mejor rendimiento del neumático.</div></div>' +
-      (qr ? '<div style="text-align:center;font-size:7px">' + qr + '<div>Foto del remito firmado</div></div>' : '') +
+    return '<div class="rv">' +
+      '<div class="rb" style="display:flex;justify-content:space-between;gap:6px"><div><img src="' + logo + '" crossorigin="anonymous" style="height:38px"/><div class="rm" style="margin-top:3px">' + pcEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantread.com<br><u>I.V.A. Responsable Inscripto</u></div></div>' +
+      '<div style="text-align:right;font-size:9.5px;min-width:118px"><div style="font-size:9px">(' + cual + ')</div><div style="font-size:13px;font-weight:800;margin:2px 0">REMITO ' + pcEsc(x.NRO) + '</div>' +
+      '<div>Fecha: <b>' + fmtD(x.FECHA) + '</b></div><div>Hora: <b>' + hora + '</b></div><div style="font-size:8px;margin-top:3px;line-height:1.3">C.U.I.T.: ' + pcEsc(cuitF(em.CUIT)) + '<br>Ing.Brutos: ' + pcEsc(em.IIBB || '') + '<br>Inicio de Actividades: ' + pcEsc(ini) + '</div>' +
+      '<div style="font-size:7px;border:1px solid #111;display:inline-block;padding:0 4px;margin-top:3px">X · Documento no válido como factura</div></div></div>' +
+      '<div class="rb rd"><div><span>CUIT o Doc.Ident:</span> <b>' + pcEsc(cuitF(x.CUIT)) + '</b> &nbsp; <span style="font-family:Arial;font-size:9px">' + pcEsc(x.COND_IVA || '') + '</span></div>' +
+      '<div><span>Apellido y Nombres:</span> <b style="font-size:11.5px">' + pcEsc(x.CLIENTE) + '</b></div>' +
+      '<div><span>Domicilio:</span> ' + pcEsc(x.DIRECCION || '') + '</div>' +
+      '<div><span>Localidad:</span> ' + pcEsc(x.LOCALIDAD || '') + ' ' + pcEsc(x.CP || '') + ' &nbsp; <span>Provincia:</span> ' + pcEsc(x.PROVINCIA || '') + '</div>' +
+      '<div><span>Condic. de Venta:</span> ' + pcEsc(x.COND_PAGO || 'Cta.Ctes.') + ' &nbsp; <span>Vendedor:</span> ' + pcEsc(x.VENDEDOR || 'GERENCIA') + '</div>' +
+      '<div><span>' + pcEsc(x.REF_TIT || 'Orden de servicio:') + '</span> ' + pcEsc(x.NRO_OT || x.REF || '') + '</div></div>' +
+      '<div class="rb ri"><div class="rw"><img src="' + logo + '" crossorigin="anonymous"/></div><table><thead><tr><th style="width:62px">Nº Artículo</th><th>Descripción</th><th class="rn" style="width:56px">Cantidad U.M</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+      '<div class="rp"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:6px"><div><u>Observaciones:</u> ' + pcEsc(x.OBSERVACIONES || '') +
+      '<div style="margin-top:4px">Nota: se recomienda para su GARANTÍA, el uso en los neumáticos radiales y convencionales con arreglo, refuerzo interior o exterior, el uso de CÁMARAS NUEVAS para evitar filtraciones y un mejor rendimiento del neumático.</div></div>' +
+      (qr ? '<div style="text-align:center;font-size:6.5px;flex:none">' + qr + 'Foto del remito firmado</div>' : '') + '</div>' +
       '<div class="fi"><div>Documento</div><div>Aclaración</div><div>Firma</div></div></div></div>';
   };
-  pcImprimir('Remito ' + x.NRO + ' ' + x.CLIENTE, css + copia('Original') + (media ? '<div class="rcorte"></div>' : '') + copia('Duplicado'));
+  pcImprimir('Remito ' + x.NRO + ' ' + x.CLIENTE, css + '<div class="rh">' + copia('Original') + copia('Duplicado') + '</div>', true);
 }
 async function pcAnularOT() { var m = await uiPedir('Motivo de la anulación de la orden de servicio:', { obligatorio: true }); if (m === null) return; var r = await gsRun('gsPC_AnularOT', PC_.ot.ot.ID_OT, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT anulada: las cubiertas volvieron a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
 function pcVerCosto(idCub) {
