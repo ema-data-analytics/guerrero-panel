@@ -27,7 +27,7 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 .chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
 .chip{flex:0 0 auto;border:1px solid var(--li);background:#fff;border-radius:18px;padding:6px 12px;font-size:13px;cursor:pointer;white-space:nowrap}
 .chip.on{background:var(--az);color:#fff;border-color:var(--az)}
-.divs{display:flex;gap:0;margin:0 0 8px;border:1px solid var(--az);border-radius:10px;overflow:hidden}.divs button{flex:1;border:0;background:#fff;color:var(--az);padding:10px 6px;font-size:14px;font-weight:700;cursor:pointer}.divs button.on{background:var(--az);color:#fff}
+.divs{display:flex;gap:0;margin:0 0 8px;border:1px solid var(--az);border-radius:10px;overflow:hidden}.divs{flex-wrap:wrap}.divs button{flex:1 1 18%;border:0;border-right:1px solid #e2e8f0;background:#fff;color:var(--az);padding:10px 6px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}@media(max-width:620px){.divs button{flex:1 1 30%;border-bottom:1px solid #e2e8f0}}.srvc{display:grid;place-items:center;width:100%;height:100%;min-height:150px;font-size:46px;background:#f1f5f9}.tag2{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:2px 7px;background:#eef2f7;color:#334155;margin-top:4px}.divs button.on{background:var(--az);color:#fff}
 .ph img.ti{max-width:88%;max-height:88%;object-fit:contain}.cod{font-size:11px;color:var(--mu);font-family:ui-monospace,monospace}.nin{font-size:14px;font-weight:700;color:var(--az);line-height:1.25;min-height:2.5em}
 .info{color:var(--mu);font-size:13px;margin:4px 2px 10px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
@@ -87,7 +87,7 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 
 <main>
 <div class="bar">
-<div class="divs" id="cDiv"><button id="dvC" class="on" onclick="setDiv('CUB')">🛞 Cubiertas</button><button id="dvI" onclick="setDiv('INS')">🔧 Insumos y accesorios</button></div>
+<div class="divs" id="cDiv"><button id="dvC" class="on" onclick="setDiv('CUB')">🚗 Cubiertas</button><button id="dvR" onclick="setDiv('REC')">♻️ Recapadas</button><button id="dvS" onclick="setDiv('SRV')">🏭 Servicios</button><button id="dvG" onclick="setDiv('GOM')">🔩 Gomería</button><button id="dvI" onclick="setDiv('INS')">🔧 Insumos y accesorios</button></div>
 <input class="srch" id="q" placeholder="Buscá tu medida: 205/55R16, 2055516, 295 80 22.5, AT3..." oninput="filtrar()" autocomplete="off">
 <div class="chips" id="cRub"></div>
 <div class="chips" id="cMar"></div>
@@ -141,7 +141,9 @@ var RUB=[['','Todo'],['AUTO','Auto'],['CAMIONETA','Camioneta / SUV'],['CAMION','
 var LOGOK={'GITI':'GITI','GT RADIAL':'GT_RADIAL','WANLI':'WANLI','SUNNY':'SUNNY','GOODYEAR':'GOODYEAR','MIRAGE':'MIRAGE','ASCENSO':'ASCENSO'};
 var MARCAS=['GITI','GT RADIAL','WANLI','SUNNY','GOODYEAR','KELLY','COOPER','MIRAGE','ASCENSO'];
 var S={div:'CUB',rub:'',mar:'',q:'',lim:40,res:[]};
-try{if(/insumo/i.test(location.hash))S.div='INS';}catch(e){}
+try{if(/insumo/i.test(location.hash))S.div='INS';else if(/servicio/i.test(location.hash))S.div='SRV';else if(/recapad/i.test(location.hash))S.div='REC';else if(/gomer/i.test(location.hash))S.div='GOM';}catch(e){}
+// Recapadas, servicios de producción y gomería: vienen del servidor con el precio de la lista vigente (servicios sin stock)
+var EXT=[], EXTDIV={REC:'recapadas',SRV:'servicios',GOM:'gomeria'};
 var VIVO=null, CFG={wa:'',envio_modo:'B',mp:false,transf:false,cuotas:''}, ENT='';
 var CAR={};
 try{CAR=JSON.parse(localStorage.getItem('vt_carro')||'{}')||{};}catch(e){CAR={};}
@@ -163,9 +165,9 @@ function cuotasHtml(P,planes,boton){var h='<div class="cuo-cont">Precio de conta
 
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function esIns(a){return a.r==='INSUMOS';}
-function dis(a){if(esIns(a)){var s=D.secs[a.g]||['','',''];return {m:s[1],n:a.n,i:s[2]?'brio/'+s[2]:'',k:s[0]};}return D.dis[a.s];}
-function nomArt(a){return esIns(a)?a.n+' (cód. '+a.c+')':a.me+' '+mNom(dis(a).m)+' '+dis(a).n;}
-function setDiv(d){S.div=d;S.rub='';S.mar='';S.lim=40;$('dvC').className=d==='CUB'?'on':'';$('dvI').className=d==='INS'?'on':'';$('q').placeholder=d==='INS'?'Buscá por nombre o código: parche, válvula, raspa, AA0775...':'Buscá tu medida: 205/55R16, 2055516, 295 80 22.5, AT3...';try{history.replaceState(null,'',d==='INS'?'#insumos':location.pathname+location.search);}catch(e){}chips();filtrar();}
+function dis(a){if(a.x)return {m:'',n:a.n,i:'',k:''};if(esIns(a)){var s=D.secs[a.g]||['','',''];return {m:s[1],n:a.n,i:s[2]?'brio/'+s[2]:'',k:s[0]};}return D.dis[a.s];}
+function nomArt(a){if(a.x)return a.n+(a.k==='REC'?'':' (servicio: coordinamos la entrega del casco)');return esIns(a)?a.n+' (cód. '+a.c+')':a.me+' '+mNom(dis(a).m)+' '+dis(a).n;}
+function setDiv(d){S.div=d;S.rub='';S.mar='';S.lim=40;['C','R','S','G','I'].forEach(function(x){var b=$('dv'+x);if(b)b.className=({C:'CUB',R:'REC',S:'SRV',G:'GOM',I:'INS'})[x]===d?'on':'';});$('q').placeholder=d==='INS'?'Buscá por nombre o código: parche, válvula, raspa, AA0775...':d==='SRV'?'Buscá medida o trabajo: 18.4 38, 295 80, retacado...':d==='REC'||d==='GOM'?'Buscá por nombre o medida':'Buscá tu medida: 205/55R16, 2055516, 295 80 22.5, AT3...';try{history.replaceState(null,'',d==='INS'?'#insumos':EXTDIV[d]?'#'+EXTDIV[d]:location.pathname+location.search);}catch(e){}chips();filtrar();}
 function tit(s){s=String(s).toLowerCase();return s.charAt(0).toUpperCase()+s.slice(1);}
 function mNom(m){return m==='GT RADIAL'?'GT Radial':m;}
 function logo(m){return LOGOK[m]?'<img src="logos/'+LOGOK[m]+'.png" alt="'+esc(m)+'">':'<b>'+esc(m)+'</b>';}
@@ -194,6 +196,7 @@ function cargarVivo(){
     CFG.wa=r.wa||'';CFG.envio_modo=r.envio_modo||'B';CFG.mp=!!r.mp;CFG.transf=!!r.transf;CFG.cuotas=r.cuotas||'';
     VIVO={};
     for(var i=0;i<r.arts.length;i++){VIVO[r.arts[i][0]]=1;var a=BYID[r.arts[i][0]];if(a){a.p=r.arts[i][1];a.st=r.arts[i][2];a.ok=true;}}
+    EXT=[];(r.extra||[]).forEach(function(e){if(BYID[e.id]&&!BYID[e.id].x)return;var o={id:e.id,n:e.n,c:e.c,p:e.p,st:e.st,k:e.k,me:e.me,tr:e.tr,li:e.li,x:1,ok:true,r:'X'+e.k,sp:''};BYID[e.id]=o;VIVO[e.id]=1;EXT.push(o);});
     for(var k in CAR){var b=BYID[k];if(!b||!b.ok||b.st<=0)delete CAR[k];else if(CAR[k]>b.st)CAR[k]=b.st;}
     guardar();cuenta();
     $('waLink').href=waUrl('Hola, tengo una consulta sobre neumáticos');
@@ -203,6 +206,7 @@ function cargarVivo(){
 
 function chips(){
   if(S.div==='INS'){chipsIns();return;}
+  if(EXTDIV[S.div]){var hx='';if(S.div==='SRV'){[['','Todas'],['CAMIONES','Camiones'],['AGRICOLA','Agrícola']].forEach(function(r){hx+='<button class="chip'+(S.rub===r[0]?' on':'')+'" onclick="setRub(\''+r[0]+'\')">'+r[1]+'</button>';});}$('cRub').innerHTML=hx;$('cMar').innerHTML='';return;}
   var h='';for(var i=0;i<RUB.length;i++){h+='<button class="chip'+(S.rub===RUB[i][0]?' on':'')+'" onclick="setRub(\''+RUB[i][0]+'\')">'+RUB[i][1]+'</button>';}
   $('cRub').innerHTML=h;
   var pres={};for(var j=0;j<D.arts.length;j++){var a=D.arts[j];if(esIns(a))continue;if(VIVO&&!a.ok)continue;if(!S.rub||a.r===S.rub)pres[dis(a).m]=1;}
@@ -235,6 +239,7 @@ function chipsIns(){
 }
 function filtrar(){
   S.q=$('q').value.trim();
+  if(EXTDIV[S.div]){var rx=[],qq=S.q.toUpperCase().split(/\s+/).filter(function(x){return x;});EXT.forEach(function(a){if(a.k!==S.div)return;if(S.rub&&a.li!==S.rub)return;var t=norm(a.n+' '+a.c+' '+a.me+' '+a.tr),td=dig(a.me);for(var i=0;i<qq.length;i++){var w=norm(qq[i]);if(w&&t.indexOf(w)<0&&!(/^[0-9]+$/.test(w)&&td.indexOf(w)>=0))return;}rx.push(a);});S.res=rx;pintar();return;}
   var r=[];for(var i=0;i<D.arts.length;i++){var a=D.arts[i];if(VIVO&&!a.ok)continue;if((S.div==='INS')!==esIns(a))continue;if(esIns(a)){var sc=D.secs[a.g];if(S.rub&&sc[0].replace(/'/g,'')!==S.rub)continue;if(S.mar&&sc[1].replace(/'/g,'')!==S.mar)continue;if(match(a,S.q))r.push(a);continue;}if(S.rub&&a.r!==S.rub)continue;if(S.mar&&dis(a).m!==S.mar)continue;if(match(a,S.q))r.push(a);}
   // Primero lo que tiene stock
   r.sort(function(x,y){return (y.st>0?1:0)-(x.st>0?1:0);});
@@ -269,10 +274,22 @@ function card(a){
   return '<div class="card'+(sin?' cardx':'')+'"><div class="ph">'+mk+im+'</div><div class="bdy"><div class="med">'+esc(a.me)+'</div><div class="dis"><b>'+esc(mNom(d.m))+'</b> '+esc(d.n)+'</div><div class="sp">'+esc(a.sp)+' '+est+'</div>'+
   '<div class="pr">'+pesos(a.p)+' <small>c/IVA'+(hayCuotas()?' · contado':'')+'</small></div>'+(hayCuotas()&&!sin?'<button class="vc" onclick="verCuotas('+a.id+')">Ver cuotas</button>':'')+'<div class="add">'+acc+'</div></div></div>';
 }
+function cardX(a){
+  var q=CAR[a.id]||0, srv=a.k!=='REC', sin=!srv&&a.st<=0;
+  var ico=a.k==='GOM'?'🔩':a.k==='SRV'?'🏭':'♻️';
+  var tit=a.k==='SRV'&&a.me?(a.me==='TODAS'?'Otras medidas':a.me):a.n;
+  var sub=a.k==='SRV'?'<b>'+esc(a.tr)+'</b>'+(a.li?' · '+(a.li==='AGRICOLA'?'Agrícola':'Camiones'):''):'';
+  var est=srv?'<span class="tag2">Servicio: coordinamos la entrega del casco</span>':(sin?'<span class="sinst">Sin stock</span>':(a.st<=4?'<span class="ult">Últimas '+a.st+'</span>':''));
+  var acc=sin?'<a class="btn l" style="text-align:center;text-decoration:none" target="_blank" rel="noopener" href="'+waUrl('Hola, quiero saber cuándo hay: '+a.n)+'">Avisame cuando haya</a>':
+    '<div class="qty"><button onclick="paso('+a.id+',-1)">−</button><input id="q'+a.id+'" value="'+(q||1)+'" inputmode="numeric"><button onclick="paso('+a.id+',1)">+</button></div>'+
+    '<button class="btn'+(q?' o':'')+'" id="b'+a.id+'" onclick="agregar('+a.id+')">'+(q?'En pedido ('+q+')':'Agregar')+'</button>';
+  return '<div class="card'+(sin?' cardx':'')+'"><div class="ph"><div class="srvc">'+ico+'</div></div><div class="bdy"><div class="med">'+esc(tit)+'</div>'+(sub?'<div class="dis">'+sub+'</div>':'')+'<div class="sp">Cód. '+esc(a.c)+'</div>'+est+
+  '<div class="pr">'+pesos(a.p)+' <small>c/IVA</small></div><div class="add">'+acc+'</div></div></div>';
+}
 function pintar(){
-  var h='';var n=Math.min(S.lim,S.res.length);for(var i=0;i<n;i++)h+=(esIns(S.res[i])?cardIns(S.res[i]):card(S.res[i]));
+  var h='';var n=Math.min(S.lim,S.res.length);for(var i=0;i<n;i++)h+=(S.res[i].x?cardX(S.res[i]):esIns(S.res[i])?cardIns(S.res[i]):card(S.res[i]));
   $('grid').innerHTML=h||(S.div==='INS'?'<p class="note">No encontramos ese producto. <a target="_blank" rel="noopener" href="'+waUrl('Hola, busco '+S.q)+'">Escribinos</a> y te lo conseguimos.</p>':'')||'<p class="note">No encontramos esa medida. <a target="_blank" rel="noopener" href="'+waUrl('Hola, busco la medida '+S.q)+'">Escribinos</a> y te la conseguimos.</p>';
-  $('cnt').textContent=S.res.length+(S.div==='INS'?' productos':' medidas')+(S.q?' para "'+S.q+'"':'');
+  $('cnt').textContent=S.res.length+(S.div==='INS'||S.div==='REC'||S.div==='GOM'?' productos':S.div==='SRV'?' servicios':' medidas')+(S.q?' para "'+S.q+'"':'');
   $('more').style.display=S.res.length>S.lim?'block':'none';
 }
 function paso(id,d){var e=$('q'+id);var a=BYID[id];var v=Math.max(1,(parseInt(e.value,10)||1)+d);if(a&&v>a.st)v=a.st;e.value=v;}
@@ -284,7 +301,7 @@ function cerrarCarro(){$('dr').className='drawer';pintar();}
 function pintarCarro(){
   var h='',t=0,n=0;
   for(var k in CAR){var a=BYID[k];if(!a)continue;var d=dis(a);var q=CAR[k];t+=a.p*q;n++;
-    h+='<div class="it">'+(d.i?'<img src="img/'+esc(d.i)+'">':'')+'<div class="x"><b>'+(esIns(a)?esc(a.n):esc(a.me)+' · '+esc(d.n))+'</b>'+(esIns(a)?'Cód. '+esc(a.c):esc(mNom(d.m)))+' · '+q+' × '+pesos(a.p)+'<br><b>'+pesos(a.p*q)+'</b></div>'+
+    h+='<div class="it">'+(d.i?'<img src="img/'+esc(d.i)+'">':'')+'<div class="x"><b>'+(a.x||esIns(a)?esc(a.n):esc(a.me)+' · '+esc(d.n))+'</b>'+(a.x||esIns(a)?'Cód. '+esc(a.c)+(a.x&&a.k!=='REC'?' · servicio':''):esc(mNom(d.m)))+' · '+q+' × '+pesos(a.p)+'<br><b>'+pesos(a.p*q)+'</b></div>'+
     '<div class="qty"><button onclick="cq('+k+',-1)">−</button><input value="'+q+'" readonly><button onclick="cq('+k+',1)">+</button></div><button class="rm" onclick="cq('+k+',-999)">✕</button></div>';}
   $('items').innerHTML=h||'<p class="note" style="padding:20px 0">Todavía no agregaste cubiertas.</p>';
   $('frm').style.display=n?'block':'none';$('bConf').style.display=n?'block':'none';$('waNota').style.display=n?'block':'none';
