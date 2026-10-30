@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610301419';
+var EMA_BUILD = '202610301427';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3887,7 +3887,7 @@ function vrImprimir(id) {
   var x = (window.VR_LISTA || []).filter(function(r) { return String(r.ID_REMITO) === String(id); })[0]; if (!x) return;
   var f3 = function(n) { return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
   var filas = x.ITEMS.map(function(i) { return '<tr><td class="rk">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + '</td><td class="rn">' + f3(i.CANT) + ' c/u</td></tr>'; }).join('');
-  x.REF_TIT = 'Factura:'; x.REF = x.FACTURA || 'Pendiente'; x.OBSERVACIONES = x.OBS;
+  x.REF_TIT = 'Factura:'; x.REF = x.FACTURA || 'Pendiente'; x.OBSERVACIONES = x.OBS; x._CAP = 16;
   remVulcanImp(x, filas, Math.ceil(x.ITEMS.length / 2));
 }
 function vrNuevo() {
@@ -3958,7 +3958,7 @@ function feF(d) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); retu
 function feCuitF(c) { c = String(c || '').replace(/\D/g, ''); return c.length === 11 ? c.slice(0, 2) + '-' + c.slice(2, 10) + '-' + c.slice(10) : c; }
 async function feImprimir(r) {
   var v = r.VENTA, fe = v.FE, an = v.ESTADO === 'ANULADA', esA = fe.LETRA === 'A', nc = /^NC/.test(v.TIPO_COMP);
-  var tit = (nc ? 'NOTA DE CREDITO' : 'FACTURA'), qr = '';
+  var tit = (nc ? 'NOTA DE CREDITO' : (/^ND/.test(v.TIPO_COMP) ? 'NOTA DE DEBITO' : 'FACTURA')), qr = '';
   try { if (fe.QR) { await feLibQR(); qr = feQRsvg(fe.QR, 110); } } catch (e) { qr = ''; }
   var prueba = fe.AMBIENTE !== 'PROD', em = fe.EMISOR, nro = String(v.NRO_COMP || '').split('-');
   var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
@@ -10500,31 +10500,33 @@ function remVulcanImp(x, filas, nItems) {
   var hora = ''; try { var dd = new Date(Number(x.FECHA)); hora = ('0' + dd.getHours()).slice(-2) + ':' + ('0' + dd.getMinutes()).slice(-2); } catch (eh) {}
   var css = '<style>.rh{display:flex;gap:0;align-items:stretch;page-break-after:always;break-after:page}.rh:last-child{page-break-after:auto;break-after:auto}' +
     '.rv{position:relative;font-family:Arial,Helvetica,sans-serif;color:#111;box-sizing:border-box;width:50%;min-height:188mm;padding:0 4mm;display:flex;flex-direction:column}.rv+.rv{border-left:1px dashed #888}' +
-    '.rb{border:1.3px solid #111;border-radius:10px;padding:4px 7px;margin-bottom:4px}.rm{font-family:"Courier New",monospace;font-size:9.5px;font-weight:700;line-height:1.25}' +
-    '.rk{font-family:"Courier New",monospace;font-size:9.5px;color:#333}.rs{font-size:9.5px;color:#333}.rd div{font-size:12px;line-height:1.4}.rd span{font-family:"Courier New",monospace;font-size:9.5px;color:#333}' +
-    '.ri{flex:1;position:relative;padding:3px 5px}.ri table{width:100%;border-collapse:collapse;position:relative}.ri th{font-family:"Courier New",monospace;font-size:9.5px;font-style:italic;font-weight:400;border:0;border-bottom:1px solid #111;background:none;text-align:left;padding:1px 2px}' +
-    '.ri td{border:0;font-size:11.5px;padding:2px 2px;vertical-align:top}.rn{text-align:right;white-space:nowrap}.rw{position:absolute;left:0;right:0;top:35%;text-align:center;opacity:.10}.rw img{width:220px}' +
-    '.rp{font-size:9.5px;margin-top:3px}.rp .fi{display:flex;gap:10px;justify-content:flex-end;margin-top:4px}.rp .fi div{border-top:1px solid #111;width:72px;text-align:center;padding-top:2px}.rp img,.rp svg{width:62px;height:62px}' +
-    '@media print{@page{size:A4 portrait;margin:8mm}.rhp{width:194mm;height:280mm;overflow:hidden;position:relative}.rhp .rh{position:absolute;top:0;left:0;width:280mm;height:194mm;transform-origin:top left;transform:translateX(194mm) rotate(90deg)}.rhp .rv{min-height:0;height:194mm}}</style>';
-  var copia = function(cual) {
+    '.rb{border:1.3px solid #111;border-radius:10px;padding:4px 7px;margin-bottom:4px}.rm{font-family:"Courier New",monospace;font-size:10.5px;font-weight:700;line-height:1.3}' +
+    '.rk{font-family:"Courier New",monospace;font-size:10.5px;color:#333}.rs{font-size:10.5px;color:#333}.rd div{font-size:13.5px;line-height:1.45}.rd span{font-family:"Courier New",monospace;font-size:10.5px;color:#333}' +
+    '.ri{flex:1;position:relative;padding:3px 5px}.ri table{width:100%;border-collapse:collapse;position:relative}.ri th{font-family:"Courier New",monospace;font-size:10.5px;font-style:italic;font-weight:400;border:0;border-bottom:1px solid #111;background:none;text-align:left;padding:1px 2px}' +
+    '.ri td{border:0;font-size:13px;padding:2px 2px;vertical-align:top}.rn{text-align:right;white-space:nowrap}.rw{position:absolute;left:0;right:0;top:35%;text-align:center;opacity:.10}.rw img{width:220px}' +
+    '.rp{font-size:10.5px;margin-top:3px}.rp .fi{display:flex;gap:10px;justify-content:flex-end;margin-top:4px}.rp .fi div{border-top:1px solid #111;width:72px;text-align:center;padding-top:2px}.rp img,.rp svg{width:62px;height:62px}' +
+    '@media print{@page{size:A4 portrait;margin:8mm}.rhp{width:194mm;height:280mm;overflow:hidden;position:relative;page-break-after:always;break-after:page}.rhp:last-child{page-break-after:auto;break-after:auto}.rhp .rh{position:absolute;top:0;left:0;width:280mm;height:194mm;transform-origin:top left;transform:translateX(194mm) rotate(90deg)}.rhp .rv{min-height:0;height:194mm}}</style>';
+  var filasArr = String(filas).split('</tr>').filter(function(t) { return t.indexOf('<tr') !== -1; }).map(function(t) { return t + '</tr>'; });
+  var cap = x._CAP || 6, hojas = []; for (var h = 0; h < Math.max(1, filasArr.length); h += cap) hojas.push(filasArr.slice(h, h + cap).join(''));
+  var copia = function(cual, fil, nh) {
     return '<div class="rv">' +
-      '<div class="rb" style="display:flex;justify-content:space-between;gap:6px"><div><img src="' + logo + '" crossorigin="anonymous" style="height:50px"/><div class="rm" style="margin-top:3px">' + pcEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantread.com<br><u>I.V.A. Responsable Inscripto</u></div></div>' +
-      '<div style="text-align:right;font-size:11.5px;min-width:130px"><div style="font-size:9px">(' + cual + ')</div><div style="font-size:16px;font-weight:800;margin:2px 0">REMITO ' + pcEsc(x.NRO) + '</div>' +
-      '<div>Fecha: <b>' + fmtD(x.FECHA) + '</b></div><div>Hora: <b>' + hora + '</b></div><div style="font-size:9.5px;margin-top:3px;line-height:1.3">C.U.I.T.: ' + pcEsc(cuitF(em.CUIT)) + '<br>Ing.Brutos: ' + pcEsc(em.IIBB || '') + '<br>Inicio de Actividades: ' + pcEsc(ini) + '</div>' +
+      '<div class="rb" style="display:flex;justify-content:space-between;gap:6px"><div><img src="' + logo + '" crossorigin="anonymous" style="height:58px"/><div class="rm" style="margin-top:3px">' + pcEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantread.com<br><u>I.V.A. Responsable Inscripto</u></div></div>' +
+      '<div style="text-align:right;font-size:13px;min-width:150px"><div style="font-size:10px">(' + cual + ')' + (hojas.length > 1 ? ' · Hoja ' + nh + ' de ' + hojas.length : '') + '</div><div style="font-size:16px;font-weight:800;margin:2px 0;white-space:nowrap">REMITO ' + pcEsc(x.NRO) + '</div>' +
+      '<div>Fecha: <b>' + fmtD(x.FECHA) + '</b></div><div>Hora: <b>' + hora + '</b></div><div style="font-size:10.5px;margin-top:3px;line-height:1.35">C.U.I.T.: ' + pcEsc(cuitF(em.CUIT)) + '<br>Ing.Brutos: ' + pcEsc(em.IIBB || '') + '<br>Inicio de Actividades: ' + pcEsc(ini) + '</div>' +
       '<div style="font-size:7px;border:1px solid #111;display:inline-block;padding:0 4px;margin-top:3px">X · Documento no válido como factura</div></div></div>' +
       '<div class="rb rd"><div><span>CUIT o Doc.Ident:</span> <b>' + pcEsc(cuitF(x.CUIT)) + '</b> &nbsp; <span style="font-family:Arial;font-size:9px">' + pcEsc(x.COND_IVA || '') + '</span></div>' +
-      '<div><span>Apellido y Nombres:</span> <b style="font-size:14px">' + pcEsc(x.CLIENTE) + '</b></div>' +
+      '<div><span>Apellido y Nombres:</span> <b style="font-size:16px">' + pcEsc(x.CLIENTE) + '</b></div>' +
       '<div><span>Domicilio:</span> ' + pcEsc(x.DIRECCION || '') + '</div>' +
       '<div><span>Localidad:</span> ' + pcEsc(x.LOCALIDAD || '') + ' ' + pcEsc(x.CP || '') + ' &nbsp; <span>Provincia:</span> ' + pcEsc(x.PROVINCIA || '') + '</div>' +
       '<div><span>Condic. de Venta:</span> ' + pcEsc(x.COND_PAGO || 'Cta.Ctes.') + ' &nbsp; <span>Vendedor:</span> ' + pcEsc(x.VENDEDOR || 'GERENCIA') + '</div>' +
       '<div><span>' + pcEsc(x.REF_TIT || 'Orden de servicio:') + '</span> ' + pcEsc(x.NRO_OT || x.REF || '') + '</div></div>' +
-      '<div class="rb ri"><div class="rw"><img src="' + logo + '" crossorigin="anonymous"/></div><table><thead><tr><th style="width:62px">Nº Artículo</th><th>Descripción</th><th class="rn" style="width:56px">Cantidad U.M</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+      '<div class="rb ri"><div class="rw"><img src="' + logo + '" crossorigin="anonymous"/></div><table><thead><tr><th style="width:62px">Nº Artículo</th><th>Descripción</th><th class="rn" style="width:56px">Cantidad U.M</th></tr></thead><tbody>' + fil + '</tbody></table></div>' +
       '<div class="rp"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:6px"><div><u>Observaciones:</u> ' + pcEsc(x.OBSERVACIONES || '') +
       '<div style="margin-top:4px">Nota: se recomienda para su GARANTÍA, el uso en los neumáticos radiales y convencionales con arreglo, refuerzo interior o exterior, el uso de CÁMARAS NUEVAS para evitar filtraciones y un mejor rendimiento del neumático.</div></div>' +
       (qr ? '<div style="text-align:center;font-size:6.5px;flex:none">' + qr + 'Foto del remito firmado</div>' : '') + '</div>' +
       '<div class="fi"><div>Documento</div><div>Aclaración</div><div>Firma</div></div></div></div>';
   };
-  pcImprimir('Remito ' + x.NRO + ' ' + x.CLIENTE, css + '<div class="rhp"><div class="rh">' + copia('Original') + copia('Duplicado') + '</div></div>', true);
+  pcImprimir('Remito ' + x.NRO + ' ' + x.CLIENTE, css + hojas.map(function(fil, k) { return '<div class="rhp"><div class="rh">' + copia('Original', fil, k + 1) + copia('Duplicado', fil, k + 1) + '</div></div>'; }).join(''), true);
 }
 async function pcAnularOT() { var m = await uiPedir('Motivo de la anulación de la orden de servicio:', { obligatorio: true }); if (m === null) return; var r = await gsRun('gsPC_AnularOT', PC_.ot.ot.ID_OT, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT anulada: las cubiertas volvieron a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
 function pcVerCosto(idCub) {
