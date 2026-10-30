@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610301427';
+var EMA_BUILD = '202610301431';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3887,7 +3887,7 @@ function vrImprimir(id) {
   var x = (window.VR_LISTA || []).filter(function(r) { return String(r.ID_REMITO) === String(id); })[0]; if (!x) return;
   var f3 = function(n) { return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
   var filas = x.ITEMS.map(function(i) { return '<tr><td class="rk">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + '</td><td class="rn">' + f3(i.CANT) + ' c/u</td></tr>'; }).join('');
-  x.REF_TIT = 'Factura:'; x.REF = x.FACTURA || 'Pendiente'; x.OBSERVACIONES = x.OBS; x._CAP = 16;
+  x.REF_TIT = 'Factura:'; x.REF = x.FACTURA || 'Pendiente'; x.OBSERVACIONES = x.OBS; x._CAP = 10;
   remVulcanImp(x, filas, Math.ceil(x.ITEMS.length / 2));
 }
 function vrNuevo() {
