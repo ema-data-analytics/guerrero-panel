@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610301506';
+var EMA_BUILD = '202610301507';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3988,11 +3988,27 @@ async function feLibQR() { if (typeof qrcode === 'undefined') await new Promise(
 function feQRsvg(txt, tam) { var q = qrcode(0, 'M'); q.addData(txt); q.make(); var cs = Math.max(2, Math.floor((tam || 150) / (q.getModuleCount() + 8))); return '<img alt="QR" src="' + q.createDataURL(cs * 2, 8) + '" style="width:100%;height:100%;max-width:' + (tam || 150) + 'px;image-rendering:pixelated;display:block"/>'; }
 function feF(d) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : (d || ''); }
 function feCuitF(c) { c = String(c || '').replace(/\D/g, ''); return c.length === 11 ? c.slice(0, 2) + '-' + c.slice(2, 10) + '-' + c.slice(10) : c; }
+function feBarras(cuit, cod, pv, cae, vto) {
+  try {
+    var t = String(cuit || '').replace(/\D/g, '') + String(cod || '').padStart(3, '0') + String(pv || '').replace(/\D/g, '').padStart(5, '0') + String(cae || '') + String(vto || '').replace(/\D/g, '');
+    if (!/^\d+$/.test(t)) return '';
+    var imp = 0, par = 0; for (var i = 0; i < t.length; i++) { if (i % 2 === 0) imp += +t[i]; else par += +t[i]; }
+    var dv = (10 - ((imp * 3 + par) % 10)) % 10; t += dv; if (t.length % 2) t = '0' + t;
+    var P = ['nnwwn', 'wnnnw', 'nwnnw', 'wwnnn', 'nnwnw', 'wnwnn', 'nwwnn', 'nnnww', 'wnnwn', 'nwnwn'];
+    var mods = 'nnnn', n = 1, w = 3, x = 0;
+    for (var k = 0; k < t.length; k += 2) { var a = P[+t[k]], b = P[+t[k + 1]]; for (var j = 0; j < 5; j++) mods += a[j] + b[j]; }
+    mods += 'wnn';
+    var ancho = 0; for (var m = 0; m < mods.length; m++) ancho += mods[m] === 'w' ? w : n;
+    var cv = document.createElement('canvas'); cv.width = ancho + 20; cv.height = 50; var g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.fillStyle = '#000'; x = 10;
+    for (var q = 0; q < mods.length; q++) { var ww = mods[q] === 'w' ? w : n; if (q % 2 === 0) g.fillRect(x, 0, ww, 50); x += ww; }
+    return '<img alt="barras" src="' + cv.toDataURL('image/png') + '" style="height:34px;width:300px;display:block;margin:3px auto 0"/><div style="font-size:8px;letter-spacing:1px">' + t + '</div>';
+  } catch (e) { return ''; }
+}
 async function feImprimir(r) {
   var v = r.VENTA, fe = v.FE, an = v.ESTADO === 'ANULADA', esA = fe.LETRA === 'A', nc = /^NC/.test(v.TIPO_COMP);
   var tit = (nc ? 'NOTA DE CREDITO' : (/^ND/.test(v.TIPO_COMP) ? 'NOTA DE DEBITO' : 'FACTURA')), qr = '';
   try { if (fe.QR) { await feLibQR(); qr = feQRsvg(fe.QR, 110); } } catch (e) { qr = ''; }
-  var prueba = fe.AMBIENTE !== 'PROD', em = fe.EMISOR, nro = String(v.NRO_COMP || '').split('-');
+  var prueba = fe.AMBIENTE !== 'PROD', em = fe.EMISOR, nro = String(v.NRO_COMP || '').split('-'); if (nro[0] && nro[0].length === 5 && nro[0].charAt(0) === '0') nro[0] = nro[0].slice(1);
   var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
   var ini = /^\d{4}-\d{2}-\d{2}/.test(String(em.INICIO_ACT || '')) ? feF(em.INICIO_ACT) : (em.INICIO_ACT || '');
   var f2 = function(x) { return Number(x || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
@@ -4010,25 +4026,25 @@ async function feImprimir(r) {
   var css = '<style>.vh{position:relative;font-family:Arial,Helvetica,sans-serif;color:#111;page-break-after:always;break-after:page}.vh:last-child{page-break-after:auto;break-after:auto}' +
     '.vb{border:1.5px solid #111;border-radius:14px;padding:8px 10px;margin-bottom:8px}.vc{display:grid;grid-template-columns:1fr 110px 1fr;gap:6px}.vm{font-family:"Courier New",monospace;font-size:9.5px;font-weight:700}' +
     '.vl{text-align:center}.vl .le{display:inline-block;border:1.5px solid #111;font-size:34px;font-weight:800;padding:0 16px;line-height:40px}.vl small{display:block;font-size:9px;border:1px solid #111;margin:0 auto;width:56px}' +
-    '.vt{font-size:19px;font-weight:800}.vn{font-size:19px;font-weight:800}.vk{font-family:"Courier New",monospace;font-size:10px;color:#333}.vr{display:grid;grid-template-columns:1fr 260px;gap:4px}' +
+    '.vt{font-size:19px;font-weight:800}.vn{font-size:19px;font-weight:800}.vk{font-family:"Courier New",monospace;font-size:10px;color:#333}.vr{display:grid;grid-template-columns:1fr 210px;gap:8px;align-items:stretch}.vr>.vb{margin-bottom:8px}' +
     '.vr .c{font-size:13px}.vr .c span{font-family:"Courier New",monospace;font-size:10px;color:#333;display:inline-block;width:118px;text-align:right}.vi{min-height:420px;position:relative}' +
     '.vi table{width:100%;border-collapse:collapse}.vi th{font-family:"Courier New",monospace;font-size:10px;border:0;border-bottom:1.5px solid #111;background:none;text-align:left}.vi td{border:0;font-size:12px;padding:2px 4px}.vi .n{text-align:right}' +
-    '.vw{position:absolute;left:0;right:0;top:170px;text-align:center;opacity:.13}.vw img{width:330px}.vtot{display:grid;grid-template-columns:1fr 430px;gap:10px;margin-top:6px}' +
+    '.vw{position:absolute;left:0;right:0;top:215px;text-align:center;opacity:.13}.vw img{width:400px}.vtot{display:grid;grid-template-columns:1fr 430px;gap:10px;margin-top:6px}' +
     '.vtot table{width:100%;border-collapse:collapse}.vtot td,.vtot th{border:0;font-size:12px;padding:2px 6px}.vtot th{border-bottom:1px solid #111;background:none;text-align:right}.vtot .n{text-align:right}' +
     '.vpie{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px}.vpie svg,.vpie img{width:100px;height:100px}.vag{border:3px solid #b91c1c;color:#b91c1c;font-weight:800;text-align:center;padding:4px;margin-bottom:6px;font-size:13px}</style>';
   var copia = function(cual) {
     return '<div class="vh">' + (prueba ? '<div class="vag">COMPROBANTE DE PRUEBA (' + vEsc(fe.AMBIENTE) + ') · SIN VALIDEZ FISCAL</div>' : '') + (an ? '<div class="vag">ANULADA · ' + vEsc(v.MOTIVO_ANULACION || '') + '</div>' : '') +
-      '<div class="vb vc"><div><img src="' + logo + '" crossorigin="anonymous" style="height:62px"/><div class="vm" style="margin-top:6px">' + vEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantread.com</div><div class="vm" style="margin-top:8px;text-decoration:underline">I.V.A. ' + vEsc(em.COND_IVA === 'IVA RESPONSABLE INSCRIPTO' ? 'Responsable Inscripto' : em.COND_IVA) + '</div></div>' +
+      '<div class="vb vc"><div><img src="' + logo + '" crossorigin="anonymous" style="height:76px"/><div class="vm" style="margin-top:6px">' + vEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantread.com</div><div class="vm" style="margin-top:8px;text-decoration:underline">I.V.A. ' + vEsc(em.COND_IVA === 'IVA RESPONSABLE INSCRIPTO' ? 'Responsable Inscripto' : em.COND_IVA) + '</div></div>' +
       '<div class="vl"><span class="le">' + vEsc(fe.LETRA) + '</span><small>Cod.' + String(fe.COD_CBTE).padStart(3, '0') + '</small>' + (esA ? '<div class="vm" style="margin-top:6px">Operacion Sujeta a Retencion</div>' : '') + '</div>' +
       '<div><div class="vt">' + tit + '</div><div class="vn">' + vEsc(nro[0] || '') + ' ' + vEsc(nro[1] || '') + ' <span style="font-size:12px;font-weight:400">(' + cual + ')</span></div>' +
       '<div style="font-size:13px;margin-left:30px"><span class="vk">Fecha:</span> <b style="font-size:15px">' + fmtD(v.FECHA) + '</b> &nbsp; ' + hora + '<br><span class="vk">Hoja:</span> <b>1</b> de <b>1</b></div>' +
       '<div class="vk" style="margin-top:6px;font-weight:700;text-decoration:underline">C.B.U. N°:</div><div class="vk" style="font-weight:700;text-decoration:underline">Fecha Vcmto. p/Pago:</div>' +
       '<div style="font-size:11px">C.U.I.T.: ' + vEsc(feCuitF(em.CUIT)) + '<br>Ing.Brutos: ' + vEsc(em.IIBB || '') + '<br>Inicio de Actividades: ' + vEsc(ini) + '</div></div></div>' +
-      '<div class="vb vr"><div class="c"><div><span>Razón Social:</span> <b style="font-size:15px">' + vEsc(v.CLIENTE) + '</b></div><div><span>Domicilio:</span> ' + vEsc(v.CLI_DIR || '') + '</div>' +
+      '<div class="vr"><div class="vb c"><div><span>Razón Social:</span> <b style="font-size:15px">' + vEsc(v.CLIENTE) + '</b></div><div><span>Domicilio:</span> ' + vEsc(v.CLI_DIR || '') + '</div>' +
       '<div><span>Localidad:</span> ' + vEsc(v.CLI_LOC || '') + ' &nbsp; &nbsp; ' + vEsc(v.CLI_CP || '') + '</div><div><span>Provincia:</span> ' + vEsc(v.CLI_PROV || '') + '</div>' +
-      '<div><span>C.U.I.T. Nr.:</span> <b>' + vEsc(v.CUIT || '') + '</b> &nbsp; <span style="width:auto">Sit.IVA:</span> <b>' + vEsc(fe.RECEPTOR_COND || '') + '</b></div>' +
+      '<div><span>C.U.I.T. Nr.:</span> <b>' + vEsc(v.CUIT || '') + '</b> &nbsp; <span style="width:auto">Sit.IVA:</span> <b>' + vEsc(fe.RECEPTOR_COND || '') + '</b><span class="vk" style="float:right;width:auto;font-weight:700;text-decoration:underline">Cpbte.Asoc.: ' + vEsc(v.ORIGEN || '') + '</span></div>' +
       '<div><span>Condicion Venta:</span> ' + (v.SALDO > 0 ? 'Cuenta Corriente' : 'Contado') + ' &nbsp; <span style="width:auto">Vendedor:</span> ' + vEsc(v.CLI_VEND || 'GERENCIA') + '</div></div>' +
-      '<div style="border-left:1px solid #111;padding-left:8px"><div class="vk" style="text-align:center;border-bottom:1px solid #111">Sub-Cuenta</div><div style="height:60px"></div><div class="vk" style="font-weight:700;text-decoration:underline">Cpbte.Asoc.: ' + vEsc(v.ORIGEN || '') + '</div></div></div>' +
+      '<div class="vb" style="padding:0"><div class="vk" style="text-align:center;border-bottom:1px solid #111;padding:2px">Sub-Cuenta</div></div></div>' +
       '<div class="vb vi"><div class="vw"><img src="' + logo + '" crossorigin="anonymous"/></div><table><thead><tr><th style="width:110px">Código</th><th>Nombre del Articulo</th><th class="n" style="width:90px">Cantidad U.M</th><th class="n" style="width:90px">Prc.Unit</th><th class="n" style="width:100px">Importe</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
       '<div class="vtot"><div class="vk" style="font-size:11px"><div style="text-decoration:underline">Observaciones:</div><div style="font-family:Arial;font-size:11px;color:#111">' + vEsc(v.OBS || '') + (fe.LEYENDAS || []).map(function(l) { return '<div>' + vEsc(l) + '</div>'; }).join('') + '</div><div style="text-decoration:underline;margin-top:14px">Valores Recibidos:</div></div>' +
       '<div class="vb" style="padding:4px 6px"><table><thead><tr><th></th><th>21.00%</th><th>10.50%</th><th>Total</th></tr></thead><tbody>' +
@@ -4037,7 +4053,7 @@ async function feImprimir(r) {
       '<tr><td colspan="3" style="padding-top:10px"><b>No Gravado</b></td><td class="n" style="padding-top:10px">' + (ng ? f2(ng) : '') + '</td></tr>' +
       '<tr><td colspan="3" style="border-top:1px solid #111;font-size:14px"><b>TOTAL Pesos</b></td><td class="n" style="border-top:1px solid #111;font-size:17px"><b>' + f2(v.TOTAL) + '</b></td></tr></tbody></table>' +
       (!esA ? '<div class="vk" style="font-size:9px;margin-top:4px">Régimen de Transparencia Fiscal al Consumidor (Ley 27.743): IVA contenido ' + f2(i21 + i105) + '</div>' : '') + '</div></div>' +
-      '<div class="vpie"><div>' + (qr || '') + '</div><div class="vk" style="font-size:11px">C.A.E. &nbsp;' + vEsc(fe.CAE) + ' * Vto. ' + vEsc(feF(fe.CAE_VTO)) + (prueba ? '<br>PRUEBA — SIN VALIDEZ FISCAL' : '') + '</div></div></div>';
+      '<div class="vpie"><div>' + (qr || '') + '</div><div class="vk" style="font-size:11px;text-align:center">C.A.E. &nbsp;' + vEsc(fe.CAE) + ' * Vto. ' + vEsc(feF(fe.CAE_VTO)) + '<br>' + feBarras(em.CUIT, fe.COD_CBTE, String(v.NRO_COMP || '').split('-')[0], fe.CAE, fe.CAE_VTO) + (prueba ? '<br>PRUEBA — SIN VALIDEZ FISCAL' : '') + '</div></div></div>';
   };
   pcImprimir(tit + ' ' + fe.LETRA + ' ' + v.NRO_COMP, css + copia('Original') + copia('Duplicado'), false);
 }
