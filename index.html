@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610301958';
+var EMA_BUILD = '202610302003';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12519,7 +12519,7 @@ async function renderPrecios() {
 }
 // Al mandar por WhatsApp el celular sale de la app; si al volver la página se recarga, se vuelve a la misma búsqueda y posición.
 function pnGuardar() {
-  try { sessionStorage.setItem('pn_estado', JSON.stringify({ q: PN_.q, rubro: PN_.rubro, marca: PN_.marca, promo: PN_.promo, max: PN_.max, y: window.scrollY || 0, sel: PN_.sel, orden: PN_.orden, cli: PN_.cli, pago: PN_.pago, lista: PN_.lista, desc: PN_.desc, dItem: PN_.dItem })); } catch (e) {}
+  try { sessionStorage.setItem('pn_estado', JSON.stringify({ q: PN_.q, rubro: PN_.rubro, marca: PN_.marca, promo: PN_.promo, max: PN_.max, y: window.scrollY || 0, sel: PN_.sel, orden: PN_.orden, cli: PN_.cli, pago: PN_.pago, lista: PN_.lista, desc: PN_.desc, dItem: PN_.dItem, ext: PN_.ext || {} })); } catch (e) {}
 }
 function pnRestaurar() {
   if (PN_.restaurado) return 0;
@@ -12527,7 +12527,7 @@ function pnRestaurar() {
   try {
     var e = JSON.parse(sessionStorage.getItem('pn_estado') || 'null');
     if (!e) return 0;
-    PN_.q = e.q || ''; PN_.rubro = e.rubro || ''; PN_.marca = e.marca || ''; PN_.promo = e.promo || 0; PN_.max = e.max || 40; PN_.sel = e.sel || {}; PN_.orden = e.orden || []; PN_.cli = e.cli || ''; PN_.pago = e.pago || ''; PN_.lista = e.lista || '30%'; PN_.desc = Number(e.desc) || 0; PN_.dItem = e.dItem || {};
+    PN_.q = e.q || ''; PN_.rubro = e.rubro || ''; PN_.marca = e.marca || ''; PN_.promo = e.promo || 0; PN_.max = e.max || 40; PN_.sel = e.sel || {}; PN_.orden = e.orden || []; PN_.cli = e.cli || ''; PN_.pago = e.pago || ''; PN_.lista = e.lista || '30%'; PN_.desc = Number(e.desc) || 0; PN_.dItem = e.dItem || {}; PN_.ext = e.ext || {};
     return e.y || 0;
   } catch (x) { return 0; }
 }
@@ -12662,7 +12662,23 @@ function pnCompartir(id) {
   window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
 }
 // ── Cotización: elegir varias cubiertas y mandarlas juntas (texto o PDF con logo) ──
-function pnPorId(id) { var r = null; (PN_.d.PRECIOS || []).forEach(function(x) { if (x.ID_PN === id) r = x; }); return r; }
+function pnPorId(id) { var r = null; (PN_.d.PRECIOS || []).forEach(function(x) { if (x.ID_PN === id) r = x; }); return r || (PN_.ext && PN_.ext[id]) || null; }
+// Recapadas, servicios y gomería en la misma cotización (30/10/2026): se arman como un producto más, con id negativo (−ID del artículo)
+function pnExtDe(k, a) {
+  var lin = a.LINEA === 'AGRICOLA' ? 'Agrícola' : a.LINEA === 'VIAL' ? 'Vial' : a.LINEA === 'CAMIONES' ? 'Camiones' : '';
+  var med = k === 'SRV' ? String(a.NOMBRE).replace(/^SERVICIO /, '') : a.NOMBRE;
+  return { ID_PN: -Number(a.ID_ARTICULO), ID_ARTICULO: Number(a.ID_ARTICULO), CODIGO: a.CODIGO, MEDIDA: k === 'SRV' ? 'Servicio ' + med : med, MARCA: '', DISENO: k === 'SRV' ? 'Servicio de producción' + (lin ? ' · ' + lin : '') : k === 'REC' ? 'Cubierta recapada' : 'Servicio de gomería', PRECIO_CON_IVA: a.CON, PRECIO_SIN_IVA: a.SIN, LISTAS: [], RUBRO: k, EXT: k };
+}
+function pnExtBuscar(k, idArt) { var d = PN_ANX.d; if (!d) return null; var arr = k === 'SRV' ? d.SERVICIOS : k === 'REC' ? d.RECAPADAS : d.GOMERIA; return arr.filter(function(x) { return Number(x.ID_ARTICULO) === Number(idArt); })[0] || null; }
+function pnExtSel(k, idArt) { var a = pnExtBuscar(k, idArt); if (!a) return; var p = pnExtDe(k, a); PN_.ext = PN_.ext || {}; PN_.ext[p.ID_PN] = p; pnSelToggle(p.ID_PN); }
+function pnExtBtn(k, idArt) { var id = -Number(idArt); return '<div class="pn-acc2"><button id="pn-sb-' + id + '" class="' + (PN_.sel[id] ? 'on' : '') + '" onclick="pnExtSel(\'' + k + '\',' + Number(idArt) + ')">' + (PN_.sel[id] ? '✓ En la cotización' : '➕ Agregar a cotización') + '</button><button onclick="pnExtMandar(\'' + k + '\',' + Number(idArt) + ')">📤 Mandar esta</button></div>'; }
+function pnExtMandar(k, idArt) {
+  var a = pnExtBuscar(k, idArt); if (!a) return;
+  var p = pnExtDe(k, a), t = p.MEDIDA + '\n' + p.DISENO + '\nCódigo: ' + p.CODIGO + '\nPrecio: ' + pnPlata(p.PRECIO_CON_IVA) + ' (IVA incluido)\nVulcan Tread Neumáticos';
+  pnGuardar();
+  if (navigator.share) { navigator.share({ text: t }).catch(function() {}); return; }
+  window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+}
 // Precio según la lista elegida (camión y agro tienen listas 10% a 30%); el resto usa su precio de venta.
 function pnPrecioSel(p) {
   var ls = p.LISTAS || [];
@@ -12731,7 +12747,7 @@ function pnHoja() {
   if (!its.length) return;
   var h = '<div class="pn-hoja" onclick="event.stopPropagation()"><div class="pn-hc"><h3>🧾 Cotización</h3><button class="x" onclick="pnHojaCerrar()">✕</button></div>' +
     '<div id="pn-ci-list"></div>' +
-    '<div class="pn-dbox"><div class="tl">DESCUENTO GENERAL (para todas) · tocá el número y escribilo</div>' +
+    '<div class="pn-dbox"><div class="tl">DESCUENTO GENERAL (para todo) · tocá el número y escribilo</div>' +
     '<div class="pn-dctl"><button type="button" onclick="pnDesc(-1)">−1</button><div class="pn-dw"><input id="pn-dsc" type="text" inputmode="decimal" autocomplete="off" value="' + String(PN_.desc || 0).replace('.', ',') + '" onfocus="this.select()" oninput="pnDescTxt(this.value)" onblur="this.value=String(PN_.desc||0).replace(\'.\',\',\')" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b></div><button type="button" onclick="pnDesc(1)">+1</button></div>' +
     '<div class="pn-dctl">' + [0, 5, 10, 15].map(function(v) { return '<button type="button" class="q" onclick="pnDesc(' + v + ',true)">' + v + '%</button>'; }).join('') + '</div>' +
     '<div id="pn-sem"></div></div>' +
@@ -12788,8 +12804,8 @@ function pnHojaAct() {
         '<div style="flex:1"><div style="font-weight:800;color:' + c2[0] + ';font-size:13px">' + c2[2] + ' · ' + c2[3] + '</div><div style="font-size:24px;font-weight:800;color:' + c2[0] + '">' + (g2 < 0 ? 'Pierde ' + pnPct(-g2) : 'Gana ' + pnPct(g2)) + '</div>' +
         (tot < totL - 0.5 ? '<div style="font-size:12.5px">Descuento total: <b>' + pnPlata(totL - tot) + '</b> (' + pnPct(1 - tot / totL) + ')</div>' : '') +
         (Rg !== null ? '<div style="font-size:12.5px">Descuento general: 🟢 hasta <b>' + pnPct(pnMgTope(Rg, PN_.mgD.VERDE)) + '</b> · 🟡 hasta <b>' + pnPct(pnMgTope(Rg, PN_.mgD.AMARILLO)) + '</b> · no gana nada en <b>' + pnPct(pnMgTope(Rg, 0)) + '</b></div>' : '') +
-        (propios ? '<div class="tdim" style="font-size:11px">' + propios + ' cubierta' + (propios === 1 ? ' tiene' : 's tienen') + ' su propio descuento.</div>' : '') +
-        (todos ? '' : '<div class="tdim" style="font-size:11px">Hay cubiertas sin costo cargado: no entran en el cálculo.</div>') + '</div></div>'; }
+        (propios ? '<div class="tdim" style="font-size:11px">' + propios + ' producto' + (propios === 1 ? ' tiene' : 's tienen') + ' su propio descuento.</div>' : '') +
+        (todos ? '' : '<div class="tdim" style="font-size:11px">Hay productos sin costo cargado: no entran en el cálculo.</div>') + '</div></div>'; }
   }
   pnPdfBotones();
 }
@@ -12835,7 +12851,7 @@ function pnCotTexto() {
   var t = '*Cotización · Vulcan Tread Neumáticos*\n' + pnHoyTxt() + (PN_.cli ? '\nCliente: ' + PN_.cli : '') + (PN_.pago ? '\nForma de pago: ' + PN_.pago : '') + (its.some(function(x) { return x.d; }) ? '\nDescuentos ya aplicados en los precios' : '') + '\n';
   its.forEach(function(x) {
     tot += x.sub;
-    t += '\n• ' + x.cant + ' x ' + x.p.MEDIDA + ' ' + x.p.MARCA + ' ' + x.p.DISENO + '\n   ' + (x.d ? 'Lista ' + pnPlata(x.base) + ' − ' + String(x.dp).replace('.', ',') + '% → ' : '') + pnPlata(x.unit) + ' c/u' + (x.nota ? ' (' + x.nota + ')' : '') + ' · Subtotal ' + pnPlata(x.sub);
+    t += '\n• ' + x.cant + ' x ' + (x.p.EXT ? x.p.MEDIDA + ' (' + x.p.DISENO + ')' : x.p.MEDIDA + ' ' + x.p.MARCA + ' ' + x.p.DISENO) + '\n   ' + (x.d ? 'Lista ' + pnPlata(x.base) + ' − ' + String(x.dp).replace('.', ',') + '% → ' : '') + pnPlata(x.unit) + ' c/u' + (x.nota ? ' (' + x.nota + ')' : '') + ' · Subtotal ' + pnPlata(x.sub);
   });
   t += '\n\n*Total: ' + pnPlata(tot) + '* (IVA incluido)\nPrecios con IVA incluido. Sujetos a cambio y disponibilidad.';
   return t;
@@ -12858,7 +12874,7 @@ function pnCotHtml() {
     '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #E8792B;padding-bottom:12px">' +
     '<img src="' + pnEsc(logo) + '" crossorigin="anonymous" style="height:62px"/><div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#14213d">Cotización</div><div style="color:#555">Fecha: ' + pnHoyTxt() + '</div>' + (v ? '<div style="color:#555">Vendedor: ' + pnEsc(v) + '</div>' : '') + '</div></div>' +
     (PN_.cli || PN_.pago ? '<div style="margin:14px 0 4px;font-size:14px">' + (PN_.cli ? '<div><span style="color:#555">Cliente:</span> <b>' + pnEsc(PN_.cli) + '</b></div>' : '') + (PN_.pago ? '<div style="margin-top:3px"><span style="color:#555">Forma de pago:</span> <b>' + pnEsc(PN_.pago) + '</b></div>' : '') + '</div>' : '<div style="height:12px"></div>') +
-    '<table style="width:100%;border-collapse:collapse;margin-top:8px"><tr><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:left">Cubierta</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:center">Cant.</th>' + (hayD ? '<th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">Precio lista</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:center">Desc.</th>' : '') + '<th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">' + (hayD ? 'Precio final' : 'Precio c/u') + '</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">Subtotal</th></tr>' + filas + '</table>' +
+    '<table style="width:100%;border-collapse:collapse;margin-top:8px"><tr><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:left">Producto</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:center">Cant.</th>' + (hayD ? '<th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">Precio lista</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:center">Desc.</th>' : '') + '<th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">' + (hayD ? 'Precio final' : 'Precio c/u') + '</th><th style="background:#14213d;color:#fff;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;border:0;padding:8px;text-align:right">Subtotal</th></tr>' + filas + '</table>' +
     '<div style="display:flex;justify-content:flex-end;margin-top:12px"><div style="min-width:260px;border-top:2px solid #14213d;padding-top:8px">' +
     (hayD ? '<div style="display:flex;justify-content:space-between;color:#555"><span>Total de lista</span><span>' + pnPlata(its.reduce(function(a, x) { return a + x.base * x.cant; }, 0)) + '</span></div><div style="display:flex;justify-content:space-between;color:#15803d;font-weight:700"><span>Descuento</span><span>− ' + pnPlata(its.reduce(function(a, x) { return a + (x.base - x.unit) * x.cant; }, 0)) + '</span></div>' : '') +
     '<div style="display:flex;justify-content:space-between;color:#555"><span>Subtotal sin IVA</span><span>' + pnPlata(tot / 1.21) + '</span></div>' +
@@ -13028,6 +13044,7 @@ function pnAnxRes() {
   h += '<div class="pn-info">' + lista.length + ' resultado' + (lista.length === 1 ? '' : 's') + '</div>';
   if (!lista.length) h += '<div class="card"><div class="card-body tdim">' + (toks.length || PN_ANX.trabajo || PN_ANX.linea ? 'No hay resultados con esa búsqueda.' : 'La lista vigente todavía no tiene ' + vacio + ' con precio.') + '</div></div>';
   lista.slice(0, PN_ANX.max).forEach(function(x) { h += PN_.div === 'SRV' ? pnAnxServ(x) : pnAnxArt(x); });
+  setTimeout(pnBarra, 0);
   if (lista.length > PN_ANX.max) h += '<button class="pn-mas" onclick="PN_ANX.max+=40;pnAnxRes()">Ver más (' + (lista.length - PN_ANX.max) + ' restantes)</button>';
   r.innerHTML = h;
 }
@@ -13035,7 +13052,7 @@ function pnAnxServ(s) {
   return '<div class="pn-item"><div class="pn-l1"><div><div class="pn-med">' + pnEsc(s.MEDIDA === 'TODAS' ? 'Otras medidas' : s.MEDIDA) + '</div>' +
     '<div class="pn-mar"><b>' + pnEsc(s.TRABAJO) + '</b>' + (s.LINEA ? ' · ' + (s.LINEA === 'AGRICOLA' ? 'Agrícola' : s.LINEA === 'VIAL' ? 'Vial' : 'Camiones') : '') + '</div></div>' +
     '<div class="pn-pre"><div class="c">' + pnPlata(s.CON) + '</div><div class="s">' + pnPlata(s.SIN) + ' + IVA</div></div></div>' +
-    '<div class="pn-tags"><span class="pn-tag">' + pnEsc(s.CODIGO) + '</span></div></div>';
+    '<div class="pn-tags"><span class="pn-tag">' + pnEsc(s.CODIGO) + '</span></div>' + pnExtBtn('SRV', s.ID_ARTICULO) + '</div>';
 }
 function pnAnxArt(a) {
   var h = '<div class="pn-item"><div class="pn-l1"><div><div class="pn-med">' + pnEsc(a.NOMBRE) + '</div><div class="pn-mar">' + pnEsc(a.CODIGO) + '</div></div>' +
@@ -13044,7 +13061,7 @@ function pnAnxArt(a) {
     h += '<div class="pn-tags">' + (a.VIEJO ? '<span class="pn-tag">Artículo del sistema viejo: revisar con la planta</span>' : '') + '<span class="pn-tag">En stock: ' + a.UNIDADES.length + '</span></div>';
     if (a.UNIDADES.length) h += '<div class="pn-uni">' + a.UNIDADES.map(function(u) { return '<div>Marca grabada: <b>' + pnEsc(u.MARCA || '—') + '</b> · DOT: <b>' + pnEsc(u.DOT || '—') + '</b></div>'; }).join('') + '</div>';
   }
-  return h + '</div>';
+  return h + pnExtBtn(PN_.div, a.ID_ARTICULO) + '</div>';
 }
 function lvEsAdmin() { var r = String((SES && SES.rol) || '').toUpperCase(); return r === 'SUPER' || r.indexOf('ADMIN') !== -1; }
 function lvF(ms) { return ms ? new Date(ms).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'; }
@@ -17426,15 +17443,21 @@ function mgM(n) { n = Math.round(n); return (n < 0 ? '−' : '') + Math.abs(n).t
 function mgArt(c) { return MG_.d.ARTICULOS.filter(function(a) { return a.CODIGO === c; })[0]; }
 // Pasa las cubiertas y el descuento a la cotización de Precios (la misma que arma el PDF para el cliente)
 async function mgACotizacion() {
-  if (!MG_.items.length) { toast('Agregá las cubiertas', 'r2'); return; }
+  if (!MG_.items.length) { toast('Agregá lo que vas a vender', 'r2'); return; }
   try {
     if (!PN_.d) { PN_.d = await gsRun('gsPN_Datos'); pnIndexar(); }
     var porCod = {}; (PN_.d.PRECIOS || []).forEach(function(p) { porCod[p.CODIGO] = p; });
     var sel = {}, orden = [], faltan = [], dIt = {};
+    // Recapadas, servicios y gomería: también entran (30/10/2026)
+    if (MG_.items.some(function(i) { return !porCod[i.c]; })) {
+      if (!PN_ANX.d) PN_ANX.d = await gsRun('gsPN_Anexo');
+      PN_.ext = PN_.ext || {};
+      [['SRV', PN_ANX.d.SERVICIOS], ['REC', PN_ANX.d.RECAPADAS], ['GOM', PN_ANX.d.GOMERIA]].forEach(function(g) { (g[1] || []).forEach(function(a) { if (!porCod[a.CODIGO]) { var p = pnExtDe(g[0], a); PN_.ext[p.ID_PN] = p; porCod[a.CODIGO] = p; } }); });
+    }
     MG_.items.forEach(function(i) { var p = porCod[i.c]; if (!p) { faltan.push(i.c); return; } if (!sel[p.ID_PN]) orden.push(p.ID_PN); sel[p.ID_PN] = (sel[p.ID_PN] || 0) + i.n; if (!(i.d === null || i.d === undefined)) dIt[p.ID_PN] = i.d; });
-    if (!orden.length) { toast('La cotización en PDF / WhatsApp por ahora es solo de cubiertas nuevas. Recapadas, servicios y gomería: el precio y el margen se ven acá', 'r2'); return; }
+    if (!orden.length) { toast('Eso no está en la lista de precios vigente', 'r2'); return; }
     PN_.restaurado = true; PN_.sel = sel; PN_.orden = orden; PN_.desc = MG_.desc; PN_.dItem = dIt; PN_.pdf = null; pnGuardar();
-    if (faltan.length) toast('Pasan a la cotización solo las cubiertas nuevas. Quedan afuera: ' + faltan.join(', '), 'w');
+    if (faltan.length) toast('No están en la lista de precios vigente: ' + faltan.join(', '), 'w');
     mvAbrir('precios-nuevos');
     var n = 0, t = setInterval(function() { n++; if ((PN_.idx && $id('pn-res')) || n > 40) { clearInterval(t); pnBarra(); pnHoja(); } }, 250);
   } catch (e) { toast(e.message, 'r2'); }
