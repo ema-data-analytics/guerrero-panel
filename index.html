@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "35b89d1f13ce"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "aa3ae05c62ec"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '20261030132931';
+var EMA_BUILD = '20261030140430';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3875,12 +3875,20 @@ async function vrRemitos() {
     var r = await gsRun('gsFP_RemitosVenta'); var el = $id('vr-rl');
     if (!r || !r.ok) { el.innerHTML = '<div class="al al-r">' + vEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
     if (!r.REMITOS.length) { el.innerHTML = '<div class="al al-b">Todavía no hay remitos de venta. Con «Nuevo remito» se entrega mercadería sin factura y se factura después.</div>'; return; }
+    window.VR_LISTA = r.REMITOS;
     el.innerHTML = '<div class="tw"><table><thead><tr><th>Remito</th><th>Fecha</th><th>Cliente</th><th>Qué se entregó</th><th>Estado</th><th></th></tr></thead><tbody>' + r.REMITOS.map(function(x) {
       var est = x.ESTADO === 'ANULADO' ? '<span class="badge b-red">Anulado</span>' : (x.FACTURA ? '<span class="badge b-green">' + vEsc(x.FACTURA) + '</span>' : '<span class="badge b-yellow">Sin facturar</span>');
       return '<tr><td><b>' + vEsc(x.NRO) + '</b></td><td>' + vrFecha(x.FECHA) + '</td><td>' + vEsc(x.CLIENTE) + '</td><td>' + x.ITEMS.map(function(i) { return vEsc(i.CANT) + ' × ' + vEsc(i.NOMBRE); }).join('<br>') + '</td><td>' + est + '</td>' +
-        '<td>' + (x.ESTADO !== 'ANULADO' && !x.FACTURA ? '<button class="btn btn-s btn-sm" onclick="vrAnular(' + x.ID_REMITO + ',\'' + vEsc(x.NRO) + '\')">Anular</button>' : '') + '</td></tr>';
+        '<td style="white-space:nowrap">' + (x.ESTADO !== 'ANULADO' ? '<button class="btn btn-s btn-sm" title="Imprimir remito" onclick="vrImprimir(' + x.ID_REMITO + ')"><i class="fas fa-print"></i></button> ' : '') + (x.ESTADO !== 'ANULADO' && !x.FACTURA ? '<button class="btn btn-s btn-sm" onclick="vrAnular(' + x.ID_REMITO + ',\'' + vEsc(x.NRO) + '\')">Anular</button>' : '') + '</td></tr>';
     }).join('') + '</tbody></table></div>';
   } catch (e) { toast(e.message || e, 'r2'); }
+}
+function vrImprimir(id) {
+  var x = (window.VR_LISTA || []).filter(function(r) { return String(r.ID_REMITO) === String(id); })[0]; if (!x) return;
+  var f3 = function(n) { return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var filas = x.ITEMS.map(function(i) { return '<tr><td class="rk">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + '</td><td class="rn">' + f3(i.CANT) + ' c/u</td></tr>'; }).join('');
+  x.REF_TIT = 'Factura:'; x.REF = x.FACTURA || 'Pendiente'; x.OBSERVACIONES = x.OBS;
+  remVulcanImp(x, filas, Math.ceil(x.ITEMS.length / 2));
 }
 function vrNuevo() {
   VR_.rem = { ID_CLIENTE: VR_.cli || '', ITEMS: [], OBS: '' }; closeModal();
@@ -10471,19 +10479,51 @@ async function pcEntregas() {
 }
 async function pcImpRemito(i) {
   var x = window.PC_REM[i]; if (!x) return;
-  var qr = ''; try { if (x.TOKEN_FIRMA) { await asLibQR(); qr = asQRsvg(pcRemUrl(x), 130); } } catch (eq) { qr = ''; }
-  var ter = x.ITEMS.filter(function(t) { return t.RESULTADO === 'TERMINADA'; }), dev = x.ITEMS.filter(function(t) { return t.RESULTADO !== 'TERMINADA'; });
+  var qr = ''; try { if (x.TOKEN_FIRMA) { await asLibQR(); qr = asQRsvg(pcRemUrl(x), 90); } } catch (eq) { qr = ''; }
+  var em = x.EMISOR || {}, logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
   var nInt = {}; (PC_.d.cubiertas || []).forEach(function(c) { nInt[String(c.ID_CUB)] = c.ID_CASCO; });
-  var fila = function(t, k) { return '<tr><td>' + (k + 1) + '</td><td><b>' + pcEsc(t.MARCA) + '</b>' + (nInt[String(t.ID_CUB)] ? '<div style="font-size:9px;color:#444">N° int. ' + pcEsc(nInt[String(t.ID_CUB)]) + '</div>' : '') + '</td><td>' + pcDotTxt(t.DOT) + '</td><td>' + pcEsc(t.MEDIDA) + '</td><td>' + pcEsc(t.FABRICANTE) + '</td><td>' + pcEsc(t.TRABAJO) + (t.REPROCESO ? ' (con corrección)' : '') + pcCambioTrab(t.ID_CUB) + pcParcheRemito(t.ID_CUB) + '</td><td>' + (t.BOLETA ? 'Boleta ' + pcEsc(t.BOLETA) + ' · ' : '') + pcEsc(t.OTRAB) + '</td>' + (t.RESULTADO === 'TERMINADA' ? '' : '<td>' + pcEsc(t.MOTIVO) + '</td>') + '<td class="ck">☐</td></tr>'; };
-  var h = pcEncImp('REMITO DE ENTREGA', x.NRO) +
-    '<div class="dat"><div><b>Cliente</b>' + pcEsc(x.CLIENTE) + '</div><div><b>Fecha</b>' + fmtD(x.FECHA) + '</div><div><b>Orden de servicio</b>' + pcEsc(x.NRO_OT || 'Devolución sin trabajo') + '</div><div><b>Cubiertas</b>' + x.ITEMS.length + '</div>' +
-    (x.CUIT ? '<div><b>CUIT</b>' + pcEsc(x.CUIT) + '</div>' : '') + (x.DIRECCION ? '<div><b>Dirección</b>' + pcEsc(x.DIRECCION) + '</div>' : '') + (x.TELEFONO ? '<div><b>Teléfono</b>' + pcEsc(x.TELEFONO) + '</div>' : '') + '</div>' +
-    (ter.length ? '<h2>Cubiertas terminadas (' + ter.length + ')</h2><table><thead><tr><th>#</th><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Marca casco</th><th>Trabajo</th><th>Orden de trabajo</th><th class="ck">Recibe</th></tr></thead><tbody>' + ter.map(fila).join('') + '</tbody></table>' : '') +
-    (dev.length ? '<h2>Cubiertas que se devuelven sin trabajo (' + dev.length + ')</h2><table><thead><tr><th>#</th><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Marca casco</th><th>Trabajo pedido</th><th>Orden de trabajo</th><th>Motivo</th><th class="ck">Recibe</th></tr></thead><tbody>' + dev.map(fila).join('') + '</tbody></table>' : '') +
-    '<div class="nota">Documento interno de entrega de cubiertas del cliente. No válido como factura.</div>' +
-    '<div class="firmas"><div>Entregó (Vulcan Tread)</div><div>Recibió conforme (cliente) · Aclaración y DNI</div></div>' +
-    (qr ? '<div style="display:flex;gap:12px;align-items:center;margin-top:18px;border:1px dashed #999;border-radius:8px;padding:8px;page-break-inside:avoid"><div style="width:110px;height:110px">' + qr + '</div><div style="font-size:11px"><b>Al entregar:</b> con el remito firmado, escaneá este código con el celular y sacale una foto. Queda cargado en el sistema.</div></div>' : '');
-  pcImprimir('Remito ' + x.NRO + ' ' + x.CLIENTE, h);
+  var cuitF = function(c) { c = String(c || '').replace(/\D/g, ''); return c.length === 11 ? c.slice(0, 2) + '-' + c.slice(2, 10) + '-' + c.slice(10) : c; };
+  var ini = /^\d{4}-\d{2}-\d{2}/.test(em.INICIO_ACT || '') ? fmtD(em.INICIO_ACT) : (em.INICIO_ACT || '');
+  var hora = ''; try { var dd = new Date(Number(x.FECHA)); hora = ('0' + dd.getHours()).slice(-2) + ':' + ('0' + dd.getMinutes()).slice(-2); } catch (eh) {}
+  var filas = x.ITEMS.map(function(t) {
+    var ok = t.RESULTADO === 'TERMINADA';
+    return '<tr><td class="rk">' + (ok ? 'Ident.Casco' : 'Casco RECHAZADO') + '</td><td><b>' + pcEsc(t.MEDIDA) + ' ' + pcEsc(t.FABRICANTE) + '</b> &nbsp; <span class="rk">DOT</span> ' + pcDotTxt(t.DOT) + ' &nbsp; ' + pcEsc(ok ? t.TRABAJO : 'Sin trabajo') + (t.REPROCESO ? ' (con corrección)' : '') + (ok && t.BANDA ? '<div>' + pcEsc(t.BANDA) + '</div>' : '') +
+      '<div class="rs">Marca grabada: <b>' + pcEsc(t.MARCA) + '</b>' + (nInt[String(t.ID_CUB)] ? ' · N° int. ' + pcEsc(nInt[String(t.ID_CUB)]) : '') + ' · ' + (t.BOLETA ? 'Boleta ' + pcEsc(t.BOLETA) + ' · ' : '') + pcEsc(t.OTRAB || '') + (ok ? '' : ' · Motivo: ' + pcEsc(t.MOTIVO || '')) + '</div>' + pcParcheRemito(t.ID_CUB) + '</td><td class="rn">1,00 c/u</td></tr>';
+  }).join('');
+  x._QR = qr; if (!x.NRO_OT) x.REF = 'Devolución sin trabajo';
+  remVulcanImp(x, filas, x.ITEMS.length);
+}
+function remVulcanImp(x, filas, nItems) {
+  var qr = x._QR || '', em = x.EMISOR || {}, logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
+  var cuitF = function(c) { c = String(c || '').replace(/\D/g, ''); return c.length === 11 ? c.slice(0, 2) + '-' + c.slice(2, 10) + '-' + c.slice(10) : c; };
+  var ini = /^\d{4}-\d{2}-\d{2}/.test(em.INICIO_ACT || '') ? fmtD(em.INICIO_ACT) : (em.INICIO_ACT || '');
+  var hora = ''; try { var dd = new Date(Number(x.FECHA)); hora = ('0' + dd.getHours()).slice(-2) + ':' + ('0' + dd.getMinutes()).slice(-2); } catch (eh) {}
+  var media = nItems <= 6;
+  var css = '<style>.rv{position:relative;font-family:Arial,Helvetica,sans-serif;color:#111;box-sizing:border-box;padding:2mm 1mm;display:flex;flex-direction:column}' +
+    '.rv.m{height:136mm;overflow:hidden}.rv.f{min-height:270mm;page-break-after:always;break-after:page}.rv.f:last-child{page-break-after:auto}.rcorte{border-top:1px dashed #888;margin:1mm 0;height:0}' +
+    '.rb{border:1.3px solid #111;border-radius:10px;padding:4px 8px;margin-bottom:4px}.rc{display:grid;grid-template-columns:1fr 70px 1fr;gap:6px;align-items:start}.rm{font-family:"Courier New",monospace;font-size:8.5px;font-weight:700}' +
+    '.rl{text-align:center}.rl .le{display:inline-block;border:1.3px solid #111;font-size:24px;font-weight:800;padding:0 10px;line-height:28px}.rl small{display:block;font-size:7px;margin-top:2px}' +
+    '.rk{font-family:"Courier New",monospace;font-size:8.5px;color:#333}.rs{font-size:8.5px;color:#333}.rd{display:grid;grid-template-columns:1fr 1fr;gap:1px 10px;font-size:10.5px}.rd span{font-family:"Courier New",monospace;font-size:8.5px;color:#333}' +
+    '.ri{flex:1;position:relative;padding:3px 6px;overflow:hidden}.ri table{width:100%;border-collapse:collapse}.ri th{font-family:"Courier New",monospace;font-size:8.5px;font-style:italic;border:0;border-bottom:1px solid #111;background:none;text-align:left;padding:1px 3px}' +
+    '.ri td{border:0;font-size:10px;padding:2px 3px;vertical-align:top}.rn{text-align:right;white-space:nowrap}.rw{position:absolute;left:0;right:0;top:30%;text-align:center;opacity:.10}.rw img{width:230px}' +
+    '.rp{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;font-size:8.5px}.rp .fi{display:flex;gap:14px}.rp .fi div{border-top:1px solid #111;width:90px;text-align:center;padding-top:2px}.rp svg{width:64px;height:64px}</style>';
+  var copia = function(cual) {
+    return '<div class="rv ' + (media ? 'm' : 'f') + '">' +
+      '<div class="rb rc"><div><img src="' + logo + '" crossorigin="anonymous" style="height:40px"/><div class="rm" style="margin-top:3px">' + pcEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantread.com</div><div class="rm" style="text-decoration:underline;margin-top:2px">I.V.A. Responsable Inscripto</div></div>' +
+      '<div class="rl"><span class="le">X</span><small>Documento no válido como factura</small></div>' +
+      '<div style="font-size:10px"><div style="text-align:right;font-size:9px">(' + cual + ')</div><div style="font-size:15px;font-weight:800">REMITO ' + pcEsc(x.NRO) + '</div>' +
+      '<div>Fecha: <b>' + fmtD(x.FECHA) + '</b> &nbsp; Hora: <b>' + hora + '</b></div><div style="font-size:9px;margin-top:2px">C.U.I.T.: ' + pcEsc(cuitF(em.CUIT)) + '<br>Ing.Brutos: ' + pcEsc(em.IIBB || '') + '<br>Inicio de Actividades: ' + pcEsc(ini) + '</div></div></div>' +
+      '<div class="rb rd"><div><span>CUIT o Doc.Ident:</span> <b>' + pcEsc(cuitF(x.CUIT)) + '</b></div><div>' + pcEsc(x.COND_IVA || '') + '</div>' +
+      '<div style="grid-column:1/3"><span>Apellido y Nombres:</span> <b style="font-size:12px">' + pcEsc(x.CLIENTE) + '</b></div>' +
+      '<div><span>Domicilio:</span> ' + pcEsc(x.DIRECCION || '') + '</div><div><span>Provincia:</span> ' + pcEsc(x.PROVINCIA || '') + '</div>' +
+      '<div><span>Localidad:</span> ' + pcEsc(x.LOCALIDAD || '') + ' ' + pcEsc(x.CP || '') + '</div><div><span>Vendedor:</span> ' + pcEsc(x.VENDEDOR || 'GERENCIA') + '</div>' +
+      '<div><span>Condic. de Venta:</span> ' + pcEsc(x.COND_PAGO || 'Cta.Ctes.') + '</div><div><span>' + pcEsc(x.REF_TIT || 'Orden de servicio:') + '</span> ' + pcEsc(x.NRO_OT || x.REF || '') + '</div></div>' +
+      '<div class="rb ri"><div class="rw"><img src="' + logo + '" crossorigin="anonymous"/></div><table><thead><tr><th style="width:80px">Nº Artículo</th><th>Descripción</th><th class="rn" style="width:70px">Cantidad U.M</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+      '<div class="rp"><div><div style="text-decoration:underline">Observaciones:</div><div>' + pcEsc(x.OBSERVACIONES || '') + '</div><div style="margin-top:3px;max-width:330px">Nota: se recomienda para su GARANTÍA, el uso en los neumáticos radiales y convencionales con arreglo, refuerzo interior o exterior, el uso de CÁMARAS NUEVAS para evitar filtraciones y un mejor rendimiento del neumático.</div></div>' +
+      (qr ? '<div style="text-align:center;font-size:7px">' + qr + '<div>Foto del remito firmado</div></div>' : '') +
+      '<div class="fi"><div>Documento</div><div>Aclaración</div><div>Firma</div></div></div></div>';
+  };
+  pcImprimir('Remito ' + x.NRO + ' ' + x.CLIENTE, css + copia('Original') + (media ? '<div class="rcorte"></div>' : '') + copia('Duplicado'));
 }
 async function pcAnularOT() { var m = await uiPedir('Motivo de la anulación de la orden de servicio:', { obligatorio: true }); if (m === null) return; var r = await gsRun('gsPC_AnularOT', PC_.ot.ot.ID_OT, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT anulada: las cubiertas volvieron a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
 function pcVerCosto(idCub) {
