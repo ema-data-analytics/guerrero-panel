@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610301551';
+var EMA_BUILD = '202610301554';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3912,7 +3912,7 @@ async function vrImprimir(id) {
       return '<tr><td class="rk">' + (ok ? 'Ident.Casco' : 'Casco RECHAZADO') + '</td><td><b>' + vEsc(t.MEDIDA) + ' ' + vEsc(t.FABRICANTE) + '</b> &nbsp; <span class="rk">DOT</span> ' + (t.DOT ? vEsc(t.DOT) : 'sin DOT') + ' &nbsp; ' + vEsc(ok ? t.TRABAJO : 'Sin trabajo') + (t.REPROCESO ? ' (con corrección)' : '') +
         (ok && t.BANDA ? '<div>' + vEsc(t.BANDA) + '</div>' : '') + '<div class="rs">Marca grabada: <b>' + vEsc(t.MARCA) + '</b> · ' + (t.BOLETA ? 'Boleta ' + vEsc(t.BOLETA) + ' · ' : '') + vEsc(t.OTRAB || '') + (ok ? '' : ' · Motivo: ' + vEsc(t.MOTIVO || '')) + '</div></td><td class="rn">1,00 c/u</td></tr>';
     }).join('');
-    x._CAP = 6;
+    x._CAP = 5;
   } else {
     filas = x.ITEMS.map(function(i) { return '<tr><td class="rk">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + '</td><td class="rn">' + f3(i.CANT) + ' c/u</td></tr>'; }).join('');
     x._CAP = 10;
@@ -10553,10 +10553,11 @@ function remVulcanImp(x, filas, nItems) {
     '.rk{font-family:"Courier New",monospace;font-size:10.5px;color:#333}.rs{font-size:10.5px;color:#333}.rd div{font-size:13.5px;line-height:1.45}.rd span{font-family:"Courier New",monospace;font-size:10.5px;color:#333}' +
     '.ri{flex:1;position:relative;padding:3px 5px}.ri table{width:100%;border-collapse:collapse;position:relative}.ri th{font-family:"Courier New",monospace;font-size:10.5px;font-style:italic;font-weight:400;border:0;border-bottom:1px solid #111;background:none;text-align:left;padding:1px 2px}' +
     '.ri td{border:0;font-size:13px;padding:2px 2px;vertical-align:top}.rn{text-align:right;white-space:nowrap}.rw{position:absolute;left:0;right:0;top:35%;text-align:center;opacity:.10}.rw img{width:220px}' +
-    '.rp{font-size:10.5px;margin-top:3px}.rp .fi{display:flex;gap:10px;justify-content:flex-end;margin-top:4px}.rp .fi div{border-top:1px solid #111;width:72px;text-align:center;padding-top:2px}.rp img,.rp svg{width:62px;height:62px}' +
+    '.rp{font-size:9px;margin-top:3px;display:flex;gap:8px;align-items:stretch}.rp .ob{flex:1 1 45%;display:flex;gap:6px;align-items:flex-end}.rp .sg{flex:0 0 52%;display:flex;flex-direction:column;justify-content:flex-end;min-height:30mm}' +
+    '.rp .sg .ln{border-top:1px dashed #111;display:flex;justify-content:space-around;padding-top:2px;font-family:"Courier New",monospace;font-size:10px}.rp img,.rp svg{width:56px;height:56px}' +
     '@media print{@page{size:A4 portrait;margin:8mm}.rhp{width:194mm;height:281mm;overflow:hidden;position:relative;page-break-after:always;break-after:page}.rhp:last-child{page-break-after:auto;break-after:auto}.rhp .rh{position:absolute;top:8mm;left:0;width:265mm;height:180mm;transform-origin:top left;transform:translateX(187mm) rotate(90deg)}.rhp .rv{min-height:0;height:180mm}}</style>';
   var filasArr = String(filas).split('</tr>').filter(function(t) { return t.indexOf('<tr') !== -1; }).map(function(t) { return t + '</tr>'; });
-  var cap = x._CAP || 6, hojas = []; for (var h = 0; h < Math.max(1, filasArr.length); h += cap) hojas.push(filasArr.slice(h, h + cap).join(''));
+  var cap = x._CAP || 5, hojas = []; for (var h = 0; h < Math.max(1, filasArr.length); h += cap) hojas.push(filasArr.slice(h, h + cap).join(''));
   var copia = function(cual, fil, nh) {
     return '<div class="rv">' +
       '<div class="rb" style="display:flex;justify-content:space-between;gap:6px;overflow:hidden"><div style="flex:1 1 auto;min-width:0"><img src="' + logo + '" crossorigin="anonymous" style="height:58px"/><div class="rm" style="margin-top:3px">' + pcEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantread.com<br><u>I.V.A. Responsable Inscripto</u></div></div>' +
@@ -10570,10 +10571,9 @@ function remVulcanImp(x, filas, nItems) {
       '<div><span>Condic. de Venta:</span> ' + pcEsc(x.COND_PAGO || 'Cta.Ctes.') + ' &nbsp; <span>Vendedor:</span> ' + pcEsc(x.VENDEDOR || 'GERENCIA') + '</div>' +
       '<div><span>' + pcEsc(x.REF_TIT || 'Orden de servicio:') + '</span> ' + pcEsc(x.NRO_OT || x.REF || '') + '</div></div>' +
       '<div class="rb ri"><div class="rw"><img src="' + logo + '" crossorigin="anonymous"/></div><table><thead><tr><th style="width:62px">Nº Artículo</th><th>Descripción</th><th class="rn" style="width:56px">Cantidad U.M</th></tr></thead><tbody>' + fil + '</tbody></table></div>' +
-      '<div class="rp"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:6px"><div><u>Observaciones:</u> ' + pcEsc(x.OBSERVACIONES || '') +
-      '<div style="margin-top:4px">Nota: se recomienda para su GARANTÍA, el uso en los neumáticos radiales y convencionales con arreglo, refuerzo interior o exterior, el uso de CÁMARAS NUEVAS para evitar filtraciones y un mejor rendimiento del neumático.</div></div>' +
-      (qr ? '<div style="text-align:center;font-size:6.5px;flex:none">' + qr + 'Foto del remito firmado</div>' : '') + '</div>' +
-      '<div class="fi"><div>Documento</div><div>Aclaración</div><div>Firma</div></div></div></div>';
+      '<div class="rp"><div class="ob">' + (qr ? '<div style="text-align:center;font-size:6.5px;flex:none">' + qr + 'Foto del remito<br>firmado</div>' : '') +
+      '<div><u>Observaciones:</u> ' + pcEsc(x.OBSERVACIONES || '') + '<div style="margin-top:3px">Nota: se recomienda para su GARANTÍA, el uso en los neumáticos radiales y convencionales con arreglo, refuerzo interior o exterior, el uso de CÁMARAS NUEVAS para evitar filtraciones y un mejor rendimiento del neumático.</div></div></div>' +
+      '<div class="sg"><div class="ln"><span>Documento</span><span>Aclaración</span><span>Firma</span></div></div></div></div>';
   };
   pcImprimir('Remito ' + x.NRO + ' ' + x.CLIENTE, css + hojas.map(function(fil, k) { return '<div class="rhp"><div class="rh">' + copia('Original', fil, k + 1) + copia('Duplicado', fil, k + 1) + '</div></div>'; }).join(''), true);
 }
