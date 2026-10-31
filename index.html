@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "76a6a7bfc89d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "b8a9529eaa33"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610302326';
+var EMA_BUILD = '202610310334';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13053,7 +13053,7 @@ function pnAnxRes() {
 }
 function pnAnxServ(s) {
   return '<div class="pn-item"><div class="pn-l1"><div><div class="pn-med">' + pnEsc(s.MEDIDA === 'TODAS' ? 'Otras medidas' : s.MEDIDA) + '</div>' +
-    '<div class="pn-mar"><b>' + pnEsc(s.TRABAJO) + '</b>' + (s.LINEA ? ' · ' + (s.LINEA === 'AGRICOLA' ? 'Agrícola' : s.LINEA === 'VIAL' ? 'Vial' : 'Camiones') : '') + '</div></div>' +
+    '<div class="pn-mar"><b>' + pnEsc(s.TRABAJO) + '</b>' + (s.BANDA ? ' · banda ' + pnEsc(s.BANDA) : '') + (s.LINEA ? ' · ' + (s.LINEA === 'AGRICOLA' ? 'Agrícola' : s.LINEA === 'VIAL' ? 'Vial' : 'Camiones') : '') + '</div></div>' +
     '<div class="pn-pre"><div class="c">' + pnPlata(s.CON) + '</div><div class="s">' + pnPlata(s.SIN) + ' + IVA</div></div></div>' +
     '<div class="pn-tags"><span class="pn-tag">' + pnEsc(s.CODIGO) + '</span></div>' + pnExtBtn('SRV', s.ID_ARTICULO) + '</div>';
 }
