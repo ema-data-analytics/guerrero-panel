@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "b8a9529eaa33"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "c2b98c30e18e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202610310334';
+var EMA_BUILD = '202611012025';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -5026,7 +5026,7 @@ async function renderCargaCombustible() {
       '<td class="mono tr tred">'+fmt(cg.TOTAL||0)+'</td>'+
       '<td><span class="badge '+(anulado?'b-red':'b-green')+'" style="font-size:9px">'+(anulado?'ANULADO':'OK')+'</span></td>'+
       '<td style="white-space:nowrap">'+
-      (anulado?'':'<button class="btn btn-xs btn-w" onclick="combEditar(\''+cg.ID_CARGA_COMB+'\')" title="Editar"><i class="fas fa-pencil-alt"></i></button> '+'<button class="btn btn-xs btn-d" onclick="combAnular(\''+cg.ID_CARGA_COMB+'\')" title="Anular"><i class="fas fa-ban"></i></button>')+
+      (anulado?'':'<button class="btn btn-xs btn-d" onclick="combAnular(\''+cg.ID_CARGA_COMB+'\')" title="Anular"><i class="fas fa-ban"></i></button>')+
       '</td></tr>';
   }).join('');
   el.innerHTML=
@@ -5084,22 +5084,17 @@ function calcCombustible() {
 }
 
 async function confirmarCombustible() {
+  // 01/11/2026: la carga de combustible mueve la caja y entra en los egresos (servidor: gsADM_Grabar COMBUSTIBLE)
   const vehId = $v('cb-veh'); if (!vehId) { toast('Seleccionar vehículo','r2'); return; }
   const litros = $vf('cb-litros'); const km = $vi('cb-km');
   if (!litros || !km) { toast('Completar litros y KM','r2'); return; }
-  const precio = $vf('cb-precio');
-  const total = litros * precio;
-  const veh = await ADB.get('vehiculos', vehId);
+  const precio = $vf('cb-precio'); if (!(precio > 0)) { toast('Falta el precio del litro','r2'); return; }
+  const caja = $v('cb-caja'); if (!caja) { toast('Elegí de qué caja sale la plata','r2'); return; }
   try {
-    await ADB.put('carga_combustible', {
-      ID_CARGA_COMB: await nextId('carga_combustible','ID_CARGA_COMB'), ID_VEHICULO: vehId, PATENTE: (veh&&veh.PATENTE?veh.PATENTE:''), TIPO_VEHICULO: (veh&&veh.TIPO?veh.TIPO:''),
-      NRO_COMPROBANTE: $v('cb-nro'), TIPO_COMBUSTIBLE: $v('cb-tipo') || 'NAFTA',
-      CHOFER: $v('cb-chofer').trim(), ID_CAJA: $v('cb-caja') || '0f66dc81',
-      LITROS: litros, KM_MEDIDOR: km, PRECIO_LITRO: precio,
-      TOTAL: total, FECHA: new Date($v('cb-fecha')+'T12:00:00').getTime(), HORA: $v('cb-hora')
-    });
-    if (veh) { veh.KM_ACTUAL = km; await ADB.put('vehiculos', veh); }
-    toast('Carga registrada — '+fmtN(litros)+' L — '+fmt(total)+' ✓','g');
+    const r = await admGrabar('COMBUSTIBLE', { FECHA: $v('cb-fecha'), HORA: $v('cb-hora'), ID_VEHICULO: vehId, NRO_COMPROBANTE: $v('cb-nro'), TIPO_COMBUSTIBLE: $v('cb-tipo') || 'NAFTA',
+      CHOFER: ($v('cb-chofer') || '').trim(), ID_CAJA: caja, LITROS: litros, KM_MEDIDOR: km, PRECIO_LITRO: precio });
+    if (typeof _mcDel === 'function') { _mcDel('carga_combustible'); _mcDel('vehiculos'); }
+    toast('Carga registrada — '+fmtN(litros)+' L — '+fmt(r.IMPORTE)+' · salió de la caja ✓','g');
     renderCargaCombustible();
   } catch(e) { toast('Error: '+e.message,'r2'); }
 }
@@ -5135,7 +5130,6 @@ async function combRefreshHist() {
         '<td class="mono tr tred">'+fmt(cg.TOTAL||0)+'</td>'+
         '<td><span class="badge '+(an?'b-red':'b-green')+'" style="font-size:9px">'+(an?'ANULADO':'OK')+'</span></td>'+
         '<td style="white-space:nowrap">'+
-        '<button class="btn btn-xs btn-w" onclick="combEditar(\'' +cg.ID_CARGA_COMB+ '\')"><i class="fas fa-pencil-alt"></i></button> '+
         (an?'':'<button class="btn btn-xs btn-d" onclick="combAnular(\'' +cg.ID_CARGA_COMB+ '\')"><i class="fas fa-ban"></i></button>')+
         '</td></tr>';
     }).join('');
@@ -5145,15 +5139,13 @@ async function combRefreshHist() {
 }
 
 async function combAnular(id) {
-  if (!confirm('¿Anular esta carga?')) return;
+  // 01/11/2026: anula y devuelve la plata a la caja (sin ventanas del navegador)
+  const m = await uiPedir('Motivo de la anulación de la carga de combustible:', { obligatorio: true }); if (m === null) return;
   try {
-    var todos = await ADB.getAll('carga_combustible');
-    var cg = todos.find(function(x){ return String(x.ID_CARGA_COMB)===String(id); });
-    if (!cg) { toast('No encontrado','r2'); return; }
-    cg.ESTADO_COMB = 'ANULADO';
-    if (isGsMode()) { await gsRun('gsPut','carga_combustible',cg); } else { await DB.put('carga_combustible',cg); }
-    _mcDel('carga_combustible');
-    toast('Carga anulada ✓','g');
+    const r = await gsRun('gsADM_Anular', 'COMBUSTIBLE', id, m);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo anular','r2'); return; }
+    if (typeof _mcDel === 'function') { _mcDel('carga_combustible'); _mcDel('movimientos_caja'); }
+    toast('Carga anulada' + (r.REVERTIDO_CAJA ? ': la plata volvió a la caja' : '') + ' ✓','g');
     renderCargaCombustible();
   } catch(e){ toast('Error: '+e.message,'r2'); }
 }
@@ -10345,7 +10337,7 @@ function pcPintarOT() {
     (abierta ? '<button class="btn btn-p btn-sm" onclick="pcPrep(' + o.ID_OT + ')">⚖ Preparación y pesaje</button>' : '') +
     '<button class="btn btn-s btn-sm" onclick="pcImpOS(' + o.ID_OT + ')"><i class="fas fa-print"></i> Imprimir</button>' +
     (o.ESTADO === 'CERRADA' ? '<button class="btn btn-p btn-sm" onclick="pcRemitos(' + o.ID_OT + ')"><i class="fas fa-file-alt"></i> Remitos</button>' : '') +
-    (abierta && pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" onclick="pcCerrarOT()">Cerrar OT</button>' : '') +
+    (abierta && pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" onclick="pcCerrarOT()">Cerrar ' + (String(o.NRO_OT).indexOf('OS') === 0 ? 'OS' : 'OT') + '</button>' : '') +
     (abierta && pcPuede('ANULAR') ? '<button class="btn btn-s btn-sm" onclick="pcAnularOT()">Anular OT</button>' : '') + '</span></div>' +
     (o.OBSERVACIONES ? '<div class="tdim" style="padding:0 14px;font-size:12px">' + pcEsc(o.OBSERVACIONES) + '</div>' : '') +
     '<div class="tw"><table style="font-size:12px" id="pc-grid"><thead><tr><th>#</th><th>Marca grabada · DOT</th><th>Cubierta</th><th>Rol</th>' + cols.map(function(c) { return '<th class="tc" style="min-width:70px;max-width:120px;white-space:normal">' + pcEsc(c.nombre) + '</th>'; }).join('') + '<th>Estado</th><th class="tr">Costo</th><th></th></tr></thead><tbody>' +
