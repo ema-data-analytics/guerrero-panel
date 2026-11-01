@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611012025';
+var EMA_BUILD = '202611012120';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1581,16 +1581,18 @@ async function renderDashboard() {
   var totalVentas = ventas.reduce(function(s,v){
     var tc=v.TIPO_COMP||'';
     var esNC=tc.indexOf('NC')===0;
-    return s+(esNC?-(v.TOTAL_VENTA||0):(v.TOTAL_VENTA||0));
+    var imp=(v.NETO_VENTA!==undefined&&v.NETO_VENTA!==null&&v.NETO_VENTA!=='')?(parseFloat(v.NETO_VENTA)||0):(v.TOTAL_VENTA||0); // 01/11/2026: sin IVA, igual que el estado de resultados
+    return s+(esNC?-imp:imp);
   },0);
   var totalCompras = comprasActivas.reduce(function(s,c){
     var tc=c.TIPO_COMP||'COMPRA';
     var esNC=tc==='NC_PROV_DEV'||tc==='NC_PROV_IMP';
-    return s+(esNC?-(c.TOTAL_COMPRA||0):(c.TOTAL_COMPRA||0));
+    var imp=(String(c.IVA_COMPUTABLE)!=='0'&&parseFloat(c.NETO_COMPRA)>0)?parseFloat(c.NETO_COMPRA):(c.TOTAL_COMPRA||0); // sin IVA si es crédito fiscal
+    return s+(esNC?-imp:imp);
   },0);
   var nCompras = comprasActivas.filter(function(c){return !c.TIPO_COMP||c.TIPO_COMP==='COMPRA';}).length;
   var nNC      = comprasActivas.filter(function(c){return c.TIPO_COMP==='NC_PROV_DEV'||c.TIPO_COMP==='NC_PROV_IMP';}).length;
-  var totalComb    = combs.reduce(function(s,c){return s+(c.TOTAL||0);},0);
+  var totalComb    = combs.filter(function(c){return c.ESTADO_COMB!=='ANULADO';}).reduce(function(s,c){return s+(c.TOTAL||0);},0);
   // Solo los insumos de las órdenes de producción del período
   var _prodIds = {}; prods.forEach(function(p){ _prodIds[String(p.ID_PROD)] = true; });
   var _lineasPer = {}; detsProd.forEach(function(d){ if(_prodIds[String(d.ID_PROD)]) _lineasPer[String(d.ID_LINEA_SERV)] = true; });
@@ -10882,7 +10884,7 @@ async function pcCostos() {
     '<button class="btn btn-s btn-sm" onclick="pcPreciosRec()"><i class="fas fa-tags"></i> Precios de servicios</button>' +
     '<span class="tdim" style="font-size:11px">Reparto: ' + (r.metodo === 'MINUTOS' ? 'según minutos de cada cubierta' : 'igual por cubierta') + '</span></div>' +
     '<div class="tw"><table style="font-size:12px" id="pc-tbl-costos"><thead><tr><th>Terminada</th><th>OT</th><th>Marca grabada · DOT</th><th>Cliente</th><th>Cubierta</th><th class="tr">Materiales</th><th class="tr">Herramental</th><th class="tr">Min</th><th class="tr">Mano de obra</th><th class="tr">Fijos</th><th class="tr">Total</th></tr></thead><tbody>' +
-    r.filas.map(function(f) { return '<tr><td>' + fmtD(f.FECHA_FIN) + '</td><td class="mono">' + pcEsc(f.NRO_OT) + '</td><td class="mono"><b>' + pcEsc(f.MARCA) + '</b><div style="font-size:10px">DOT: ' + pcDotTxt(pcDotDe(f)) + '</div></td><td>' + pcEsc(f.CLIENTE) + '</td><td style="font-size:11px">' + pcEsc(f.TIPO + ' ' + f.MEDIDA + ' · ' + f.TRABAJO) + '</td><td class="tr mono">' + fmt(f.MATERIALES) + '</td><td class="tr mono">' + fmt(f.HERRAMENTAL) + '</td><td class="tr">' + f.MINUTOS + '</td><td class="tr mono">' + fmt(f.MO) + '</td><td class="tr mono">' + fmt(f.FIJOS) + '</td><td class="tr mono"><b>' + fmt(f.TOTAL) + '</b></td></tr>'; }).join('') +
+    r.filas.map(function(f) { return '<tr><td>' + fmtD(f.FECHA_FIN) + '</td><td class="mono">' + pcEsc(f.NRO_OT) + '</td><td class="mono"><b>' + pcEsc(f.MARCA) + '</b><div style="font-size:10px">DOT: ' + pcDotTxt(pcDotDe(f)) + '</div></td><td>' + pcEsc(f.CLIENTE) + '</td><td style="font-size:11px">' + pcEsc(f.TIPO + ' ' + f.MEDIDA + ' · ' + f.TRABAJO) + '</td><td class="tr mono">' + fmt(f.MATERIALES) + '</td><td class="tr mono">' + fmt(f.HERRAMENTAL) + '</td><td class="tr">' + pcDur(f.MINUTOS) + '</td><td class="tr mono">' + fmt(f.MO) + '</td><td class="tr mono">' + fmt(f.FIJOS) + '</td><td class="tr mono"><b>' + fmt(f.TOTAL) + '</b></td></tr>'; }).join('') +
     (n ? '<tr style="font-weight:700"><td colspan="5">Total ' + n + ' cubiertas (promedio ' + fmt(t.tot / n) + ')</td><td class="tr mono">' + fmt(t.mat) + '</td><td class="tr mono">' + fmt(t.herr) + '</td><td></td><td class="tr mono">' + fmt(t.mo) + '</td><td class="tr mono">' + fmt(t.fij) + '</td><td class="tr mono">' + fmt(t.tot) + '</td></tr>' : '') +
     '</tbody></table>' + (n ? '' : '<div class="tdim" style="padding:12px">No hay cubiertas terminadas en ' + mes + '.</div>') + '</div>' +
     (r.prorrateos.length ? '<div class="tdim" style="padding:8px 14px;font-size:11px">Prorrateos hechos: ' + r.prorrateos.map(function(p) { return p.MES + ' (' + p.METODO + ', ' + fmt(p.FIJOS_MES) + ' entre ' + p.CUBIERTAS + ')'; }).join(' · ') + '</div>' : '') + '</div>';
