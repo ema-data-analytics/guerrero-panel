@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611020920';
+var EMA_BUILD = '202611021015';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -11184,7 +11184,7 @@ function puElegirEst() {
     '<div class="tdim" style="font-size:15px">O la tablet queda fija en una estación (se elige una sola vez y la recuerda):</div>' +
     (function() { var grupos = {}, orden = []; PU_.d.estaciones.forEach(function(e) { var L = e.LINEA || ''; if (!grupos[L]) { grupos[L] = []; orden.push(L); } grupos[L].push(e); });
       return orden.map(function(L) { return (orden.length > 1 ? '<div class="pu-h" style="margin-top:12px">Línea ' + puEsc(L === 'AGRICOLA' ? 'agrícola' : (L === 'CAMIONES' ? 'camiones' : L)) + '</div>' : '') +
-        '<div class="pu-ests">' + grupos[L].map(function(e) { return '<button onclick="puFijarEst(\'' + puEsc(e.ID_ESTACION) + '\')"><small>ESTACIÓN ' + e.ORDEN + '</small>' + puEsc(e.NOMBRE) + '</button>'; }).join('') + '</div>'; }).join(''); })();
+        '<div class="pu-ests">' + grupos[L].map(function(e) { return '<button onclick="puFijarEst(\'' + puEsc(e.ID_ESTACION) + '\')"><small>ESTACIÓN ' + (e.NRO || e.ORDEN) + '</small>' + puEsc(e.NOMBRE) + '</button>'; }).join('') + '</div>'; }).join(''); })();
 }
 function puFijarEst(id) { PU_.est = String(id); puGuardar('pu_est', PU_.est); puCargar(); }
 function puCambiarEst() { puPararReloj(); PU_.est = ''; PU_.vista = 'lista'; puPintar(); }
@@ -12133,7 +12133,7 @@ function puPesarCub(r) { return !!(PU_.f && PU_.f.pesar && PU_.f.pesar.cub && r.
 function puPesoOk(r) { var a = puN(r.pa), z = puN(r.pz); return r.pa !== '' && r.pz !== '' && r.pa !== undefined && r.pz !== undefined && !isNaN(a) && !isNaN(z) && z <= a + 1e-9; }
 function puPesajeBanner() {
   var p = PU_.pes; if (!p || !p.ITEMS || !p.ITEMS.length) return '';
-  var sinIni = p.ITEMS.filter(function(i) { return !i.PES; }), abiertos = p.ITEMS.filter(function(i) { return i.PES && i.PES.ESTADO === 'ABIERTO'; });
+  var sinIni = p.ITEMS.filter(function(i) { return !i.PES && i.PREVISTO; }) /* 02/11/2026: solo lo que la carga de hoy usa en esa estación */, abiertos = p.ITEMS.filter(function(i) { return i.PES && i.PES.ESTADO === 'ABIERTO'; });
   if (sinIni.length) return '<div class="pu-reg" style="border-color:var(--danger);background:var(--danger-light, #fde8e8)"><div style="font-size:19px;font-weight:700;color:var(--danger)">⚖ Falta el pesaje de inicio del día: ' + puEsc(sinIni.map(function(i) { return i.NOMBRE + (puTodas() ? ' (' + i.ESTACION + ')' : ''); }).join(', ')) + '</div>' +
     '<div style="font-size:15px">Hasta que no se pese lo que se retira, esta estación no deja cargar ese insumo.</div><button class="pu-btn" style="background:var(--danger);color:#fff;width:max-content" onclick="puPesaje(\'\')">Pesar ahora</button></div>';
   if (abiertos.length) return '<div class="pu-reg" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-color:var(--accent)"><div style="font-size:17px">⚖ Pesaje del día abierto: ' + puEsc(abiertos.map(function(i) { return i.NOMBRE; }).join(', ')) + '. Al terminar el día pesá lo que sobra.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pu-btn pu-min" onclick="puPesaje(\'\')">Pesaje del día</button><button class="pu-btn pu-min" onclick="puPesaje(\'' + puEsc(p.MANANA || '') + '\')">⚖ Preparar mañana</button></div></div>';
