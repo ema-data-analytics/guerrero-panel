@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611012120';
+var EMA_BUILD = '202611020910';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12848,7 +12848,7 @@ function pnCotTexto() {
   var t = '*Cotización · Vulcan Tread Neumáticos*\n' + pnHoyTxt() + (PN_.cli ? '\nCliente: ' + PN_.cli : '') + (PN_.pago ? '\nForma de pago: ' + PN_.pago : '') + (its.some(function(x) { return x.d; }) ? '\nDescuentos ya aplicados en los precios' : '') + '\n';
   its.forEach(function(x) {
     tot += x.sub;
-    t += '\n• ' + x.cant + ' x ' + (x.p.EXT ? x.p.MEDIDA + ' (' + x.p.DISENO + ')' : x.p.MEDIDA + ' ' + x.p.MARCA + ' ' + x.p.DISENO) + '\n   ' + (x.d ? 'Lista ' + pnPlata(x.base) + ' − ' + String(x.dp).replace('.', ',') + '% → ' : '') + pnPlata(x.unit) + ' c/u' + (x.nota ? ' (' + x.nota + ')' : '') + ' · Subtotal ' + pnPlata(x.sub);
+    t += '\n• ' + x.cant + ' x ' + (x.p.EXT ? x.p.MEDIDA + ' (' + x.p.DISENO + ')' : x.p.MEDIDA + ' ' + x.p.MARCA + ' ' + x.p.DISENO) + '\n   ' + pnPlata(x.unit) + ' c/u' + (x.nota ? ' (' + x.nota + ')' : '') + ' · Subtotal ' + pnPlata(x.sub);
   });
   t += '\n\n*Total: ' + pnPlata(tot) + '* (IVA incluido)\nPrecios con IVA incluido. Sujetos a cambio y disponibilidad.';
   return t;
@@ -12859,7 +12859,7 @@ function pnCotWhats() {
   window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
 }
 function pnCotHtml() {
-  var its = pnSelItems(), tot = 0, filas = '', hayD = its.some(function(x) { return x.d; });
+  var its = pnSelItems(), tot = 0, filas = '', hayD = false;   // 02/11/2026 (Anibal): al cliente va solo el precio final con el descuento incluido; el descuento se ve en la pantalla de carga
   var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
   its.forEach(function(x, i) {
     tot += x.sub;
