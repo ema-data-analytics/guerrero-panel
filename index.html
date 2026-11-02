@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611020910';
+var EMA_BUILD = '202611020920';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12845,7 +12845,7 @@ function pnHoyTxt() { var d = new Date(); return ('0' + d.getDate()).slice(-2) +
 function pnVendedor() { var v = $id('sb-nm'); var t = v ? v.textContent.trim() : ''; return t && t !== 'Usuario' ? t : ''; }
 function pnCotTexto() {
   var its = pnSelItems(), tot = 0;
-  var t = '*Cotización · Vulcan Tread Neumáticos*\n' + pnHoyTxt() + (PN_.cli ? '\nCliente: ' + PN_.cli : '') + (PN_.pago ? '\nForma de pago: ' + PN_.pago : '') + (its.some(function(x) { return x.d; }) ? '\nDescuentos ya aplicados en los precios' : '') + '\n';
+  var t = '*Cotización · Vulcan Tread Neumáticos*\n' + pnHoyTxt() + (PN_.cli ? '\nCliente: ' + PN_.cli : '') + (PN_.pago ? '\nForma de pago: ' + PN_.pago : '') + '\n';
   its.forEach(function(x) {
     tot += x.sub;
     t += '\n• ' + x.cant + ' x ' + (x.p.EXT ? x.p.MEDIDA + ' (' + x.p.DISENO + ')' : x.p.MEDIDA + ' ' + x.p.MARCA + ' ' + x.p.DISENO) + '\n   ' + pnPlata(x.unit) + ' c/u' + (x.nota ? ' (' + x.nota + ')' : '') + ' · Subtotal ' + pnPlata(x.sub);
