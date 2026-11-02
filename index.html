@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "c2b98c30e18e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9ea3e574afd1"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611021015';
+var EMA_BUILD = '202611021115';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3396,7 +3396,7 @@ async function sbMigrar() {
 // → renglones (cada uno se graba al agregarlo) → entrega y cobro → Confirmar (recién ahí: número, stock y cuenta corriente).
 var _VTA = null, ventaItems = [], _vtaFormas = [];
 var VB_ = { f: { desde: '', hasta: '', cli: '', tipo: '', estado: '' }, bor: null, editBd: '' };
-var VTA_TIPO_TXT = { FACTURA_A: 'Factura A', FACTURA_B: 'Factura B', PRESUPUESTO: 'Presupuesto', NC_A: 'NC A', NC_B: 'NC B', NC_INTERNA: 'NC interna' };
+var VTA_TIPO_TXT = { FACTURA_A: 'Factura A', FACTURA_B: 'Factura B', PRESUPUESTO: 'Presupuesto', NC_A: 'NC A', NC_B: 'NC B', NC_INTERNA: 'NC interna', ND_A: 'ND A', ND_B: 'ND B' };
 var COB_FORMA_TXT = { EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', TARJETA: 'Tarjeta', CHEQUE_TERCERO: 'Cheque', RETENCION: 'Retención' };
 function vEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function vNum(v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; }
@@ -3451,7 +3451,7 @@ function vbLista() {
     '<div class="fg"><label class="fl">Hasta</label><input type="date" class="fi" value="' + vEsc(f.hasta) + '" onchange="VB_.f.hasta=this.value;vbGrilla()"/></div>' +
     '<div class="fg" style="flex:2;min-width:180px"><label class="fl">Cliente o N°</label><input class="fi" value="' + vEsc(f.cli) + '" placeholder="Nombre, CUIT o número" oninput="VB_.f.cli=this.value;clearTimeout(window._vbT);window._vbT=setTimeout(vbGrilla,250)"/></div>' +
     '<div class="fg"><label class="fl">Tipo</label><select class="fs" onchange="VB_.f.tipo=this.value;vbGrilla()">' +
-    [['', 'Todos'], ['FACTURA', 'Facturas'], ['PRESUPUESTO', 'Presupuestos'], ['NC', 'Notas de crédito']].map(function(o) { return '<option value="' + o[0] + '"' + (f.tipo === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
+    [['', 'Todos'], ['FACTURA', 'Facturas'], ['PRESUPUESTO', 'Presupuestos'], ['NC', 'Notas de crédito'], ['ND', 'Notas de débito']].map(function(o) { return '<option value="' + o[0] + '"' + (f.tipo === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
     '<div class="fg"><label class="fl">Estado</label><select class="fs" onchange="VB_.f.estado=this.value;vbGrilla()">' +
     [['', 'Todos'], ['CARGA', 'En carga'], ['DEBE', 'Con saldo'], ['COBRADO', 'Cobrados'], ['ANULADA', 'Anulados']].map(function(o) { return '<option value="' + o[0] + '"' + (f.estado === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
     '</div></div></div>' +
@@ -3466,7 +3466,7 @@ function vbFilas() {
     filas.push({ CARGA: true, ID: b.ID_BOR, FECHA: vbFechaMs(b.FECHA), NRO: 'En carga #' + b.ID_BOR, TIPO: b.TIPO_COMP, TIPO_TXT: b.COMPROBANTE, CLIENTE: b.CLIENTE, CUIT: '', TOTAL: b.TOTAL, SALDO: 0, ESTADO: 'CARGA', RENG: b.RENGLONES });
   });
   (_VTA.VENTAS || []).forEach(function(v) {
-    var c = vtaCli(v.CLIENTE), tb = v.TIPO_COMP.indexOf('NC') === 0 ? 'NC' : (v.TIPO_COMP === 'PRESUPUESTO' ? 'PRESUPUESTO' : 'FACTURA');
+    var c = vtaCli(v.CLIENTE), tb = v.TIPO_COMP.indexOf('NC') === 0 ? 'NC' : (v.TIPO_COMP.indexOf('ND') === 0 ? 'ND' : (v.TIPO_COMP === 'PRESUPUESTO' ? 'PRESUPUESTO' : 'FACTURA'));
     filas.push({ CARGA: false, ID: v.ID_VENTA, FECHA: v.FECHA, NRO: v.NRO_COMP, TIPO: tb, TIPO_COMP: v.TIPO_COMP, TIPO_TXT: VTA_TIPO_TXT[v.TIPO_COMP] || v.TIPO_COMP, CLIENTE: c ? c.NOMBRE : String(v.CLIENTE), CUIT: c ? c.CUIT : '',
       TOTAL: v.TOTAL, SALDO: v.SALDO, ESTADO: v.ESTADO === 'ANULADA' ? 'ANULADA' : (tb === 'NC' ? 'NC' : v.ESTADO_COBRO) });
   });
@@ -3498,7 +3498,7 @@ function vbGrilla() {
       '<button class="btn btn-xs btn-s" onclick="vbDescartarPedir(' + x.ID + ')" title="Descartar"><i class="fas fa-times"></i></button>';
     else bt = '<button class="btn btn-xs btn-info" onclick="vtaVerDetalle(\'' + x.ID + '\')" title="Ver"><i class="fas fa-eye"></i></button> ' +
       '<button class="btn btn-xs btn-s" onclick="vtaImprimir(\'' + x.ID + '\')" title="Imprimir / PDF"><i class="fas fa-print"></i></button>' +
-      (x.ESTADO !== 'ANULADA' && x.TIPO !== 'NC' ? ' <button class="btn btn-xs btn-s" onclick="vbNC(\'' + x.ID + '\')" title="Nota de crédito">NC</button>' : '') +
+      (x.ESTADO !== 'ANULADA' && x.TIPO !== 'NC' && x.TIPO !== 'ND' ? ' <button class="btn btn-xs btn-s" onclick="vbNC(\'' + x.ID + '\')" title="Nota de crédito">NC</button>' : '') +
       (x.ESTADO !== 'ANULADA' ? ' <button class="btn btn-xs btn-s" onclick="vtaAnularPedir(\'' + x.ID + '\')" title="Anular"><i class="fas fa-ban"></i></button>' : '');
     return '<tr' + (x.ESTADO === 'ANULADA' ? ' style="opacity:.55"' : '') + '><td class="mono" style="font-size:12px">' + (x.FECHA ? fmtD(x.FECHA) : '') + '</td><td class="mono" style="font-size:11px">' + vEsc(x.NRO) + '</td>' +
       '<td><span class="badge ' + (x.TIPO === 'NC' ? 'b-warn' : x.TIPO === 'PRESUPUESTO' ? 'b-gray' : 'b-blue') + '" style="font-size:9px">' + vEsc(x.TIPO_TXT) + '</span></td>' +
@@ -3519,7 +3519,7 @@ async function vbAbrir(id) {
   catch (e) { toast(e.message || e, 'r2'); }
 }
 function vbEditor() {
-  var el = $id('page-ventas'), b = VB_.bor, nuevo = !b.ID_BOR, nc = b.TIPO_COMP === 'NC', imp = nc && b.NC_TIPO === 'IMPORTE';
+  var el = $id('page-ventas'), b = VB_.bor, nuevo = !b.ID_BOR, nd = b.TIPO_COMP === 'ND', nc = b.TIPO_COMP === 'NC' || nd, imp = nc && (nd || b.NC_TIPO === 'IMPORTE');
   var cli = vtaCli(b.ID_CLIENTE);
   var titulo = nuevo ? 'Nuevo comprobante' : (b.COMPROBANTE || b.TIPO_COMP) + ' · en carga #' + b.ID_BOR;
   el.innerHTML =
@@ -3530,14 +3530,14 @@ function vbEditor() {
     // Encabezado
     '<div class="card mb3"><div class="card-hd"><span class="card-title">1 · Encabezado</span>' + (nuevo ? '' : '<span class="badge b-green">Grabado</span>') + '</div><div class="card-body">' +
     '<div class="fr" style="flex-wrap:wrap"><div class="fg"><label class="fl">Tipo *</label><select id="vb-tipo" class="fs" style="font-weight:700" onchange="vbTipoCambio()">' +
-    [['FACTURA', 'Factura (A o B según el cliente)'], ['PRESUPUESTO', 'Presupuesto (comprobante X: no va a ARCA)'], ['NC', 'Nota de crédito']].map(function(o) { return '<option value="' + o[0] + '"' + (b.TIPO_COMP === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
+    [['FACTURA', 'Factura (A o B según el cliente)'], ['PRESUPUESTO', 'Presupuesto (comprobante X: no va a ARCA)'], ['NC', 'Nota de crédito'], ['ND', 'Nota de débito (intereses, diferencias, cheque rechazado)']].map(function(o) { return '<option value="' + o[0] + '"' + (b.TIPO_COMP === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
     '<div class="fg"><label class="fl">Fecha *</label><input id="vb-fecha" type="date" class="fi" value="' + vEsc(b.FECHA) + '"/></div>' +
     '<div class="fg" id="vb-entrega-w"' + (nc ? ' style="display:none"' : '') + '><label class="fl">Entrega</label><select id="vb-entrega" class="fs"><option value="MOSTRADOR"' + (b.TIPO_ENTREGA !== 'REMITO' ? ' selected' : '') + '>Mostrador — sale del stock al confirmar</option><option value="REMITO"' + (b.TIPO_ENTREGA === 'REMITO' ? ' selected' : '') + '>Con remito — sale del stock al entregar</option></select></div></div>' +
     '<div class="fr" style="flex-wrap:wrap"><div class="fg" style="flex:2;min-width:220px"><label class="fl">Cliente *</label><input id="vb-cli-q" class="fi" placeholder="Buscar por nombre o CUIT…" oninput="vbCliFiltrar()" value=""/>' +
     '<select id="vb-cli" class="fs mt1" onchange="vbCliCambio()"></select></div>' +
     '<div class="fg" style="flex:2;min-width:220px" id="vb-cli-info"></div></div>' +
-    '<div id="vb-nc-w"' + (nc ? '' : ' style="display:none"') + '><div class="fr" style="flex-wrap:wrap"><div class="fg" style="flex:2"><label class="fl">Venta a la que se le hace la NC *</label><select id="vb-nc-origen" class="fs"></select></div>' +
-    '<div class="fg"><label class="fl">Tipo de NC</label><select id="vb-nc-tipo" class="fs" onchange="vbTipoCambio()"><option value="DEVOLUCION"' + (b.NC_TIPO !== 'IMPORTE' ? ' selected' : '') + '>Devolución de mercadería (vuelve el stock)</option><option value="IMPORTE"' + (b.NC_TIPO === 'IMPORTE' ? ' selected' : '') + '>Por importe</option></select></div></div>' +
+    '<div id="vb-nc-w"' + (nc ? '' : ' style="display:none"') + '><div class="fr" style="flex-wrap:wrap"><div class="fg" style="flex:2"><label class="fl" id="vb-nc-lbl">' + (nd ? 'Factura a la que se le hace la nota de débito *' : 'Venta a la que se le hace la NC *') + '</label><select id="vb-nc-origen" class="fs"></select></div>' +
+    '<div class="fg" id="vb-nc-tipo-w"' + (nd ? ' style="display:none"' : '') + '><label class="fl">Tipo de NC</label><select id="vb-nc-tipo" class="fs" onchange="vbTipoCambio()"><option value="DEVOLUCION"' + (b.NC_TIPO !== 'IMPORTE' ? ' selected' : '') + '>Devolución de mercadería (vuelve el stock)</option><option value="IMPORTE"' + (b.NC_TIPO === 'IMPORTE' ? ' selected' : '') + '>Por importe</option></select></div></div>' +
     '<div class="fr" id="vb-ncimp-w"' + (imp ? '' : ' style="display:none"') + '><div class="fg" style="flex:2"><label class="fl">Concepto *</label><input id="vb-nc-concepto" class="fi" value="' + vEsc(b.NC_CONCEPTO || '') + '" placeholder="Ej: Bonificación"/></div>' +
     '<div class="fg"><label class="fl">Importe con IVA *</label><input id="vb-nc-importe" type="number" step="0.01" class="fi" value="' + (b.NC_IMPORTE || '') + '"/></div>' +
     '<div class="fg"><label class="fl">IVA %</label><select id="vb-nc-iva" class="fs">' + ['21', '10.5', '0'].map(function(x) { return '<option' + (String(b.NC_IVA || '21') === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div></div></div>' +
@@ -3563,20 +3563,21 @@ function vbCliCambio() {
     (t === 'FACTURA' ? ' · corresponde <b>factura ' + c.LETRA + '</b>' : '') + '<br>Debe: <b>' + fmt((_VTA.VENTAS || []).filter(function(v) { return String(v.CLIENTE) === String(c.ID_CLIENTE) && v.ESTADO !== 'ANULADA'; }).reduce(function(s, v) { return s + v.SALDO; }, 0)) + '</b></div>';
   var o = $id('vb-nc-origen');
   if (o) {
-    var b = VB_.bor, vs = c ? (_VTA.VENTAS || []).filter(function(v) { return String(v.CLIENTE) === String(c.ID_CLIENTE) && v.ESTADO !== 'ANULADA' && v.TIPO_COMP.indexOf('NC') !== 0; }) : [];
+    var b = VB_.bor, esND = $v('vb-tipo') === 'ND', vs = c ? (_VTA.VENTAS || []).filter(function(v) { return String(v.CLIENTE) === String(c.ID_CLIENTE) && v.ESTADO !== 'ANULADA' && (esND ? /^FACTURA_/.test(v.TIPO_COMP) : v.TIPO_COMP.indexOf('NC') !== 0 && v.TIPO_COMP.indexOf('ND') !== 0); }) : [];
     o.innerHTML = '<option value="">' + (c ? (vs.length ? '— Elegir —' : 'Este cliente no tiene ventas') : '— Elegí primero el cliente —') + '</option>' +
       vs.map(function(v) { return '<option value="' + v.ID_VENTA + '"' + (String(b.ID_COMP_ORIGEN) === String(v.ID_VENTA) ? ' selected' : '') + '>' + (VTA_TIPO_TXT[v.TIPO_COMP] || v.TIPO_COMP) + ' ' + vEsc(v.NRO_COMP) + ' · ' + fmtD(v.FECHA) + ' · ' + fmt(v.TOTAL) + '</option>'; }).join('');
   }
 }
 function vbTipoCambio() {
-  var t = $v('vb-tipo'), nc = t === 'NC';
+  var t = $v('vb-tipo'), nd = t === 'ND', nc = t === 'NC' || nd;
   $id('vb-nc-w').style.display = nc ? '' : 'none'; $id('vb-entrega-w').style.display = nc ? 'none' : '';
-  $id('vb-ncimp-w').style.display = nc && $v('vb-nc-tipo') === 'IMPORTE' ? '' : 'none';
+  $id('vb-nc-tipo-w').style.display = nd ? 'none' : ''; $id('vb-nc-lbl').textContent = nd ? 'Factura a la que se le hace la nota de débito *' : 'Venta a la que se le hace la NC *';
+  $id('vb-ncimp-w').style.display = nc && (nd || $v('vb-nc-tipo') === 'IMPORTE') ? '' : 'none';
   vbCliCambio();
 }
 async function vbGrabarEnc() {
   var b = VB_.bor, d = { ID_BOR: b.ID_BOR || '', TIPO_COMP: $v('vb-tipo'), FECHA: $v('vb-fecha'), ID_CLIENTE: $v('vb-cli'), TIPO_ENTREGA: $v('vb-entrega'), OBS: $v('vb-obs'),
-    ID_COMP_ORIGEN: $v('vb-nc-origen'), NC_TIPO: $v('vb-nc-tipo'), NC_IMPORTE: $v('vb-nc-importe'), NC_IVA: $v('vb-nc-iva'), NC_CONCEPTO: $v('vb-nc-concepto') };
+    ID_COMP_ORIGEN: $v('vb-nc-origen'), NC_TIPO: $v('vb-tipo') === 'ND' ? 'IMPORTE' : $v('vb-nc-tipo'), NC_IMPORTE: $v('vb-nc-importe'), NC_IVA: $v('vb-nc-iva'), NC_CONCEPTO: $v('vb-nc-concepto') };
   if (!d.ID_CLIENTE) { toast('Elegí el cliente', 'r2'); return; }
   var bt = $id('vb-enc-ok'); bt.disabled = true;
   try {
@@ -3589,7 +3590,7 @@ async function vbGrabarEnc() {
 // ── Detalle ──
 function vbDetalleHtml() {
   var b = VB_.bor;
-  if (b.TIPO_COMP === 'NC' && b.NC_TIPO === 'IMPORTE') return '<div class="card mb3"><div class="card-hd"><span class="card-title">2 · Detalle</span></div><div class="card-body tdim">La nota de crédito por importe no lleva renglones: el importe va en el encabezado.</div>' + vbPieHtml() + '</div>';
+  if ((b.TIPO_COMP === 'NC' || b.TIPO_COMP === 'ND') && b.NC_TIPO === 'IMPORTE') return '<div class="card mb3"><div class="card-hd"><span class="card-title">2 · Detalle</span></div><div class="card-body tdim">La nota ' + (b.TIPO_COMP === 'ND' ? 'de débito' : 'de crédito') + ' por importe no lleva renglones: el importe va en el encabezado.</div>' + vbPieHtml() + '</div>';
   return '<div class="card mb3"><div class="card-hd"><span class="card-title">2 · Detalle</span><span class="badge b-blue" id="vb-nl"></span></div><div class="card-body">' +
     '<div class="fr" style="flex-wrap:wrap;align-items:flex-end">' +
     '<div class="fg"><label class="fl">Qué</label><select id="vb-l-tipo" class="fs" onchange="vbLTipo()"><option value="ARTICULO">Artículo</option><option value="SERVICIO">Servicio</option></select></div>' +
@@ -12234,7 +12235,7 @@ function puPesFin(k) {
         $id('pu-pes-fin-' + k).value = v; return;
       }
       if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
-      toast('Día cerrado ✓', 'g'); puPesaje(); } catch (e) { toast(e.message, 'r2'); }
+      toast(r.PASA_A ? 'Día cerrado ✓ · lo que quedó en la estación ya es el inicio del ' + puFechaTxt(r.PASA_A) + ': no hay que volver a pesarlo' : 'Día cerrado ✓', 'g'); puPesaje(); } catch (e) { toast(e.message, 'r2'); }
   });
 }
 function puElegir(tit, ops, fn) {
@@ -17205,15 +17206,17 @@ async function renderDocs() {
   try {
     if (typeof PC_ === 'undefined' || !PC_.d) { PC_.d = await gsRun('gsPC_Datos'); }
     var r = await gsRun('gsPC_Remitos', ''); DC_.rem = (r && r.REMITOS) || []; window.PC_REM = DC_.rem;
+    // 02/11/2026: también facturas, notas de crédito y de débito (si el usuario ve ventas)
+    try { DC_.vta = await gsRun('gsVTA_Datos'); if (DC_.vta && typeof _VTA !== 'undefined' && !_VTA) _VTA = DC_.vta; } catch (e2) { DC_.vta = null; }
   } catch (e) { el.innerHTML = '<div class="dc-wrap"><div class="al al-r">' + pcEsc(e.message) + '</div></div>'; return; }
   docsPintar();
 }
 function docsNorm(s) { return String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\s\-.\/]/g, ''); }
 function docsPintar() {
   var el = $id('page-documentos');
-  el.innerHTML = '<div class="dc-wrap"><div class="page-hd" style="margin-bottom:6px"><div><div class="page-title">📄 Documentos para el cliente</div><div class="page-sub">Buscá y mandá en PDF la orden de trabajo, el remito o el certificado de una cubierta.</div></div>' + (document.body.classList.contains('modo-puesto') ? '<button class="btn btn-s" onclick="mvAbrir(\'cascos\')">📥 Recibir cascos</button>' : '') + '</div>' +
+  el.innerHTML = '<div class="dc-wrap"><div class="page-hd" style="margin-bottom:6px"><div><div class="page-title">📄 Documentos para el cliente</div><div class="page-sub">Buscá y mandá en PDF la orden de trabajo, el remito, la factura o nota, o el certificado de una cubierta.</div></div>' + (document.body.classList.contains('modo-puesto') ? '<button class="btn btn-s" onclick="mvAbrir(\'cascos\')">📥 Recibir cascos</button>' : '') + '</div>' +
     '<input class="dc-q" id="dc-q" placeholder="Cliente, marca grabada, DOT, OT, remito…" value="' + pcEsc(DC_.q) + '" autocomplete="off">' +
-    '<div class="dc-tipos">' + [['', 'Todo'], ['OT', 'Órdenes de trabajo'], ['REM', 'Remitos'], ['CUB', 'Cubiertas (certificado)']].map(function(t) { return '<button class="dc-chip' + (DC_.tipo === t[0] ? ' on' : '') + '" onclick="DC_.tipo=\'' + t[0] + '\';docsPintar()">' + t[1] + '</button>'; }).join('') + '</div>' +
+    '<div class="dc-tipos">' + [['', 'Todo'], ['OT', 'Órdenes de trabajo'], ['REM', 'Remitos'], ['FAC', 'Facturas y notas'], ['CUB', 'Cubiertas (certificado)']].filter(function(t) { return t[0] !== 'FAC' || (DC_.vta && DC_.vta.VENTAS); }).map(function(t) { return '<button class="dc-chip' + (DC_.tipo === t[0] ? ' on' : '') + '" onclick="DC_.tipo=\'' + t[0] + '\';docsPintar()">' + t[1] + '</button>'; }).join('') + '</div>' +
     '<div id="dc-res"></div></div>';
   var q = $id('dc-q'); q.oninput = function() { DC_.q = this.value; docsRes(); }; docsRes();
 }
@@ -17227,6 +17230,17 @@ function docsRes() {
     items.push({ cli: o.CLIENTE, f: +o.FECHA, h: '<div><div class="dc-t">Orden de trabajo ' + pcEsc(o.NRO_MANUAL ? 'boleta ' + o.NRO_MANUAL + ' · ' + o.NRO : o.NRO) + '</div><div class="dc-s">' + fmtD(+o.FECHA) + ' · ' + cs.length + (cs.length === 1 ? ' cubierta' : ' cubiertas') + ' · ' + (o.FIRMA_ID ? '✓ firmada por ' + pcEsc(o.FIRMA_NOMBRE) : 'sin firma del cliente') + '</div></div>' +
       '<div class="dc-acc">' + (o.FIRMA_ID ? '' : '<button class="btn btn-s" onclick="pcFirmaOT(' + o.ID_OTRAB + ')">✍ Firmar</button>') + '<button class="btn btn-p" onclick="pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-file-pdf"></i> PDF</button></div>' });
   });
+  if ((!DC_.tipo || DC_.tipo === 'FAC') && DC_.vta && DC_.vta.VENTAS) {
+    var cliN = {}; (DC_.vta.CLIENTES || []).forEach(function(c) { cliN[String(c.ID_CLIENTE)] = c; });
+    var txt = { FACTURA_A: 'Factura A', FACTURA_B: 'Factura B', NC_A: 'Nota de crédito A', NC_B: 'Nota de crédito B', ND_A: 'Nota de débito A', ND_B: 'Nota de débito B', PRESUPUESTO: 'Presupuesto', NC_INTERNA: 'NC interna' };
+    DC_.vta.VENTAS.forEach(function(v) {
+      if (v.ESTADO === 'ANULADA') return;
+      var c = cliN[String(v.CLIENTE)] || {}, nom = c.NOMBRE || String(v.CLIENTE);
+      if (!pasa([v.NRO_COMP, nom, c.CUIT, txt[v.TIPO_COMP]].join(' '))) return;
+      items.push({ cli: nom, f: +v.FECHA, h: '<div><div class="dc-t">' + pcEsc((txt[v.TIPO_COMP] || v.TIPO_COMP) + ' ' + v.NRO_COMP) + '</div><div class="dc-s">' + fmtD(+v.FECHA) + ' · ' + fmt(v.TOTAL) + (v.SALDO > 0.009 && !/^NC/.test(v.TIPO_COMP) ? ' · debe ' + fmt(v.SALDO) : '') + '</div></div>' +
+        '<div class="dc-acc"><button class="btn btn-p" onclick="vtaImprimir(' + Number(v.ID_VENTA) + ')"><i class="fas fa-file-pdf"></i> PDF</button></div>' });
+    });
+  }
   if (!DC_.tipo || DC_.tipo === 'REM') (DC_.rem || []).forEach(function(x, i) {
     if (!pasa([x.NRO, x.CLIENTE, x.NRO_OT].concat((x.ITEMS || []).map(function(t) { return t.MARCA + ' ' + (t.DOT || ''); })).join(' '))) return;
     items.push({ cli: x.CLIENTE, f: +x.FECHA, h: '<div><div class="dc-t">Remito ' + pcEsc(x.NRO) + '</div><div class="dc-s">' + fmtD(+x.FECHA) + ' · ' + x.N_TERMINADAS + ' terminadas' + (+x.N_DEVUELTAS ? ' · ' + x.N_DEVUELTAS + ' devueltas' : '') + ' · ' + (x.ESTADO === 'ENTREGADO' ? '✓ entregado' : 'falta la foto firmada') + '</div></div>' +
