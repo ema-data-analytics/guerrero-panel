@@ -97,6 +97,9 @@ body.modo-cascos #page-produccion-cubiertas .tabs,body.modo-cascos #page-producc
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;color:#94a3b8;font-size:13px;font-weight:500;transition:all .12s;border-left:3px solid transparent;margin:1px 0;}
 .nav-item:hover{color:#f1f5f9;background:rgba(255,255,255,.06);}
 .nav-item.active{color:#fff;background:rgba(37,99,235,.25);border-left-color:#2563eb;}
+.sb-grp{margin:1px 0}.sb-gh{display:flex;align-items:center;gap:9px;padding:10px 14px;cursor:pointer;color:#cbd5e1;font-size:13.5px;font-weight:700;user-select:none;border-left:3px solid transparent}.sb-gh:hover{background:rgba(255,255,255,.06);color:#fff}
+.sb-gi-ic{width:20px;text-align:center;font-size:15px}.sb-gt{flex:1}.sb-car{font-size:16px;color:#64748b;transition:transform .15s}.sb-grp.abierto>.sb-gh{color:#fff;background:rgba(255,255,255,.04)}.sb-grp.abierto>.sb-gh .sb-car{transform:rotate(90deg);color:#93c5fd}
+.sb-gl{display:none;padding:2px 0 6px}.sb-grp.abierto>.sb-gl{display:block}.sb-gl .nav-item{padding:8px 16px 8px 30px;font-size:12.5px}.sb-grp.tiene-activo>.sb-gh{border-left-color:#2563eb}
 .nav-icon{font-size:15px;width:18px;text-align:center;}
 .sb-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.06);font-family:var(--mono);font-size:9px;color:#475569;}
 .page-hdr{padding:20px 28px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:var(--shadow);}
@@ -287,82 +290,90 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
       <button class="sb-logout" onclick="doLogout()" title="Salir">⏻</button>
     </div>
     <nav class="sb-nav">
-      <div class="sb-group">Principal</div>
-      <div class="nav-item active" data-page="dashboard"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Dashboard</div>
-
-      <div class="sb-group">Cargas</div>
-      <div class="nav-item" data-page="carga-produccion"><span class="nav-icon"><i class="fas fa-cog"></i></span> Producción</div>
-      <div class="nav-item" data-page="ordenes-trabajo"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Órdenes de Trabajo</div>
-      <div class="nav-item" data-page="produccion-cubiertas"><span class="nav-icon"><i class="fas fa-fire"></i></span> Producción por cubierta</div>
-      <div class="nav-item" data-page="tablero-linea"><span class="nav-icon"><i class="fas fa-tv"></i></span> Tablero de la línea</div>
-      <div class="nav-item" data-page="documentos"><span class="nav-icon"><i class="fas fa-file-pdf"></i></span> Documentos para el cliente</div>
-      <div class="nav-item" data-page="puesto-estacion"><span class="nav-icon"><i class="fas fa-tablet-alt"></i></span> Puesto de estación</div>
-      <div class="nav-item" data-page="recetas"><span class="nav-icon"><i class="fas fa-flask"></i></span> Recetas</div>
-      <div class="nav-item" data-page="stock-insumos"><span class="nav-icon"><i class="fas fa-box-open"></i></span> Stock de insumos</div>
-      <div class="nav-item" data-page="ventas"><span class="nav-icon"><i class="fas fa-shopping-cart"></i></span> Ventas</div>
-      <div class="nav-item" data-page="catalogo-tienda"><span class="nav-icon"><i class="fas fa-shopping-bag"></i></span> Catálogo (tienda)</div>
-      <div class="nav-item" data-page="precios-nuevos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Lista de precios</div>
-      <div class="nav-item" data-page="margen"><span class="nav-icon"><i class="fas fa-traffic-light"></i></span> Margen con descuento</div>
-      <div class="nav-item" data-page="pedidos-web"><span class="nav-icon"><i class="fas fa-store"></i></span> Pedidos web</div>
-      <div class="nav-item" data-page="carga-compras"><span class="nav-icon"><i class="fas fa-cart-plus"></i></span> Compras</div>
-      <div class="nav-item" data-page="carga-combustible"><span class="nav-icon"><i class="fas fa-gas-pump"></i></span> Combustible</div>
-      <div class="nav-item" data-page="carga-gastos"><span class="nav-icon"><i class="fas fa-receipt"></i></span> Gastos Varios</div>
-
-      <div class="sb-group">Administración</div>
-      <div class="nav-item" data-page="carga-financiero"><span class="nav-icon"><i class="fas fa-university"></i></span> Financiero</div>
-      <div class="nav-item" data-page="carga-transporte"><span class="nav-icon"><i class="fas fa-truck-moving"></i></span> Transporte</div>
-      <div class="nav-item" data-page="carga-impositivo"><span class="nav-icon"><i class="fas fa-file-invoice"></i></span> Impositivo</div>
-      <div class="nav-item" data-page="carga-sueldos"><span class="nav-icon"><i class="fas fa-users"></i></span> Sueldos</div>
-      <div class="nav-item" data-page="asistencia"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> Asistencia</div>
-
-      <div class="sb-group">Finanzas</div>
-      <div class="nav-item" data-page="cheques"><span class="nav-icon"><i class="fas fa-money-check-alt"></i></span> Cheques</div>
-      <div class="nav-item" data-page="cobranzas"><span class="nav-icon"><i class="fas fa-hand-holding-usd"></i></span> Cobranzas</div>
-      <div class="nav-item" data-page="ordenes-pago"><span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Órdenes de Pago</div>
-      <div class="nav-item" data-page="caja"><span class="nav-icon"><i class="fas fa-cash-register"></i></span> Libro de Caja</div>
-      <div class="nav-item" data-page="cta-cte-clientes"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> Cta Cte Clientes</div>
-      <div class="nav-item" data-page="cta-cte-proveedores"><span class="nav-icon"><i class="fas fa-truck"></i></span> Cta Cte Proveedores</div>
-
-      <div class="sb-group">Reportes</div>
-      <div class="nav-item" data-page="estado-resultados"><span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Estado de Resultados</div>
-      <div class="nav-item" data-page="rpt-ventas"><span class="nav-icon"><i class="fas fa-chart-line"></i></span> Ventas por Tipo</div>
-      <div class="nav-item" data-page="rpt-produccion"><span class="nav-icon"><i class="fas fa-industry"></i></span> Producción / Insumos</div>
-      <div class="nav-item" data-page="rpt-gastos"><span class="nav-icon"><i class="fas fa-chart-pie"></i></span> Resumen de Gastos</div>
-      <div class="nav-item" data-page="stock"><span class="nav-icon"><i class="fas fa-boxes"></i></span> Control de Stock</div>
-      <div class="nav-item" data-page="rpt-costo-cubiertas"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Costo por Cubierta</div>
-      <div class="nav-item" data-page="rpt-diferencias-precios"><span class="nav-icon"><i class="fas fa-not-equal"></i></span> Dif. de Precios</div>
-      <div class="nav-item" data-page="inteligencia"><span class="nav-icon"><i class="fas fa-brain"></i></span> Panel Gerencial</div>
-      <div class="nav-item" data-page="objetivo"><span class="nav-icon"><i class="fas fa-bullseye"></i></span> Objetivo Mensual</div>
-
-      <div class="sb-group">Maestros</div>
-      <div class="nav-item" data-page="abm-clientes"><span class="nav-icon"><i class="fas fa-users"></i></span> Clientes</div>
-      <div class="nav-item" data-page="abm-proveedores"><span class="nav-icon"><i class="fas fa-truck"></i></span> Proveedores</div>
-      <div class="nav-item" data-page="abm-articulos"><span class="nav-icon"><i class="fas fa-boxes"></i></span> Artículos</div>
-      <div class="nav-item" data-page="abm-insumos"><span class="nav-icon"><i class="fas fa-layer-group"></i></span> Insumos</div>
-      <div class="nav-item" data-page="abm-empleados"><span class="nav-icon"><i class="fas fa-id-badge"></i></span> Empleados</div>
-      <div class="nav-item" data-page="abm-servicios"><span class="nav-icon"><i class="fas fa-tools"></i></span> Servicios</div>
-      <div class="nav-item" data-page="abm-vehiculos"><span class="nav-icon"><i class="fas fa-car"></i></span> Vehículos</div>
-      <div class="nav-item" data-page="abm-financieras"><span class="nav-icon"><i class="fas fa-university"></i></span> Financieras</div>
-      <div class="nav-item" data-page="abm-bancos"><span class="nav-icon"><i class="fas fa-landmark"></i></span> Bancos</div>
-      <div class="nav-item" data-page="abm-listas-precios"><span class="nav-icon"><i class="fas fa-tags"></i></span> Listas de Precios</div>
-
-      <div class="sb-group">Tablas / Config</div>
-      <div class="nav-item" data-page="abm-marcas"><span class="nav-icon"><i class="fas fa-copyright"></i></span> Marcas</div>
-      <div class="nav-item" data-page="abm-medidas"><span class="nav-icon"><i class="fas fa-ruler"></i></span> Medidas</div>
-      <div class="nav-item" data-page="abm-tipos-gasto"><span class="nav-icon"><i class="fas fa-sitemap"></i></span> Tipos de Gasto</div>
-      <div class="nav-item" data-page="abm-metodo-pago"><span class="nav-icon"><i class="fas fa-credit-card"></i></span> Métodos de Pago</div>
-      <div class="nav-item" data-page="abm-cajas"><span class="nav-icon"><i class="fas fa-cash-register"></i></span> Cajas</div>
-      <div class="nav-item" data-page="abm-localidades"><span class="nav-icon"><i class="fas fa-map-marker-alt"></i></span> Localidades</div>
-      <div class="nav-item" data-page="abm-conceptos"><span class="nav-icon"><i class="fas fa-folder-open"></i></span> Conceptos de Gasto</div>
-
-      <div class="sb-group">Sistema</div>
-      <div class="nav-item" data-page="agenda"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Agenda del proyecto</div>
-      <div class="nav-item" data-page="bitacora"><span class="nav-icon"><i class="fas fa-scroll"></i></span> Bitácora (todo lo que se hizo)</div>
-      <div class="nav-item" data-page="avance"><span class="nav-icon"><i class="fas fa-chart-line"></i></span> Avance del sistema</div>
-      <div class="nav-item" data-page="seguridad"><span class="nav-icon"><i class="fas fa-shield-alt"></i></span> Seguridad</div>
-      <div class="nav-item" data-page="configuracion"><span class="nav-icon"><i class="fas fa-cog"></i></span> Configuración</div>
-      <div class="nav-item" data-page="gsheets"><span class="nav-icon"><i class="fas fa-table"></i></span> Google Sheets</div>
-      <div class="nav-item" data-page="backup-page"><span class="nav-icon"><i class="fas fa-save"></i></span> Backup / Restore</div>
+        <div class="nav-item active" data-page="dashboard"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Cómo va la empresa</div>
+      <div class="sb-grp" data-g="prod"><div class="sb-gh" onclick="menuGrupo('prod')"><span class="sb-gi-ic">🏭</span><span class="sb-gt">Producción</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="produccion-cubiertas"><span class="nav-icon"><i class="fas fa-fire"></i></span> Recepción, OT y órdenes de servicio</div>
+        <div class="nav-item" data-page="tablero-linea"><span class="nav-icon"><i class="fas fa-tv"></i></span> Tablero de la línea</div>
+        <div class="nav-item" data-page="puesto-estacion"><span class="nav-icon"><i class="fas fa-tablet-alt"></i></span> Puesto de estación</div>
+        <div class="nav-item" data-page="recetas"><span class="nav-icon"><i class="fas fa-flask"></i></span> Recetas</div>
+        <div class="nav-item" data-page="stock-insumos"><span class="nav-icon"><i class="fas fa-box-open"></i></span> Stock de insumos</div>
+        <div class="nav-item" data-page="ordenes-trabajo"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Órdenes de trabajo (anterior)</div>
+        <div class="nav-item" data-page="carga-produccion"><span class="nav-icon"><i class="fas fa-cog"></i></span> Carga de producción (anterior)</div>
+      </div></div>
+      <div class="sb-grp" data-g="vta"><div class="sb-gh" onclick="menuGrupo('vta')"><span class="sb-gi-ic">🧾</span><span class="sb-gt">Ventas</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="ventas"><span class="nav-icon"><i class="fas fa-shopping-cart"></i></span> Ventas y facturas</div>
+        <div class="nav-item" data-page="ventas" data-acc="rem-venta"><span class="nav-icon"><i class="fas fa-truck"></i></span> Remitos</div>
+        <div class="nav-item" data-page="ventas" data-acc="fact-rem"><span class="nav-icon"><i class="fas fa-file-invoice"></i></span> Facturar remitos</div>
+        <div class="nav-item" data-page="documentos"><span class="nav-icon"><i class="fas fa-file-pdf"></i></span> Documentos para el cliente</div>
+        <div class="nav-item" data-page="pedidos-web"><span class="nav-icon"><i class="fas fa-store"></i></span> Pedidos web</div>
+      </div></div>
+      <div class="sb-grp" data-g="pre"><div class="sb-gh" onclick="menuGrupo('pre')"><span class="sb-gi-ic">💲</span><span class="sb-gt">Precios</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="precios-nuevos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Lista de precios</div>
+        <div class="nav-item" data-page="margen"><span class="nav-icon"><i class="fas fa-traffic-light"></i></span> Margen con descuento</div>
+        <div class="nav-item" data-page="catalogo-tienda"><span class="nav-icon"><i class="fas fa-shopping-bag"></i></span> Catálogo (tienda)</div>
+      </div></div>
+      <div class="sb-grp" data-g="cmp"><div class="sb-gh" onclick="menuGrupo('cmp')"><span class="sb-gi-ic">🛒</span><span class="sb-gt">Compras</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="carga-compras"><span class="nav-icon"><i class="fas fa-cart-plus"></i></span> Compras</div>
+        <div class="nav-item" data-page="stock-insumos" data-acc="ped-prov"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Pedidos a proveedores</div>
+        <div class="nav-item" data-page="ordenes-pago"><span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Órdenes de Pago</div>
+        <div class="nav-item" data-page="cta-cte-proveedores"><span class="nav-icon"><i class="fas fa-truck"></i></span> Cta Cte Proveedores</div>
+      </div></div>
+      <div class="sb-grp" data-g="tes"><div class="sb-gh" onclick="menuGrupo('tes')"><span class="sb-gi-ic">💰</span><span class="sb-gt">Cobranzas y tesorería</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="cobranzas"><span class="nav-icon"><i class="fas fa-hand-holding-usd"></i></span> Cobranzas</div>
+        <div class="nav-item" data-page="cta-cte-clientes"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> Cta Cte Clientes</div>
+        <div class="nav-item" data-page="cheques"><span class="nav-icon"><i class="fas fa-money-check-alt"></i></span> Cheques</div>
+        <div class="nav-item" data-page="caja"><span class="nav-icon"><i class="fas fa-cash-register"></i></span> Libro de Caja</div>
+        <div class="nav-item" data-page="carga-financiero"><span class="nav-icon"><i class="fas fa-university"></i></span> Financiero</div>
+      </div></div>
+      <div class="sb-grp" data-g="gas"><div class="sb-gh" onclick="menuGrupo('gas')"><span class="sb-gi-ic">📤</span><span class="sb-gt">Gastos</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="carga-gastos"><span class="nav-icon"><i class="fas fa-receipt"></i></span> Gastos Varios</div>
+        <div class="nav-item" data-page="carga-combustible"><span class="nav-icon"><i class="fas fa-gas-pump"></i></span> Combustible</div>
+        <div class="nav-item" data-page="carga-transporte"><span class="nav-icon"><i class="fas fa-truck-moving"></i></span> Transporte</div>
+        <div class="nav-item" data-page="carga-impositivo"><span class="nav-icon"><i class="fas fa-file-invoice"></i></span> Impositivo</div>
+        <div class="nav-item" data-page="carga-sueldos"><span class="nav-icon"><i class="fas fa-users"></i></span> Sueldos</div>
+      </div></div>
+      <div class="sb-grp" data-g="per"><div class="sb-gh" onclick="menuGrupo('per')"><span class="sb-gi-ic">👥</span><span class="sb-gt">Personal</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="asistencia"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> Asistencia</div>
+        <div class="nav-item" data-page="abm-empleados"><span class="nav-icon"><i class="fas fa-id-badge"></i></span> Empleados</div>
+      </div></div>
+      <div class="sb-grp" data-g="inf"><div class="sb-gh" onclick="menuGrupo('inf')"><span class="sb-gi-ic">📊</span><span class="sb-gt">Informes</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="estado-resultados"><span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Estado de Resultados</div>
+        <div class="nav-item" data-page="inteligencia"><span class="nav-icon"><i class="fas fa-brain"></i></span> Panel Gerencial</div>
+        <div class="nav-item" data-page="objetivo"><span class="nav-icon"><i class="fas fa-bullseye"></i></span> Objetivo Mensual</div>
+        <div class="nav-item" data-page="rpt-ventas"><span class="nav-icon"><i class="fas fa-chart-line"></i></span> Ventas por Tipo</div>
+        <div class="nav-item" data-page="rpt-produccion"><span class="nav-icon"><i class="fas fa-industry"></i></span> Producción / Insumos</div>
+        <div class="nav-item" data-page="rpt-gastos"><span class="nav-icon"><i class="fas fa-chart-pie"></i></span> Resumen de Gastos</div>
+        <div class="nav-item" data-page="stock"><span class="nav-icon"><i class="fas fa-boxes"></i></span> Control de Stock</div>
+        <div class="nav-item" data-page="rpt-costo-cubiertas"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Costo por Cubierta</div>
+        <div class="nav-item" data-page="rpt-diferencias-precios"><span class="nav-icon"><i class="fas fa-not-equal"></i></span> Dif. de Precios</div>
+      </div></div>
+      <div class="sb-grp" data-g="mae"><div class="sb-gh" onclick="menuGrupo('mae')"><span class="sb-gi-ic">🗂</span><span class="sb-gt">Datos maestros</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="abm-clientes"><span class="nav-icon"><i class="fas fa-users"></i></span> Clientes</div>
+        <div class="nav-item" data-page="abm-proveedores"><span class="nav-icon"><i class="fas fa-truck"></i></span> Proveedores</div>
+        <div class="nav-item" data-page="abm-articulos"><span class="nav-icon"><i class="fas fa-boxes"></i></span> Artículos</div>
+        <div class="nav-item" data-page="abm-insumos"><span class="nav-icon"><i class="fas fa-layer-group"></i></span> Insumos</div>
+        <div class="nav-item" data-page="abm-servicios"><span class="nav-icon"><i class="fas fa-tools"></i></span> Servicios</div>
+        <div class="nav-item" data-page="abm-vehiculos"><span class="nav-icon"><i class="fas fa-car"></i></span> Vehículos</div>
+        <div class="nav-item" data-page="abm-financieras"><span class="nav-icon"><i class="fas fa-university"></i></span> Financieras</div>
+        <div class="nav-item" data-page="abm-bancos"><span class="nav-icon"><i class="fas fa-landmark"></i></span> Bancos</div>
+        <div class="nav-item" data-page="abm-cajas"><span class="nav-icon"><i class="fas fa-cash-register"></i></span> Cajas</div>
+        <div class="nav-item" data-page="abm-listas-precios"><span class="nav-icon"><i class="fas fa-tags"></i></span> Listas de Precios</div>
+        <div class="nav-item" data-page="abm-marcas"><span class="nav-icon"><i class="fas fa-copyright"></i></span> Marcas</div>
+        <div class="nav-item" data-page="abm-medidas"><span class="nav-icon"><i class="fas fa-ruler"></i></span> Medidas</div>
+        <div class="nav-item" data-page="abm-tipos-gasto"><span class="nav-icon"><i class="fas fa-sitemap"></i></span> Tipos de Gasto</div>
+        <div class="nav-item" data-page="abm-conceptos"><span class="nav-icon"><i class="fas fa-folder-open"></i></span> Conceptos de Gasto</div>
+        <div class="nav-item" data-page="abm-metodo-pago"><span class="nav-icon"><i class="fas fa-credit-card"></i></span> Métodos de Pago</div>
+        <div class="nav-item" data-page="abm-localidades"><span class="nav-icon"><i class="fas fa-map-marker-alt"></i></span> Localidades</div>
+      </div></div>
+      <div class="sb-grp" data-g="sis"><div class="sb-gh" onclick="menuGrupo('sis')"><span class="sb-gi-ic">⚙️</span><span class="sb-gt">Sistema</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="agenda"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Agenda del proyecto</div>
+        <div class="nav-item" data-page="bitacora"><span class="nav-icon"><i class="fas fa-scroll"></i></span> Bitácora (todo lo que se hizo)</div>
+        <div class="nav-item" data-page="avance"><span class="nav-icon"><i class="fas fa-chart-line"></i></span> Avance del sistema</div>
+        <div class="nav-item" data-page="seguridad"><span class="nav-icon"><i class="fas fa-shield-alt"></i></span> Seguridad</div>
+        <div class="nav-item" data-page="configuracion"><span class="nav-icon"><i class="fas fa-cog"></i></span> Configuración</div>
+        <div class="nav-item" data-page="gsheets"><span class="nav-icon"><i class="fas fa-table"></i></span> Google Sheets</div>
+        <div class="nav-item" data-page="backup-page"><span class="nav-icon"><i class="fas fa-save"></i></span> Backup / Restore</div>
+      </div></div>
     </nav>
     <div class="sb-footer">v1.0 · EMA Analytics · IndexedDB</div>
   </aside>
@@ -734,9 +745,38 @@ function puedeVerPagina(page) {
   return tienePermiso(moduloDePagina(page), 'VER');
 }
 
+// ── Menú con entradas: al tocar una entrada se abre su submenú y se cierra la anterior ──
+function menuGrupo(g, abrir) {
+  document.querySelectorAll('.sb-grp').forEach(function(x) {
+    var es = x.dataset.g === g, ab = es && (abrir === true || (abrir !== false && !x.classList.contains('abierto')));
+    x.classList.toggle('abierto', ab);
+  });
+  try { localStorage.setItem('menu_grupo', document.querySelector('.sb-grp.abierto') ? g : ''); } catch (e) {}
+}
+// Marca la entrada que contiene la pantalla activa y la deja abierta
+function menuMarcarActivo() {
+  var act = document.querySelector('.sb-grp .nav-item.active'), g = act ? act.closest('.sb-grp') : null;
+  document.querySelectorAll('.sb-grp').forEach(function(x) { x.classList.toggle('tiene-activo', x === g); });
+  if (g) menuGrupo(g.dataset.g, true);
+}
+// Opciones que abren una parte de una pantalla (remitos —uno solo, producción y venta—, facturar remitos) o una ventana (pedidos a proveedores)
+function menuClick(el) {
+  var pg = el.dataset.page, acc = el.dataset.acc || '';
+  if (acc === 'ped-prov') { document.body.classList.remove('sb-abierto'); if (typeof npLista === 'function') npLista(); return; }
+  if (acc === 'rem-venta' && typeof VB_ !== 'undefined') VB_.accion = 'REMITOS';
+  if (acc === 'fact-rem' && typeof VB_ !== 'undefined') VB_.accion = 'FACTURAR';
+  window._menuAcc = acc;
+  navTo(pg);
+}
 function aplicarPermisosMenu() {
   document.querySelectorAll('.nav-item').forEach(function(el) {
-    el.style.display = puedeVerPagina(el.dataset.page) && ((el.dataset.page !== 'agenda' && el.dataset.page !== 'bitacora') || String((SES && SES.rol) || '').toUpperCase() === 'SUPER') ? '' : 'none';
+    var ve = el.dataset.acc === 'ped-prov' ? tienePermiso('COMPRAS', 'VER') : puedeVerPagina(el.dataset.page) && ((el.dataset.page !== 'agenda' && el.dataset.page !== 'bitacora') || String((SES && SES.rol) || '').toUpperCase() === 'SUPER');
+    el.style.display = ve ? '' : 'none';
+  });
+  // Entradas del menú: se ocultan las que no tienen ninguna opción visible para este usuario
+  document.querySelectorAll('.sb-grp').forEach(function(g) {
+    var hay = Array.prototype.some.call(g.querySelectorAll('.nav-item'), function(el) { return el.style.display !== 'none'; });
+    g.style.display = hay ? '' : 'none';
   });
   // Oculta los títulos de grupo que quedaron sin opciones visibles
   document.querySelectorAll('.sb-group').forEach(function(g) {
@@ -1204,9 +1244,11 @@ function navTo(page) {
   var pageEl = $id('page-' + page);
   document.body.classList.toggle('en-inicio-movil', page === 'inicio-movil');
   if (pageEl) pageEl.classList.remove('hidden');
+  var accAct = window._menuAcc || ''; window._menuAcc = '';
   document.querySelectorAll('.nav-item').forEach(function(el) {
-    el.classList.toggle('active', el.dataset.page === page);
+    el.classList.toggle('active', el.dataset.page === page && (el.dataset.acc || '') === accAct);
   });
+  menuMarcarActivo();
   if (page !== 'fichaje' && typeof fkSalirPagina === 'function') fkSalirPagina();
   var fn = getPage(page);
   if (fn) fn();
@@ -1274,7 +1316,7 @@ async function appInit() {
   if (!isGsMode()) { await DB.init(); await seedData(); }
   if (!_navListo) {
     document.querySelectorAll('.nav-item').forEach(function(el) {
-      el.addEventListener('click', function() { navTo(el.dataset.page); });
+      el.addEventListener('click', function() { menuClick(el); });
     });
     _navListo = true;
   }
@@ -1438,7 +1480,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031640';
+var EMA_BUILD = '202611031643';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3956,7 +3998,7 @@ async function vrRemitos() {
   try {
     var r = await gsRun('gsFP_RemitosVenta'); var el = $id('vr-rl');
     if (!r || !r.ok) { el.innerHTML = '<div class="al al-r">' + vEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
-    if (!r.REMITOS.length) { el.innerHTML = '<div class="al al-b">Todavía no hay remitos de venta. Con «Nuevo remito» se entrega mercadería sin factura y se factura después.</div>'; return; }
+    if (!r.REMITOS.length) { el.innerHTML = '<div class="al al-b">Todavía no hay remitos. Los de producción salen solos al entregar; con «Nuevo remito» se entrega mercadería sin factura y se factura después.</div>'; return; }
     window.VR_LISTA = r.REMITOS;
     el.innerHTML = '<div class="tw tw-cards"><table><thead><tr><th>Remito</th><th>Fecha</th><th>Cliente</th><th>Qué se entregó</th><th>Estado</th><th></th></tr></thead><tbody>' + r.REMITOS.map(function(x) {
       var soloDev = (x.CUBS || []).length && x.CUBS.every(function(t) { return t.RESULTADO !== 'TERMINADA'; });
