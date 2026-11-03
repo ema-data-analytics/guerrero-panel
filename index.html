@@ -1438,7 +1438,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031449';
+var EMA_BUILD = '202611031551';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -10559,7 +10559,7 @@ function okfPintar() {
     (r.ES_ENCARGADO ? '<div class="tdim mt3" style="font-size:13px">Da el OK: <b>' + pcEsc(r.USUARIO) + '</b> (encargado de línea).</div>'
       : '<div class="mt3" style="font-size:13px"><b>Lo autoriza el encargado de línea</b> con su usuario y clave:</div><div class="flex gap2 mt2"><input class="fi" id="okf-u" placeholder="Usuario del encargado" autocomplete="off"><input class="fi" id="okf-c" type="password" placeholder="Clave" autocomplete="new-password"></div>') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button>' +
-    '<button class="btn btn-p" style="background:#16a34a;border-color:#16a34a" ' + (n || (cierra && (r.TERMINADAS || r.RECHAZADAS)) ? '' : 'disabled') + ' onclick="okfConfirmar()">✓ Dar el OK final' + (n ? ' (' + n + ')' : '') + (cierra ? ' y cerrar la orden' : '') + '</button></div>';
+    '<button class="btn btn-p" style="background:#16a34a;border-color:#16a34a' + (n || (cierra && (r.TERMINADAS || r.RECHAZADAS)) ? '"' : ';opacity:.4;cursor:not-allowed" disabled') + ' onclick="okfConfirmar()">✓ Dar el OK final' + (n ? ' (' + n + ')' : '') + (cierra ? ' y cerrar la orden' : '') + '</button></div>';
   el.innerHTML = h;
 }
 async function okfConfirmar() {
@@ -12744,7 +12744,7 @@ function tbProgramar() {
   TB_.reloj = setInterval(function() {
     if (!tbVisible() || !TB_.d) return;
     var dt = Date.now() + (TB_.dt || 0);
-    document.querySelectorAll('#page-tablero-linea [data-ini]').forEach(function(x) { x.textContent = tbReloj((dt - (+x.getAttribute('data-ini'))) / 1000); });
+    document.querySelectorAll('#page-tablero-linea [data-ini], #modals [data-ini]').forEach(function(x) { x.textContent = tbReloj((dt - (+x.getAttribute('data-ini'))) / 1000); });
     var ck = $id('tp-clk'); if (ck) { var dd = new Date(dt); ck.textContent = tbHora(dt) + ':' + (dd.getSeconds() < 10 ? '0' : '') + dd.getSeconds(); }
   }, 1000);
 }
@@ -13078,6 +13078,7 @@ function tbAlertas() {
   return a;
 }
 function tbPintarMarcar() {
+  if (!TB_.emps) tbEmps(); // los operarios quedan listos para EMPEZAR
   var el = tbEl(), d = TB_.d; if (!el || !d) return;
   var ahora = Date.now() + (TB_.dt || 0), E = d.ESTACIONES, linNom = d.LINEA === 'AGRICOLA' ? 'Línea agrícola' : 'Línea camiones';
   var h = '<div class="tp"><div class="tp-hd"><div class="tp-tt"><span>Encargado · marcar en la línea</span><b>✋ ' + linNom + '</b></div>' +
@@ -13145,16 +13146,30 @@ async function tbEmps() {
 }
 async function tbEmpezar(id) {
   var c = tbCubD(id); if (!c) return;
+  if (!TB_.emps) tbOcupado('Cargando operarios…');
   var emps = await tbEmps(), q = '\'' + tbEsc(c.ID_CUB) + '\'';
   if (!emps.length) return tbEmpezarCon(id, (typeof SES !== 'undefined' && SES && SES.nombre) || 'SIN NOMBRE');
   TB_.opsTmp = emps;
   tbSheet(tbCab(c, tbEstD(c.DONDE)) + '<div style="margin-top:14px;font-weight:800;font-size:18px">▶ EMPEZAR · ¿quién la trabaja?</div><div class="tm-ops">' +
     emps.map(function(o, i) { return '<button onclick="tbEmpezarCon(' + q + ',TB_.opsTmp[' + i + '])">' + tbEsc(o) + '</button>'; }).join('') + '</div><button class="tm-big gr" onclick="tbAcc(' + q + ')">Volver</button>');
 }
+// Mientras el servidor responde: botones bloqueados y un aviso, así nadie toca dos veces
+function tbOcupado(msg) {
+  var m = $id('modals'); if (!m) return;
+  m.querySelectorAll('button').forEach(function(b) { b.disabled = true; b.style.opacity = '.5'; });
+  var a = $id('tm-esp'); if (!a) { a = document.createElement('div'); a.id = 'tm-esp'; a.style.cssText = 'margin:12px 0;padding:12px;border-radius:12px;background:#1e3a8a;color:#fff;font-weight:800;font-size:17px;text-align:center'; var box = m.querySelector('.tm-ops') || m.querySelector('.tm-big'); if (box && box.parentNode) box.parentNode.insertBefore(a, box); else m.appendChild(a); }
+  a.textContent = '⏳ ' + msg;
+}
+function tbLibre() {
+  var m = $id('modals'); if (!m) return;
+  m.querySelectorAll('button').forEach(function(b) { b.disabled = false; b.style.opacity = ''; });
+  var a = $id('tm-esp'); if (a) a.parentNode.removeChild(a);
+}
 async function tbRel(fn, c, extra) {
   var d = { ID_OT: c.ID_OT, ID_CUB: c.ID_CUB, ID_ESTACION: c.DONDE }, k; for (k in (extra || {})) d[k] = extra[k];
-  var r; try { r = await gsRun(fn, d); } catch (e) { toast(e.message, 'r2'); return null; }
-  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return null; }
+  tbOcupado(fn === 'gsPC_RelojParar' ? 'Parando el reloj…' : extra && extra.SEGUIR ? 'Siguiendo…' : 'Empezando…');
+  var r; try { r = await gsRun(fn, d); } catch (e) { tbLibre(); toast(e.message, 'r2'); return null; }
+  if (!r || !r.ok) { tbLibre(); toast((r && r.error) || 'No se pudo', 'r2'); return null; }
   return r;
 }
 async function tbEmpezarCon(id, oper) {
