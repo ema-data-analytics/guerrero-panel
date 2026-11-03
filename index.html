@@ -1438,7 +1438,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031244';
+var EMA_BUILD = '202611031312';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1523,12 +1523,12 @@ async function renderDashboard() {
   if (_selPrev && _selPrev.value) _dsPeriodo = _selPrev.value;
   var fecha = new Date().toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).toUpperCase();
   el.innerHTML =
-    '<div class="page-hdr"><div><div class="page-title">Dashboard</div>'+
-    '<div class="page-sub">RESUMEN OPERATIVO · '+fecha+'</div></div>'+
+    '<div class="page-hdr"><div><div class="page-title">Cómo va la empresa</div>'+
+    '<div class="page-sub">TABLERO GENERAL · '+fecha+'</div></div>'+
     '<div style="display:flex;gap:8px;align-items:center">'+
     '<select id="ds-periodo" class="fs" style="max-width:160px" onchange="renderDashboard()">'+
-    ['mes','semana','hoy','todo'].map(function(v){
-      var lbl={mes:'Este mes',semana:'Esta semana',hoy:'Hoy',todo:'Todo el tiempo'}[v];
+    ['hoy','semana','mes','mes_ant','todo'].map(function(v){
+      var lbl={mes:'Este mes',semana:'Esta semana',hoy:'Hoy',mes_ant:'Mes anterior',todo:'Todo el tiempo'}[v];
       return '<option value="'+v+'"'+(v===_dsPeriodo?' selected':'')+'>'+lbl+'</option>';
     }).join('')+
     '</select></div></div>'+
@@ -1548,13 +1548,17 @@ async function renderDashboard() {
   } else if(periodo==='mes'){
     dt=new Date(ahora.getFullYear(),ahora.getMonth(),1).getTime();
     ht=finDeHoy;
+  } else if(periodo==='mes_ant'){
+    dt=new Date(ahora.getFullYear(),ahora.getMonth()-1,1).getTime();
+    ht=new Date(ahora.getFullYear(),ahora.getMonth(),1).getTime()-1;
   } else {
     dt=0; ht=finDeHoy;
   }
 
   var _stores=['ventas_enc','compras_enc','carga_gastos','carga_combustible',
     'consumo_insumos','produccion_encabezado','produccion_detalle_serv',
-    'carga_sueldos','carga_transporte','carga_impositivo','gasto_det_financiero'];
+    'carga_sueldos','carga_transporte','carga_impositivo','gasto_det_financiero',
+    'ventas_det','cobros_enc','cheques','clientes','pc_ot_cub'];
   var _b;
   if(isGsMode()){
     _b=await gsRun('gsBatchLoad',_stores);
@@ -1650,86 +1654,7 @@ async function renderDashboard() {
   ];
   var colorRes = resultado>=0?'var(--success)':'var(--danger)';
 
-  var html =
-  '<div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--success);margin-bottom:6px">INGRESOS</div>'+
-  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px">'+
-  kpiCard('VENTAS','fas fa-shopping-cart','var(--success)',totalVentas,ventas.length+' comprobantes','ventas','sv-green')+
-  '</div>'+
-  '<div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--danger);margin-bottom:6px">EGRESOS</div>'+
-  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:16px">'+
-  _kpiMods.map(function(m){
-    return '<div class="stat" style="border-top:4px solid '+m.c+';cursor:pointer" onclick="navTo(\''+m.p+'\')">'+'<div class="stat-label"><i class="'+m.i+'" style="color:'+m.c+'"></i> '+m.l+'</div>'+'<div style="font-size:17px;font-weight:800;color:'+m.c+'">'+fmt(m.v)+'</div>'+'<div style="font-size:10px;color:var(--dim);margin-top:2px">click para ver</div></div>';
-  }).join('')+
-  '</div>'+
-  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'+
-  '<div class="stat" style="border-top:4px solid var(--danger);background:var(--danger-light)">'+
-  '<div class="stat-label">TOTAL EGRESOS</div>'+
-  '<div class="stat-val sv-red" style="font-size:20px">'+fmt(totalEgresos)+'</div></div>'+
-  '<div class="stat" style="border-top:4px solid '+colorRes+';background:'+(resultado>=0?'var(--success-light)':'var(--danger-light)')+';cursor:pointer" onclick="navTo(\'estado-resultados\')">'+
-  '<div class="stat-label">RESULTADO NETO</div>'+
-  '<div class="stat-val" style="font-size:20px;color:'+colorRes+'">'+fmt(resultado)+'</div>'+
-  '<div class="stat-sub">'+(resultado>=0?'POSITIVO':'NEGATIVO')+'</div></div>'+
-  '</div>'+
-
-  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'+
-  '<div class="card"><div class="card-hd"><span class="card-title" style="color:var(--success)"><i class="fas fa-arrow-up"></i> INGRESOS</span>'+
-  '<span class="mono" style="font-weight:700;color:var(--success)">'+fmt(totalVentas)+'</span></div>'+
-  '<div class="card-body" style="padding:0">'+
-  detalleLinea('Ventas realizadas','fas fa-shopping-cart',totalVentas,ventas.length+' comprobantes','ventas','var(--success)')+
-  '</div></div>'+
-
-  '<div class="card"><div class="card-hd"><span class="card-title" style="color:var(--danger)"><i class="fas fa-arrow-down"></i> EGRESOS</span>'+
-  '<span class="mono" style="font-weight:700;color:var(--danger)">'+fmt(totalEgresos)+'</span></div>'+
-  '<div class="card-body" style="padding:0">'+
-  detalleLinea('Insumos Produccion','fas fa-cog',costoInsumos,prods.length+' producciones','carga-produccion','var(--accent)')+
-  detalleLinea('Compras de materiales','fas fa-cart-plus',totalCompras,nCompras+' facturas','carga-compras','var(--danger)')+
-  detalleLinea('Combustible','fas fa-gas-pump',totalComb,combs.length+' cargas','carga-combustible','#f97316')+
-  detalleLinea('Gastos Generales','fas fa-receipt',_dsGral,gastos.length+' registros','carga-gastos','var(--warn)')+
-  (_dsFin>0?detalleLinea('Financiero (perdida)','fas fa-university',_dsFin,'retencion financieras','carga-financiero','var(--purple)'):'')  +
-  (_dsSu>0?detalleLinea('Sueldos y Personal','fas fa-users',_dsSu,'liquidaciones','carga-sueldos','var(--accent)'):'')  +
-  (_dsTr>0?detalleLinea('Transporte','fas fa-truck-moving',_dsTr,'fletes','carga-transporte','var(--success)'):'')  +
-  (_dsIm>0?detalleLinea('Impositivo','fas fa-file-invoice',_dsIm,'pagos','carga-impositivo','var(--orange)'):'')  +
-  (_dsViat>0?detalleLinea('Viaticos','fas fa-plane',_dsViat,'','carga-gastos','var(--warn)'):'')  +
-  (_dsSer>0?detalleLinea('Service Vehiculos','fas fa-wrench',_dsSer,'','carga-gastos','var(--dim)'):'')  +
-  '</div></div>'+
-  '</div>'+
-
-  '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px">'+
-  '<div class="card" style="cursor:pointer;border-top:3px solid var(--warn)" onclick="navTo(\'cobranzas\')">'+
-  '<div class="card-hd"><span class="card-title">Pendiente Cobrar</span></div>'+
-  '<div class="card-body"><div class="stat-val sv-warn" style="font-size:20px">'+fmt(saldoPendCobro)+'</div>'+
-  '<div class="stat-sub">'+ventasPendCobro.length+' comprobantes</div>'+
-  '<div style="font-size:10px;color:var(--dim);margin-top:4px">↗ ir a Cobranzas</div></div></div>'+
-
-  '<div class="card" style="cursor:pointer;border-top:3px solid var(--danger)" onclick="navTo(\'ordenes-pago\')">'+
-  '<div class="card-hd"><span class="card-title">Pendiente Pagar</span></div>'+
-  '<div class="card-body"><div class="stat-val sv-red" style="font-size:20px">'+fmt(saldoPendPago)+'</div>'+
-  '<div class="stat-sub">'+comprasPendPago.length+' facturas a pagar</div>'+
-  '<div style="font-size:10px;color:var(--dim);margin-top:4px">↗ ir a Órdenes de Pago</div></div></div>'+
-
-  '<div class="card" style="cursor:pointer;border-top:3px solid var(--accent)" onclick="navTo(\'stock\')">'+
-  '<div class="card-hd"><span class="card-title">Entregas Pendientes</span></div>'+
-  '<div class="card-body"><div class="stat-val sv-blue" style="font-size:20px">'+ventasPendEntrega.length+'</div>'+
-  '<div class="stat-sub">ventas sin entregar</div>'+
-  '<div style="font-size:10px;color:var(--dim);margin-top:4px">↗ ir a Control de Stock</div></div></div>'+
-  '</div>'+
-
-  '<div class="card">'+
-  '<div class="card-hd"><span class="card-title">Últimas Producciones</span>'+
-  '<button class="btn btn-sm btn-p" onclick="navTo(\'carga-produccion\')"><i class="fas fa-plus"></i> Nueva</button></div>'+
-  '<div class="card-body" style="padding:0">'+
-  (prods.length===0?'<div class="tdim tc" style="padding:20px">Sin producciones en el período.</div>':
-  '<div class="tw"><table style="font-size:12px"><thead><tr><th>Fecha</th><th>Estado</th><th class="tr">Ruedas</th></tr></thead><tbody>'+
-  prods.slice().sort(function(a,b){return (b.FECHA||0)-(a.FECHA||0);}).slice(0,6).map(function(p){
-    var dets=detsProd.filter(function(d){return d.ID_PROD===p.ID_PROD;});
-    var ruedas=dets.reduce(function(s,d){return s+(d.CANTIDAD||0);},0);
-    return '<tr><td>'+fmtD(p.FECHA)+'</td>'+
-      '<td><span class="badge '+(p.ESTADO==='CONFIRMADO'?'b-green':'b-warn')+'" style="font-size:9px">'+(p.ESTADO||'—')+'</span></td>'+
-      '<td class="mono tr">'+ruedas+'</td></tr>';
-  }).join('')+'</tbody></table></div>')+
-  '</div></div>';
-
-  $id('ds-content').innerHTML = html;
+  dbPintar({dt:dt,ht:ht,periodo:periodo,b:_b,ventas:ventas,totalVentas:totalVentas,totalCompras:totalCompras,totalComb:totalComb,costoInsumos:costoInsumos,totalGastos:totalGastos,totalEgresos:totalEgresos,resultado:resultado,mods:_kpiMods,gastos:gastos,combs:combs,ventasPendCobro:ventasPendCobro,saldoPendCobro:saldoPendCobro,comprasPendPago:comprasPendPago,saldoPendPago:saldoPendPago,ventasPendEntrega:ventasPendEntrega,nCompras:nCompras});
 }
 
 function kpiCard(titulo, icono, color, valor, sub, pagina, clase) {
@@ -1747,6 +1672,149 @@ function detalleLinea(titulo, icono, valor, sub, pagina, color) {
     '<div style="font-size:11px;color:var(--dim)">'+sub+' · click para ver detalle</div></div>'+
     '<div class="mono" style="font-weight:700;color:'+color+';font-size:15px">'+fmt(valor)+'</div>'+
     '</div>';
+}
+// ===== Tablero general (03/11/2026): mismo estilo sala de control que el tablero de la línea =====
+function dbM(v) { v = Math.round(v || 0); var a = Math.abs(v), s = v < 0 ? '-' : ''; if (a >= 1e6) return s + '$ ' + (a / 1e6).toFixed(a >= 1e7 ? 1 : 2).replace('.', ',') + ' M'; if (a >= 1e3) return s + '$ ' + Math.round(a / 1e3) + ' mil'; return s + '$ ' + a; }
+function dbEsc(x) { return String(x === undefined || x === null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function dbDia(ms) { var d = new Date(ms); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+function dbAnillo(t, p, col, txt, sub) { var c = 2 * Math.PI * 42; p = Math.max(0, Math.min(1, p || 0));
+  return '<svg width="' + t + '" height="' + t + '" viewBox="0 0 100 100" aria-hidden="true" style="flex:0 0 auto"><circle cx="50" cy="50" r="42" fill="none" stroke="#1b2643" stroke-width="11"/><circle cx="50" cy="50" r="42" fill="none" stroke="' + col + '" stroke-width="11" stroke-linecap="round" stroke-dasharray="' + (c * p).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 50 50)"/><text x="50" y="' + (sub ? 52 : 58) + '" text-anchor="middle" font-size="' + (sub ? 21 : 24) + '" font-weight="800" fill="#e6ebf5">' + txt + '</text>' + (sub ? '<text x="50" y="70" text-anchor="middle" font-size="11.5" fill="#8d9bb8">' + sub + '</text>' : '') + '</svg>'; }
+function dbCss() {
+  if ($id('db-css')) return;
+  var st = document.createElement('style'); st.id = 'db-css';
+  st.textContent = '.dbw{background:#0a1020;color:#e6ebf5;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px;font-family:inherit}' +
+    '.dbw *{box-sizing:border-box}.dbk{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}' +
+    '.dbc{background:linear-gradient(160deg,#131f3a,#0f1830);border:1px solid #22304f;border-radius:16px;padding:13px 14px;min-width:0;cursor:pointer;display:flex;gap:11px;align-items:center}' +
+    '.dbc:hover{border-color:#3b82f6}.dbc .bar{flex:0 0 12px;height:54px;border-radius:7px}.dbc .v{font-size:clamp(19px,1.7vw,27px);font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap}' +
+    '.dbc .l{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8d9bb8;margin-top:3px}.dbc .s{font-size:12px;color:#c7d0e3;margin-top:3px}' +
+    '.dbp{background:#0f1830;border:1px solid #22304f;border-radius:18px;padding:14px 16px;min-width:0}.dbp h3{margin:0 0 3px;font-size:18px;font-weight:800;color:#e6ebf5}' +
+    '.dbp .sub{font-size:12px;color:#8d9bb8;margin:0 0 10px}.db2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px}.db3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}' +
+    '.dbr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid #18233d;font-size:13.5px;cursor:pointer}.dbr:last-child{border-bottom:0}' +
+    '.dbr .m{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}.dbhb{height:9px;border-radius:5px;background:#0b1325;overflow:hidden;margin-top:4px}.dbhb i{display:block;height:100%;border-radius:5px}' +
+    '.dbt{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:10px;margin-left:6px}.dbley{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#c7d0e3;margin-top:6px}.dbley i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}' +
+    '.dbbig{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}.dbnota{font-size:11.5px;color:#64748b}' +
+    '@media(max-width:1300px){.dbk{grid-template-columns:repeat(3,minmax(0,1fr))}.db3{grid-template-columns:1fr 1fr}}@media(max-width:900px){.db2,.db3{grid-template-columns:1fr}}@media(max-width:560px){.dbk{grid-template-columns:1fr 1fr}.dbc .v{font-size:21px}}';
+  document.head.appendChild(st);
+}
+function dbPintar(X) {
+  dbCss();
+  var b = X.b, dt = X.dt, ht = X.ht, hoy = dbDia(Date.now());
+  var nombreP = { hoy: 'hoy', semana: 'esta semana', mes: 'este mes', mes_ant: 'el mes anterior', todo: 'todo el tiempo' }[X.periodo] || '';
+  // período anterior del mismo largo (para comparar ventas)
+  var largo = Math.min(ht, Date.now()) - dt, pdt = dt - largo - 1, pht = dt - 1;
+  if (X.periodo === 'mes') { var a = new Date(dt); pdt = new Date(a.getFullYear(), a.getMonth() - 1, 1).getTime(); pht = pdt + largo; }
+  function netoV(v) { var imp = (v.NETO_VENTA !== undefined && v.NETO_VENTA !== null && v.NETO_VENTA !== '') ? (parseFloat(v.NETO_VENTA) || 0) : (v.TOTAL_VENTA || 0); return String(v.TIPO_COMP || '').indexOf('NC') === 0 ? -imp : imp; }
+  var ventasPrev = (b.ventas_enc || []).filter(function(v) { return v.ESTADO !== 'ANULADA' && (v.FECHA || 0) >= pdt && (v.FECHA || 0) <= pht; }).reduce(function(s, v) { return s + netoV(v); }, 0);
+  var varV = X.periodo !== 'todo' && ventasPrev > 0 ? (X.totalVentas - ventasPrev) / ventasPrev : null;
+  var cobros = (b.cobros_enc || []).filter(function(c) { return String(c.ESTADO) !== 'ANULADO' && (c.FECHA || 0) >= dt && (c.FECHA || 0) <= ht; });
+  var cobrado = cobros.reduce(function(s, c) { return s + (parseFloat(c.TOTAL_COBRO) || 0); }, 0);
+  var gastosSinCompras = X.totalEgresos - X.totalCompras;
+  var margen = X.totalVentas > 0 ? X.resultado / X.totalVentas : 0;
+  // producción
+  var cubs = b.pc_ot_cub || [], term = 0, rech = 0, enLinea = 0, porDiaP = {};
+  cubs.forEach(function(c) { var e = String(c.ESTADO || ''), f = parseFloat(c.FECHA_FIN) || 0;
+    if (e === 'EN_PROCESO' || e === 'PENDIENTE') enLinea++;
+    if (f >= dt && f <= ht) { if (e === 'TERMINADA' || e === 'RETIRADA') { term++; var d = dbDia(f); porDiaP[d] = (porDiaP[d] || 0) + 1; } else if (e === 'RECHAZADA') rech++; } });
+  // día por día
+  var dias = {}, ini = dbDia(dt || Date.now()), fin = dbDia(Math.min(ht, Date.now()));
+  if (X.periodo === 'todo') { var mn = fin; (b.ventas_enc || []).forEach(function(v) { if (v.FECHA && v.FECHA < mn) mn = v.FECHA; }); (b.compras_enc || []).forEach(function(c) { if (c.FECHA_COMPRA && c.FECHA_COMPRA < mn) mn = c.FECHA_COMPRA; }); ini = dbDia(Math.max(mn, fin - 59 * 864e5)); }
+  for (var d = ini; d <= fin; d = dbDia(d + 864e5 + 36e5)) dias[d] = { v: 0, e: 0, p: 0 };
+  function sumar(f, campo, imp) { var k = dbDia(f); if (dias[k]) dias[k][campo] += imp; }
+  X.ventas.forEach(function(v) { sumar(v.FECHA, 'v', netoV(v)); });
+  (b.compras_enc || []).forEach(function(c) { if (c.ESTADO_COMPRA === 'ANULADA' || c.ACTIVO === 0) return; var f = c.FECHA_COMPRA || 0; if (f < dt || f > ht) return;
+    var imp = (String(c.IVA_COMPUTABLE) !== '0' && parseFloat(c.NETO_COMPRA) > 0) ? parseFloat(c.NETO_COMPRA) : (c.TOTAL_COMPRA || 0); var tc = c.TIPO_COMP || 'COMPRA'; sumar(f, 'e', (tc === 'NC_PROV_DEV' || tc === 'NC_PROV_IMP') ? -imp : imp); });
+  X.gastos.forEach(function(g) { sumar(g.FECHA_GASTO, 'e', parseFloat(g.IMPORTE_GASTO) || 0); });
+  X.combs.forEach(function(c) { sumar(c.FECHA, 'e', c.TOTAL || 0); });
+  ['carga_sueldos', 'carga_transporte', 'carga_impositivo'].forEach(function(t) { (b[t] || []).forEach(function(x) { if (x.ESTADO === 'ANULADO' || x.FECHA < dt || x.FECHA > ht) return; sumar(x.FECHA, 'e', t === 'carga_sueldos' ? (x.NETO || 0) : (x.IMPORTE || 0)); }); });
+  Object.keys(porDiaP).forEach(function(k) { if (dias[k]) dias[k].p = porDiaP[k]; });
+  var claves = Object.keys(dias).map(Number).sort(function(a, c) { return a - c; });
+  // clientes
+  var cliN = {}; (b.clientes || []).forEach(function(c) { cliN[String(c.ID_CLIENTE)] = String(c.NOMBRE_FANTASIA || '').trim() || (String(c.APELLIDO || '') + ' ' + String(c.NOMBRE || '')).trim() || ('Cliente ' + c.ID_CLIENTE); });
+  function nomCli(id) { return cliN[String(id)] || (id ? 'Cliente ' + id : 'Sin cliente'); }
+  var porCli = {}; X.ventas.forEach(function(v) { var k = String(v.CLIENTE || ''); porCli[k] = (porCli[k] || 0) + netoV(v); });
+  var topCli = Object.keys(porCli).map(function(k) { return { k: k, v: porCli[k] }; }).filter(function(x) { return x.v > 0; }).sort(function(a, c) { return c.v - a.v; }).slice(0, 5);
+  var deu = {}, viejo = 0; X.ventasPendCobro.forEach(function(v) { var k = String(v.CLIENTE || ''), s = v.SALDO_PENDIENTE || v.TOTAL_VENTA || 0; deu[k] = deu[k] || { v: 0, dias: 0 }; deu[k].v += s; var dd = Math.floor((Date.now() - (v.FECHA || Date.now())) / 864e5); deu[k].dias = Math.max(deu[k].dias, dd); if (dd > 30) viejo += s; });
+  var topDeu = Object.keys(deu).map(function(k) { return { k: k, v: deu[k].v, d: deu[k].dias }; }).sort(function(a, c) { return c.v - a.v; }).slice(0, 5);
+  // ventas por tipo (servicios de recapado vs artículos)
+  var idsV = {}; X.ventas.forEach(function(v) { idsV[String(v.ID_VENTA)] = String(v.TIPO_COMP || '').indexOf('NC') === 0 ? -1 : 1; });
+  var porTipo = { SERVICIO: 0, ARTICULO: 0 }; (b.ventas_det || []).forEach(function(x) { var sg = idsV[String(x.ID_VENTA)]; if (!sg) return; var t = String(x.TIPO_ITEM || '') === 'SERVICIO' ? 'SERVICIO' : 'ARTICULO'; var imp = parseFloat(x.PRECIO_NETO) > 0 ? parseFloat(x.PRECIO_NETO) : (parseFloat(x.SUBTOTAL) || 0) / (1 + (parseFloat(x.IVA_ALICUOTA) || 0) / 100); porTipo[t] += sg * imp; });
+  // cheques
+  var semana = Date.now() + 7 * 864e5, chC = { n: 0, v: 0, sem: 0 }, chP = { n: 0, v: 0, sem: 0 };
+  (b.cheques || []).forEach(function(c) { var e = String(c.ESTADO || ''), imp = parseFloat(c.IMPORTE) || 0, f = parseFloat(c.FECHA_ACREDITACION) || 0;
+    if (c.ACTIVO === 0 || e === 'ANULADO') return;
+    if (e === 'EN_CARTERA') { chC.n++; chC.v += imp; if (f && f <= semana) chC.sem += imp; }
+    else if (String(c.TIPO_ORIGEN) === 'PROPIO' && (e === 'ENTREGADO' || e === 'EMITIDO') && (!f || f >= hoy)) { chP.n++; chP.v += imp; if (f && f <= semana) chP.sem += imp; } });
+  var mods = X.mods.filter(function(m) { return m.v > 0; }).sort(function(a, c) { return c.v - a.v; }), mxM = mods.length ? mods[0].v : 1;
+  var colRes = X.resultado >= 0 ? '#22c55e' : '#ef4444';
+  function k(col, v, l, s, pag) { return '<div class="dbc" onclick="navTo(\'' + pag + '\')"><span class="bar" style="background:' + col + '"></span><div style="min-width:0"><div class="v">' + v + '</div><div class="l">' + l + '</div><div class="s">' + s + '</div></div></div>'; }
+  var h = '<div class="dbw">';
+  h += '<div class="dbk">' +
+    k('#22c55e', dbM(X.totalVentas), 'Ventas sin IVA', varV === null ? X.ventas.length + ' comprobantes' : '<b style="color:' + (varV >= 0 ? '#86efac' : '#fca5a5') + '">' + (varV >= 0 ? '▲ ' : '▼ ') + Math.abs(Math.round(varV * 100)) + '%</b> contra el período anterior', 'ventas') +
+    k('#38bdf8', dbM(cobrado), 'Cobrado', cobros.length + ' recibos', 'cobranzas') +
+    k('#ef4444', dbM(X.totalCompras), 'Compras sin IVA', X.nCompras + ' facturas', 'carga-compras') +
+    k('#f59e0b', dbM(gastosSinCompras), 'Gastos y costos', 'insumos, sueldos, combustible…', 'carga-gastos') +
+    k(colRes, '<span style="color:' + colRes + '">' + dbM(X.resultado) + '</span>', 'Resultado', (X.totalVentas > 0 && Math.abs(margen) <= 9.99 ? '<b style="color:' + colRes + '">' + Math.round(margen * 100) + '%</b> de lo vendido · ' : '') + 'ventas − compras − gastos', 'estado-resultados') +
+    k('#a78bfa', term, 'Cubiertas terminadas', (rech ? rech + ' rechazadas · ' : '') + enLinea + ' en producción', 'tablero-linea') + '</div>';
+  // gráfico día por día
+  var W = 1000, H = 250, L = 56, R = 12, T = 14, B = 34, n = Math.max(1, claves.length), mxV = 1;
+  claves.forEach(function(c) { mxV = Math.max(mxV, dias[c].v, dias[c].e); });
+  var acu = 0, mnA = 0, mxA = 0, acs = claves.map(function(c) { acu += dias[c].v - dias[c].e; mnA = Math.min(mnA, acu); mxA = Math.max(mxA, acu); return acu; });
+  var top = Math.max(mxV, mxA), bot = Math.min(0, mnA), sy = function(v) { return T + (top - v) / ((top - bot) || 1) * (H - T - B); }, bw = (W - L - R) / n;
+  var g = '';
+  [0, .25, .5, .75, 1].forEach(function(f) { var v = bot + (top - bot) * f, y = sy(v); g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="#1a2440"/><text x="' + (L - 6) + '" y="' + (y + 4).toFixed(1) + '" fill="#8d9bb8" font-size="11" text-anchor="end">' + dbM(v).replace('$ ', '') + '</text>'; });
+  g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + sy(0).toFixed(1) + '" y2="' + sy(0).toFixed(1) + '" stroke="#3a4a6b"/>';
+  claves.forEach(function(c, i) { var x = L + i * bw, w = Math.max(2, bw * 0.36), dd = dias[c], dl = new Date(c);
+    if (dd.v > 0) g += '<rect x="' + (x + bw * 0.12).toFixed(1) + '" y="' + sy(dd.v).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + (sy(0) - sy(dd.v)).toFixed(1) + '" rx="2" fill="#22c55e"><title>' + dl.getDate() + '/' + (dl.getMonth() + 1) + ' · ventas ' + dbM(dd.v) + '</title></rect>';
+    if (dd.e > 0) g += '<rect x="' + (x + bw * 0.12 + w + 1).toFixed(1) + '" y="' + sy(dd.e).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + (sy(0) - sy(dd.e)).toFixed(1) + '" rx="2" fill="#ef4444"><title>' + dl.getDate() + '/' + (dl.getMonth() + 1) + ' · egresos ' + dbM(dd.e) + '</title></rect>';
+    var cada = Math.ceil(n / 16); if (i % cada === 0) g += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 12) + '" fill="#8d9bb8" font-size="11" text-anchor="middle">' + dl.getDate() + '/' + (dl.getMonth() + 1) + '</text>'; });
+  if (claves.length > 1) g += '<polyline fill="none" stroke="#a78bfa" stroke-width="2.5" points="' + acs.map(function(v, i) { return (L + i * bw + bw / 2).toFixed(1) + ',' + sy(v).toFixed(1); }).join(' ') + '"/>';
+  var hayMov = claves.some(function(c) { return dias[c].v || dias[c].e; });
+  h += '<div class="db2"><div class="dbp"><h3>Día por día · ' + nombreP + '</h3><p class="sub">Lo que se vendió y lo que salió cada día (sin IVA). La línea violeta es el resultado acumulado.</p>' +
+    (hayMov ? '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" role="img" aria-label="Ventas y egresos por día">' + g + '</svg>' : '<div class="dbnota" style="padding:40px 0;text-align:center">No hay ventas ni egresos cargados en ' + nombreP + '.</div>') +
+    '<div class="dbley"><span><i style="background:#22c55e"></i>Ventas</span><span><i style="background:#ef4444"></i>Compras y gastos</span><span><i style="background:#a78bfa"></i>Resultado acumulado</span><span class="dbnota">Los insumos de producción se suman al total pero no al gráfico diario.</span></div></div>';
+  // en qué se va la plata
+  h += '<div class="dbp"><h3>En qué se va la plata</h3><p class="sub">Egresos de ' + nombreP + ': ' + dbM(X.totalEgresos) + '</p>' +
+    (mods.length ? mods.map(function(m) { return '<div class="dbr" onclick="navTo(\'' + m.p + '\')"><div><div>' + dbEsc(m.l.charAt(0) + m.l.slice(1).toLowerCase()) + '</div><div class="dbhb"><i style="width:' + (m.v / mxM * 100).toFixed(1) + '%;background:' + ({'var(--danger)':'#ef4444','var(--warn)':'#f59e0b','var(--purple)':'#a78bfa','var(--accent)':'#3b82f6','var(--success)':'#22c55e','var(--orange)':'#f97316','var(--dim)':'#64748b'}[m.c] || m.c) + '"></i></div></div><div class="m">' + dbM(m.v) + ' <span class="dbnota">' + Math.round(m.v / (X.totalEgresos || 1) * 100) + '%</span></div></div>'; }).join('') : '<div class="dbnota">Sin egresos en el período.</div>') + '</div></div>';
+  // plata
+  var tot = porTipo.SERVICIO + porTipo.ARTICULO;
+  h += '<div class="db3">' +
+    '<div class="dbp" id="db-cajas"><h3>Caja y bancos</h3><p class="sub">Saldo de hoy</p><div class="dbnota">Cargando…</div></div>' +
+    '<div class="dbp"><h3>Nos deben</h3><p class="sub">Ventas sin cobrar: ' + X.ventasPendCobro.length + ' comprobantes</p><div class="dbbig" style="color:#fbbf24;cursor:pointer" onclick="navTo(\'cobranzas\')">' + dbM(X.saldoPendCobro) + '</div>' +
+      (viejo > 0 ? '<div style="margin:4px 0 6px;font-size:13px;color:#fca5a5;font-weight:700">⚠ ' + dbM(viejo) + ' con más de 30 días</div>' : '<div class="dbnota" style="margin:4px 0 6px">nada con más de 30 días</div>') +
+      topDeu.map(function(x) { return '<div class="dbr" onclick="navTo(\'cobranzas\')"><div>' + dbEsc(nomCli(x.k)) + (x.d > 30 ? '<span class="dbt" style="background:#4c1010;color:#fecaca">' + x.d + ' días</span>' : '') + '</div><div class="m">' + dbM(x.v) + '</div></div>'; }).join('') + '</div>' +
+    '<div class="dbp"><h3>Debemos y cheques</h3><p class="sub">Facturas de proveedores sin pagar: ' + X.comprasPendPago.length + '</p><div class="dbbig" style="color:#f87171;cursor:pointer" onclick="navTo(\'ordenes-pago\')">' + dbM(X.saldoPendPago) + '</div>' +
+      '<div class="dbr" style="margin-top:8px" onclick="navTo(\'cheques\')"><div>Cheques de terceros en cartera <span class="dbnota">(' + chC.n + ')</span>' + (chC.sem ? '<div style="font-size:12px;color:#86efac">' + dbM(chC.sem) + ' se pueden depositar esta semana</div>' : '') + '</div><div class="m" style="color:#86efac">' + dbM(chC.v) + '</div></div>' +
+      '<div class="dbr" onclick="navTo(\'cheques\')"><div>Cheques nuestros por debitar <span class="dbnota">(' + chP.n + ')</span>' + (chP.sem ? '<div style="font-size:12px;color:#fca5a5">⚠ ' + dbM(chP.sem) + ' se debitan esta semana</div>' : '') + '</div><div class="m" style="color:#fca5a5">' + dbM(chP.v) + '</div></div></div>' +
+    '</div>';
+  // ventas: tipo + clientes + producción
+  var mxC = topCli.length ? topCli[0].v : 1, pS = tot > 0 ? porTipo.SERVICIO / tot : 0;
+  var pd = claves.map(function(c) { return dias[c].p; }), mxP = Math.max(1, Math.max.apply(null, pd.concat([0])));
+  h += '<div class="db3">' +
+    '<div class="dbp"><h3>Qué se vende</h3><p class="sub">Recapado y servicios contra reventa de artículos</p><div style="display:flex;gap:16px;align-items:center">' + dbAnillo(120, pS, '#3b82f6', Math.round(pS * 100) + '%', 'servicios') +
+      '<div style="flex:1;min-width:0"><div class="dbr"><div><i style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#3b82f6;margin-right:6px"></i>Servicios (recapado)</div><div class="m">' + dbM(porTipo.SERVICIO) + '</div></div><div class="dbr"><div><i style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#1b2643;margin-right:6px"></i>Artículos (reventa)</div><div class="m">' + dbM(porTipo.ARTICULO) + '</div></div></div></div></div>' +
+    '<div class="dbp"><h3>Los que más compran</h3><p class="sub">Top 5 de ' + nombreP + '</p>' + (topCli.length ? topCli.map(function(x, i) { return '<div class="dbr" onclick="navTo(\'ventas\')"><div><div>' + (i + 1) + '. ' + dbEsc(nomCli(x.k)) + '</div><div class="dbhb"><i style="width:' + (x.v / mxC * 100).toFixed(1) + '%;background:#22c55e"></i></div></div><div class="m">' + dbM(x.v) + '</div></div>'; }).join('') : '<div class="dbnota">Sin ventas en el período.</div>') + '</div>' +
+    '<div class="dbp" style="cursor:pointer" onclick="navTo(\'tablero-linea\')"><h3>Producción</h3><p class="sub">Cubiertas terminadas por día · tocar para ver la línea en vivo</p><div style="display:flex;gap:18px;align-items:baseline;margin-bottom:8px"><div><span class="dbbig" style="color:#a78bfa">' + term + '</span> <span class="dbnota">terminadas</span></div><div><span class="dbbig" style="color:#3b82f6">' + enLinea + '</span> <span class="dbnota">en producción</span></div><div><span class="dbbig" style="color:' + (rech ? '#f87171' : '#64748b') + '">' + rech + '</span> <span class="dbnota">rechazadas</span></div></div>' +
+      '<div style="display:flex;align-items:flex-end;gap:2px;height:80px">' + claves.map(function(c, i) { var v = pd[i]; return '<div title="' + new Date(c).getDate() + '/' + (new Date(c).getMonth() + 1) + ': ' + v + '" style="flex:1;min-width:2px;height:' + Math.max(v ? 6 : 2, v / mxP * 100) + '%;background:' + (v ? '#a78bfa' : '#1b2643') + ';border-radius:3px 3px 0 0"></div>'; }).join('') + '</div></div>' +
+    '</div>';
+  h += '<div class="dbp" id="db-stock"><h3>Insumos por acabarse</h3><div class="dbnota">Cargando…</div></div>';
+  h += '<div class="dbnota">Importes sin IVA, como el estado de resultados. Tocá cualquier cuadro para ir al detalle. Entregas pendientes: ' + X.ventasPendEntrega.length + '.</div></div>';
+  $id('ds-content').innerHTML = h;
+  dbExtras();
+}
+async function dbExtras() {
+  try { var r = await gsRun('gsADM_Cajas'); var cs = (r && r.CAJAS) || [], tot = 0; cs.forEach(function(c) { tot += Number(c.SALDO) || 0; });
+    var el = $id('db-cajas'); if (el) el.innerHTML = '<h3>Caja y bancos</h3><p class="sub">Saldo de hoy</p><div class="dbbig" style="color:' + (tot >= 0 ? '#86efac' : '#fca5a5') + '">' + dbM(tot) + '</div>' +
+      cs.map(function(c) { return '<div class="dbr" onclick="navTo(\'caja\')"><div>' + (c.TIPO === 'BANCO' ? '🏦 ' : '💵 ') + dbEsc(c.CAJA_DESC) + '</div><div class="m" style="color:' + ((Number(c.SALDO) || 0) < 0 ? '#fca5a5' : '#e6ebf5') + '">' + dbM(c.SALDO) + '</div></div>'; }).join(''); }
+  catch (e) { var el2 = $id('db-cajas'); if (el2) el2.innerHTML = '<h3>Caja y bancos</h3><div class="dbnota">No tenés permiso para ver las cajas.</div>'; }
+  try { var lst = [], vistos = {};
+    try { var cb = await gsRun('gsINS_Cobertura', { ALERTA: 1 }); ((cb && cb.ok && cb.filas) || []).forEach(function(f) { vistos[String(f.NOMBRE)] = 1; lst.push({ n: f.NOMBRE, r: f.NIVEL === 'r', txt: f.STOCK <= 0 ? 'sin stock' : f.DIAS === null || f.DIAS === undefined ? 'sin dato de consumo' : 'quedan ' + f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's'), p: f.STOCK <= 0 ? 0 : Math.min(1, (f.DIAS || 0) / 15) }); }); } catch (ec) {}
+    var s = await gsRun('gsST_General');
+    ((s && s.INSUMOS) || []).concat((s && s.ARTICULOS) || []).forEach(function(x) { if (x.MINIMO > 0 && x.STOCK < x.MINIMO && !vistos[String(x.NOMBRE)]) lst.push({ n: x.NOMBRE, r: x.STOCK <= 0, txt: x.STOCK + ' de mínimo ' + x.MINIMO + ' ' + (x.UNIDAD || ''), p: Math.max(0, x.STOCK / x.MINIMO), pr: x.POR_RECIBIR || 0 }); });
+    lst.sort(function(a, b) { return (a.r ? 0 : 1) - (b.r ? 0 : 1) || a.p - b.p; });
+    var nr = lst.filter(function(x) { return x.r; }).length;
+    var el3 = $id('db-stock'); if (el3) el3.innerHTML = '<h3>Insumos por acabarse <span class="dbt" style="background:' + (nr ? '#4c1010;color:#fecaca' : lst.length ? '#4a2a07;color:#fde68a' : '#0f3d24;color:#86efac') + '">' + (nr ? nr + ' para pedir YA' : lst.length ? lst.length + ' para pedir pronto' : 'todo cubierto') + '</span></h3><p class="sub">Según lo que se consume por día y el stock mínimo · tocar para ir al stock</p>' +
+      (lst.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0 18px">' + lst.slice(0, 12).map(function(x) { return '<div class="dbr" onclick="navTo(\'stock-insumos\')"><div><div>' + (x.r ? '🔴 ' : '🟡 ') + dbEsc(x.n) + (x.pr ? '<span class="dbt" style="background:#10223f;color:#93c5fd">llega ' + x.pr + '</span>' : '') + '</div><div class="dbhb"><i style="width:' + Math.max(3, x.p * 100).toFixed(1) + '%;background:' + (x.r ? '#ef4444' : '#f59e0b') + '"></i></div></div><div class="m" style="color:' + (x.r ? '#fca5a5' : '#fde68a') + '">' + dbEsc(x.txt) + '</div></div>'; }).join('') + '</div>' + (lst.length > 12 ? '<div class="dbnota">y ' + (lst.length - 12) + ' más</div>' : '') : '<div class="dbnota">Nada por acabarse.</div>'); }
+  catch (e2) { var el4 = $id('db-stock'); if (el4) el4.innerHTML = '<h3>Insumos por acabarse</h3><div class="dbnota">No tenés permiso para ver el stock.</div>'; }
 }
 </script>
 
@@ -17726,6 +17794,7 @@ async function docsCert(marca) {
 // ── Menú del celular: una sola entrada (el link del sistema) y botones grandes según los permisos del usuario ──
 var MV_OPC = [
   // [clave, ícono, título, explicación, página, pestaña o filtro, roles que lo ven (además de SUPER y ADMINISTRADOR)]
+  ['empresa', '📊', 'Cómo va la empresa', 'Ventas, gastos, plata y producción', 'dashboard', '', ''],
   ['cascos', '📥', 'Recibir cascos', 'Boleta del cliente con su firma', 'produccion-cubiertas', 'cascos', 'RECEPCION ENCARGADO_PLANTA VENDEDOR'],
   ['documentos', '📄', 'Documentos', 'Orden, remito o certificado en PDF', 'documentos', '', 'RECEPCION ENCARGADO_PLANTA VENDEDOR FACTURACION'],
   ['cubierta', '🔎', 'Buscar cubierta', 'Dónde está y toda su vida', 'documentos', 'CUB', 'RECEPCION ENCARGADO_PLANTA VENDEDOR FACTURACION'],
