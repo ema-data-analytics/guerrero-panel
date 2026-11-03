@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611030900';
+var EMA_BUILD = '202611030920';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -9474,15 +9474,13 @@ function pcNroCambiar(m, idIn) {
   var w = $id(idIn + '-w'); if (w) w.outerHTML = pcNroAuto(idIn);
   var i = $id(idIn); if (i && m === 'MANUAL') i.focus();
 }
+// 03/11/2026 (pedido de Anibal): siempre están las dos cosas a la vista: el N° automático de la OT y el campo del N° de la boleta de papel del talonario (opcional: se carga si la boleta lo tiene)
 function pcNroAuto(idIn) {
-  var m = pcNroModo();
-  return '<div class="fg pc-nro-w" id="' + idIn + '-w"><label class="fl">N° de orden</label>' +
-    '<div class="pc-nro-op"><button type="button" class="' + (m === 'AUTO' ? 'on' : '') + '" onclick="pcNroCambiar(\'AUTO\',\'' + idIn + '\')">🤖 Automático</button><button type="button" class="' + (m === 'MANUAL' ? 'on' : '') + '" onclick="pcNroCambiar(\'MANUAL\',\'' + idIn + '\')">📄 Manual (boleta de papel)</button></div>' +
-    (m === 'MANUAL'
-      ? '<input class="fi" id="' + idIn + '" placeholder="N° de la boleta del talonario" autocomplete="off" oninput="pcBoletaAviso(this.value,\'' + idIn + '-av\')"/><div id="' + idIn + '-av" style="color:#b91c1c;font-size:12px;font-weight:600"></div>'
-      : '<div class="fi pc-nro-auto" title="Lo pone el sistema al grabar">' + pcProxOT() + ' <span class="tdim" style="font-weight:400;margin-left:6px">(lo pone el sistema)</span></div><input type="hidden" id="' + idIn + '" value=""/>') + '</div>';
+  return '<div class="fg pc-nro-w" id="' + idIn + '-w" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+    '<div><label class="fl">N° de orden (automático)</label><div class="fi pc-nro-auto" title="Lo pone el sistema al grabar">' + pcProxOT() + '</div></div>' +
+    '<div><label class="fl">N° boleta de papel (talonario)</label><input class="fi" id="' + idIn + '" placeholder="Opcional" autocomplete="off" oninput="pcBoletaAviso(this.value,\'' + idIn + '-av\')"/><div id="' + idIn + '-av" style="color:#b91c1c;font-size:12px;font-weight:600"></div></div></div>';
 }
-function pcNroFalta(idIn) { if (pcNroModo() === 'MANUAL' && !String($v(idIn) || '').trim()) { toast('Escribí el N° de la boleta de papel (o elegí Automático)', 'r2'); var i = $id(idIn); if (i) i.focus(); return true; } return false; }
+function pcNroFalta(idIn) { return false; }
 function pcBoletaAviso(v, idAv) {
   var n = String(v || '').toUpperCase().replace(/\s+/g, ''), el = $id(idAv || 'pc-k-man-av'); if (!el) return;
   var o = n ? (PC_.d.ordTrabajo || []).filter(function(x) { return x.ESTADO !== 'ANULADA' && String(x.NRO_MANUAL || '').toUpperCase().replace(/\s+/g, '') === n; })[0] : null;
