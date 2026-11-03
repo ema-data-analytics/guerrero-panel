@@ -1438,7 +1438,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031340';
+var EMA_BUILD = '202611031352';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1676,6 +1676,7 @@ function detalleLinea(titulo, icono, valor, sub, pagina, color) {
 // ===== Tablero general (03/11/2026): mismo estilo sala de control que el tablero de la línea =====
 function dbM(v) { v = Math.round(v || 0); var a = Math.abs(v), s = v < 0 ? '-' : ''; if (a >= 1e6) return s + '$ ' + (a / 1e6).toFixed(a >= 1e7 ? 1 : 2).replace('.', ',') + ' M'; if (a >= 1e3) return s + '$ ' + Math.round(a / 1e3) + ' mil'; return s + '$ ' + a; }
 function dbEsc(x) { return String(x === undefined || x === null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function dbN(n, uno, varios) { return n + ' ' + (n === 1 ? uno : varios); }
 function dbDia(ms) { var d = new Date(ms); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
 function dbAnillo(t, p, col, txt, sub) { var c = 2 * Math.PI * 42; p = Math.max(0, Math.min(1, p || 0));
   return '<svg width="' + t + '" height="' + t + '" viewBox="0 0 100 100" aria-hidden="true" style="flex:0 0 auto"><circle cx="50" cy="50" r="42" fill="none" stroke="#1b2643" stroke-width="11"/><circle cx="50" cy="50" r="42" fill="none" stroke="' + col + '" stroke-width="11" stroke-linecap="round" stroke-dasharray="' + (c * p).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 50 50)"/><text x="50" y="' + (sub ? 52 : 58) + '" text-anchor="middle" font-size="' + (sub ? 21 : 24) + '" font-weight="800" fill="#e6ebf5">' + txt + '</text>' + (sub ? '<text x="50" y="70" text-anchor="middle" font-size="11.5" fill="#8d9bb8">' + sub + '</text>' : '') + '</svg>'; }
@@ -1693,7 +1694,7 @@ function dbCss() {
     '.dbr .m{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}.dbhb{height:9px;border-radius:5px;background:#0b1325;overflow:hidden;margin-top:4px}.dbhb i{display:block;height:100%;border-radius:5px}' +
     '.dbt{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:10px;margin-left:6px}.dbley{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#c7d0e3;margin-top:6px}.dbley i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}' +
     '.dbbig{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}.dbnota{font-size:11.5px;color:#64748b}' +
-    '@media(max-width:1300px){.dbk{grid-template-columns:repeat(3,minmax(0,1fr))}.db3{grid-template-columns:1fr 1fr}}@media(max-width:900px){.db2,.db3{grid-template-columns:1fr}}@media(max-width:560px){.dbk{grid-template-columns:1fr 1fr}.dbc .v{font-size:21px}}';
+    '@media(max-width:1300px){.dbk{grid-template-columns:repeat(3,minmax(0,1fr))}.db3{grid-template-columns:1fr 1fr}}@media(max-width:900px){.db2,.db3{grid-template-columns:1fr}}@media(max-width:560px){.dbk{grid-template-columns:1fr 1fr}.dbc{padding:10px;gap:8px}.dbc .bar{flex-basis:7px}.dbc .v{font-size:19px}.dbw{padding:10px}}';
   document.head.appendChild(st);
 }
 function dbPintar(X) {
@@ -1749,27 +1750,27 @@ function dbPintar(X) {
   function k(col, v, l, s, pag) { return '<div class="dbc" onclick="navTo(\'' + pag + '\')"><span class="bar" style="background:' + col + '"></span><div style="min-width:0"><div class="v">' + v + '</div><div class="l">' + l + '</div><div class="s">' + s + '</div></div></div>'; }
   var h = '<div class="dbw">';
   h += '<div class="dbk">' +
-    k('#22c55e', dbM(X.totalVentas), 'Ventas sin IVA', varV === null ? X.ventas.length + ' comprobantes' : '<b style="color:' + (varV >= 0 ? '#86efac' : '#fca5a5') + '">' + (varV >= 0 ? '▲ ' : '▼ ') + Math.abs(Math.round(varV * 100)) + '%</b> contra el período anterior', 'ventas') +
-    k('#38bdf8', dbM(cobrado), 'Cobrado', cobros.length + ' recibos', 'cobranzas') +
-    k('#ef4444', dbM(X.totalCompras), 'Compras sin IVA', X.nCompras + ' facturas', 'carga-compras') +
+    k('#22c55e', dbM(X.totalVentas), 'Ventas sin IVA', varV === null ? dbN(X.ventas.length, 'comprobante', 'comprobantes') : '<b style="color:' + (varV >= 0 ? '#86efac' : '#fca5a5') + '">' + (varV >= 0 ? '▲ ' : '▼ ') + Math.abs(Math.round(varV * 100)) + '%</b> contra el período anterior', 'ventas') +
+    k('#38bdf8', dbM(cobrado), 'Cobrado', dbN(cobros.length, 'recibo', 'recibos'), 'cobranzas') +
+    k('#ef4444', dbM(X.totalCompras), 'Compras sin IVA', dbN(X.nCompras, 'factura', 'facturas'), 'carga-compras') +
     k('#f59e0b', dbM(gastosSinCompras), 'Gastos y costos', 'insumos, sueldos, combustible…', 'carga-gastos') +
     k(colRes, '<span style="color:' + colRes + '">' + dbM(X.resultado) + '</span>', 'Resultado', (X.totalVentas > 0 && Math.abs(margen) <= 9.99 ? '<b style="color:' + colRes + '">' + Math.round(margen * 100) + '%</b> de lo vendido · ' : '') + 'ventas − compras − gastos', 'estado-resultados') +
-    k('#a78bfa', term, 'Cubiertas terminadas', (rech ? rech + ' rechazadas · ' : '') + enLinea + ' en producción', 'tablero-linea') + '</div>';
+    k('#a78bfa', term, 'Cubiertas terminadas', (rech ? dbN(rech, 'rechazada', 'rechazadas') + ' · ' : '') + enLinea + ' en producción', 'tablero-linea') + '</div>';
   // gráfico día por día
-  var W = 1000, H = 250, L = 56, R = 12, T = 14, B = 34, n = Math.max(1, claves.length), mxV = 1;
+  var cw = ($id('ds-content') || {}).clientWidth || 1000, W = cw < 700 ? 440 : 1000, H = cw < 700 ? 290 : 250, FS = cw < 700 ? 14 : 11, L = cw < 700 ? 60 : 56, R = 12, T = 14, B = 34, n = Math.max(1, claves.length), mxV = 1;
   claves.forEach(function(c) { mxV = Math.max(mxV, dias[c].v, dias[c].e); });
   var acu = 0, mnA = 0, mxA = 0, acs = claves.map(function(c) { acu += dias[c].v - dias[c].e; mnA = Math.min(mnA, acu); mxA = Math.max(mxA, acu); return acu; });
   var top = Math.max(mxV, mxA), bot = Math.min(0, mnA), sy = function(v) { return T + (top - v) / ((top - bot) || 1) * (H - T - B); }, bw = (W - L - R) / n;
   var g = '';
-  [0, .25, .5, .75, 1].forEach(function(f) { var v = bot + (top - bot) * f, y = sy(v); g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="#1a2440"/><text x="' + (L - 6) + '" y="' + (y + 4).toFixed(1) + '" fill="#8d9bb8" font-size="11" text-anchor="end">' + dbM(v).replace('$ ', '') + '</text>'; });
+  [0, .25, .5, .75, 1].forEach(function(f) { var v = bot + (top - bot) * f, y = sy(v); g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="#1a2440"/><text x="' + (L - 6) + '" y="' + (y + 4).toFixed(1) + '" fill="#8d9bb8" font-size="' + FS + '" text-anchor="end">' + dbM(v).replace('$ ', '') + '</text>'; });
   g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + sy(0).toFixed(1) + '" y2="' + sy(0).toFixed(1) + '" stroke="#3a4a6b"/>';
   claves.forEach(function(c, i) { var x = L + i * bw, w = Math.max(2, bw * 0.36), dd = dias[c], dl = new Date(c);
     if (dd.v > 0) g += '<rect x="' + (x + bw * 0.12).toFixed(1) + '" y="' + sy(dd.v).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + (sy(0) - sy(dd.v)).toFixed(1) + '" rx="2" fill="#22c55e"><title>' + dl.getDate() + '/' + (dl.getMonth() + 1) + ' · ventas ' + dbM(dd.v) + '</title></rect>';
     if (dd.e > 0) g += '<rect x="' + (x + bw * 0.12 + w + 1).toFixed(1) + '" y="' + sy(dd.e).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + (sy(0) - sy(dd.e)).toFixed(1) + '" rx="2" fill="#ef4444"><title>' + dl.getDate() + '/' + (dl.getMonth() + 1) + ' · egresos ' + dbM(dd.e) + '</title></rect>';
-    var cada = Math.ceil(n / 16); if (i % cada === 0) g += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 12) + '" fill="#8d9bb8" font-size="11" text-anchor="middle">' + dl.getDate() + '/' + (dl.getMonth() + 1) + '</text>'; });
+    var cada = Math.ceil(n / (W < 700 ? 8 : 16)); if (i % cada === 0) g += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 12) + '" fill="#8d9bb8" font-size="' + FS + '" text-anchor="middle">' + dl.getDate() + '/' + (dl.getMonth() + 1) + '</text>'; });
   if (claves.length > 1) g += '<polyline fill="none" stroke="#a78bfa" stroke-width="2.5" points="' + acs.map(function(v, i) { return (L + i * bw + bw / 2).toFixed(1) + ',' + sy(v).toFixed(1); }).join(' ') + '"/>';
   var hayMov = claves.some(function(c) { return dias[c].v || dias[c].e; });
-  h += '<div class="db2"><div class="dbp"><h3>Día por día · ' + nombreP + '</h3><p class="sub">Lo que se vendió y lo que salió cada día (sin IVA). La línea violeta es el resultado acumulado.</p>' +
+  h += '<div class="db2"><div class="dbp"><h3>Día por día · ' + (X.periodo === 'todo' ? 'últimos 60 días' : nombreP) + '</h3><p class="sub">Lo que se vendió y lo que salió cada día (sin IVA). La línea violeta es el resultado acumulado.</p>' +
     (hayMov ? '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" role="img" aria-label="Ventas y egresos por día">' + g + '</svg>' : '<div class="dbnota" style="padding:40px 0;text-align:center">No hay ventas ni egresos cargados en ' + nombreP + '.</div>') +
     '<div class="dbley"><span><i style="background:#22c55e"></i>Ventas</span><span><i style="background:#ef4444"></i>Compras y gastos</span><span><i style="background:#a78bfa"></i>Resultado acumulado</span><span class="dbnota">Los insumos de producción se suman al total pero no al gráfico diario.</span></div></div>';
   // en qué se va la plata
@@ -1779,7 +1780,7 @@ function dbPintar(X) {
   var tot = porTipo.SERVICIO + porTipo.ARTICULO;
   h += '<div class="db3">' +
     '<div class="dbp" id="db-cajas"><h3>Caja y bancos</h3><p class="sub">Saldo de hoy</p><div class="dbnota">Cargando…</div></div>' +
-    '<div class="dbp"><h3>Nos deben</h3><p class="sub">Ventas sin cobrar: ' + X.ventasPendCobro.length + ' comprobantes</p><div class="dbbig" style="color:#fbbf24;cursor:pointer" onclick="navTo(\'cobranzas\')">' + dbM(X.saldoPendCobro) + '</div>' +
+    '<div class="dbp"><h3>Nos deben</h3><p class="sub">Ventas sin cobrar: ' + dbN(X.ventasPendCobro.length, 'comprobante', 'comprobantes') + '</p><div class="dbbig" style="color:#fbbf24;cursor:pointer" onclick="navTo(\'cobranzas\')">' + dbM(X.saldoPendCobro) + '</div>' +
       (viejo > 0 ? '<div style="margin:4px 0 6px;font-size:13px;color:#fca5a5;font-weight:700">⚠ ' + dbM(viejo) + ' con más de 30 días</div>' : '<div class="dbnota" style="margin:4px 0 6px">nada con más de 30 días</div>') +
       topDeu.map(function(x) { return '<div class="dbr" onclick="navTo(\'cobranzas\')"><div>' + dbEsc(nomCli(x.k)) + (x.d > 30 ? '<span class="dbt" style="background:#4c1010;color:#fecaca">' + x.d + ' días</span>' : '') + '</div><div class="m">' + dbM(x.v) + '</div></div>'; }).join('') + '</div>' +
     '<div class="dbp"><h3>Debemos y cheques</h3><p class="sub">Facturas de proveedores sin pagar: ' + X.comprasPendPago.length + '</p><div class="dbbig" style="color:#f87171;cursor:pointer" onclick="navTo(\'ordenes-pago\')">' + dbM(X.saldoPendPago) + '</div>' +
@@ -1807,7 +1808,7 @@ async function dbExtras() {
       cs.map(function(c) { return '<div class="dbr" onclick="navTo(\'caja\')"><div>' + (c.TIPO === 'BANCO' ? '🏦 ' : '💵 ') + dbEsc(c.CAJA_DESC) + '</div><div class="m" style="color:' + ((Number(c.SALDO) || 0) < 0 ? '#fca5a5' : '#e6ebf5') + '">' + dbM(c.SALDO) + '</div></div>'; }).join(''); }
   catch (e) { var el2 = $id('db-cajas'); if (el2) el2.innerHTML = '<h3>Caja y bancos</h3><div class="dbnota">No tenés permiso para ver las cajas.</div>'; }
   try { var lst = [], vistos = {};
-    try { var cb = await gsRun('gsINS_Cobertura', { ALERTA: 1 }); ((cb && cb.ok && cb.filas) || []).forEach(function(f) { vistos[String(f.NOMBRE)] = 1; lst.push({ n: f.NOMBRE, r: f.NIVEL === 'r', txt: f.STOCK <= 0 ? 'sin stock' : f.DIAS === null || f.DIAS === undefined ? 'sin dato de consumo' : 'quedan ' + f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's'), p: f.STOCK <= 0 ? 0 : Math.min(1, (f.DIAS || 0) / 15) }); }); } catch (ec) {}
+    try { var cb = await gsRun('gsINS_Cobertura', { ALERTA: 1 }); ((cb && cb.ok && cb.filas) || []).forEach(function(f) { vistos[String(f.NOMBRE)] = 1; lst.push({ n: f.NOMBRE, r: f.NIVEL === 'r', txt: f.STOCK <= 0 ? 'sin stock' : f.DIAS === null || f.DIAS === undefined ? 'sin dato de consumo' : f.DIAS <= 0 ? 'se acaba hoy' : 'quedan ' + dbN(f.DIAS, 'día', 'días'), p: f.STOCK <= 0 ? 0 : Math.min(1, (f.DIAS || 0) / 15) }); }); } catch (ec) {}
     var s = await gsRun('gsST_General');
     ((s && s.INSUMOS) || []).concat((s && s.ARTICULOS) || []).forEach(function(x) { if (x.MINIMO > 0 && x.STOCK < x.MINIMO && !vistos[String(x.NOMBRE)]) lst.push({ n: x.NOMBRE, r: x.STOCK <= 0, txt: x.STOCK + ' de mínimo ' + x.MINIMO + ' ' + (x.UNIDAD || ''), p: Math.max(0, x.STOCK / x.MINIMO), pr: x.POR_RECIBIR || 0 }); });
     lst.sort(function(a, b) { return (a.r ? 0 : 1) - (b.r ? 0 : 1) || a.p - b.p; });
@@ -14191,7 +14192,7 @@ function cbPintar() {
       '<div class="cb-nom"><b>' + cbEsc(f.NOMBRE) + '</b><small>' + id + (f.RUBRO ? ' · ' + cbEsc(f.RUBRO) : '') + '</small></div>' +
       '<div><div class="cb-k">Stock</div><div class="cb-v">' + cbN(f.STOCK) + ' ' + cbEsc(f.UNIDAD) + '</div></div>' +
       '<div><div class="cb-k">Gasto por día ' + cbFuente(f) + '</div><div class="cb-v' + (f.FUENTE === 'ESTIMADO' ? ' cb-est' : '') + '">' + (f.CONSUMO_DIA ? cbN(f.CONSUMO_DIA) + ' ' + cbEsc(f.UNIDAD) : '—') + '</div></div>' +
-      '<div><div class="cb-k">Quedan</div><div class="cb-v" style="color:' + col + '">' + (f.STOCK <= 0 ? 'SIN STOCK' : (f.DIAS === null ? '—' : f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's'))) + '</div></div>' +
+      '<div><div class="cb-k">Quedan</div><div class="cb-v" style="color:' + col + '">' + (f.STOCK <= 0 ? 'SIN STOCK' : (f.DIAS === null ? '—' : f.DIAS <= 0 ? 'se acaba hoy' : f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's'))) + '</div></div>' +
       '<div><div class="cb-k">Pedir antes del</div><div class="cb-v">' + (f.PEDIR_ANTES ? (f.NIVEL === 'r' ? '<span style="color:#dc2626">¡YA!</span>' : cbFecha(f.PEDIR_ANTES, true)) : '—') + '</div></div></div>' +
       (ab ? cbDetalle(f) : '') + '</div>';
   });
@@ -14282,7 +14283,7 @@ async function cobAvisoInicio() {
     if (!r || !r.ok || !(r.rojas + r.amarillas) || !SES || SES.token !== tk) return;
     var li = r.filas.map(function(f) {
       return '<li><b style="color:' + (f.NIVEL === 'r' ? '#dc2626' : '#a16207') + '">' + (f.NIVEL === 'r' ? '🔴 ' : '🟡 ') + cbEsc(f.NOMBRE) + '</b>: ' +
-        (f.STOCK <= 0 ? '<b>sin stock</b>' : f.DIAS === null ? 'sin dato de consumo' : 'quedan ' + f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's') + ' (se acaba el ' + cbFecha(f.SE_ACABA, true) + ')') +
+        (f.STOCK <= 0 ? '<b>sin stock</b>' : f.DIAS === null ? 'sin dato de consumo' : f.DIAS <= 0 ? '<b>se acaba hoy</b>' : 'quedan ' + f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's') + ' (se acaba el ' + cbFecha(f.SE_ACABA, true) + ')') +
         (f.NIVEL === 'r' ? ' · <b>pedir YA</b>' : ' · pedir antes del ' + cbFecha(f.PEDIR_ANTES, true)) + (f.FUENTE === 'ESTIMADO' ? ' <span class="cb-f cb-fE">ESTIMADO</span>' : '') + '</li>';
     }).join('');
     showModal('<div class="mh"><span class="mt">⚠ Insumos por acabarse</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 cb-av" style="font-size:14px">' +
