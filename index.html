@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "86d68e4a53b2"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "fba5a909a1ad"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031133';
+var EMA_BUILD = '202611031135';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -10930,17 +10930,19 @@ async function pcPreciosRec() {
   var uniq = function(k) { var o = {}; r.FILAS.forEach(function(f) { if (f[k]) o[f[k]] = 1; }); return Object.keys(o).sort(); };
   var opts = function(arr, todos) { return '<option value="">' + todos + '</option>' + arr.map(function(x) { return '<option value="' + pcEsc(x) + '">' + pcEsc(x) + '</option>'; }).join(''); };
   showModal('<div class="mh"><span class="mt"><i class="fas fa-tags" style="color:var(--accent)"></i> Precios de servicios y recapadas para la lista de venta</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
-    '<div style="margin:0 0 8px;font-size:12px;background:var(--surface2,#f1f5f9);border-radius:8px;padding:8px 10px"><b>Cómo sale el precio:</b> 1) <b>Costo sin IVA</b> (promedio real de las cubiertas terminadas de esa medida y trabajo; si no hay, el de la receta) → 2) <b>+ rentabilidad</b> (la de la receta o la general ' + pct(g.RENTABILIDAD) + ') → 3) <b>+ impuestos de venta ' + pct(g.IMP_VENTA) + '</b> = <b>precio de venta sin IVA</b> → 4) <b>+ IVA ' + pct(g.IVA) + '</b> = <b>precio de venta con IVA</b>. Tocá <b>«ver cálculo»</b> en cada fila para ver la cuenta con sus números.</div>' +
+    '<div style="margin:0 0 8px;font-size:12px;background:var(--surface2,#f1f5f9);border-radius:8px;padding:8px 10px"><b>Cómo sale el precio:</b> 1) <b>Costo sin IVA</b> (promedio real de las cubiertas terminadas de esa medida y trabajo; si no hay, el de la receta) → 2) <b>+ rentabilidad</b> (la de la receta o la general ' + pct(g.RENTABILIDAD) + ') → 3) <b>+ impuestos de venta ' + pct(g.IMP_VENTA) + '</b> = <b>precio de venta sin IVA</b> → 4) <b>+ IVA ' + pct(g.IVA) + '</b> = <b>precio de venta con IVA</b>. Tocá <b>«ver cálculo»</b> en una fila (o tildá «Ver el cálculo de todos») para ver cómo se arma: el costo con sus partes y cada paso hasta el precio final.</div>' +
     '<div class="fbar" style="gap:6px;flex-wrap:wrap;margin-bottom:6px">' +
       '<input class="fi" id="pcpr-q" placeholder="Buscar medida, trabajo o nombre…" style="flex:1 1 220px;min-width:180px"/>' +
       '<select class="fi" id="pcpr-lin" style="width:auto">' + opts(uniq('LIN'), 'Todas las líneas') + '</select>' +
       '<select class="fi" id="pcpr-tra" style="width:auto">' + opts(uniq('TRA'), 'Todos los trabajos') + '</select>' +
+      '<label style="display:flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap"><input type="checkbox" id="pcpr-todo-det"/> Ver el cálculo de todos</label>' +
       '<select class="fi" id="pcpr-ver" style="width:auto"><option value="">Todos los precios</option><option value="C">Solo los que cambian</option><option value="S">Solo sube</option><option value="B">Solo baja</option><option value="N">Sin precio en la lista</option><option value="E">Solo los elegidos</option></select>' +
     '</div>' +
     '<div class="tw" style="max-height:52vh"><table style="font-size:13px"><thead><tr><th style="width:28px"><input type="checkbox" id="pcpr-todos" title="Elegir todos los que se ven"/></th><th>Artículo</th><th>Base</th><th class="tr">Costo</th><th class="tr">Precio de venta<div style="font-weight:400;font-size:10px">sin IVA</div></th><th class="tr">Precio de venta<div style="font-weight:400;font-size:10px">con IVA</div></th><th class="tr">En la lista hoy</th><th class="tr">Diferencia</th></tr></thead><tbody id="pcpr-tb"></tbody></table></div>' +
     '<div id="pcpr-pie" class="tdim" style="font-size:12px;margin-top:8px"></div>' +
     (r.FUERA && (r.FUERA.MARCA || r.FUERA.APRENDIZAJE) ? '<div class="tdim" style="font-size:11px">No entran: ' + [r.FUERA.MARCA ? r.FUERA.MARCA + ' receta' + (r.FUERA.MARCA === 1 ? '' : 's') + ' por marca de cubierta' : '', r.FUERA.APRENDIZAJE ? r.FUERA.APRENDIZAJE + ' receta' + (r.FUERA.APRENDIZAJE === 1 ? '' : 's') + ' en aprendizaje (sin cantidades ni cubiertas terminadas)' : ''].filter(function(x) { return x; }).join(' · ') + '.</div>' : '') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-p" id="pcpr-ok"><i class="fas fa-paper-plane"></i> Mandar a aprobar</button></div>', 'md-lg');
+  $id('pcpr-todo-det').addEventListener('change', function() { var on = this.checked; PCPR_.r.FILAS.forEach(function(f) { PCPR_.ver[f.KEY] = on; }); pcprPintar(); });
   ['pcpr-q', 'pcpr-lin', 'pcpr-tra', 'pcpr-ver'].forEach(function(id) { $id(id).addEventListener(id === 'pcpr-q' ? 'input' : 'change', pcprPintar); });
   $id('pcpr-todos').addEventListener('change', function() { var on = this.checked; pcprVisibles().forEach(function(f) { if (f.CAMBIA) PCPR_.sel[f.KEY] = on; else delete PCPR_.sel[f.KEY]; }); pcprPintar(); });
   $id('pcpr-tb').addEventListener('change', function(e) { var k = e.target && e.target.getAttribute('data-k'); if (!k) return; if (e.target.checked) PCPR_.sel[k] = true; else delete PCPR_.sel[k]; pcprPie(); });
@@ -10988,17 +10990,38 @@ function pcprPintar() {
 function pcprFormula(f) { var g = PCPR_.r.REGLA, ren = f.RENTABILIDAD || g.RENTABILIDAD, n = function(x) { return (Math.round(x * 1000) / 1000).toLocaleString('es-AR'); };
   return 'costo × ' + n(1 + ren) + ' ÷ ' + n(1 - g.IMP_VENTA) + ' × ' + n(1 + g.IVA); }
 function pcprVer(k) { PCPR_.ver[k] = !PCPR_.ver[k]; pcprPintar(); }
-// La cuenta paso a paso de una fila, con los mismos números que usa el sistema
+// Cómo se arma el precio de una fila: el costo con sus partes y después rentabilidad, impuestos e IVA (03/11/2026)
 function pcprCalculo(f) {
-  var g = PCPR_.r.REGLA, ren = f.RENTABILIDAD || g.RENTABILIDAD, p = function(x) { return (Math.round(x * 1000) / 10).toLocaleString('es-AR') + '%'; };
-  var conRen = f.COSTO * (1 + ren), iva = f.CON_IVA - f.SIN_IVA;
-  var paso = function(n, txt, cuenta, res, fuerte) { return '<tr><td style="width:22px;color:var(--dim,#888)">' + n + '</td><td>' + txt + '</td><td class="mono tdim" style="font-size:11px">' + cuenta + '</td><td class="tr mono"' + (fuerte ? ' style="font-weight:700"' : '') + '>' + fmt(res) + '</td></tr>'; };
-  return '<tr><td></td><td colspan="7" style="background:var(--surface2,#f8fafc)"><table style="font-size:12px;width:100%;max-width:640px"><tbody>' +
-    paso('1', 'Costo sin IVA (' + pcEsc(f.BASE) + ')', '', f.COSTO) +
-    paso('2', '+ rentabilidad ' + p(ren), fmt(f.COSTO) + ' × ' + (1 + ren).toLocaleString('es-AR'), conRen) +
-    paso('3', '+ impuestos de venta ' + p(g.IMP_VENTA) + ' → <b>precio de venta sin IVA</b>', fmt(conRen) + ' ÷ ' + (1 - g.IMP_VENTA).toLocaleString('es-AR'), f.SIN_IVA, true) +
-    paso('4', '+ IVA ' + p(g.IVA) + ' (' + fmt(iva) + ') → <b>precio de venta con IVA</b>', fmt(f.SIN_IVA) + ' × ' + (1 + g.IVA).toLocaleString('es-AR'), f.CON_IVA, true) +
-    '</tbody></table></td></tr>';
+  var g = PCPR_.r.REGLA, ren = f.RENTABILIDAD || g.RENTABILIDAD, gar = g.GARANTIA || 0;
+  var p = function(x) { return (Math.round(x * 1000) / 10).toLocaleString('es-AR') + '%'; }, n = function(x) { return (Math.round(x * 10000) / 10000).toLocaleString('es-AR'); };
+  var conRen = f.COSTO * (1 + ren), iva = f.CON_IVA - f.SIN_IVA, imp = f.SIN_IVA - conRen;
+  var fila = function(txt, cuenta, res, tipo) {
+    var st = tipo === 'tot' ? 'font-weight:700;border-top:1px solid var(--border,#ddd)' : tipo === 'fin' ? 'font-weight:700;font-size:14px;border-top:2px solid var(--text,#222)' : '';
+    return '<tr><td style="padding:3px 6px;' + st + '">' + txt + '</td><td class="mono tdim" style="padding:3px 6px;font-size:11px;' + st + '">' + cuenta + '</td><td class="tr mono" style="padding:3px 6px;white-space:nowrap;' + st + '">' + fmt(res) + '</td></tr>'; };
+  var tit = function(t) { return '<tr><td colspan="3" style="padding:8px 6px 3px;font-weight:700;color:var(--accent,#2563eb)">' + t + '</td></tr>'; };
+  var h = '<tr><td></td><td colspan="7" style="background:var(--surface2,#f8fafc);padding:8px 12px"><table style="font-size:12px;width:100%;max-width:720px"><tbody>';
+  h += tit('A · Costo de una cubierta (sin IVA)');
+  if (f.ORIGEN === 'REAL') {
+    h += fila('Promedio del costo real de ' + f.N_REAL + ' cubierta' + (f.N_REAL === 1 ? '' : 's') + ' terminada' + (f.N_REAL === 1 ? '' : 's') + ' de esta medida y trabajo', 'materiales + herramental + mano de obra + fijos de cada una', f.COSTO, 'tot');
+  } else {
+    var sub = (f.MATERIALES || 0) + (f.HERRAMENTAL || 0) + (f.MANO_OBRA || 0) + (f.FIJOS || 0);
+    h += fila('Materiales de la receta' + (f.BANDA ? ' (banda ' + pcEsc(f.BANDA) + ')' : ''), 'cantidad × precio de cada insumo', f.MATERIALES || 0) +
+      fila('Herramental (inner, envelope…)', 'precio de la pieza ÷ usos', f.HERRAMENTAL || 0) +
+      fila('Mano de obra', n(f.MINUTOS || 0) + ' min × ' + fmt(g.MINUTO_MO || 0) + ' por minuto', f.MANO_OBRA || 0) +
+      fila('Gastos fijos del mes por cubierta', 'gastos fijos ÷ cubiertas de un mes normal', f.FIJOS || 0) +
+      fila('Subtotal', '', sub, 'tot') +
+      fila('+ Garantía ' + p(gar), fmt(sub) + ' × ' + p(gar), sub * gar) +
+      fila('= Costo', fmt(sub) + ' × ' + n(1 + gar), f.COSTO, 'tot');
+  }
+  h += tit('B · Precio de venta');
+  h += fila('Costo', '', f.COSTO) +
+    fila('+ Rentabilidad ' + p(ren) + (f.RENTABILIDAD ? ' (de la receta)' : ' (general)'), fmt(f.COSTO) + ' × ' + p(ren), conRen - f.COSTO) +
+    fila('= Costo + rentabilidad', fmt(f.COSTO) + ' × ' + n(1 + ren), conRen, 'tot') +
+    fila('+ Impuestos de venta ' + p(g.IMP_VENTA) + ' <span class="tdim">(Ingresos Brutos ' + p(g.IIBB || 0) + ' + imp. cheque ' + p(g.IMP_CHEQUE || 0) + ' + comisión ' + p(g.COMISION_VENTA || 0) + ')</span>', fmt(conRen) + ' ÷ ' + n(1 - g.IMP_VENTA) + ' (para que queden cubiertos sobre el precio)', imp) +
+    fila('= Precio de venta sin IVA', '', f.SIN_IVA, 'tot') +
+    fila('+ IVA ' + p(g.IVA), fmt(f.SIN_IVA) + ' × ' + p(g.IVA), iva) +
+    fila('= PRECIO DE VENTA CON IVA', fmt(f.SIN_IVA) + ' × ' + n(1 + g.IVA), f.CON_IVA, 'fin');
+  return h + '</tbody></table></td></tr>';
 }
 function pcprPie() {
   var fs = PCPR_.r.FILAS, vis = pcprVisibles(), camb = fs.filter(function(f) { return f.CAMBIA; }).length;
