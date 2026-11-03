@@ -1438,7 +1438,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031312';
+var EMA_BUILD = '202611031340';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -11320,6 +11320,8 @@ async function puCargar() {
   if (PU_.est) await puPesajeCargar(); else PU_.pes = null;
   puPintar();
   // Viene del tablero de la línea: abre esa cubierta (su mapa de estaciones) para seguir desde ahí
+  // Viene del modo «Marcar» del tablero: abre directo la ficha de esa estación
+  if (PU_.irFicha && PU_.est) { var fi = PU_.irFicha; PU_.irFicha = null; return puAbrir(fi.ot, fi.cub, fi.est); }
   if (PU_.irA && PU_.est) { var ir = PU_.irA; PU_.irA = null; if (puCubD(ir.cub)) puPanel(ir.ot, ir.cub); else toast('Esa cubierta no está en este puesto', 'r2'); }
 }
 // Después de confirmar un paso: se actualiza la cubierta acá mismo, sin volver a pedir todo al servidor
@@ -12027,7 +12029,10 @@ function puAdicional() {
   };
 }
 function puAgregar(i) { var l = PU_.pend.splice(i, 1)[0]; PU_.rows.push(puNuevaFila(l)); PU_.verOtros = false; puFicha(); puAbrirFila(PU_.rows.length - 1); }
-function puVolver() { puPararReloj(); PU_.vista = 'lista'; PU_.f = null; PU_.estF = ''; puCargar(); }
+function puVolver() { puPararReloj(); PU_.vista = 'lista'; PU_.f = null; PU_.estF = '';
+  // Si vino del tablero (modo Marcar), vuelve al tablero
+  if (PU_.volverTablero && Date.now() - PU_.volverTablero < 4 * 3600000) { PU_.volverTablero = 0; if (typeof TB_ !== 'undefined') { TB_.marcar = true; TB_.vista = 'planta'; } return navTo('tablero-linea'); }
+  puCargar(); }
 // ── Reloj de trabajo guardado en el servidor: varios a la vez desde un mismo aparato ──
 function puRelDe(ot, cub, est) {
   return ((PU_.d && PU_.d.relojes) || []).filter(function(r) { return String(r.ID_OT) === String(ot) && String(r.ID_CUB) === String(cub) && String(r.ID_ESTACION) === String(est); })[0] || null;
@@ -12694,7 +12699,7 @@ function tbEstadoEst(e, primera) {
   return ['verde', 'EN TIEMPO'];
 }
 function tbPintar() {
-  if (TB_.vista === 'planta') return tbPintarPlanta();
+  if (TB_.vista === 'planta') return TB_.marcar ? tbPintarMarcar() : tbPintarPlanta();
   var el = tbEl(), d = TB_.d; if (!el || !d) return;
   var R = d.RESUMEN, ahora = Date.now() + (TB_.dt || 0);
   var h = '<div class="tb-hd"><h2>🏭 Tablero de la línea</h2>' +
@@ -12871,6 +12876,7 @@ function tbPintarPlanta() {
     d.LINEAS.map(function(l) { return '<button class="tp-btn' + (l === d.LINEA ? ' on' : '') + '" onclick="tbLinea(\'' + tbEsc(l) + '\')">' + (l === 'AGRICOLA' ? 'Agrícola' : l === 'CAMIONES' ? 'Camiones' : tbEsc(l)) + '</button>'; }).join('') +
     '<button class="tp-btn" onclick="TB_.vista=\'linea\';tbPintar()">Columnas</button><button class="tp-btn" onclick="TB_.vista=\'cuadro\';tbPintar()">Cuadro</button>' +
     '<button class="tp-btn" onclick="tbGrande()">' + (TB_.grande ? '✕ Salir' : '📺 Pantalla grande') + '</button>' +
+    (puedeVerPagina('puesto-estacion') && !window.EMA_MODO_TABLERO ? '<button class="tp-btn" style="background:#16a34a;border-color:#16a34a;color:#fff" onclick="tbMarcarModo()">✋ Marcar</button>' : '') +
     '<div class="tp-clk" id="tp-clk">' + tbHora(ahora) + '</div></div>';
   // Números grandes
   var k = function(ico, bg, v, l, s, al) { return '<div class="tp-k' + (al ? ' al' : '') + '"><div class="ico" style="background:' + bg + '">' + ico + '</div><div><div class="v">' + v + '</div><div class="l">' + l + '</div>' + (s ? '<div class="s">' + s + '</div>' : '') + '</div></div>'; };
@@ -12931,6 +12937,177 @@ function tbPintarPlanta() {
   h += '<div class="tp-ley"><span><i style="background:#3b82f6"></i>En tiempo</span><span><i style="background:#f59e0b"></i>Cerca del tiempo normal</span><span><i style="background:#ef4444"></i>Atrasada (+30%)</span><span><i style="background:#f97316"></i>Cocinando</span><span><i style="background:#fbbf24"></i>Esperando</span><span><i style="background:#64748b"></i>Por empezar</span><span><i style="background:#22c55e"></i>Lista / hecha</span>' +
     '<span style="color:#64748b">El anillo de cada cubierta se llena con el tiempo de la estación (o con el avance de la cubierta en las tarjetas). Se actualiza solo.</span></div></div>';
   el.innerHTML = '<div class="tb-wrap">' + h + '</div>';
+}
+</script>
+<script>
+// ================================================================
+// TABLERO · MODO «MARCAR» (03/11/2026): el encargado marca cada cubierta en cada estación desde el tablero.
+// Usa los mismos relojes y fichas que el Puesto de estación (las dos formas conviven):
+// EMPEZAR / PAUSA / SEGUIR = relojes; TERMINÉ = para el reloj y abre la ficha de esa estación para cargar y confirmar.
+// ================================================================
+(function() {
+  var st = document.createElement('style');
+  st.textContent = '.tm-zn{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;font-size:13px;color:#94a3b8}.tm-zn button{min-width:44px;min-height:40px;border-radius:10px;border:1px solid #22304f;background:#131f3a;color:#cbd5e1;font-weight:800;cursor:pointer}.tm-zn button.on{background:#2563eb;border-color:#3b82f6;color:#fff}' +
+    '.tm-al{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}.tm-a{display:flex;gap:10px;align-items:center;border-radius:12px;padding:11px 14px;font-size:15px;font-weight:600;border:1px solid;cursor:pointer;text-align:left;color:#e6ebf5;width:100%}' +
+    '.tm-a.r{background:#3b0d0d;border-color:#ef4444}.tm-a.a{background:#3a2606;border-color:#f59e0b}.tm-a.i{background:#10223f;border-color:#3b82f6}.tm-a.v{background:#0d2e1c;border-color:#22c55e;cursor:default}' +
+    '.tm-g{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.tm-e{background:#0f1830;border:1px solid #22304f;border-radius:18px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}.tm-e.r{border-color:#ef4444;box-shadow:0 0 16px #ef444440}.tm-e.a{border-color:#f59e0b}' +
+    '.tm-eh{display:flex;gap:9px;align-items:center}.tm-n{flex:0 0 42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:21px;background:#2a3757;color:#fff}.tm-n.verde{background:#15803d}.tm-n.amarillo{background:#b45309}.tm-n.rojo{background:#b91c1c}' +
+    '.tm-nn{font-weight:800;font-size:14.5px;line-height:1.15;color:#e6ebf5}.tm-ns{font-size:11.5px;color:#94a3b8;margin-top:2px}.tm-ts{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:6px}' +
+    '.tm-b{display:flex;flex-direction:column;align-items:center;gap:3px;background:#131f3a;border:2px solid #22304f;border-radius:14px;padding:8px 4px 7px;cursor:pointer;color:#e6ebf5;min-height:118px;min-width:0}.tm-b:active{transform:scale(.97)}' +
+    '.tm-b .mk{font-family:monospace;font-weight:800;font-size:13.5px}.tm-b .rl{font-family:monospace;font-weight:800;font-size:15px}.tm-b .sx{font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;text-align:center}.tm-b .op{font-size:10.5px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}' +
+    '.tm-v{font-size:13px;color:#475569;text-align:center;padding:14px 0}.tm-coc{display:flex;gap:10px;align-items:center;background:#2a1405;border:1px solid #f97316;border-radius:14px;padding:8px;cursor:pointer;color:#e6ebf5;width:100%;text-align:left}' +
+    '.md.tm-sh{background:#0f1830;color:#e6ebf5;border:1px solid #2f4170}.tm-sh h3{margin:0;font-size:28px;font-weight:900;font-family:monospace}.tm-sh .s2{color:#94a3b8;font-size:14px;margin-top:2px}' +
+    '.tm-dat{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}.tm-dat div{background:#131f3a;border-radius:10px;padding:7px 10px;min-width:0}.tm-dat small{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8}.tm-dat b{font-size:14px;overflow-wrap:anywhere}' +
+    '.tm-ru{display:flex;gap:4px;margin:8px 0 2px}.tm-ru span{flex:1;text-align:center;font-size:12px;font-weight:800;padding:6px 0;border-radius:7px;background:#1b2643;color:#94a3b8}.tm-ru span.H{background:#14532d;color:#86efac}.tm-ru span.C{background:#1d4ed8;color:#fff;box-shadow:0 0 0 2px #93c5fd}.tm-ru span.E{background:#78350f;color:#fde68a}.tm-ru span.N{background:transparent;border:1px dashed #2a3757;color:#334155}' +
+    '.tm-big{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:70px;border-radius:16px;border:0;font-weight:900;font-size:21px;cursor:pointer;margin-top:10px;color:#fff}.tm-big.go{background:#16a34a}.tm-big.pa{background:#7c3aed}.tm-big.fi{background:#2563eb}.tm-big.co{background:#ea580c}.tm-big.gr{background:#334155;font-size:17px;min-height:54px}.tm-big:disabled{opacity:.45}' +
+    '.tm-ops{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px;max-height:46vh;overflow:auto}.tm-ops button{min-height:60px;border-radius:14px;border:2px solid #22304f;background:#131f3a;color:#e6ebf5;font-weight:800;font-size:17px;cursor:pointer}' +
+    '.tm-av{margin-top:10px;font-size:14px;color:#fde68a;background:#3a2606;border-radius:10px;padding:8px 12px}.tm-tk{font-size:54px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}' +
+    '@media(max-width:1250px){.tm-g{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.tm-g{grid-template-columns:repeat(2,minmax(0,1fr))}.tm-dat{grid-template-columns:1fr 1fr}}@media(max-width:480px){.tm-g{grid-template-columns:1fr}}';
+  document.head.appendChild(st);
+})();
+TB_.marcar = (function() { try { return localStorage.getItem('tb_marcar') === '1'; } catch (e) { return false; } })();
+TB_.zona = (function() { try { return JSON.parse(localStorage.getItem('tb_zona') || '[]') || []; } catch (e) { return []; } })();
+TB_.emps = null;
+function tbMarcarModo() { TB_.marcar = !TB_.marcar; TB_.vista = 'planta'; try { localStorage.setItem('tb_marcar', TB_.marcar ? '1' : '0'); } catch (e) {} tbPintar(); }
+function tbZona(id) {
+  if (id === '') TB_.zona = []; else { var i = TB_.zona.indexOf(String(id)); if (i === -1) TB_.zona.push(String(id)); else TB_.zona.splice(i, 1); }
+  try { localStorage.setItem('tb_zona', JSON.stringify(TB_.zona)); } catch (e) {} tbPintar();
+}
+function tbEnZona(id) { return !TB_.zona.length || TB_.zona.indexOf(String(id)) !== -1; }
+function tbCubD(id) { return ((TB_.d && TB_.d.CUBIERTAS) || []).filter(function(x) { return String(x.ID_CUB) === String(id); })[0] || null; }
+function tbEstD(id) { return ((TB_.d && TB_.d.ESTACIONES) || []).filter(function(e) { return String(e.ID_ESTACION) === String(id); })[0] || null; }
+function tbAlertas() {
+  var d = TB_.d, a = [], ahora = Date.now() + (TB_.dt || 0), E = d.ESTACIONES;
+  d.CUBIERTAS.forEach(function(c) {
+    var e = tbEstD(c.DONDE); if (!e || !tbEnZona(e.ID_ESTACION) || e.ES_AUTOCLAVE) return;
+    if (c.ESTADO_EST === 'EN_CURSO' && e.MIN_STD && c.SEG / 60 > e.MIN_STD * 1.3) a.push(['r', '⏱', '<b style="font-family:monospace">' + tbEsc(c.MARCA) + '</b> en ' + e.NRO + ' · ' + tbEsc(e.NOMBRE) + ' lleva ' + tbReloj(c.SEG) + ' (lo normal es ' + tbMin(e.MIN_STD) + '). ¿Se olvidaron de marcar TERMINÉ?', c.ID_CUB]);
+    if (c.ESTADO_EST === 'PARADO') a.push(['a', '⏸', '<b style="font-family:monospace">' + tbEsc(c.MARCA) + '</b> en ' + e.NRO + ' · ' + tbEsc(e.NOMBRE) + ': reloj parado. Falta SEGUIR o confirmar el paso en la ficha.', c.ID_CUB]);
+  });
+  E.forEach(function(e, ix) {
+    if (!tbEnZona(e.ID_ESTACION)) return;
+    if (e.ES_AUTOCLAVE) {
+      if (e.COCINANDO) { if (ahora - e.COCINANDO.INICIO >= (e.COCINANDO.MIN || 0) * 60000) a.unshift(['r', '🔥', 'Autoclave: la cocción ya cumplió ' + tbMin(e.COCINANDO.MIN) + '. Terminar la cocción.', 'A' + e.ID_ESTACION]); }
+      else if (e.ESPERANDO.length) {
+        var antes = d.CUBIERTAS.filter(function(c) { var x = tbEstD(c.DONDE); return x && x.NRO < e.NRO && c.ESTADO_EST !== 'LISTA'; }).length;
+        a.push([antes ? 'i' : 'r', '🔥', 'Autoclave: ' + e.ESPERANDO.length + ' juntadas' + (antes ? ', faltan ' + antes + ' por llegar.' : '. Llegaron todas: <b>empezar la cocción.</b>'), 'A' + e.ID_ESTACION]);
+      }
+      return;
+    }
+    if (ix === 0 || !e.ESPERANDO.length || e.EN_CURSO.length) return;
+    var mx = 0; e.ESPERANDO.forEach(function(x) { mx = Math.max(mx, (ahora - x.DESDE) / 60000); });
+    a.push([mx > 15 ? 'r' : 'a', '⏳', 'Estación ' + e.NRO + ' · ' + tbEsc(e.NOMBRE) + ': ' + e.ESPERANDO.length + ' esperando y <b>nadie trabajando</b>' + (mx >= 1 ? ' (la primera hace ' + tbMin(mx) + ')' : ''), e.ESPERANDO[0].ID_CUB]);
+  });
+  return a;
+}
+function tbPintarMarcar() {
+  var el = tbEl(), d = TB_.d; if (!el || !d) return;
+  var ahora = Date.now() + (TB_.dt || 0), E = d.ESTACIONES, linNom = d.LINEA === 'AGRICOLA' ? 'Línea agrícola' : 'Línea camiones';
+  var h = '<div class="tp"><div class="tp-hd"><div class="tp-tt"><span>Encargado · marcar en la línea</span><b>✋ ' + linNom + '</b></div>' +
+    d.LINEAS.map(function(l) { return '<button class="tp-btn' + (l === d.LINEA ? ' on' : '') + '" onclick="tbLinea(\'' + tbEsc(l) + '\')">' + (l === 'AGRICOLA' ? 'Agrícola' : l === 'CAMIONES' ? 'Camiones' : tbEsc(l)) + '</button>'; }).join('') +
+    '<button class="tp-btn on" onclick="tbMarcarModo()">📺 Volver al tablero</button>' +
+    '<div class="tp-clk" id="tp-clk">' + tbHora(ahora) + '</div></div>';
+  h += '<div class="tm-zn"><span>Estaciones que marco en esta tablet:</span><button class="' + (!TB_.zona.length ? 'on' : '') + '" onclick="tbZona(\'\')" style="padding:0 12px">Todas</button>' +
+    E.map(function(e) { return '<button class="' + (TB_.zona.indexOf(String(e.ID_ESTACION)) !== -1 ? 'on' : '') + '" title="' + tbEsc(e.NOMBRE) + '" onclick="tbZona(\'' + tbEsc(e.ID_ESTACION) + '\')">' + e.NRO + '</button>'; }).join('') + '</div>';
+  var al = tbAlertas();
+  h += '<div class="tm-al">' + (al.length ? al.slice(0, 6).map(function(x) { var on = String(x[3]).charAt(0) === 'A' && tbEstD(String(x[3]).slice(1)) ? 'tbAutoclave(\'' + tbEsc(String(x[3]).slice(1)) + '\')' : 'tbAcc(\'' + tbEsc(x[3]) + '\')'; return '<button class="tm-a ' + x[0] + '" onclick="' + on + '"><span style="font-size:20px">' + x[1] + '</span><span>' + x[2] + '</span></button>'; }).join('') + (al.length > 6 ? '<div style="color:#94a3b8;font-size:13px">y ' + (al.length - 6) + ' avisos más</div>' : '')
+    : '<div class="tm-a v"><span style="font-size:20px">✓</span><span>Todo en orden: nadie esperando sin atender y ningún reloj pasado.</span></div>') + '</div>';
+  var ord = { mal: 0, ojo: 1, ok: 2, par: 3, coc: 4, esp: 5, emp: 6 };
+  h += '<div class="tm-g">' + E.filter(function(e) { return tbEnZona(e.ID_ESTACION); }).map(function(e, ix) {
+    var s = tbEstadoEst(e, e.ID_ESTACION === E[0].ID_ESTACION), std = e.MIN_STD;
+    var aca = d.CUBIERTAS.filter(function(c) { return c.DONDE === e.ID_ESTACION && c.ESTADO_EST !== 'LISTA'; }).sort(function(a, b) { return ord[tpCls(a, std)] - ord[tpCls(b, std)] || b.HECHAS - a.HECHAS; });
+    var cls = s[0] === 'rojo' ? 'r' : s[0] === 'amarillo' ? 'a' : '', body;
+    if (e.ES_AUTOCLAVE) {
+      var c0 = e.COCINANDO, nW = e.ESPERANDO.length;
+      body = '<button class="tm-coc" onclick="tbAutoclave(\'' + tbEsc(e.ID_ESTACION) + '\')">' + (c0 ? tpAnillo(70, (ahora - c0.INICIO) / 60000 / (c0.MIN || 1), '#f97316', '🔥 ' + c0.N, '') + '<div><div style="font-family:monospace;font-weight:800;font-size:20px;color:#fdba74" data-ini="' + c0.INICIO + '">' + tbReloj((ahora - c0.INICIO) / 1000) + '</div><div style="font-size:12px;color:#94a3b8">sale ' + tbHora(c0.INICIO + c0.MIN * 60000) + '</div></div>'
+        : tpAnillo(70, nW ? 0.5 : 0, '#fbbf24', '' + nW, 'juntadas') + '<div style="font-size:14px;font-weight:800">' + (nW ? 'Tocar para<br>armar la carga' : 'Sin cubiertas<br>todavía') + '</div>') + '</button>';
+    } else body = aca.length ? '<div class="tm-ts">' + aca.map(function(c) {
+      var cl = tpCls(c, std), col = TP_COL[cl], trab = cl === 'ok' || cl === 'ojo' || cl === 'mal' || cl === 'par';
+      var t = trab ? '<div class="rl" style="color:' + col + '"' + (cl === 'par' ? '' : ' data-ini="' + Math.round(ahora - c.SEG * 1000) + '"') + '>' + tbReloj(c.SEG) + '</div>' : cl === 'esp' ? '<div class="rl" style="color:#fbbf24;font-size:13px" data-ini="' + c.DESDE + '">' + tbReloj((ahora - c.DESDE) / 1000) + '</div>' : '<div class="rl" style="color:#64748b;font-size:12px">—</div>';
+      return '<button class="tm-b" style="border-color:' + col + '" onclick="tbAcc(\'' + tbEsc(c.ID_CUB) + '\')">' + tpCubSvg(46, trab && std ? c.SEG / 60 / std : 0, col, trab && cl !== 'par', cl === 'emp') + '<div class="mk">' + tbEsc(c.MARCA) + '</div>' + t +
+        '<div class="sx" style="color:' + col + '">' + TP_TXT[cl].replace('▶ ', '') + '</div>' + (trab && c.OPERARIO ? '<div class="op">' + tbEsc(c.OPERARIO) + '</div>' : '') + '</button>';
+    }).join('') + '</div>' : '<div class="tm-v">libre</div>';
+    return '<section class="tm-e ' + cls + '"><div class="tm-eh"><div class="tm-n ' + s[0] + '">' + e.NRO + '</div><div style="min-width:0"><div class="tm-nn">' + tbEsc(e.NOMBRE) + '</div><div class="tm-ns">' + s[1].toLowerCase() + ' · hoy ' + e.HECHAS_HOY + ' · normal ' + tbMin(std) + '</div></div></div>' + body + '</section>';
+  }).join('') + '</div>';
+  var listas = d.CUBIERTAS.filter(function(c) { return c.ESTADO_EST === 'LISTA'; }).length;
+  h += '<div class="tp-ley" style="margin-top:12px"><span>✓ Listas para terminar: <b>' + listas + '</b></span><span>Terminadas hoy: <b>' + d.RESUMEN.TERMINADAS_HOY + '</b></span><span style="color:#64748b">Tocá una cubierta para marcarla. Lo mismo se puede hacer desde Puesto de estación: las dos formas usan los mismos relojes y fichas.</span></div></div>';
+  el.innerHTML = '<div class="tb-wrap">' + h + '</div>';
+}
+function tbRuta(c) {
+  return '<div class="tm-ru">' + c.PASOS.map(function(p) { return '<span class="' + (p.E === 'HECHA' ? 'H' : p.E === 'EN_CURSO' ? 'C' : p.E === 'ESPERA' ? 'E' : p.E === 'NO_PASA' ? 'N' : '') + '" title="' + tbEsc(p.NRO + ' · ' + p.NOMBRE) + '">' + p.NRO + '</span>'; }).join('') + '</div>';
+}
+function tbCab(c, e) {
+  return '<h3>' + tbEsc(c.MARCA) + '</h3><div class="s2">' + (e ? 'Estación ' + e.NRO + ' · ' + tbEsc(e.NOMBRE) : 'Pasó por todas las estaciones') + ' · ' + tbEsc(c.NRO_OT) + (c.PASADA > 1 ? ' · reproceso' : '') + '</div>' +
+    '<div class="tm-dat"><div><small>Marca grabada</small><b>' + tbEsc(c.MARCA) + '</b></div><div><small>DOT</small><b>' + tbEsc(c.DOT || 'sin cargar') + '</b></div><div><small>Cliente</small><b>' + tbEsc(c.CLIENTE) + '</b></div><div><small>Trabajo</small><b>' + tbEsc(c.TRABAJO) + ' · ' + tbEsc(c.MEDIDA) + '</b></div></div>' +
+    '<div class="s2">Recorrido: ' + c.HECHAS + ' de ' + c.TOTAL + ' estaciones hechas</div>' + tbRuta(c);
+}
+function tbSheet(h) { closeModal(); showModal('<div class="mb2" style="padding:18px">' + h + '</div>', 'md-lg tm-sh'); }
+function tbAcc(id) {
+  var c = tbCubD(id); if (!c) return toast('Esa cubierta ya no está en la línea', 'r2');
+  var e = tbEstD(c.DONDE), h = tbCab(c, e), ahora = Date.now() + (TB_.dt || 0), q = '\'' + tbEsc(c.ID_CUB) + '\'';
+  if (!e) h += '<div class="tm-av">Pasó por todas las estaciones: falta terminarla en la oficina.</div><button class="tm-big gr" onclick="closeModal()">Cerrar</button>';
+  else if (e.ES_AUTOCLAVE) return tbAutoclave(e.ID_ESTACION);
+  else if (c.ESTADO_EST === 'ESPERA') {
+    h += '<div class="tm-av">' + (c.HECHAS ? 'Esperando hace ' + tbMin((ahora - c.DESDE) / 60000) + ' para entrar a esta estación.' : 'Todavía no empezó en la línea.') + '</div>' +
+      '<button class="tm-big go" onclick="tbEmpezar(' + q + ')">▶ EMPEZAR</button><button class="tm-big gr" onclick="tbCub(' + q + ')">Ver el recorrido completo</button><button class="tm-big gr" onclick="closeModal()">Cerrar</button>';
+  } else {
+    var std = e.MIN_STD, cl = tpCls(c, std), col = TP_COL[cl], par = c.ESTADO_EST === 'PARADO';
+    h += '<div style="display:flex;gap:16px;align-items:center;margin-top:12px">' + tpAnillo(104, std ? c.SEG / 60 / std : 0, col, std ? Math.round(c.SEG / 60 / std * 100) + '%' : '—', 'del normal') +
+      '<div><div class="tm-tk" style="color:' + col + '"' + (par ? '' : ' data-ini="' + Math.round(ahora - c.SEG * 1000) + '"') + '>' + tbReloj(c.SEG) + '</div><div class="s2">' + (par ? '⏸ reloj parado · ' : '') + tbEsc(c.OPERARIO) + ' · normal ' + tbMin(std) + '</div></div></div>' +
+      (par ? '<button class="tm-big go" onclick="tbSeguir(' + q + ')">▶ SEGUIR</button>' : '<button class="tm-big pa" onclick="tbPausa(' + q + ')">⏸ PAUSA</button>') +
+      '<button class="tm-big fi" onclick="tbTermine(' + q + ')">✓ TERMINÉ · cargar y confirmar</button><button class="tm-big gr" onclick="closeModal()">Cerrar</button>';
+  }
+  tbSheet(h);
+}
+async function tbEmps() {
+  if (TB_.emps) return TB_.emps;
+  try { var r = await gsRun('gsPC_PuestoDatos', ''); TB_.emps = ((r && r.empleados) || []).map(function(x) { return x.NOMBRE; }); } catch (e) { TB_.emps = []; }
+  return TB_.emps;
+}
+async function tbEmpezar(id) {
+  var c = tbCubD(id); if (!c) return;
+  var emps = await tbEmps(), q = '\'' + tbEsc(c.ID_CUB) + '\'';
+  if (!emps.length) return tbEmpezarCon(id, (typeof SES !== 'undefined' && SES && SES.nombre) || 'SIN NOMBRE');
+  TB_.opsTmp = emps;
+  tbSheet(tbCab(c, tbEstD(c.DONDE)) + '<div style="margin-top:14px;font-weight:800;font-size:18px">▶ EMPEZAR · ¿quién la trabaja?</div><div class="tm-ops">' +
+    emps.map(function(o, i) { return '<button onclick="tbEmpezarCon(' + q + ',TB_.opsTmp[' + i + '])">' + tbEsc(o) + '</button>'; }).join('') + '</div><button class="tm-big gr" onclick="tbAcc(' + q + ')">Volver</button>');
+}
+async function tbRel(fn, c, extra) {
+  var d = { ID_OT: c.ID_OT, ID_CUB: c.ID_CUB, ID_ESTACION: c.DONDE }, k; for (k in (extra || {})) d[k] = extra[k];
+  var r; try { r = await gsRun(fn, d); } catch (e) { toast(e.message, 'r2'); return null; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return null; }
+  return r;
+}
+async function tbEmpezarCon(id, oper) {
+  var c = tbCubD(id); if (!c) return;
+  var r = await tbRel('gsPC_RelojEmpezar', c, { OPERARIO: oper }); if (!r) return;
+  closeModal(); toast('▶ ' + c.MARCA + ' · ' + oper + ' empezó', 'g'); tbCargar();
+}
+async function tbPausa(id) { var c = tbCubD(id); if (!c) return; var r = await tbRel('gsPC_RelojParar', c); if (!r) return; closeModal(); toast('⏸ ' + c.MARCA + ' en pausa', 'g'); tbCargar(); }
+async function tbSeguir(id) { var c = tbCubD(id); if (!c) return; var r = await tbRel('gsPC_RelojEmpezar', c, { OPERARIO: c.OPERARIO, SEGUIR: true }); if (!r) return; closeModal(); toast('▶ ' + c.MARCA + ' sigue', 'g'); tbCargar(); }
+// TERMINÉ: para el reloj y abre la ficha de esa estación (insumos, inspección) en el puesto; al confirmar vuelve al tablero
+async function tbTermine(id) {
+  var c = tbCubD(id); if (!c) return;
+  if (c.ESTADO_EST === 'EN_CURSO') { var r = await tbRel('gsPC_RelojParar', c); if (!r) return; }
+  tbIrFicha(c.ID_OT, c.ID_CUB, c.DONDE);
+}
+function tbIrFicha(ot, cub, est) {
+  closeModal(); if (typeof PU_ === 'undefined') return;
+  PU_.est = 'TODAS'; try { localStorage.setItem('pu_est', 'TODAS'); } catch (e) {}
+  PU_.vista = 'lista'; PU_.irFicha = { ot: ot, cub: cub, est: est }; PU_.volverTablero = Date.now();
+  navTo('puesto-estacion');
+}
+function tbAutoclave(idEst) {
+  var d = TB_.d, e = tbEstD(idEst); if (!e) return;
+  var ahora = Date.now() + (TB_.dt || 0), aca = d.CUBIERTAS.filter(function(c) { return c.DONDE === e.ID_ESTACION; });
+  var antes = d.CUBIERTAS.filter(function(c) { var x = tbEstD(c.DONDE); return x && x.NRO < e.NRO && c.ESTADO_EST !== 'LISTA'; }).length;
+  var h = '<h3 style="font-family:inherit">🔥 Autoclave</h3><div class="s2">Estación ' + e.NRO + ' · cocción de ' + tbMin(e.MIN_STD) + '</div>';
+  if (e.COCINANDO) { var c0 = e.COCINANDO, s = (ahora - c0.INICIO) / 60000;
+    h += '<div style="display:flex;gap:16px;align-items:center;margin-top:12px">' + tpAnillo(110, s / (c0.MIN || 1), '#f97316', '🔥 ' + c0.N, 'cocinando') + '<div><div class="tm-tk" style="color:#fdba74" data-ini="' + c0.INICIO + '">' + tbReloj(s * 60) + '</div><div class="s2">' + tbEsc(c0.NRO_OT) + ' · sale ' + tbHora(c0.INICIO + c0.MIN * 60000) + '</div></div></div>';
+  } else h += '<div style="margin-top:12px;font-size:17px"><b>' + aca.length + '</b> cubiertas juntadas' + (antes ? ' · faltan <b>' + antes + '</b> que todavía están antes del autoclave' : ' · ya llegaron todas') + '.</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + aca.map(function(c) { return '<span style="font-family:monospace;font-weight:800;background:#131f3a;border-left:4px solid #fbbf24;border-radius:8px;padding:5px 9px">' + tbEsc(c.MARCA) + '</span>'; }).join('') + '</div>';
+  var c1 = aca[0];
+  h += (c1 ? '<button class="tm-big co" onclick="tbIrFicha(\'' + tbEsc(c1.ID_OT) + '\',\'' + tbEsc(c1.ID_CUB) + '\',\'' + tbEsc(e.ID_ESTACION) + '\')">' + (e.COCINANDO ? '🔥 Abrir el autoclave · terminar la cocción' : '🔥 Abrir el autoclave · armar la carga y empezar') + '</button>' : '') + '<button class="tm-big gr" onclick="closeModal()">Cerrar</button>';
+  tbSheet(h);
 }
 </script>
 
@@ -17799,6 +17976,7 @@ var MV_OPC = [
   ['documentos', '📄', 'Documentos', 'Orden, remito o certificado en PDF', 'documentos', '', 'RECEPCION ENCARGADO_PLANTA VENDEDOR FACTURACION'],
   ['cubierta', '🔎', 'Buscar cubierta', 'Dónde está y toda su vida', 'documentos', 'CUB', 'RECEPCION ENCARGADO_PLANTA VENDEDOR FACTURACION'],
   ['tablero', '📺', 'Tablero de la línea', 'Cómo va cada estación ahora', 'tablero-linea', '', 'ENCARGADO_PLANTA'],
+  ['marcar', '✋', 'Marcar en la línea', 'Empezar y terminar cada cubierta en cada estación', 'tablero-linea', 'marcar', 'ENCARGADO_PLANTA'],
   ['cargas', '🏭', 'Cargas en la línea', 'Cada orden de servicio y sus cubiertas', 'produccion-cubiertas', 'os', 'ENCARGADO_PLANTA'],
   ['puesto-estacion', '🛠', 'Estaciones', 'Trabajo en la línea', 'puesto-estacion', '', 'ENCARGADO_PLANTA OPERADOR'],
   ['plan', '📅', 'Plan de mañana', 'Dejar todo listo el día anterior', 'produccion-cubiertas', 'plan', 'ENCARGADO_PLANTA'],
@@ -17849,6 +18027,7 @@ function mvAbrir(k) {
   document.body.classList.remove('en-inicio-movil'); document.body.classList.remove('modo-cascos'); PC_.foco = null;
   if (o[4] === 'produccion-cubiertas' && o[5]) { document.body.classList.add('modo-cascos'); PC_.tab = o[5]; PC_.foco = o; }
   if (o[4] === 'documentos') DC_.tipo = o[5] || '';
+  if (o[4] === 'tablero-linea' && typeof TB_ !== 'undefined') { TB_.marcar = o[5] === 'marcar'; TB_.vista = 'planta'; try { localStorage.setItem('tb_marcar', TB_.marcar ? '1' : '0'); } catch (e) {} }
   if (o[4] === 'precios-nuevos' && typeof PN_ !== 'undefined') { PN_.div = o[5] || 'CUB'; PN_.rubro = ''; PN_.marca = ''; PN_.promo = 0; }
   if (o[4] === 'margen') { MG_.div = o[5] || 'CUB'; MG_.rubro = ''; }
   if (o[4] === 'ventas' && typeof VB_ !== 'undefined') VB_.accion = o[5] || '';
