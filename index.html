@@ -318,6 +318,10 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="ordenes-pago"><span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Órdenes de Pago</div>
         <div class="nav-item" data-page="cta-cte-proveedores"><span class="nav-icon"><i class="fas fa-truck"></i></span> Cta Cte Proveedores</div>
       </div></div>
+      <div class="sb-grp" data-g="stk"><div class="sb-gh" onclick="menuGrupo('stk')"><span class="sb-gi-ic">📦</span><span class="sb-gt">Stock</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="stock"><span class="nav-icon"><i class="fas fa-boxes"></i></span> Control de Stock</div>
+        <div class="nav-item" data-page="stock" data-acc="rem-int"><span class="nav-icon"><i class="fas fa-exchange-alt"></i></span> Remito interno (ajuste de stock)</div>
+      </div></div>
       <div class="sb-grp" data-g="tes"><div class="sb-gh" onclick="menuGrupo('tes')"><span class="sb-gi-ic">💰</span><span class="sb-gt">Cobranzas y tesorería</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="cobranzas"><span class="nav-icon"><i class="fas fa-hand-holding-usd"></i></span> Cobranzas</div>
         <div class="nav-item" data-page="cta-cte-clientes"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> Cta Cte Clientes</div>
@@ -343,7 +347,6 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="rpt-ventas"><span class="nav-icon"><i class="fas fa-chart-line"></i></span> Ventas por Tipo</div>
         <div class="nav-item" data-page="rpt-produccion"><span class="nav-icon"><i class="fas fa-industry"></i></span> Producción / Insumos</div>
         <div class="nav-item" data-page="rpt-gastos"><span class="nav-icon"><i class="fas fa-chart-pie"></i></span> Resumen de Gastos</div>
-        <div class="nav-item" data-page="stock"><span class="nav-icon"><i class="fas fa-boxes"></i></span> Control de Stock</div>
         <div class="nav-item" data-page="rpt-costo-cubiertas"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Costo por Cubierta</div>
         <div class="nav-item" data-page="rpt-diferencias-precios"><span class="nav-icon"><i class="fas fa-not-equal"></i></span> Dif. de Precios</div>
       </div></div>
@@ -765,6 +768,7 @@ function menuClick(el) {
   if (acc === 'ped-prov') { document.body.classList.remove('sb-abierto'); if (typeof npLista === 'function') npLista(); return; }
   if (acc === 'rem-venta' && typeof VB_ !== 'undefined') VB_.accion = 'REMITOS';
   if (acc === 'fact-rem' && typeof VB_ !== 'undefined') VB_.accion = 'FACTURAR';
+  if (acc === 'rem-int') window._stAccion = 'rem-int';
   window._menuAcc = acc;
   navTo(pg);
 }
@@ -1480,7 +1484,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031643';
+var EMA_BUILD = '202611031646';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -6444,6 +6448,8 @@ async function renderStock() {
   window._stArticulos = articulos;
   window._stRemitos   = remitos;
   window._stMovs      = movs;
+  // Menú › Stock › Remito interno: abre la ventana apenas está cargada la lista de artículos
+  if (window._stAccion === 'rem-int') { window._stAccion = ''; setTimeout(stNuevoRemito, 0); }
   var mm = {}; marcas.forEach(function(m){ mm[m.ID_MARCA]=m.MARCA; });
   var med = {}; medidas.forEach(function(m){ med[m.ID_MEDIDA]=m.MEDIDA; });
 
