@@ -1484,7 +1484,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031656';
+var EMA_BUILD = '202611031703';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -10741,12 +10741,25 @@ function remAltoFila(f) {
   partes.forEach(function(t, i) { var txt = t.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&[a-z]+;/g, 'x').trim(); if (!txt && i) return; alto += Math.max(1, Math.ceil(txt.length / (i ? 82 : 52))) * (i ? 11.5 : 14); });
   return alto;
 }
+// Mide el lugar libre del detalle en una copia oculta completa, con el alto de una copia del PDF (189,5 mm = 716 px; el impreso tiene más)
+function remLugarDetalle(css, copiaHtml) {
+  try {
+    var d = document.createElement('div');
+    d.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:normal;color:#111;letter-spacing:normal';
+    d.innerHTML = css + '<div class="rh" style="width:1040px;min-width:0">' + copiaHtml + '</div>';
+    document.body.appendChild(d);
+    var ri = d.querySelector('.ri'), v = ri ? ri.clientHeight : 0, rv = d.querySelector('.rv');
+    if (rv && rv.offsetHeight > 718) v -= rv.offsetHeight - 718;
+    document.body.removeChild(d);
+    return v;
+  } catch (e) { return 0; }
+}
 // Mide el alto real de cada renglón en una copia oculta (mismo estilo, ancho de una copia del PDF: 520 px)
 function remMedirFilas(filasArr, css) {
   try {
     var d = document.createElement('div');
-    d.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden';
-    d.innerHTML = css + '<div class="rv" style="width:520px;min-height:0;display:block"><div class="rb ri" style="flex:none;overflow:visible"><table><thead><tr><th style="width:44px">Nº Art.</th><th>Descripción</th><th class="rn" style="width:40px">Cant.</th></tr></thead><tbody>' + filasArr.join('') + '</tbody></table></div></div>';
+    d.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:normal;color:#111;letter-spacing:normal';
+    d.innerHTML = css + '<div class="rv" style="width:520px;min-height:0;display:block"><div class="rb ri" style="flex:none;overflow:visible"><table><thead><tr><th style="width:44px">Nº Art.</th><th>Descripción</th><th class="rn" style="width:34px">Cant.</th></tr></thead><tbody>' + filasArr.join('') + '</tbody></table></div></div>';
     document.body.appendChild(d);
     var trs = d.querySelectorAll('tbody tr'), altos = [], cab = d.querySelector('thead').getBoundingClientRect().height;
     for (var i = 0; i < trs.length; i++) altos.push(trs[i].getBoundingClientRect().height);
@@ -10760,19 +10773,16 @@ function remVulcanImp(x, filas, nItems) {
   var ini = /^\d{4}-\d{2}-\d{2}/.test(em.INICIO_ACT || '') ? fmtD(em.INICIO_ACT) : (em.INICIO_ACT || '');
   var hora = ''; try { var dd = new Date(Number(x.FECHA)); hora = ('0' + dd.getHours()).slice(-2) + ':' + ('0' + dd.getMinutes()).slice(-2); } catch (eh) {}
   var css = '<style>.rh{display:flex;gap:0;align-items:stretch;page-break-after:always;break-after:page}.rh:last-child{page-break-after:auto;break-after:auto}' +
-    '.rhp{min-width:1000px}@media print{.rhp{min-width:0}}.rv{position:relative;font-family:Arial,Helvetica,sans-serif;color:#111;box-sizing:border-box;width:50%;min-height:189.5mm;padding:0 4mm;display:flex;flex-direction:column}.rv+.rv{border-left:1px dashed #888}' +
+    '.rhp{min-width:1000px}@media print{.rhp{min-width:0}}.rv{position:relative;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.25;color:#111;box-sizing:border-box;width:50%;min-height:189.5mm;padding:0 4mm;display:flex;flex-direction:column}.rv+.rv{border-left:1px dashed #888}' +
     '.rb{border:1.2px solid #111;border-radius:8px;padding:3px 6px;margin-bottom:3px}.rm{font-family:"Courier New",monospace;font-size:9.5px;font-weight:700;line-height:1.25}' +
-    '.rk{font-family:"Courier New",monospace;font-size:9.5px;color:#333}.rs{font-size:9.5px;color:#333;line-height:1.2}.rd div{font-size:12px;line-height:1.3}.rd span{font-family:"Courier New",monospace;font-size:9.5px;color:#333}' +
+    '.rk{font-family:"Courier New",monospace;font-size:9.5px;color:#333}.rs{font-size:9.5px;color:#333;line-height:1.2}.ri td .rs{margin-right:-36px}.rd div{font-size:12px;line-height:1.3}.rd span{font-family:"Courier New",monospace;font-size:9.5px;color:#333}' +
     '.ri{flex:1 1 auto;position:relative;padding:2px 4px;overflow:hidden}.ri table{width:100%;border-collapse:collapse;position:relative}.ri th{font-family:"Courier New",monospace;font-size:9.5px;font-style:italic;font-weight:400;border:0;border-bottom:1px solid #111;background:none;text-align:left;padding:1px 2px}' +
     '.ri td{border:0;border-bottom:0.5px solid #ddd;font-size:11.5px;line-height:1.2;padding:2px 2px;vertical-align:top}.rn{text-align:right;white-space:nowrap}.rw{position:absolute;left:0;right:0;top:35%;text-align:center;opacity:.10}.rw img{width:220px}' +
-    '.rp{font-size:10px;line-height:1.25;margin-top:auto;padding-top:2px}.rp .r1{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.rp .qr{display:flex;align-items:center;gap:5px;font-size:9px;text-align:right;flex:none}' +
-    '.rp .nt{font-size:9px;margin-top:2px;line-height:1.2}.rp .fs{display:flex;gap:6mm;margin-top:8mm}.rp .fs div{flex:1;border-top:1px solid #111;text-align:center;padding-top:1px;font-family:"Courier New",monospace;font-size:10.5px}.rp img,.rp svg{width:46px;height:46px;display:block}' +
+    '.rp{font-size:10px;line-height:1.25;margin-top:auto;padding-top:2px}.rp .rr1{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.rp .rqr{display:flex;align-items:center;gap:5px;font-size:9px;text-align:right;flex:none}' +
+    '.rp .rnt{font-size:9px;margin-top:2px;line-height:1.2}.rp .rfs{display:flex;gap:6mm;margin-top:8mm}.rp .rfs div{flex:1;border-top:1px solid #111;text-align:center;padding-top:1px;font-family:"Courier New",monospace;font-size:10.5px}.rp img,.rp svg{width:60px;height:60px;display:block}' +
     '@media print{@page{size:A4 portrait;margin:6mm}.rhp{width:198mm;height:285mm;overflow:hidden;position:relative;page-break-after:always;break-after:page}.rhp:last-child{page-break-after:auto;break-after:auto}.rhp .rh{position:absolute;top:0;left:0;width:285mm;height:198mm;transform-origin:top left;transform:translateX(198mm) rotate(90deg)}.rhp .rv{min-height:0;height:198mm}}</style>';
+  var hojas = [];
   var filasArr = String(filas).split('</tr>').filter(function(t) { return t.indexOf('<tr') !== -1; }).map(function(t) { return t + '</tr>'; });
-  // Hojas por alto REAL de cada renglón, medido con la misma letra y el ancho del PDF (el caso más angosto): nunca se corta un renglón
-  var med = remMedirFilas(filasArr, css), hojas = [], act = [], usado = 0, lugar = REM_ALTO_DETALLE_ - med.cab;
-  filasArr.forEach(function(f, k) { var h = med.altos ? med.altos[k] : remAltoFila(f); if (act.length && usado + h > lugar) { hojas.push(act.join('')); act = []; usado = 0; } act.push(f); usado += h; });
-  if (act.length || !hojas.length) hojas.push(act.join(''));
   var copia = function(cual, fil, nh) {
     return '<div class="rv">' +
       '<div class="rb" style="display:flex;justify-content:space-between;gap:6px;overflow:hidden"><div style="flex:1 1 auto;min-width:0"><img src="' + logo + '" crossorigin="anonymous" style="height:46px"/><div class="rm" style="margin-top:2px">' + pcEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantread.com<br><u>I.V.A. Responsable Inscripto</u></div></div>' +
@@ -10785,12 +10795,17 @@ function remVulcanImp(x, filas, nItems) {
       '<div><span>Localidad:</span> ' + pcEsc(x.LOCALIDAD || '') + ' ' + pcEsc(x.CP || '') + ' &nbsp; <span>Provincia:</span> ' + pcEsc(x.PROVINCIA || '') + '</div>' +
       '<div><span>Condic. de Venta:</span> ' + pcEsc(x.COND_PAGO || 'Cta.Ctes.') + ' &nbsp; <span>Vendedor:</span> ' + pcEsc(x.VENDEDOR || 'GERENCIA') + '</div>' +
       '<div><span>' + pcEsc(x.REF_TIT || 'Orden de servicio:') + '</span> ' + pcEsc(x.NRO_OT || x.REF || '') + '</div></div>' +
-      '<div class="rb ri"><div class="rw"><img src="' + logo + '" crossorigin="anonymous"/></div><table><thead><tr><th style="width:44px">Nº Art.</th><th>Descripción</th><th class="rn" style="width:40px">Cant.</th></tr></thead><tbody>' + fil + '</tbody></table></div>' +
-      '<div class="rp"><div class="r1"><div><u>Observaciones:</u> ' + pcEsc(x.OBSERVACIONES || '') + '</div>' +
-      '<div class="qr">' + (qr ? '<span>Escaneá para cargar<br>el remito firmado</span>' + qr : '') + '</div></div>' +
-      '<div class="nt">Nota: se recomienda para su GARANTÍA, el uso en los neumáticos radiales y convencionales con arreglo, refuerzo interior o exterior, el uso de CÁMARAS NUEVAS para evitar filtraciones y un mejor rendimiento del neumático.</div>' +
-      '<div class="fs"><div>Firma</div><div>Aclaración</div><div>DNI</div></div></div></div>';
+      '<div class="rb ri"><div class="rw"><img src="' + logo + '" crossorigin="anonymous"/></div><table><thead><tr><th style="width:44px">Nº Art.</th><th>Descripción</th><th class="rn" style="width:34px">Cant.</th></tr></thead><tbody>' + fil + '</tbody></table></div>' +
+      '<div class="rp"><div class="rr1"><div><u>Observaciones:</u> ' + pcEsc(x.OBSERVACIONES || '') + '</div>' +
+      '<div class="rqr">' + (qr ? '<span>Escaneá para cargar<br>el remito firmado</span>' + qr : '') + '</div></div>' +
+      '<div class="rnt">Nota: se recomienda para su GARANTÍA, el uso en los neumáticos radiales y convencionales con arreglo, refuerzo interior o exterior, el uso de CÁMARAS NUEVAS para evitar filtraciones y un mejor rendimiento del neumático.</div>' +
+      '<div class="rfs"><div>Firma</div><div>Aclaración</div><div>DNI</div></div></div></div>';
   };
+  // Lugar libre del detalle MEDIDO con una copia real (encabezado, cliente y pie) en el tamaño del PDF; y el alto real de cada renglón
+  var lugar = remLugarDetalle(css, copia('Original', '', 1)), med = remMedirFilas(filasArr, css), act = [], usado = 0;
+  if (!(lugar > 100)) lugar = REM_ALTO_DETALLE_; lugar -= med.cab + 3;
+  filasArr.forEach(function(f, k) { var h = med.altos ? med.altos[k] : remAltoFila(f); if (act.length && usado + h > lugar) { hojas.push(act.join('')); act = []; usado = 0; } act.push(f); usado += h; });
+  if (act.length || !hojas.length) hojas.push(act.join(''));
   pcImprimir('Remito ' + x.NRO + ' ' + x.CLIENTE, css + hojas.map(function(fil, k) { return '<div class="rhp"><div class="rh">' + copia('Original', fil, k + 1) + copia('Duplicado', fil, k + 1) + '</div></div>'; }).join(''), true);
 }
 async function pcAnularOT() { var m = await uiPedir('Motivo de la anulación de la orden de servicio:', { obligatorio: true }); if (m === null) return; var r = await gsRun('gsPC_AnularOT', PC_.ot.ot.ID_OT, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT anulada: las cubiertas volvieron a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
