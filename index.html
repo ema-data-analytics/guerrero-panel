@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "25a96900eca8"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ffe4eb89f6fa"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1438,7 +1438,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031352';
+var EMA_BUILD = '202611031439';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1813,7 +1813,8 @@ async function dbExtras() {
     ((s && s.INSUMOS) || []).concat((s && s.ARTICULOS) || []).forEach(function(x) { if (x.MINIMO > 0 && x.STOCK < x.MINIMO && !vistos[String(x.NOMBRE)]) lst.push({ n: x.NOMBRE, r: x.STOCK <= 0, txt: x.STOCK + ' de mínimo ' + x.MINIMO + ' ' + (x.UNIDAD || ''), p: Math.max(0, x.STOCK / x.MINIMO), pr: x.POR_RECIBIR || 0 }); });
     lst.sort(function(a, b) { return (a.r ? 0 : 1) - (b.r ? 0 : 1) || a.p - b.p; });
     var nr = lst.filter(function(x) { return x.r; }).length;
-    var el3 = $id('db-stock'); if (el3) el3.innerHTML = '<h3>Insumos por acabarse <span class="dbt" style="background:' + (nr ? '#4c1010;color:#fecaca' : lst.length ? '#4a2a07;color:#fde68a' : '#0f3d24;color:#86efac') + '">' + (nr ? nr + ' para pedir YA' : lst.length ? lst.length + ' para pedir pronto' : 'todo cubierto') + '</span></h3><p class="sub">Según lo que se consume por día y el stock mínimo · tocar para ir al stock</p>' +
+    var btnNP = typeof npPuede === 'function' && npPuede() ? '<span style="float:right;display:flex;gap:6px"><button class="btn btn-sm" style="background:#16a34a;border-color:#16a34a;color:#fff" onclick="event.stopPropagation();npAbrir()">🛒 Armar pedido</button><button class="btn btn-sm" onclick="event.stopPropagation();npLista()">📋 Pedidos hechos</button></span>' : '';
+    var el3 = $id('db-stock'); if (el3) el3.innerHTML = btnNP + '<h3>Insumos por acabarse <span class="dbt" style="background:' + (nr ? '#4c1010;color:#fecaca' : lst.length ? '#4a2a07;color:#fde68a' : '#0f3d24;color:#86efac') + '">' + (nr ? nr + ' para pedir YA' : lst.length ? lst.length + ' para pedir pronto' : 'todo cubierto') + '</span></h3><p class="sub">Según lo que se consume por día y el stock mínimo · tocar para ir al stock</p>' +
       (lst.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0 18px">' + lst.slice(0, 12).map(function(x) { return '<div class="dbr" onclick="navTo(\'stock-insumos\')"><div><div>' + (x.r ? '🔴 ' : '🟡 ') + dbEsc(x.n) + (x.pr ? '<span class="dbt" style="background:#10223f;color:#93c5fd">llega ' + x.pr + '</span>' : '') + '</div><div class="dbhb"><i style="width:' + Math.max(3, x.p * 100).toFixed(1) + '%;background:' + (x.r ? '#ef4444' : '#f59e0b') + '"></i></div></div><div class="m" style="color:' + (x.r ? '#fca5a5' : '#fde68a') + '">' + dbEsc(x.txt) + '</div></div>'; }).join('') + '</div>' + (lst.length > 12 ? '<div class="dbnota">y ' + (lst.length - 12) + ' más</div>' : '') : '<div class="dbnota">Nada por acabarse.</div>'); }
   catch (e2) { var el4 = $id('db-stock'); if (el4) el4.innerHTML = '<h3>Insumos por acabarse</h3><div class="dbnota">No tenés permiso para ver el stock.</div>'; }
 }
@@ -14181,7 +14182,7 @@ function cbPintar() {
   var h = '<div class="cb-wrap"><div class="cb-top"><h2>📦 Stock de insumos</h2><div class="cb-acc">' +
     '<button class="btn btn-sm" onclick="cbAyuda()">❓ Cómo se calcula</button>' +
     '<button class="btn btn-sm" onclick="CB_.verPar=!CB_.verPar;cbPintar()">⚙ Datos para el cálculo</button>' +
-    '<button class="btn btn-sm" onclick="renderStockInsumos()">↻ Actualizar</button></div></div>';
+    '<button class="btn btn-sm" onclick="renderStockInsumos()">↻ Actualizar</button>' + (typeof npPuede === 'function' && npPuede() ? '<button class="btn btn-sm btn-p" onclick="npAbrir()">🛒 Armar pedido</button><button class="btn btn-sm" onclick="npLista()">📋 Pedidos hechos</button>' : '') + '</div></div>';
   h += '<div class="cb-res"><div class="cb-r"><b>' + n.r + '</b>Pedir YA: no llega a tiempo o no hay</div><div class="cb-y"><b>' + n.y + '</b>Pedir pronto</div><div class="cb-g"><b>' + n.g + '</b>Alcanza</div>' + (n.n ? '<div class="cb-n"><b>' + n.n + '</b>Sin dato de consumo</div>' : '') + '</div>';
   if (hayEst) h += '<div class="cb-caja"><b class="cb-est">ESTIMADO</b> = calculado con las recetas y las cubiertas que se hacen por día (' + cbEsc(d.PARAM.CUB_DIA.replace(/\|/g, ', ').replace(/:/g, ' ')) + '). Cuando haya ' + d.PARAM.DIAS_HISTORIA + ' días de consumo real cargado en el sistema, pasa solo a <b>REAL</b>. Si ya saben cuánto gastan por día, cárguenlo en el insumo y queda <b>CARGADO</b>.</div>';
   if (CB_.verPar) h += cbParametros();
@@ -14288,8 +14289,181 @@ async function cobAvisoInicio() {
     }).join('');
     showModal('<div class="mh"><span class="mt">⚠ Insumos por acabarse</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 cb-av" style="font-size:14px">' +
       '<div style="margin-bottom:6px">' + (r.rojas ? '<b style="color:#dc2626">' + r.rojas + ' para pedir YA</b>' : '') + (r.rojas && r.amarillas ? ' · ' : '') + (r.amarillas ? '<b style="color:#a16207">' + r.amarillas + ' para pedir pronto</b>' : '') + '</div><ul style="padding-left:18px;margin:0">' + li + '</ul></div>' +
-      '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-p" onclick="closeModal();navTo(\'stock-insumos\')">Ver stock de insumos</button></div>');
+      '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-p" onclick="closeModal();navTo(\'stock-insumos\')">Ver stock de insumos</button>' + (typeof npPuede === 'function' && npPuede() ? '<button class="btn btn-p" style="background:#16a34a;border-color:#16a34a" onclick="npAbrir()">🛒 Armar pedido</button>' : '') + '</div>');
   } catch (e) { }
+}
+</script>
+
+<script>
+// ================================================================
+// PEDIDOS A PROVEEDORES (03/11/2026)
+// Desde el aviso de stock (inicio, aviso al entrar, Stock de insumos): «Armar pedido».
+// Se tildan los productos, se elige proveedor, cantidad y costo, y queda una nota de pedido por proveedor (NP-000001…)
+// con su PDF para mandar. No mueve stock: la mercadería entra después con la compra o el remito, como siempre.
+// ================================================================
+var NP_ = { d: null, filas: [], dias: 30, q: '', urg: false, busca: [], obs: '' };
+function npEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function npNum(v) { var s = String(v === undefined || v === null ? '' : v).trim(); if (s.indexOf(',') !== -1) s = s.replace(/\./g, '').replace(',', '.'); var n = parseFloat(s); return isNaN(n) ? 0 : n; }
+function npN(n) { return String(Math.round((+n || 0) * 100) / 100).replace('.', ','); }
+function npPuede() { return typeof puedeVerPagina === 'function' && puedeVerPagina('carga-compras'); }
+(function() {
+  var st = document.createElement('style');
+  st.textContent = '.np-tb{width:100%;border-collapse:collapse;font-size:13px}.np-tb th{position:sticky;top:0;background:#f1f5f9;z-index:1;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#475569;padding:7px 6px;border-bottom:1px solid #e2e8f0}' +
+    '.np-tb td{padding:7px 6px;border-bottom:1px solid #eef2f7;vertical-align:top}.np-tb tr.off td{opacity:.45}.np-tb input.fi,.np-tb select.fi{padding:6px 7px;font-size:14px}.np-ch{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:9px;margin-top:3px}' +
+    '.np-r{background:#fee2e2;color:#b91c1c}.np-y{background:#fef3c7;color:#92400e}.np-m{background:#e0e7ff;color:#3730a3}.np-sc{max-height:56vh;overflow:auto;border:1px solid #e2e8f0;border-radius:10px}' +
+    '.np-res{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.np-res div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 10px;font-size:13px}.np-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}' +
+    '.np-bus{position:relative}.np-bus .lst{position:absolute;z-index:5;left:0;right:0;top:100%;background:#fff;border:1px solid #cbd5e1;border-radius:8px;max-height:260px;overflow:auto;box-shadow:0 10px 30px #0002}.np-bus .lst div{padding:7px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid #f1f5f9}.np-bus .lst div:hover{background:#eff6ff}' +
+    '@media(max-width:760px){.np-tb .hm{display:none}.np-tb td,.np-tb th{padding:6px 4px}}';
+  document.head.appendChild(st);
+})();
+// Abre la pantalla para armar el pedido con lo que falta
+async function npAbrir() {
+  if (!npPuede()) { toast('No tenés permiso para hacer pedidos a proveedores', 'r2'); return; }
+  closeModal();
+  showModal('<div class="mh"><span class="mt">🛒 Armar pedido a proveedores</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 tdim">Buscando lo que falta…</div>', 'md-xl');
+  var r; try { r = await gsRun('gsNP_Datos', {}); } catch (e) { closeModal(); toast(e.message, 'r2'); return; }
+  if (!r || !r.ok) { closeModal(); toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  NP_.d = r; NP_.dias = r.DIAS || 30; NP_.q = ''; NP_.urg = false; NP_.busca = []; NP_.obs = '';
+  NP_.filas = r.ITEMS.map(function(it) { return npFila(it, true); });
+  npPintar();
+}
+function npFila(it, sel) {
+  var p = (it.PROVS || []).filter(function(x) { return x.ID_PROVEEDOR === it.ID_PROV_SUG; })[0];
+  return { it: it, sel: sel, cant: it.SUGERIDO || 1, prov: it.ID_PROV_SUG || '', costo: p ? p.COSTO : (it.COSTO_FICHA || 0), tocada: false };
+}
+function npSugerido(it) {
+  var d = NP_.d, falta = 0, st = Math.max(0, it.STOCK || 0);
+  if (it.CONSUMO_DIA > 0) falta = it.CONSUMO_DIA * (NP_.dias + (it.DEMORA || 0)) * (d.DS || 6) / 7 - st;
+  if (it.MINIMO > 0) falta = Math.max(falta, it.MINIMO * 2 - st);
+  return falta > 0 ? Math.max(1, Math.ceil(falta / (it.CANT_PRES || 1) - 1e-9)) : 1;
+}
+function npDias(v) { NP_.dias = Math.max(1, Math.min(365, Math.round(npNum(v)) || 30)); NP_.filas.forEach(function(f) { if (!f.tocada && f.it.MOTIVO !== 'Agregado a mano') f.cant = npSugerido(f.it); }); npPintar(); }
+function npSet(i, campo, v) {
+  var f = NP_.filas[i]; if (!f) return;
+  if (campo === 'sel') f.sel = !!v;
+  else if (campo === 'cant') { f.cant = npNum(v); f.tocada = true; }
+  else if (campo === 'costo') f.costo = npNum(v);
+  else if (campo === 'prov') { f.prov = String(v); var p = (f.it.PROVS || []).filter(function(x) { return x.ID_PROVEEDOR === f.prov; })[0]; f.costo = p ? p.COSTO : (f.it.COSTO_FICHA || 0); }
+  npPintar();
+}
+function npTodos(v) { npVisibles().forEach(function(x) { NP_.filas[x.i].sel = v; }); npPintar(); }
+function npVisibles() {
+  var q = NP_.q.toUpperCase().trim();
+  return NP_.filas.map(function(f, i) { return { f: f, i: i }; }).filter(function(x) { return (!NP_.urg || x.f.it.NIVEL === 'r') && (!q || (x.f.it.NOMBRE + ' ' + x.f.it.CODIGO).toUpperCase().indexOf(q) !== -1); });
+}
+function npProvNom(id) { var p = ((NP_.d && NP_.d.PROVEEDORES) || []).filter(function(x) { return x.ID_PROVEEDOR === String(id); })[0]; return p ? p.NOMBRE : ''; }
+function npPintar() {
+  var d = NP_.d, vis = npVisibles(), sel = NP_.filas.filter(function(f) { return f.sel; });
+  var porProv = {}, sinProv = 0, sinCant = 0;
+  sel.forEach(function(f) { if (!f.prov) { sinProv++; return; } if (!(f.cant > 0)) sinCant++; var g = porProv[f.prov] = porProv[f.prov] || { n: 0, t: 0 }; g.n++; g.t += f.cant * f.costo; });
+  var ks = Object.keys(porProv), tot = 0; ks.forEach(function(k) { tot += porProv[k].t; });
+  var todosProv = (d.PROVEEDORES || []);
+  var h = '<div class="mh"><span class="mt">🛒 Armar pedido a proveedores</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="np-bar"><label style="font-size:13px">Pedir para cubrir <input class="fi" style="width:64px;display:inline-block" inputmode="numeric" value="' + NP_.dias + '" onchange="npDias(this.value)"> días</label>' +
+    '<label style="font-size:13px"><input type="checkbox" ' + (NP_.urg ? 'checked' : '') + ' onchange="NP_.urg=this.checked;npPintar()"> Solo los urgentes</label>' +
+    '<input class="fi" style="max-width:220px" placeholder="Filtrar la lista…" value="' + npEsc(NP_.q) + '" oninput="NP_.q=this.value;npPintarTabla()">' +
+    '<div class="np-bus" style="flex:1;min-width:220px"><input class="fi" id="np-q" placeholder="➕ Agregar otro producto (buscar)…" oninput="npBuscar(this.value)" autocomplete="off"><div class="lst" id="np-lst" style="display:none"></div></div></div>' +
+    '<div class="tdim" style="font-size:12px;margin-bottom:6px">La cantidad sugerida cubre ' + NP_.dias + ' días de consumo más la demora del proveedor, descontando el stock (o el doble del mínimo cuando no hay consumo cargado). Todo se puede cambiar. Costos sin IVA.</div>' +
+    '<div class="np-sc" id="np-tabla"></div>' +
+    '<div class="np-res">' + (ks.length ? ks.map(function(k) { return '<div><b>' + npEsc(npProvNom(k)) + '</b> · ' + porProv[k].n + ' producto' + (porProv[k].n === 1 ? '' : 's') + ' · ' + fmt(porProv[k].t) + '</div>'; }).join('') : '<div class="tdim">Tildá los productos y elegí el proveedor de cada uno.</div>') +
+    (sinProv ? '<div style="background:#fef2f2;border-color:#fecaca;color:#b91c1c">⚠ ' + sinProv + ' sin proveedor</div>' : '') + (sinCant ? '<div style="background:#fef2f2;border-color:#fecaca;color:#b91c1c">⚠ ' + sinCant + ' sin cantidad</div>' : '') + '</div>' +
+    '<textarea class="fi" rows="2" style="width:100%;margin-top:10px" placeholder="Observaciones para el proveedor (entrega, forma de pago…)" oninput="NP_.obs=this.value">' + npEsc(NP_.obs) + '</textarea></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="npLista()">📋 Pedidos hechos</button><button class="btn btn-s" onclick="closeModal()">Cancelar</button>' +
+    '<button class="btn btn-p" ' + (ks.length && !sinProv && !sinCant ? '' : 'disabled') + ' onclick="npGrabar()">📄 Armar ' + (ks.length || '') + ' pedido' + (ks.length === 1 ? '' : 's') + (ks.length ? ' · ' + fmt(tot) : '') + '</button></div>' +
+    '<datalist id="np-provs">' + todosProv.map(function(p) { return '<option value="' + npEsc(p.NOMBRE) + '">'; }).join('') + '</datalist>';
+  var m = document.querySelector('#modals .mo:last-child .md'); if (m) m.innerHTML = h; else showModal(h, 'md-xl');
+  npPintarTabla();
+}
+function npPintarTabla() {
+  var el = $id('np-tabla'); if (!el) return;
+  var vis = npVisibles(), todosProv = (NP_.d.PROVEEDORES || []);
+  var allSel = vis.length && vis.every(function(x) { return x.f.sel; });
+  el.innerHTML = '<table class="np-tb"><thead><tr><th style="width:28px"><input type="checkbox" ' + (allSel ? 'checked' : '') + ' onchange="npTodos(this.checked)" title="Todos"></th><th>Producto</th><th class="hm">Stock</th><th style="width:150px">Pedir</th><th style="width:210px">Proveedor</th><th style="width:120px">Costo c/u sin IVA</th><th class="hm" style="width:110px">Subtotal</th></tr></thead><tbody>' +
+    (vis.length ? vis.map(function(x) {
+      var f = x.f, it = f.it, i = x.i, ops = it.PROVS || [], idsOp = {}; ops.forEach(function(o) { idsOp[o.ID_PROVEEDOR] = 1; });
+      var sel = '<select class="fi" onchange="npSet(' + i + ',\'prov\',this.value)"><option value="">— elegir —</option>' +
+        (ops.length ? '<optgroup label="Con precio">' + ops.map(function(o) { return '<option value="' + npEsc(o.ID_PROVEEDOR) + '"' + (o.ID_PROVEEDOR === f.prov ? ' selected' : '') + '>' + npEsc(o.NOMBRE) + ' · ' + fmt(o.COSTO) + ' (' + npEsc(o.FUENTE.toLowerCase()) + ')</option>'; }).join('') + '</optgroup>' : '') +
+        '<optgroup label="Todos los proveedores">' + todosProv.filter(function(p) { return !idsOp[p.ID_PROVEEDOR]; }).map(function(p) { return '<option value="' + npEsc(p.ID_PROVEEDOR) + '"' + (p.ID_PROVEEDOR === f.prov ? ' selected' : '') + '>' + npEsc(p.NOMBRE) + '</option>'; }).join('') + '</optgroup></select>';
+      var uni = it.CANT_PRES > 1 ? '<div class="tdim" style="font-size:11px">' + npEsc(it.PRES_TXT) + ' · = ' + npN(f.cant * it.CANT_PRES) + ' ' + npEsc(it.UNIDAD) + '</div>' : '<div class="tdim" style="font-size:11px">' + npEsc(it.PRES_TXT) + '</div>';
+      return '<tr class="' + (f.sel ? '' : 'off') + '"><td><input type="checkbox" ' + (f.sel ? 'checked' : '') + ' onchange="npSet(' + i + ',\'sel\',this.checked)"></td>' +
+        '<td><b>' + npEsc(it.NOMBRE) + '</b><div class="tdim" style="font-size:11px">' + npEsc(it.TIPO === 'INSUMO' ? 'Insumo' : 'Artículo') + ' · ' + npEsc(it.CODIGO) + '</div>' +
+        '<span class="np-ch ' + (it.MOTIVO === 'Agregado a mano' ? 'np-m' : it.NIVEL === 'r' ? 'np-r' : 'np-y') + '">' + npEsc(it.MOTIVO) + '</span>' +
+        (it.CALCULO ? '<div class="tdim" style="font-size:11px;margin-top:2px">' + npEsc(it.CONSUMO_DIA > 0 ? 'Consumo ' + npN(it.CONSUMO_DIA) + ' ' + it.UNIDAD + '/día × (' + NP_.dias + ' días + ' + (it.DEMORA || 0) + ' de demora) − stock ' + npN(Math.max(0, it.STOCK || 0)) : it.CALCULO) + '</div>' : '') +
+        ((it.YA_PEDIDO || []).length ? '<div style="font-size:11px;color:#b45309;margin-top:2px">⚠ Ya pedido: ' + npEsc(it.YA_PEDIDO.join(' · ')) + '</div>' : '') + '</td>' +
+        '<td class="hm mono">' + (it.STOCK === undefined ? '—' : npN(it.STOCK) + ' ' + npEsc(it.UNIDAD)) + (it.MINIMO ? '<div class="tdim" style="font-size:11px">mín. ' + npN(it.MINIMO) + '</div>' : '') + '</td>' +
+        '<td><input class="fi" inputmode="decimal" value="' + npN(f.cant) + '" onchange="npSet(' + i + ',\'cant\',this.value)">' + uni + '</td>' +
+        '<td>' + sel + '</td>' +
+        '<td><input class="fi" inputmode="decimal" value="' + npN(f.costo) + '" onchange="npSet(' + i + ',\'costo\',this.value)"></td>' +
+        '<td class="hm mono" style="text-align:right">' + fmt(f.cant * f.costo) + '</td></tr>';
+    }).join('') : '<tr><td colspan="7" class="tdim" style="padding:18px;text-align:center">No hay productos en la lista. Agregá con el buscador.</td></tr>') + '</tbody></table>';
+}
+var npBusT = null;
+function npBuscar(q) {
+  if (npBusT) clearTimeout(npBusT);
+  var l = $id('np-lst'); if (String(q).trim().length < 2) { if (l) l.style.display = 'none'; return; }
+  npBusT = setTimeout(async function() {
+    var r; try { r = await gsRun('gsNP_Buscar', q); } catch (e) { toast(e.message, 'r2'); return; }
+    NP_.busca = (r && r.ITEMS) || []; var l2 = $id('np-lst'); if (!l2) return;
+    l2.innerHTML = NP_.busca.length ? NP_.busca.map(function(it, i) { return '<div onclick="npAgregar(' + i + ')"><b>' + npEsc(it.NOMBRE) + '</b> <span class="tdim">· ' + npEsc(it.TIPO === 'INSUMO' ? 'insumo' : 'artículo') + ' · ' + npEsc(it.CODIGO) + (it.PROVS.length ? ' · ' + npEsc(it.PROVS[0].NOMBRE) + ' ' + fmt(it.PROVS[0].COSTO) : '') + '</span></div>'; }).join('') : '<div class="tdim">Nada con ese nombre</div>';
+    l2.style.display = '';
+  }, 300);
+}
+function npAgregar(i) {
+  var it = NP_.busca[i]; if (!it) return;
+  var ya = NP_.filas.filter(function(f) { return f.it.TIPO === it.TIPO && f.it.ID === it.ID; })[0];
+  if (ya) { ya.sel = true; toast('Ya estaba en la lista: quedó tildado', 'g'); }
+  else NP_.filas.unshift(npFila(it, true));
+  NP_.q = ''; npPintar();
+}
+async function npGrabar() {
+  var sel = NP_.filas.filter(function(f) { return f.sel; });
+  var its = sel.map(function(f) { return { TIPO: f.it.TIPO, ID: f.it.ID, CANTIDAD: f.cant, ID_PROVEEDOR: f.prov, COSTO: f.costo }; });
+  var b = document.querySelector('#modals .mo:last-child .mf .btn-p'); if (b) { b.disabled = true; b.textContent = 'Grabando…'; }
+  var r; try { r = await gsRun('gsNP_Grabar', { ITEMS: its, OBS: NP_.obs }); } catch (e) { toast(e.message, 'r2'); if (b) b.disabled = false; return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo grabar', 'r2'); if (b) { b.disabled = false; b.textContent = 'Armar pedidos'; } return; }
+  closeModal();
+  showModal('<div class="mh"><span class="mt">✅ Pedidos armados</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<p style="margin:0 0 10px">Quedaron guardados. Abrí el PDF de cada uno para mandarlo al proveedor.</p>' +
+    r.PEDIDOS.map(function(p) { return '<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:8px"><div><b>' + npEsc(p.NRO) + '</b> · ' + npEsc(p.PROVEEDOR) + '<div class="tdim" style="font-size:12px">' + p.ITEMS + ' producto' + (p.ITEMS === 1 ? '' : 's') + ' · ' + fmt(p.TOTAL) + ' sin IVA</div></div><button class="btn btn-p" onclick="npPdf(' + p.ID_PEDIDO + ')">📄 PDF</button></div>'; }).join('') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="npLista()">📋 Ver todos los pedidos</button><button class="btn btn-p" onclick="closeModal()">Listo</button></div>', 'md-lg');
+}
+// PDF de la nota de pedido: misma hoja que el resto de los documentos (Imprimir · Guardar PDF · Compartir)
+async function npPdf(id) {
+  var r; try { r = await gsRun('gsNP_Ver', id); } catch (e) { toast(e.message, 'r2'); return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo abrir', 'r2'); return; }
+  var p = r.PEDIDO, pr = r.PROVEEDOR, tot = 0;
+  var cuerpo = (typeof pcEncImp === 'function' ? pcEncImp('Nota de pedido', p.NRO, p.ESTADO === 'ANULADO' ? 'ANULADO' : '') : '<h1>Nota de pedido ' + npEsc(p.NRO) + '</h1>') +
+    '<div class="dat"><div><b>Fecha</b>' + fmtD(p.FECHA) + '</div><div><b>Proveedor</b>' + npEsc(pr.NOMBRE) + '</div><div><b>CUIT</b>' + npEsc(pr.CUIT || '—') + '</div><div><b>Contacto</b>' + npEsc([pr.CONTACTO, pr.TELEFONO, pr.MAIL].filter(function(x) { return x; }).join(' · ') || '—') + '</div></div>' +
+    '<div class="emp" style="margin-bottom:8px">De: VULCAN TREAD NEUMÁTICOS S.R.L. · CUIT 30-71937385-9 · Salta. Pedido hecho por ' + npEsc(p.USUARIO) + '.</div>' +
+    '<table class="det"><thead><tr><th style="width:4%">#</th><th style="width:15%">Código</th><th>Producto</th><th class="n" style="width:12%">Cantidad</th><th style="width:16%">Presentación</th><th class="n" style="width:13%">Precio c/u</th><th class="n" style="width:14%">Subtotal</th></tr></thead><tbody>' +
+    r.DET.map(function(x, i) { tot += x.SUBTOTAL; return '<tr><td>' + (i + 1) + '</td><td>' + npEsc(x.CODIGO) + '</td><td>' + npEsc(x.DESCRIPCION) + '</td><td class="n">' + npN(x.CANTIDAD) + '</td><td>' + npEsc(x.PRESENTACION) + (x.CANT_UNIDADES && x.CANT_UNIDADES !== x.CANTIDAD ? ' (' + npN(x.CANT_UNIDADES) + ' ' + npEsc(x.UNIDAD) + ')' : '') + '</td><td class="n">' + (x.COSTO ? fmt(x.COSTO) : '—') + '</td><td class="n">' + (x.SUBTOTAL ? fmt(x.SUBTOTAL) : '—') + '</td></tr>'; }).join('') +
+    '<tr class="tot"><td colspan="6" class="n"><b>Total estimado sin IVA</b></td><td class="n"><b>' + fmt(tot) + '</b></td></tr></tbody></table>' +
+    (p.OBS ? '<h2>Observaciones</h2><div>' + npEsc(p.OBS) + '</div>' : '') +
+    '<div class="nota">Precios de referencia sin IVA (lista vigente del proveedor o último costo). Confirmar precio, disponibilidad y fecha de entrega.</div>' +
+    (p.ESTADO === 'ANULADO' ? '<div class="nota" style="color:#b91c1c;font-weight:700">PEDIDO ANULADO' + (p.MOTIVO ? ': ' + npEsc(p.MOTIVO) : '') + '</div>' : '');
+  pcImprimir('Nota de pedido ' + p.NRO + ' ' + pr.NOMBRE, cuerpo, false);
+}
+// Lista de pedidos hechos: estado, PDF, marcar recibido, anular (con motivo)
+async function npLista() {
+  var r; try { r = await gsRun('gsNP_Lista'); } catch (e) { toast(e.message, 'r2'); return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  closeModal();
+  var col = { PEDIDO: ['#1d4ed8', 'Pedido'], RECIBIDO: ['#15803d', 'Recibido'], ANULADO: ['#b91c1c', 'Anulado'] };
+  showModal('<div class="mh"><span class="mt">📋 Pedidos a proveedores</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    (r.PEDIDOS.length ? '<div class="np-sc"><table class="np-tb"><thead><tr><th>N°</th><th>Fecha</th><th>Proveedor</th><th class="hm">Productos</th><th>Total sin IVA</th><th>Estado</th><th></th></tr></thead><tbody>' +
+      r.PEDIDOS.map(function(p) { var c = col[p.ESTADO] || ['#475569', p.ESTADO];
+        return '<tr><td><b>' + npEsc(p.NRO) + '</b></td><td>' + fmtD(p.FECHA) + '</td><td>' + npEsc(p.PROVEEDOR) + '</td><td class="hm">' + p.ITEMS + '</td><td class="mono">' + fmt(p.TOTAL) + '</td><td><span class="np-ch" style="background:' + c[0] + '1a;color:' + c[0] + '">' + c[1] + '</span>' + (p.MOTIVO ? '<div class="tdim" style="font-size:11px">' + npEsc(p.MOTIVO) + '</div>' : '') + '</td>' +
+          '<td style="white-space:nowrap"><button class="btn btn-sm" onclick="npPdf(' + p.ID_PEDIDO + ')">📄 PDF</button>' + (p.ESTADO === 'PEDIDO' ? ' <button class="btn btn-sm" onclick="npEstado(' + p.ID_PEDIDO + ',\'RECIBIDO\')">✓ Recibido</button> <button class="btn btn-sm" onclick="npEstado(' + p.ID_PEDIDO + ',\'ANULADO\')">Anular</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>'
+      : '<div class="tdim">Todavía no se hizo ningún pedido.</div>') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-p" onclick="npAbrir()">🛒 Armar pedido</button></div>', 'md-xl');
+}
+async function npEstado(id, est) {
+  var motivo = '';
+  if (est === 'ANULADO') { motivo = await uiPedir('¿Por qué se anula el pedido?', { obligatorio: true, ayuda: 'Ej.: el proveedor no tiene, se pidió a otro…' }); if (!motivo) return; }
+  else if (!(await uiConfirmar('¿Marcar el pedido como recibido? (la mercadería se carga igual con la compra o el remito)', 'Sí, recibido'))) return;
+  var r; try { r = await gsRun('gsNP_Estado', id, est, motivo); } catch (e) { toast(e.message, 'r2'); return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  toast(est === 'ANULADO' ? 'Pedido anulado' : 'Pedido marcado como recibido', 'g'); npLista();
 }
 </script>
 
