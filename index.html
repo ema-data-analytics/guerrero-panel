@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ea8d649799f2"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "878f7b7be0d1"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1484,7 +1484,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031922';
+var EMA_BUILD = '202611031930';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -9483,12 +9483,13 @@ async function recImprimir(ids, btn) {
   var txt = btn ? btn.innerHTML : '', dets = [];
   if (btn) btn.disabled = true;
   try {
-    for (var k = 0; k < ids.length; k += 8) {
-      var rs = await Promise.all(ids.slice(k, k + 8).map(function(id) { return gsRun('gsREC_Detalle', id); }));
-      dets = dets.concat(rs);
+    for (var k = 0; k < ids.length; k += 60) {
+      var rs = await gsRun('gsREC_Detalles', ids.slice(k, k + 60));
+      if (!rs || !rs.ok) throw new Error((rs && rs.error) || 'No se pudo leer las recetas');
+      dets = dets.concat(rs.lista);
       if (btn) btn.textContent = 'Armando... ' + dets.length + ' de ' + ids.length;
     }
-  } finally { if (btn) { btn.disabled = false; btn.innerHTML = txt; } }
+  } catch (e) { toast('No se pudo armar la impresión: ' + e.message, 'r2'); return; } finally { if (btn) { btn.disabled = false; btn.innerHTML = txt; } }
   dets = dets.filter(function(r) { return r && r.ok; });
   if (!dets.length) { toast('No se pudo leer la receta', 'r2'); return; }
   var est = {}; (REC_.d.estaciones || []).forEach(function(e) { est[String(e.ID_ESTACION)] = e; });
@@ -9526,14 +9527,15 @@ async function recExcelDescargar(btn) {
   var txt = btn ? btn.innerHTML : '', det = new Array(vig.length), hechos = 0;
   if (btn) btn.disabled = true;
   try {
-    for (var k = 0; k < vig.length; k += 8) {
-      var tanda = vig.slice(k, k + 8);
-      var rs = await Promise.all(tanda.map(function(v) { return gsRun('gsREC_Detalle', v.ID_RECETA); }));
-      rs.forEach(function(r, x) { det[k + x] = r; });
+    for (var k = 0; k < vig.length; k += 60) {
+      var tanda = vig.slice(k, k + 60);
+      var rs = await gsRun('gsREC_Detalles', tanda.map(function(v) { return v.ID_RECETA; }));
+      if (!rs || !rs.ok) throw new Error((rs && rs.error) || 'No se pudo leer las recetas');
+      rs.lista.forEach(function(r, x) { det[k + x] = r; });
       hechos += tanda.length;
       if (btn) btn.textContent = 'Armando el Excel... ' + hechos + ' de ' + vig.length;
     }
-  } finally { if (btn) { btn.disabled = false; btn.innerHTML = txt; } }
+  } catch (e) { toast('No se pudo armar el Excel: ' + e.message, 'r2'); return; } finally { if (btn) { btn.disabled = false; btn.innerHTML = txt; } }
   for (var i = 0; i < vig.length; i++) {
     var r = det[i];
     if (!r || !r.ok) continue;
