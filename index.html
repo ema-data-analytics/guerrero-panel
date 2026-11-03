@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ffe4eb89f6fa"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "82589e43eca6"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1438,7 +1438,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031439';
+var EMA_BUILD = '202611031445';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -10413,7 +10413,8 @@ function pcPintarOT() {
     (abierta ? '<button class="btn btn-p btn-sm" onclick="pcPrep(' + o.ID_OT + ')">⚖ Preparación y pesaje</button>' : '') +
     '<button class="btn btn-s btn-sm" onclick="pcImpOS(' + o.ID_OT + ')"><i class="fas fa-print"></i> Imprimir</button>' +
     (o.ESTADO === 'CERRADA' ? '<button class="btn btn-p btn-sm" onclick="pcRemitos(' + o.ID_OT + ')"><i class="fas fa-file-alt"></i> Remitos</button>' : '') +
-    (abierta && pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" onclick="pcCerrarOT()">Cerrar ' + (String(o.NRO_OT).indexOf('OS') === 0 ? 'OS' : 'OT') + '</button>' : '') +
+    (abierta && pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" style="background:#16a34a;border-color:#16a34a" onclick="okfAbrir(' + o.ID_OT + ')">✓ OK final y cerrar</button>' : '') +
+    (o.ESTADO === 'CERRADA' ? '<button class="btn btn-s btn-sm" onclick="pcImpOSResumen(' + o.ID_OT + ')">🖨 Resumen</button>' : '') +
     (abierta && pcPuede('ANULAR') ? '<button class="btn btn-s btn-sm" onclick="pcAnularOT()">Anular OT</button>' : '') + '</span></div>' +
     (o.OBSERVACIONES ? '<div class="tdim" style="padding:0 14px;font-size:12px">' + pcEsc(o.OBSERVACIONES) + '</div>' : '') +
     '<div class="tw"><table style="font-size:12px" id="pc-grid"><thead><tr><th>#</th><th>Marca grabada · DOT</th><th>Cubierta</th><th>Rol</th>' + cols.map(function(c) { return '<th class="tc" style="min-width:70px;max-width:120px;white-space:normal">' + pcEsc(c.nombre) + '</th>'; }).join('') + '<th>Estado</th><th class="tr">Costo</th><th></th></tr></thead><tbody>' +
@@ -10441,7 +10442,7 @@ function pcPintarOT() {
         }).join('') +
         '<td>' + pcBadge(i.ESTADO) + '</td><td class="tr mono">' + (i.COSTO.TOTAL ? fmt(i.COSTO.TOTAL) : '—') + '</td>' +
         '<td style="white-space:nowrap">' + (abierta && (i.ESTADO === 'PENDIENTE' || i.ESTADO === 'EN_PROCESO') ?
-          (i.REGISTROS.length ? '<button class="btn btn-p btn-xs" onclick="pcTerminar(' + i.ID_CUB + ',\'TERMINADA\')">Terminar</button> ' : '') + '<button class="btn btn-s btn-xs" onclick="pcTerminar(' + i.ID_CUB + ',\'RECHAZADA\')">Rechazar</button> ' +
+          '<button class="btn btn-s btn-xs" onclick="pcTerminar(' + i.ID_CUB + ',\'RECHAZADA\')">Rechazar</button> ' +
           (i.ROL === 'SUPLENTE' ? '<button class="btn btn-s btn-xs" onclick="pcPromover(' + i.ID_CUB + ')">A titular</button> ' : '') +
           (i.REGISTROS.length ? '' : '<button class="btn btn-s btn-xs" onclick="pcRetirar(' + i.ID_CUB + ')">Sacar</button>') : (i.ESTADO === 'TERMINADA' ? '<button class="btn btn-s btn-xs" onclick="pcVerCosto(' + i.ID_CUB + ')">Costo</button>' : '')) + '</td></tr>';
     }).join('') + '</tbody></table></div>' +
@@ -10535,6 +10536,81 @@ async function pcTerminar(idCub, res) {
 async function pcPromover(idCub) { var r = await gsRun('gsPC_PromoverSuplente', PC_.ot.ot.ID_OT, idCub); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Pasó a titular ✓', 'g'); pcAbrirOT(PC_.ot.ot.ID_OT); }
 async function pcRetirar(idCub) { if (!(await uiConfirmar('¿Sacar la cubierta de la orden de servicio? Vuelve a espera.', 'Sí, sacar'))) return; var r = await gsRun('gsPC_RetirarCubierta', PC_.ot.ot.ID_OT, idCub, 'sacada de la OT'); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Volvió a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
 async function pcCerrarOT() { var id = PC_.ot.ot.ID_OT, r = await gsRun('gsPC_CerrarOT', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT cerrada ✓ · ' + ((r.REMITOS || []).length) + ' remito(s) de entrega', 'g'); await pcRecargar(); await pcAbrirOT(id); if ((r.REMITOS || []).length) pcRemitosLista(r.REMITOS); }
+// ── OK final de la carga (03/11/2026): el encargado da el OK cuando salen de pintura; recién ahí se terminan y se cierra la orden ──
+var OKF_ = { d: null, sel: {} };
+async function okfAbrir(idOt) {
+  var r; try { r = await gsRun('gsPC_OKFinalDatos', idOt); } catch (e) { toast(e.message, 'r2'); return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  OKF_.d = r; OKF_.sel = {}; r.LISTAS.forEach(function(x) { OKF_.sel[x.ID_CUB] = true; });
+  closeModal(); showModal('<div id="okf-m"></div>', 'md-lg'); okfPintar();
+}
+function okfPintar() {
+  var r = OKF_.d, el = $id('okf-m'); if (!el) return;
+  var n = r.LISTAS.filter(function(x) { return OKF_.sel[x.ID_CUB]; }).length;
+  var tit = r.FALTAN.filter(function(x) { return x.ROL === 'TITULAR' && !x.CORRECCION; });
+  var cierra = !tit.length && n === r.LISTAS.length;
+  var h = '<div class="mh"><span class="mt">✓ OK final de la carga · ' + pcEsc(r.NRO_OT) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="tdim" style="margin-bottom:8px">Las cubiertas que pasaron por todas sus estaciones (pintura incluida). Con el OK del encargado se terminan (cada una con su costo real)' + (cierra ? ', se cierra la orden y se arman los remitos por cliente.' : '.') + '</div>' +
+    (r.TERMINADAS || r.RECHAZADAS ? '<div style="margin-bottom:8px;font-size:13px">Ya terminadas: <b>' + r.TERMINADAS + '</b>' + (r.RECHAZADAS ? ' · no aptas / rechazadas: <b>' + r.RECHAZADAS + '</b>' : '') + '</div>' : '') +
+    (r.LISTAS.length ? '<table class="tbl" style="font-size:13px"><thead><tr><th style="width:30px"><input type="checkbox" ' + (n === r.LISTAS.length ? 'checked' : '') + ' onchange="okfTodos(this.checked)"></th><th>Marca grabada · DOT</th><th>Cliente</th><th>Medida · trabajo</th></tr></thead><tbody>' +
+      r.LISTAS.map(function(x) { return '<tr><td><input type="checkbox" ' + (OKF_.sel[x.ID_CUB] ? 'checked' : '') + ' onchange="OKF_.sel[\'' + pcEsc(x.ID_CUB) + '\']=this.checked;okfPintar()"></td><td><b>' + pcEsc(x.MARCA) + '</b> · DOT ' + (x.DOT ? pcEsc(x.DOT) : '<span class="tdim">sin DOT</span>') + (x.ROL === 'SUPLENTE' ? ' <span class="tdim">(suplente)</span>' : '') + '</td><td>' + pcEsc(x.CLIENTE) + '</td><td>' + pcEsc(x.MEDIDA) + ' · ' + pcEsc(x.TRABAJO) + '</td></tr>'; }).join('') + '</tbody></table>'
+      : '<div class="al al-b">No hay cubiertas listas para el OK final.</div>') +
+    (r.FALTAN.length ? '<div class="al al-w mt3" style="font-size:13px"><b>Todavía no:</b> ' + r.FALTAN.map(function(x) { return pcEsc(x.MARCA) + ' (' + pcEsc(x.DONDE) + ')'; }).join(' · ') + (tit.length ? '<br>Con estas pendientes la orden <b>no se cierra</b>: se terminan las tildadas y la orden sigue abierta.' : '') + '</div>' : '') +
+    (r.ES_ENCARGADO ? '<div class="tdim mt3" style="font-size:13px">Da el OK: <b>' + pcEsc(r.USUARIO) + '</b> (encargado de línea).</div>'
+      : '<div class="mt3" style="font-size:13px"><b>Lo autoriza el encargado de línea</b> con su usuario y clave:</div><div class="flex gap2 mt2"><input class="fi" id="okf-u" placeholder="Usuario del encargado" autocomplete="off"><input class="fi" id="okf-c" type="password" placeholder="Clave" autocomplete="new-password"></div>') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button>' +
+    '<button class="btn btn-p" style="background:#16a34a;border-color:#16a34a" ' + (n || (cierra && (r.TERMINADAS || r.RECHAZADAS)) ? '' : 'disabled') + ' onclick="okfConfirmar()">✓ Dar el OK final' + (n ? ' (' + n + ')' : '') + (cierra ? ' y cerrar la orden' : '') + '</button></div>';
+  el.innerHTML = h;
+}
+async function okfConfirmar() {
+  var r = OKF_.d, ids = r.LISTAS.filter(function(x) { return OKF_.sel[x.ID_CUB]; }).map(function(x) { return x.ID_CUB; });
+  var d = { ID_OT: r.ID_OT, CUBS: ids, CERRAR: true };
+  if (!r.ES_ENCARGADO) { var u = ($id('okf-u') || {}).value || '', c = ($id('okf-c') || {}).value || ''; if (!u || !c) { toast('Falta el usuario y la clave del encargado', 'r2'); return; } d.AUTORIZA = { USUARIO: u.trim(), CLAVE: c }; }
+  var b = document.querySelector('#okf-m .mf .btn-p'); if (b) { b.disabled = true; b.textContent = 'Terminando…'; }
+  var x; try { x = await gsRun('gsPC_OKFinal', d); } catch (e) { toast(e.message, 'r2'); okfPintar(); return; }
+  if (!x || !x.ok) { toast((x && x.error) || 'No se pudo', 'r2'); okfPintar(); return; }
+  closeModal();
+  var tot = 0; x.TERMINADAS.forEach(function(t) { tot += +t.COSTO || 0; });
+  showModal('<div class="mh"><span class="mt">✅ OK final · ' + pcEsc(x.NRO_OT) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<p style="margin:0 0 8px">OK dado por <b>' + pcEsc(x.QUIEN) + '</b>: ' + x.TERMINADAS.length + ' cubierta' + (x.TERMINADAS.length === 1 ? '' : 's') + ' terminada' + (x.TERMINADAS.length === 1 ? '' : 's') + (tot ? ' · costo ' + fmt(tot) : '') + '.</p>' +
+    (x.CERRADA ? '<div class="al al-g">Orden cerrada. Remitos: ' + ((x.REMITOS || []).map(function(m) { return pcEsc(m.NRO || ''); }).join(', ') || '—') + '</div>' : '<div class="al al-w">' + pcEsc(x.NO_CIERRA || 'La orden sigue abierta.') + '</div>') +
+    '</div><div class="mf"><button class="btn btn-p" onclick="pcImpOSResumen(' + r.ID_OT + ')">🖨 Resumen (1 hoja)</button><button class="btn btn-p" onclick="pcImpOSDetalle(' + r.ID_OT + ')">📄 Detalle en PDF</button>' +
+    (x.CERRADA && (x.REMITOS || []).length && typeof pcRemitosLista === 'function' ? '<button class="btn btn-s" onclick="closeModal();pcRemitosLista(OKF_.rem)">Remitos</button>' : '') + '<button class="btn btn-s" onclick="closeModal()">Listo</button></div>', 'md-lg');
+  OKF_.rem = x.REMITOS || [];
+  if (typeof TB_ !== 'undefined' && typeof tbCargar === 'function' && tbVisible && tbVisible()) tbCargar();
+  if (PC_ && PC_.ot && String(PC_.ot.ot.ID_OT) === String(r.ID_OT) && $id('page-produccion-cubiertas') && !$id('page-produccion-cubiertas').classList.contains('hidden')) { try { await pcRecargar(); await pcAbrirOT(r.ID_OT); } catch (e) {} }
+}
+function okfTodos(v) { OKF_.d.LISTAS.forEach(function(x) { OKF_.sel[x.ID_CUB] = v; }); okfPintar(); }
+async function pcAsegDatos() { if (!PC_.d) PC_.d = await gsRun('gsPC_Datos'); return PC_.d; }
+async function pcImpOSDetalle(id) {
+  await pcAsegDatos(); var r = await gsRun('gsPC_OTDetalle', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  pcImpOSInforme(r, r.ot);
+}
+// Resumen de la orden en una hoja: cubiertas por cliente, resultado y costo, con firmas
+async function pcImpOSResumen(id) {
+  await pcAsegDatos(); var r = await gsRun('gsPC_OTDetalle', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  var o = r.ot, $$ = function(n) { return '$ ' + Math.round(+n || 0).toLocaleString('es-AR'); };
+  var its = r.items.filter(function(i) { return i.ROL === 'TITULAR' || i.ESTADO === 'TERMINADA' || i.ESTADO === 'RECHAZADA'; });
+  var estTxt = { TERMINADA: 'Terminada', RECHAZADA: 'No apta / rechazada', EN_PROCESO: 'En proceso', PENDIENTE: 'Sin empezar', RETIRADA: 'Retirada' };
+  var porCli = {}, ord = [], tot = { ok: 0, rech: 0, otras: 0, c: 0 };
+  its.forEach(function(i) { var k = i.CLIENTE || 'Sin cliente'; if (!porCli[k]) { porCli[k] = []; ord.push(k); } porCli[k].push(i); if (i.ESTADO === 'TERMINADA') { tot.ok++; tot.c += i.COSTO.TOTAL; } else if (i.ESTADO === 'RECHAZADA') tot.rech++; else tot.otras++; });
+  var ini = 0; its.forEach(function(i) { (i.REGISTROS || []).forEach(function(g) { if (+g.FECHA && (!ini || +g.FECHA < ini)) ini = +g.FECHA; }); });
+  var ok = /OK final ([0-9\/ :]+) · ([^|·]+)/.exec(o.OBSERVACIONES || '');
+  var ac = (r.autoclave || [])[0], n = 0;
+  var h = pcEncImp('ORDEN DE SERVICIO · RESUMEN', o.NRO_OT, o.ESTADO === 'CERRADA' ? 'CERRADA' : 'ABIERTA') +
+    '<div class="dat"><div><b>Línea</b>' + pcEsc(o.LINEA) + '</div><div><b>Armada</b>' + fmtD(o.FECHA) + '</div><div><b>Primera estación</b>' + (ini ? fmtDT(ini) : '—') + '</div><div><b>Cerrada</b>' + (o.FECHA_CIERRE ? fmtDT(o.FECHA_CIERRE) : '—') + '</div>' +
+    '<div><b>OK final</b>' + (ok ? pcEsc(ok[1].trim()) + ' · ' + pcEsc(ok[2].trim()) : '—') + '</div><div><b>Autoclave</b>' + (ac ? fmtD(ac.INICIO) + (ac.MINUTOS ? ' · ' + Math.round(ac.MINUTOS) + ' min' : '') : '—') + '</div>' +
+    '<div><b>Cubiertas</b>' + its.length + ' · terminadas ' + tot.ok + ' · no aptas ' + tot.rech + (tot.otras ? ' · pendientes ' + tot.otras : '') + '</div><div><b>Costo de las terminadas</b>' + $$(tot.c) + (tot.ok ? ' · ' + $$(tot.c / tot.ok) + ' c/u' : '') + '</div></div>' +
+    '<table class="det"><thead><tr><th style="width:4%">#</th><th style="width:16%">Marca grabada</th><th style="width:9%">DOT</th><th style="width:14%">Medida</th><th style="width:13%">Trabajo</th><th>Resultado</th><th class="n" style="width:12%">Costo</th></tr></thead><tbody>' +
+    ord.map(function(k) {
+      return '<tr class="tot"><td colspan="7"><b>' + pcEsc(k) + '</b> · ' + porCli[k].length + ' cubierta' + (porCli[k].length === 1 ? '' : 's') + '</td></tr>' + porCli[k].map(function(i) { n++;
+        return '<tr><td>' + n + '</td><td><b>' + pcEsc(i.MARCA) + '</b></td><td>' + (i.DOT ? pcEsc(i.DOT) : 'sin DOT') + '</td><td>' + pcEsc(i.MEDIDA || '') + '</td><td>' + pcEsc(i.TRABAJO || '') + '</td><td>' + pcEsc(estTxt[i.ESTADO] || i.ESTADO) + (i.ESTADO === 'RECHAZADA' && i.OBS ? ': ' + pcEsc(i.OBS) : '') + (i.PULIR ? ' · repulida' : '') + '</td><td class="n">' + (i.ESTADO === 'TERMINADA' ? $$(i.COSTO.TOTAL) : '—') + '</td></tr>';
+      }).join('');
+    }).join('') + '<tr class="tot"><td colspan="6" class="n"><b>Total terminadas (' + tot.ok + ')</b></td><td class="n"><b>' + $$(tot.c) + '</b></td></tr></tbody></table>' +
+    '<div class="nota">Costos sin IVA. El detalle de cada cubierta (estaciones, operarios, insumos y tiempos) está en el Informe de la orden.</div>' +
+    '<div class="firmas"><div>Encargado de línea (OK final)</div><div>Oficina</div></div>';
+  pcImprimir('Resumen ' + o.NRO_OT, h, false);
+}
 // ── Remitos de entrega: uno por cliente, se arman solos al cerrar la orden de servicio ──
 async function pcRemitos(idOt) { var r = await gsRun('gsPC_Remitos', idOt); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } if (!(r.REMITOS || []).length) { toast('Esta orden no tiene remitos', 'r2'); return; } pcRemitosLista(r.REMITOS); }
 function pcRemitosLista(rs) {
@@ -13030,6 +13106,8 @@ function tbPintarMarcar() {
     }).join('') + '</div>' : '<div class="tm-v">libre</div>';
     return '<section class="tm-e ' + cls + '"><div class="tm-eh"><div class="tm-n ' + s[0] + '">' + e.NRO + '</div><div style="min-width:0"><div class="tm-nn">' + tbEsc(e.NOMBRE) + '</div><div class="tm-ns">' + s[1].toLowerCase() + ' · hoy ' + e.HECHAS_HOY + ' · normal ' + tbMin(std) + '</div></div></div>' + body + '</section>';
   }).join('') + '</div>';
+  var porOT = {}; d.CUBIERTAS.forEach(function(c) { if (c.ESTADO_EST === 'LISTA') { var k = c.ID_OT; porOT[k] = porOT[k] || { nro: c.NRO_OT, n: 0 }; porOT[k].n++; } });
+  if (Object.keys(porOT).length && puedeVerPagina('produccion-cubiertas')) h += '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px">' + Object.keys(porOT).map(function(k) { return '<button class="tm-big go" style="flex:1;min-width:260px;margin-top:0" onclick="okfAbrir(\'' + tbEsc(k) + '\')">✓ OK FINAL · ' + tbEsc(porOT[k].nro) + ' · ' + porOT[k].n + ' lista' + (porOT[k].n === 1 ? '' : 's') + '</button>'; }).join('') + '</div>';
   var listas = d.CUBIERTAS.filter(function(c) { return c.ESTADO_EST === 'LISTA'; }).length;
   h += '<div class="tp-ley" style="margin-top:12px"><span>✓ Listas para terminar: <b>' + listas + '</b></span><span>Terminadas hoy: <b>' + d.RESUMEN.TERMINADAS_HOY + '</b></span><span style="color:#64748b">Tocá una cubierta para marcarla. Lo mismo se puede hacer desde Puesto de estación: las dos formas usan los mismos relojes y fichas.</span></div></div>';
   el.innerHTML = '<div class="tb-wrap">' + h + '</div>';
