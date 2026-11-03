@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9ea3e574afd1"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "86d68e4a53b2"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611021115';
+var EMA_BUILD = '202611030900';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -10830,7 +10830,7 @@ async function pcBajaPieza(id, act) { var r = await gsRun('gsPC_BajaPieza', id, 
 // ── Configuración ──
 function pcConfig() {
   var d = PC_.d, adm = SES && (SES.rol === 'SUPER' || SES.rol === 'ADMINISTRADOR');
-  var desc = { MARCA_AUTO: 'Marca automática si se deja vacía (1 sí / 0 no)', MARCA_PREFIJO: 'Prefijo de la marca', MARCA_DIGITOS: 'Dígitos', TOLERANCIA_CONSUMO: 'Tolerancia de consumo (0,10 = 10%)', HERR_BAJA_AUTO: 'Baja automática de herramental al llegar a sus usos', BLOQUEAR_SIN_STOCK: 'Bloquear si no hay stock (1) o solo avisar (0)', HERR_OBLIGATORIO: 'Exigir la pieza de herramental en cada registro', PRORRATEO: 'Reparto de gastos fijos: CUBIERTA o MINUTOS' , ESTACIONES_OBLIGATORIAS: 'Exigir las 10 estaciones para terminar (1 sí / 0 no)', ORDEN_ESTACIONES: 'Estaciones en orden: no deja saltear (1 sí / 0 no)', TIEMPO_OPERARIO: 'El operario toma el tiempo en la tablet (1 sí / 0 no)', APRENDER_ESTACION: 'Aprender en qué estación va cada insumo (1 sí / 0 no)', CONSUMO_AMARILLO: 'Consumibles: amarillo desde (1,2 = 20% más)', CONSUMO_ROJO: 'Consumibles: rojo desde (1,5 = 50% más)', CAMBIO_CONTRA_ENTREGA: 'Consumible nuevo solo entregando el gastado (1 sí / 0 no)', SERVICE_AVISO_DIAS: 'Avisar el service de herramientas con estos días', CONTROL_DIARIO: 'Control diario de herramientas en la tablet (1 sí / 0 no: solo se avisa "Se rompió / Me falta")', CONTROL_SEMANAL_DIA: 'Día del control semanal (0 domingo … 6 sábado)', CONTROL_SEMANAL_DIAS: 'Alarma si una entrega pasa más de estos días sin control' };
+  var desc = { MARCA_AUTO: 'Marca automática si se deja vacía (1 sí / 0 no)', MARCA_PREFIJO: 'Prefijo de la marca', MARCA_DIGITOS: 'Dígitos', TOLERANCIA_CONSUMO: 'Tolerancia de consumo (0,10 = 10%)', HERR_BAJA_AUTO: 'Baja automática de herramental al llegar a sus usos', BLOQUEAR_SIN_STOCK: 'Bloquear si no hay stock (1) o solo avisar (0)', HERR_OBLIGATORIO: 'Exigir la pieza de herramental en cada registro', PRORRATEO: 'Reparto de gastos fijos: MATERIALES (según los materiales de cada cubierta), MINUTOS o CUBIERTA (igual para todas)' , ESTACIONES_OBLIGATORIAS: 'Exigir las 10 estaciones para terminar (1 sí / 0 no)', ORDEN_ESTACIONES: 'Estaciones en orden: no deja saltear (1 sí / 0 no)', TIEMPO_OPERARIO: 'El operario toma el tiempo en la tablet (1 sí / 0 no)', APRENDER_ESTACION: 'Aprender en qué estación va cada insumo (1 sí / 0 no)', CONSUMO_AMARILLO: 'Consumibles: amarillo desde (1,2 = 20% más)', CONSUMO_ROJO: 'Consumibles: rojo desde (1,5 = 50% más)', CAMBIO_CONTRA_ENTREGA: 'Consumible nuevo solo entregando el gastado (1 sí / 0 no)', SERVICE_AVISO_DIAS: 'Avisar el service de herramientas con estos días', CONTROL_DIARIO: 'Control diario de herramientas en la tablet (1 sí / 0 no: solo se avisa "Se rompió / Me falta")', CONTROL_SEMANAL_DIA: 'Día del control semanal (0 domingo … 6 sábado)', CONTROL_SEMANAL_DIAS: 'Alarma si una entrega pasa más de estos días sin control' };
   $id('pc-body').innerHTML = '<div class="g2"><div class="card"><div class="card-hd"><span class="card-title">Encargados de línea</span></div><div class="card-body"><div class="tdim mb3" style="font-size:12px">Autorizan reemplazos con su clave y cargan los tiempos.</div>' +
     '<table style="font-size:12px"><tbody>' + d.encargados.map(function(e) { return '<tr><td>' + pcEsc(e.USUARIO) + '</td><td>' + pcEsc(e.LINEA || 'Todas') + '</td><td>' + (e.ACTIVO ? 'activo' : 'inactivo') + '</td><td>' + (adm ? '<button class="btn btn-s btn-xs" onclick="pcEncargado(\'' + pcEsc(e.USUARIO) + '\',\'' + pcEsc(e.LINEA) + '\',' + (e.ACTIVO ? 0 : 1) + ')">' + (e.ACTIVO ? 'Desactivar' : 'Activar') + '</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table>' +
     (adm ? '<div class="flex gap2 aic mt3"><input class="fi" id="pce-u" placeholder="usuario" style="width:140px"/><select class="fs" id="pce-l" style="width:140px"><option value="">Todas las líneas</option>' + d.lineas.map(function(l) { return '<option>' + pcEsc(l.LINEA) + '</option>'; }).join('') + '</select><button class="btn btn-p btn-sm" onclick="pcEncargado($v(\'pce-u\'),$v(\'pce-l\'),1)">Agregar</button></div>' : '') + '</div></div>' +
@@ -10883,7 +10883,7 @@ async function pcCostos() {
     '<button class="btn btn-s btn-sm" onclick="pcCostosExcel()"><i class="fas fa-file-download"></i> Excel</button>' +
     (pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" onclick="pcProrratear()"><i class="fas fa-balance-scale"></i> Prorratear gastos fijos del mes</button>' : '') +
     '<button class="btn btn-s btn-sm" onclick="pcPreciosRec()"><i class="fas fa-tags"></i> Precios de servicios</button>' +
-    '<span class="tdim" style="font-size:11px">Reparto: ' + (r.metodo === 'MINUTOS' ? 'según minutos de cada cubierta' : 'igual por cubierta') + '</span></div>' +
+    '<span class="tdim" style="font-size:11px">Reparto: ' + (r.metodo === 'MATERIALES' ? 'según los materiales de cada cubierta' : r.metodo === 'MINUTOS' ? 'según minutos de cada cubierta' : 'igual por cubierta') + ' · se aplica al cierre del mes</span></div>' +
     '<div class="tw"><table style="font-size:12px" id="pc-tbl-costos"><thead><tr><th>Terminada</th><th>OT</th><th>Marca grabada · DOT</th><th>Cliente</th><th>Cubierta</th><th class="tr">Materiales</th><th class="tr">Herramental</th><th class="tr">Min</th><th class="tr">Mano de obra</th><th class="tr">Fijos</th><th class="tr">Total</th></tr></thead><tbody>' +
     r.filas.map(function(f) { return '<tr><td>' + fmtD(f.FECHA_FIN) + '</td><td class="mono">' + pcEsc(f.NRO_OT) + '</td><td class="mono"><b>' + pcEsc(f.MARCA) + '</b><div style="font-size:10px">DOT: ' + pcDotTxt(pcDotDe(f)) + '</div></td><td>' + pcEsc(f.CLIENTE) + '</td><td style="font-size:11px">' + pcEsc(f.TIPO + ' ' + f.MEDIDA + ' · ' + f.TRABAJO) + '</td><td class="tr mono">' + fmt(f.MATERIALES) + '</td><td class="tr mono">' + fmt(f.HERRAMENTAL) + '</td><td class="tr">' + pcDur(f.MINUTOS) + '</td><td class="tr mono">' + fmt(f.MO) + '</td><td class="tr mono">' + fmt(f.FIJOS) + '</td><td class="tr mono"><b>' + fmt(f.TOTAL) + '</b></td></tr>'; }).join('') +
     (n ? '<tr style="font-weight:700"><td colspan="5">Total ' + n + ' cubiertas (promedio ' + fmt(t.tot / n) + ')</td><td class="tr mono">' + fmt(t.mat) + '</td><td class="tr mono">' + fmt(t.herr) + '</td><td></td><td class="tr mono">' + fmt(t.mo) + '</td><td class="tr mono">' + fmt(t.fij) + '</td><td class="tr mono">' + fmt(t.tot) + '</td></tr>' : '') +
@@ -10900,7 +10900,7 @@ async function pcProrratear() {
   var r = await gsRun('gsPC_Prorratear', PC_.mes, false);
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   showModal('<div class="mh"><span class="mt">Prorrateo de gastos fijos — ' + pcEsc(r.mes) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
-    '<p>Gastos fijos del mes: <b>' + fmt(r.fijosMes) + '</b> entre <b>' + r.cubiertas + '</b> cubiertas terminadas, ' + (r.metodo === 'MINUTOS' ? 'según los minutos de cada una (' + r.minutos + ' min en total)' : 'en partes iguales') + '.</p>' +
+    '<p>Gastos fijos del mes: <b>' + fmt(r.fijosMes) + '</b> entre <b>' + r.cubiertas + '</b> cubiertas terminadas, ' + (r.metodo === 'MATERIALES' ? 'según el costo de materiales de cada una (' + fmt(r.materiales) + ' en total)' : r.metodo === 'MINUTOS' ? 'según los minutos de cada una (' + r.minutos + ' min en total)' : 'en partes iguales') + '.</p>' +
     '<div class="tw" style="max-height:300px"><table style="font-size:12px"><thead><tr><th>Marca grabada · DOT</th><th class="tr">Fijos antes</th><th class="tr">Fijos nuevo</th><th class="tr">Total nuevo</th></tr></thead><tbody>' +
     r.detalle.map(function(d) { return '<tr><td class="mono">' + pcEsc(d.MARCA) + '<div style="font-size:10px">DOT: ' + pcDotTxt(pcDotDe((PC_.d.cubiertas || []).filter(function(y) { return y.MARCA === d.MARCA; })[0])) + '</div></td><td class="tr mono">' + fmt(d.FIJOS_ANTES) + '</td><td class="tr mono">' + fmt(d.FIJOS) + '</td><td class="tr mono">' + fmt(d.TOTAL) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
     '<div class="tdim" style="font-size:11px">Los gastos fijos salen de Órdenes de Trabajo → Costos (sin la mano de obra, que va por minutos).</div></div>' +
@@ -10916,25 +10916,83 @@ async function pcProrratear() {
 // ── Precios de servicios y recapadas para la lista de venta (28/10/2026, ampliado 30/10/2026) ──
 // Servicio a clientes: promedio del costo de las cubiertas terminadas de cada medida y trabajo; si no hay, el costo de la receta. Recapada propia: promedio de las unidades en stock.
 // Precio = costo × (1 + rentabilidad) ÷ (1 − impuestos de venta) + IVA. «Armar la lista» deja una lista de venta nueva en borrador para aprobar en Precios.
+// Precios de servicios y recapadas: filtros, búsqueda y elegir cuáles van a la lista nueva (03/11/2026)
+var PCPR_ = null;
 async function pcPreciosRec() {
   var r; try { r = await gsRun('gsFP_Precios', false); } catch (e) { toast(e.message || e, 'r2'); return; }
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   var g = r.REGLA, pct = function(x) { return (Math.round(x * 10000) / 100).toLocaleString('es-AR') + '%'; };
+  r.FILAS.forEach(function(f, i) {
+    if (!f.KEY) f.KEY = 'F' + i;
+    f.CAMBIA = f.CON_IVA > 0 && Math.round(f.CON_IVA) !== Math.round(f.ACTUAL);
+    f.LIN = f.CLASE === 'SERVICIO' ? (String(f.LINEA || f.TIPO || '').toUpperCase() || 'SIN LÍNEA') : 'RECAPADA PROPIA';
+    f.TRA = String(f.TRABAJO || '').toUpperCase();
+  });
+  PCPR_ = { r: r, sel: {} };
+  r.FILAS.forEach(function(f) { if (f.CAMBIA) PCPR_.sel[f.KEY] = true; });
+  var uniq = function(k) { var o = {}; r.FILAS.forEach(function(f) { if (f[k]) o[f[k]] = 1; }); return Object.keys(o).sort(); };
+  var opts = function(arr, todos) { return '<option value="">' + todos + '</option>' + arr.map(function(x) { return '<option value="' + pcEsc(x) + '">' + pcEsc(x) + '</option>'; }).join(''); };
   showModal('<div class="mh"><span class="mt"><i class="fas fa-tags" style="color:var(--accent)"></i> Precios de servicios y recapadas para la lista de venta</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
-    '<p style="margin-top:0">Costo: el promedio real de las cubiertas terminadas de esa medida y trabajo; si no hay, el de la receta (materiales, herramental, minutos del recorrido de su línea, fijos y garantía). Regla: costo × (1 + rentabilidad de la receta, o la general ' + pct(g.RENTABILIDAD) + ') ÷ (1 − impuestos de venta ' + pct(g.IMP_VENTA) + ') + IVA ' + pct(g.IVA) + '. Los parámetros están en Órdenes de Trabajo → Costos.</p>' +
-    '<div class="tw" style="max-height:360px"><table style="font-size:13px"><thead><tr><th>Artículo</th><th>Base</th><th class="tr">Costo</th><th class="tr">Sin IVA</th><th class="tr">Con IVA</th><th class="tr">En la lista hoy</th></tr></thead><tbody>' +
-    (r.FILAS.length ? r.FILAS.map(function(f) { var cambia = Math.round(f.CON_IVA) !== Math.round(f.ACTUAL);
-      return '<tr><td>' + pcEsc(f.NOMBRE) + '<div class="tdim" style="font-size:11px">' + (f.CLASE === 'SERVICIO' ? 'Servicio a clientes' : 'Recapada propia (stock)') + '</div></td><td>' + pcEsc(f.BASE) + (f.RENTABILIDAD ? '<div class="tdim" style="font-size:11px">rentab. ' + pct(f.RENTABILIDAD) + '</div>' : '') + '</td><td class="tr mono">' + fmt(f.COSTO) + '</td><td class="tr mono">' + fmt(f.SIN_IVA) + '</td><td class="tr mono"><b>' + fmt(f.CON_IVA) + '</b></td><td class="tr mono"' + (cambia ? ' style="color:var(--warning)"' : '') + '>' + (f.ACTUAL ? fmt(f.ACTUAL) : 'sin precio') + '</td></tr>'; }).join('')
-      : '<tr><td colspan="6" class="tdim">Todavía no hay costos para armar precios.</td></tr>') + '</tbody></table></div>' +
-    '<div class="tdim" style="font-size:12px;margin-top:8px">' + r.CAMBIAN + ' precio' + (r.CAMBIAN === 1 ? '' : 's') + ' distinto' + (r.CAMBIAN === 1 ? '' : 's') + ' de la lista vigente. Al armar la lista queda en borrador: la aprueba un administrador en Precios → Versiones de la lista.' + (r.FUERA && (r.FUERA.MARCA || r.FUERA.APRENDIZAJE) ? '<br/>No entran: ' + [r.FUERA.MARCA ? r.FUERA.MARCA + ' receta' + (r.FUERA.MARCA === 1 ? '' : 's') + ' por marca de cubierta' : '', r.FUERA.APRENDIZAJE ? r.FUERA.APRENDIZAJE + ' receta' + (r.FUERA.APRENDIZAJE === 1 ? '' : 's') + ' en aprendizaje (sin cantidades ni cubiertas terminadas)' : ''].filter(function(x) { return x; }).join(' · ') + '.' : '') + '</div></div>' +
-    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button>' + (r.CAMBIAN ? '<button class="btn btn-p" id="pcpr-ok"><i class="fas fa-check"></i> Armar la lista nueva con estos precios</button>' : '') + '</div>', 'md-lg');
-  var ok = $id('pcpr-ok'); if (!ok) return;
-  ok.addEventListener('click', async function() {
+    '<details style="margin:0 0 8px"><summary class="tdim" style="cursor:pointer;font-size:12px">Cómo se calcula el precio</summary><p style="margin:6px 0 0;font-size:12px">Costo: el promedio real de las cubiertas terminadas de esa medida y trabajo; si no hay, el de la receta (materiales, herramental, minutos del recorrido de su línea, fijos y garantía). Regla: costo × (1 + rentabilidad de la receta, o la general ' + pct(g.RENTABILIDAD) + ') ÷ (1 − impuestos de venta ' + pct(g.IMP_VENTA) + ') + IVA ' + pct(g.IVA) + '. Los parámetros están en Órdenes de Trabajo → Costos.</p></details>' +
+    '<div class="fbar" style="gap:6px;flex-wrap:wrap;margin-bottom:6px">' +
+      '<input class="fi" id="pcpr-q" placeholder="Buscar medida, trabajo o nombre…" style="flex:1 1 220px;min-width:180px"/>' +
+      '<select class="fi" id="pcpr-lin" style="width:auto">' + opts(uniq('LIN'), 'Todas las líneas') + '</select>' +
+      '<select class="fi" id="pcpr-tra" style="width:auto">' + opts(uniq('TRA'), 'Todos los trabajos') + '</select>' +
+      '<select class="fi" id="pcpr-ver" style="width:auto"><option value="">Todos los precios</option><option value="C">Solo los que cambian</option><option value="S">Solo sube</option><option value="B">Solo baja</option><option value="N">Sin precio en la lista</option><option value="E">Solo los elegidos</option></select>' +
+    '</div>' +
+    '<div class="tw" style="max-height:52vh"><table style="font-size:13px"><thead><tr><th style="width:28px"><input type="checkbox" id="pcpr-todos" title="Elegir todos los que se ven"/></th><th>Artículo</th><th>Base</th><th class="tr">Costo</th><th class="tr">Precio nuevo<div style="font-weight:400;font-size:10px">con IVA</div></th><th class="tr">En la lista hoy</th><th class="tr">Diferencia</th></tr></thead><tbody id="pcpr-tb"></tbody></table></div>' +
+    '<div id="pcpr-pie" class="tdim" style="font-size:12px;margin-top:8px"></div>' +
+    (r.FUERA && (r.FUERA.MARCA || r.FUERA.APRENDIZAJE) ? '<div class="tdim" style="font-size:11px">No entran: ' + [r.FUERA.MARCA ? r.FUERA.MARCA + ' receta' + (r.FUERA.MARCA === 1 ? '' : 's') + ' por marca de cubierta' : '', r.FUERA.APRENDIZAJE ? r.FUERA.APRENDIZAJE + ' receta' + (r.FUERA.APRENDIZAJE === 1 ? '' : 's') + ' en aprendizaje (sin cantidades ni cubiertas terminadas)' : ''].filter(function(x) { return x; }).join(' · ') + '.</div>' : '') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-p" id="pcpr-ok"><i class="fas fa-check"></i> Armar la lista nueva</button></div>', 'md-lg');
+  ['pcpr-q', 'pcpr-lin', 'pcpr-tra', 'pcpr-ver'].forEach(function(id) { $id(id).addEventListener(id === 'pcpr-q' ? 'input' : 'change', pcprPintar); });
+  $id('pcpr-todos').addEventListener('change', function() { var on = this.checked; pcprVisibles().forEach(function(f) { if (f.CAMBIA) PCPR_.sel[f.KEY] = on; else delete PCPR_.sel[f.KEY]; }); pcprPintar(); });
+  $id('pcpr-tb').addEventListener('change', function(e) { var k = e.target && e.target.getAttribute('data-k'); if (!k) return; if (e.target.checked) PCPR_.sel[k] = true; else delete PCPR_.sel[k]; pcprPie(); });
+  $id('pcpr-ok').addEventListener('click', async function() {
+    var keys = Object.keys(PCPR_.sel).filter(function(k) { return PCPR_.sel[k]; });
+    if (!keys.length) { toast('Elegí al menos un precio que cambie', 'r2'); return; }
     this.disabled = true;
-    try { var c = await gsRun('gsFP_Precios', true); if (!c || !c.ok) { toast((c && c.error) || 'No se pudo', 'r2'); this.disabled = false; return; }
-      closeModal(); toast('Lista de venta N° ' + c.ID_LV + ' en borrador: aprobala en Precios → Versiones de la lista', 'g'); }
+    try { var c = await gsRun('gsFP_Precios', keys); if (!c || !c.ok) { toast((c && c.error) || 'No se pudo', 'r2'); this.disabled = false; return; }
+      closeModal(); toast('Lista de venta N° ' + c.ID_LV + ' en borrador con ' + c.CAMBIAN_ELEGIDOS + ' precio(s): aprobala en Precios → Versiones de la lista', 'g'); }
     catch (e) { toast(e.message || e, 'r2'); this.disabled = false; }
   });
+  pcprPintar();
+}
+function pcprVisibles() {
+  var q = String(($id('pcpr-q') || {}).value || '').toUpperCase().trim().split(/\s+/).filter(Boolean);
+  var lin = ($id('pcpr-lin') || {}).value || '', tra = ($id('pcpr-tra') || {}).value || '', ver = ($id('pcpr-ver') || {}).value || '';
+  return PCPR_.r.FILAS.filter(function(f) {
+    var s = (f.NOMBRE + ' ' + (f.MEDIDA || '') + ' ' + f.TRA + ' ' + f.LIN).toUpperCase();
+    if (!q.every(function(p) { return s.indexOf(p) !== -1; })) return false;
+    if (lin && f.LIN !== lin) return false;
+    if (tra && f.TRA !== tra) return false;
+    if (ver === 'C' && !f.CAMBIA) return false;
+    if (ver === 'S' && !(f.CAMBIA && f.ACTUAL > 0 && f.CON_IVA > f.ACTUAL)) return false;
+    if (ver === 'B' && !(f.CAMBIA && f.ACTUAL > 0 && f.CON_IVA < f.ACTUAL)) return false;
+    if (ver === 'N' && f.ACTUAL > 0) return false;
+    if (ver === 'E' && !PCPR_.sel[f.KEY]) return false;
+    return true;
+  });
+}
+function pcprPintar() {
+  var pct = function(x) { return (Math.round(x * 1000) / 10).toLocaleString('es-AR') + '%'; };
+  var vis = pcprVisibles();
+  $id('pcpr-tb').innerHTML = vis.length ? vis.map(function(f) {
+    var dif = f.ACTUAL > 0 ? f.CON_IVA - f.ACTUAL : 0, col = !f.CAMBIA ? 'var(--dim,#888)' : dif > 0 ? 'var(--danger,#c0392b)' : 'var(--success,#1e7b46)';
+    return '<tr' + (f.CAMBIA ? '' : ' style="opacity:.75"') + '><td>' + (f.CAMBIA ? '<input type="checkbox" data-k="' + pcEsc(f.KEY) + '"' + (PCPR_.sel[f.KEY] ? ' checked' : '') + '/>' : '') + '</td>' +
+      '<td><b>' + pcEsc(f.NOMBRE) + '</b><div class="tdim" style="font-size:11px">' + pcEsc(f.LIN) + (f.TRA ? ' · ' + pcEsc(f.TRA) : '') + '</div></td>' +
+      '<td style="font-size:12px">' + pcEsc(f.BASE) + (f.RENTABILIDAD ? '<div class="tdim" style="font-size:11px">rentab. ' + pct(f.RENTABILIDAD) + '</div>' : '') + '</td>' +
+      '<td class="tr mono">' + fmt(f.COSTO) + '<div class="tdim" style="font-size:10px">sin IVA ' + fmt(f.SIN_IVA) + '</div></td>' +
+      '<td class="tr mono" style="font-size:14px"><b>' + fmt(f.CON_IVA) + '</b></td>' +
+      '<td class="tr mono">' + (f.ACTUAL ? fmt(f.ACTUAL) : '<span class="tdim">sin precio</span>') + '</td>' +
+      '<td class="tr mono" style="color:' + col + '">' + (!f.CAMBIA ? 'igual' : f.ACTUAL > 0 ? (dif > 0 ? '+' : '−') + fmt(Math.abs(dif)) + '<div style="font-size:11px">' + (dif > 0 ? '+' : '−') + pct(Math.abs(dif) / f.ACTUAL) + '</div>' : 'nuevo') + '</td></tr>';
+  }).join('') : '<tr><td colspan="7" class="tdim">No hay precios con ese filtro.</td></tr>';
+  pcprPie();
+}
+function pcprPie() {
+  var fs = PCPR_.r.FILAS, vis = pcprVisibles(), camb = fs.filter(function(f) { return f.CAMBIA; }).length;
+  var el = fs.filter(function(f) { return f.CAMBIA && PCPR_.sel[f.KEY]; }).length;
+  $id('pcpr-pie').innerHTML = 'Se ven <b>' + vis.length + '</b> de ' + fs.length + ' · <b>' + camb + '</b> cambian respecto de la lista vigente · <b>' + el + '</b> elegidos para la lista nueva. La lista nueva queda en borrador: la aprueba un administrador en Precios → Versiones de la lista.';
+  var ok = $id('pcpr-ok'); if (ok) { ok.disabled = !el; ok.innerHTML = '<i class="fas fa-check"></i> Armar la lista nueva con ' + el + ' precio' + (el === 1 ? '' : 's'); }
 }
 
 // ── Lista desplegable propia para los campos con sugerencias (cliente, medida, marca, buscador) ──
