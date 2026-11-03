@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "03ec65541990"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ea8d649799f2"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1484,7 +1484,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031714';
+var EMA_BUILD = '202611031757';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -5359,7 +5359,7 @@ async function renderCheques() {
 function chCabecera() {
   return '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-money-check-alt" style="color:var(--accent)"></i> Cheques</div>' +
     '<div class="page-sub">RECIBIDOS (ENTRAN POR COBRANZAS) Y PROPIOS (SALEN POR ÓRDENES DE PAGO)</div></div>' +
-    '<div style="display:flex;gap:8px"><button class="btn btn-s btn-sm" onclick="chModalCarga()"><i class="fas fa-plus"></i> Carga inicial</button></div></div>';
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p btn-sm" onclick="dcAbrir()">🧾 Descontar cheques</button><button class="btn btn-s btn-sm" onclick="dcLista()">📊 Descuentos hechos</button><button class="btn btn-s btn-sm" onclick="dcFinancieras()">🏦 Financieras</button><button class="btn btn-s btn-sm" onclick="chModalCarga()"><i class="fas fa-plus"></i> Carga inicial</button></div></div>';
 }
 function renderChequesUI() {
   var el = $id('page-cheques');
@@ -5412,10 +5412,10 @@ function chBotones(c) {
   var b = [], id = chEsc(c.ID_CHEQUE);
   function btn(cls, fn, ic, tit) { b.push('<button class="btn btn-xs ' + cls + '" onclick="' + fn + '(\'' + id + '\')" title="' + tit + '"><i class="fas fa-' + ic + '"></i></button>'); }
   btn('btn-info', 'chVerDetalle', 'eye', 'Ver');
-  if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'EN_CARTERA') { btn('btn-w', 'chModalDepositar', 'university', 'Depositar'); btn('btn-g', 'chModalVentanilla', 'money-bill', 'Cobrado por ventanilla'); btn('btn-purple', 'chModalDescontar', 'percent', 'Descontar en financiera / banco'); }
+  if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'EN_CARTERA') { btn('btn-w', 'chModalDepositar', 'university', 'Depositar'); btn('btn-g', 'chModalVentanilla', 'money-bill', 'Cobrado por ventanilla'); btn('btn-purple', 'dcAbrir', 'percent', 'Descontar en financiera (liquidación)'); }
   if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'DEPOSITADO') { btn('btn-g', 'chModalAcreditar', 'check', 'Acreditado'); btn('btn-d', 'chModalRechazar', 'times', 'Rechazado'); }
   if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'ENDOSADO') btn('btn-d', 'chModalRechazar', 'times', 'Rechazado por el proveedor');
-  if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'DESCONTADO') btn('btn-d', 'chModalRechazar', 'times', 'Rechazado (la financiera lo cobra)');
+  if (c.TIPO_ORIGEN === 'TERCERO' && c.ESTADO === 'DESCONTADO') btn('btn-d', 'chModalRechazar', 'times', 'Rechazado (pagar ahora o queda como deuda con la financiera)');
   if (c.TIPO_ORIGEN === 'PROPIO' && c.ESTADO === 'ENTREGADO') { btn('btn-g', 'chModalDebitar', 'check', 'Debitado del banco'); btn('btn-d', 'chModalRechazar', 'times', 'Rechazado'); }
   if (c.PUEDE_DESHACER) btn('btn-s', 'chModalDeshacer', 'undo', 'Deshacer: ' + c.PUEDE_DESHACER);
   if (c.ANULABLE) btn('btn-s', 'chModalAnular', 'ban', 'Anular');
@@ -5483,15 +5483,17 @@ function chModalRechazar(id) {
   var ef = c.TIPO_ORIGEN === 'PROPIO' ? 'La deuda con ' + chEsc(c.PROVEEDOR || 'el proveedor') + ' vuelve a quedar pendiente.' :
     (c.CLIENTE ? 'Se le carga la deuda a ' + chEsc(c.CLIENTE) + ' en su cuenta corriente.' : 'El cheque no tiene cliente vinculado: no se carga deuda a nadie.') +
     (c.ESTADO === 'ENDOSADO' ? ' Y se le vuelve a deber a ' + chEsc(c.PROVEEDOR || 'el proveedor') + '.' : '') +
-    (c.ESTADO === 'DESCONTADO' ? ' La financiera se cobra el cheque de la cuenta que elijas.' : '');
+    (c.ESTADO === 'DESCONTADO' ? (c.LIQ ? ' Descontado en ' + chEsc(c.LIQ.NRO) + ' (' + chEsc(c.LIQ.FINANCIERA) + ').' : ' La financiera se cobra el cheque de la cuenta que elijas.') : '');
   chModal('Cheque rechazado', c, '<div class="al al-r mb3" style="font-size:12px">' + ef + '</div><div class="fg mb3"><label class="fl">Motivo *</label><input id="ch-ac-mot" class="fi" placeholder="Ej: sin fondos, firma"></div>' +
-    (c.ESTADO === 'DESCONTADO' ? chCampoCaja('Cuenta de donde se lo cobran', '') : '') + chCampoFecha(), 'RECHAZAR', '<i class="fas fa-times"></i> Registrar rechazo', 'btn-d');
+    (c.ESTADO === 'DESCONTADO' ? (c.LIQ ? '<div class="fg mb3"><label class="fl">¿Cómo se le paga a la financiera?</label><label style="display:flex;gap:6px;align-items:center;font-size:13px;margin:4px 0"><input type="radio" name="ch-ac-como" value="PAGO" checked onchange="chComo()"> La cobran ahora de una cuenta o caja</label><label style="display:flex;gap:6px;align-items:center;font-size:13px;margin:4px 0"><input type="radio" name="ch-ac-como" value="DEUDA" onchange="chComo()"> Queda como deuda con ' + chEsc(c.LIQ.FINANCIERA) + ' (se paga aparte o se descuenta de la próxima liquidación)</label></div>' : '') + '<div id="ch-ac-caja-w">' + chCampoCaja('Cuenta de donde se lo cobran', '') + '</div>' : '') + chCampoFecha(), 'RECHAZAR', '<i class="fas fa-times"></i> Registrar rechazo', 'btn-d');
 }
+function chComo() { var r = document.querySelector('input[name="ch-ac-como"]:checked'), w = $id('ch-ac-caja-w'); if (w) w.style.display = r && r.value === 'DEUDA' ? 'none' : ''; }
 function chModalAnular(id) { var c = chBuscar(id); if (!c) return; chModal('Anular cheque', c, '<div class="fg mb3"><label class="fl">Motivo *</label><input id="ch-ac-mot" class="fi" placeholder="Por qué se anula"></div>', 'ANULAR', '<i class="fas fa-ban"></i> Anular', 'btn-d'); }
 function chModalDeshacer(id) { var c = chBuscar(id); if (!c) return; chModal('Deshacer: ' + chEsc(c.PUEDE_DESHACER), c, '<div class="al al-w" style="font-size:12px">Se revierten los movimientos de caja y cuenta corriente de esa acción y el cheque vuelve al estado anterior.</div>', 'DESHACER', '<i class="fas fa-undo"></i> Deshacer', 'btn-w'); }
 async function chEjecutar(id, accion) {
   var d = {};
-  if ($id('ch-ac-caja')) { d.ID_CAJA = $v('ch-ac-caja'); if (!d.ID_CAJA) { toast('Elegí la cuenta o caja', 'r2'); return; } }
+  var comoR = document.querySelector('input[name="ch-ac-como"]:checked'); if (comoR) d.COMO = comoR.value;
+  if ($id('ch-ac-caja') && d.COMO !== 'DEUDA') { d.ID_CAJA = $v('ch-ac-caja'); if (!d.ID_CAJA) { toast('Elegí la cuenta o caja', 'r2'); return; } }
   if ($id('ch-ac-fecha')) d.FECHA = $v('ch-ac-fecha');
   if ($id('ch-ac-ent')) { d.ENTIDAD = ($v('ch-ac-ent') || '').trim(); if (!d.ENTIDAD) { toast('Escribí la financiera o banco', 'r2'); return; } }
   if ($id('ch-ac-neto')) { d.NETO = chNum($v('ch-ac-neto')); if (!(d.NETO > 0)) { toast('Cargá lo que se recibe', 'r2'); return; } }
@@ -5556,6 +5558,243 @@ async function chGuardarCarga() {
     toast('Cheque ' + r.NRO_CHEQUE + ' cargado ✓', 'g');
     chLimpiarCache(); closeModal(); renderCheques();
   } catch (e) { toast('Error: ' + (e.message || e), 'r2'); if (b) b.disabled = false; }
+}
+</script>
+
+<script>
+// ================================================================
+// DESCUENTO DE CHEQUES EN FINANCIERAS — liquidación como la hoja de la financiera (pedido 03/11/2026)
+// Cálculo por cheque (igual que el servidor): días = días hasta el cobro + clearing;
+// interés = nominal × tasa mensual × días / 30; gastos = nominal × % gastos. Se puede corregir por cheque.
+// ================================================================
+var DC_ = { d: null, sel: {}, ov: {}, cob: [], foto: '' };
+function dcEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function dcN(v) { var n = parseFloat(String(v == null ? '' : v).replace(/\./g, '').replace(',', '.')); if (String(v).indexOf(',') === -1) n = parseFloat(String(v == null ? '' : v)); return isNaN(n) ? 0 : n; }
+function dcR2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+function dcDia(ms) { var d = new Date(Number(ms)); d.setHours(12, 0, 0, 0); return d.getTime(); }
+function dcFechaMs(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3], 12, 0, 0).getTime() : 0; }
+function dcPct(n) { return String(Math.round((Number(n) || 0) * 100) / 100).replace('.', ','); }
+function dcFin(id) { return ((DC_.d && DC_.d.FINANCIERAS) || []).filter(function(f) { return String(f.ID_FINANCIERA) === String(id); })[0] || null; }
+function dcChq(id) { return ((DC_.d && DC_.d.CARTERA) || []).filter(function(c) { return String(c.ID_CHEQUE) === String(id); })[0] || null; }
+function dcOptCajas(sel) { return '<option value="">— Elegí —</option>' + ((DC_.d && DC_.d.CAJAS) || []).map(function(k) { return '<option value="' + dcEsc(k.ID_CAJA) + '"' + (String(sel) === String(k.ID_CAJA) ? ' selected' : '') + '>' + dcEsc(k.CAJA_DESC) + (k.TIPO === 'BANCO' ? ' (banco)' : '') + '</option>'; }).join(''); }
+async function dcCargar() { var r = await gsRun('gsDC_Datos'); if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudieron cargar los datos'); DC_.d = r; return r; }
+
+// ── Armar la liquidación ──
+async function dcAbrir(idPre) {
+  try { await dcCargar(); } catch (e) { toast(e.message, 'r2'); return; }
+  DC_.sel = {}; DC_.ov = {}; DC_.foto = ''; DC_.cob = [{ FORMA: 'EFECTIVO', ID_CAJA: '', IMPORTE: '' }];
+  if (idPre) DC_.sel[String(idPre)] = true;
+  var d = DC_.d, fins = d.FINANCIERAS.filter(function(f) { return f.ACTIVO; });
+  closeModal();
+  showModal('<div class="mh"><span class="mt">🧾 Descontar cheques en financiera</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="g4 mb3" style="gap:10px">' +
+    '<div class="fg"><label class="fl">Financiera *</label><div style="display:flex;gap:6px"><select id="dc-fin" class="fs" onchange="dcFinCambia()"><option value="">— Elegí —</option>' + fins.map(function(f) { return '<option value="' + f.ID_FINANCIERA + '">' + dcEsc(f.NOMBRE) + '</option>'; }).join('') + '</select><button class="btn btn-s btn-sm" title="Nueva financiera" onclick="dcFinEditar(\'\', true)">＋</button></div></div>' +
+    '<div class="fg"><label class="fl">Fecha de la liquidación *</label><input id="dc-fecha" class="fi" type="date" value="' + chHoyISO() + '" onchange="dcRecalc()"></div>' +
+    '<div class="fg"><label class="fl">Tasa mensual % *</label><input id="dc-tasa" class="fi" type="number" min="0" step="0.01" oninput="dcRecalc()"></div>' +
+    '<div class="fg"><label class="fl">Gastos % · Días de clearing *</label><div style="display:flex;gap:6px"><input id="dc-gp" class="fi" type="number" min="0" step="0.01" placeholder="% gastos" oninput="dcRecalc()"><input id="dc-dc" class="fi" type="number" min="0" step="1" placeholder="días" oninput="dcRecalc()"></div></div>' +
+    '</div>' +
+    '<div class="al al-b mb3" style="font-size:12px">Por cheque: <b>días</b> = días hasta el cobro + días de clearing · <b>interés</b> = nominal × tasa × días ÷ 30 · <b>gastos</b> = nominal × % gastos. Si la financiera liquidó distinto, corregí los días, el interés o los gastos de ese cheque.</div>' +
+    '<div id="dc-deuda"></div>' +
+    '<div class="card mb3"><div class="card-hd"><span class="card-title">Cheques en cartera (' + d.CARTERA.length + ')</span><span class="tdim" style="font-size:12px">Tildá los que se descuentan</span></div><div class="tw" style="max-height:330px;overflow:auto"><table style="font-size:12.5px"><thead><tr><th></th><th>N° · banco</th><th>Librador</th><th>Cobro</th><th class="tr">Valor nominal</th><th class="tr" style="width:70px">Días</th><th class="tr" style="width:110px">Interés</th><th class="tr" style="width:100px">Gastos</th><th class="tr">Neto</th></tr></thead><tbody>' +
+    (d.CARTERA.length ? d.CARTERA.map(function(c) { var id = dcEsc(c.ID_CHEQUE);
+      return '<tr id="dc-r-' + id + '"><td><input type="checkbox" id="dc-k-' + id + '"' + (DC_.sel[String(c.ID_CHEQUE)] ? ' checked' : '') + ' onchange="dcSel(\'' + id + '\',this.checked)"></td><td class="mono">' + dcEsc(c.NRO_CHEQUE) + '<div class="tdim" style="font-size:11px">' + dcEsc(c.NOMBRE_BANCO) + (c.TIPO_CHEQUE === 'ECHEQ' ? ' · eCheq' : '') + '</div></td><td>' + dcEsc(c.TITULAR || '') + (c.CLIENTE && c.CLIENTE !== c.TITULAR ? '<div class="tdim" style="font-size:11px">' + dcEsc(c.CLIENTE) + '</div>' : '') + '</td><td class="mono">' + fmtD(c.FECHA_ACREDITACION) + '</td><td class="mono tr">' + fmt(c.IMPORTE) + '</td>' +
+        '<td><input id="dc-di-' + id + '" class="fi tr" type="number" min="0" step="1" style="padding:4px 6px" oninput="dcOv(\'' + id + '\',\'DIAS\',this.value)"></td><td><input id="dc-in-' + id + '" class="fi tr" type="number" min="0" step="0.01" style="padding:4px 6px" oninput="dcOv(\'' + id + '\',\'INTERES\',this.value)"></td><td><input id="dc-ga-' + id + '" class="fi tr" type="number" min="0" step="0.01" style="padding:4px 6px" oninput="dcOv(\'' + id + '\',\'GASTOS\',this.value)"></td><td class="mono tr" id="dc-ne-' + id + '" style="font-weight:700">—</td></tr>';
+    }).join('') : '<tr><td colspan="9" class="tc tdim" style="padding:16px">No hay cheques de terceros en cartera.</td></tr>') + '</tbody></table></div></div>' +
+    '<div id="dc-tot" class="mb3"></div>' +
+    '<div class="card mb3"><div class="card-hd"><span class="card-title">Cómo se recibió la plata</span><button class="btn btn-s btn-sm" onclick="dcCobAgregar()">＋ otra forma</button></div><div id="dc-cob" style="padding:8px 12px"></div></div>' +
+    '<div class="g2" style="gap:10px"><div class="fg"><label class="fl">Quién recibió la plata *</label><input id="dc-rec" class="fi" placeholder="Nombre de quien la recibió"></div>' +
+    '<div class="fg"><label class="fl">Foto de la hoja de la financiera (firmada)</label><input id="dc-foto" type="file" accept="image/*" class="fi" onchange="dcFotoSel(this)"><div id="dc-foto-v" class="tdim" style="font-size:11px"></div></div></div>' +
+    '<div class="fg"><label class="fl">Observaciones</label><textarea id="dc-obs" class="fta" rows="2"></textarea></div>' +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="dc-ok" onclick="dcGrabar()">Grabar liquidación</button></div>', 'md-xl');
+  if (fins.length === 1) { $id('dc-fin').value = fins[0].ID_FINANCIERA; }
+  dcFinCambia(); dcCobPintar();
+}
+function dcFinCambia() {
+  var f = dcFin($v('dc-fin'));
+  if (f) { $id('dc-tasa').value = f.TASA; $id('dc-gp').value = f.GASTOS_PCT === '' ? '' : f.GASTOS_PCT; $id('dc-dc').value = f.DIAS_CLEARING === '' ? '' : f.DIAS_CLEARING; }
+  var el = $id('dc-deuda');
+  if (el) el.innerHTML = f && f.DEUDA > 0 ? '<div class="al al-w mb3" style="font-size:13px">Con <b>' + dcEsc(f.NOMBRE) + '</b> se deben <b>' + fmt(f.DEUDA) + '</b> por cheques rechazados. Si los descuentan de esta liquidación, poné cuánto: <input id="dc-desc" class="fi" type="number" min="0" step="0.01" style="width:160px;display:inline-block;margin-left:6px" oninput="dcRecalc()"></div>' : '';
+  dcRecalc();
+}
+function dcSel(id, on) { DC_.sel[String(id)] = !!on; dcRecalc(); }
+function dcOv(id, k, v) { DC_.ov[id] = DC_.ov[id] || {}; if (v === '') delete DC_.ov[id][k]; else DC_.ov[id][k] = v; dcRecalc(); }
+// Mismo cálculo que el servidor
+function dcCalcCheque(c) {
+  var fecha = dcFechaMs($v('dc-fecha')), tasa = dcN($v('dc-tasa')), gp = dcN($v('dc-gp')), dc = Math.round(dcN($v('dc-dc'))), ov = DC_.ov[String(c.ID_CHEQUE)] || {};
+  var dv = c.FECHA_ACREDITACION && fecha ? Math.max(0, Math.round((dcDia(c.FECHA_ACREDITACION) - dcDia(fecha)) / 86400000)) : 0, dias = ov.DIAS !== undefined ? Math.round(dcN(ov.DIAS)) : dv + dc;
+  var interes = ov.INTERES !== undefined ? dcR2(dcN(ov.INTERES)) : dcR2(c.IMPORTE * tasa / 100 * dias / 30), gastos = ov.GASTOS !== undefined ? dcR2(dcN(ov.GASTOS)) : dcR2(c.IMPORTE * gp / 100);
+  return { DIAS: dias, INTERES: interes, GASTOS: gastos, NETO: dcR2(c.IMPORTE - interes - gastos) };
+}
+function dcTot() {
+  var t = { N: 0, NOM: 0, INT: 0, GAS: 0, DP: 0 };
+  Object.keys(DC_.sel).forEach(function(id) { if (!DC_.sel[id]) return; var c = dcChq(id); if (!c) return; var k = dcCalcCheque(c); t.N++; t.NOM += c.IMPORTE; t.INT += k.INTERES; t.GAS += k.GASTOS; t.DP += c.IMPORTE * k.DIAS; });
+  t.DESC = dcR2(dcN($v('dc-desc'))); t.NOM = dcR2(t.NOM); t.INT = dcR2(t.INT); t.GAS = dcR2(t.GAS); t.NETO = dcR2(t.NOM - t.INT - t.GAS - t.DESC);
+  t.DIAS = t.NOM ? t.DP / t.NOM : 0; t.COSTO = t.NOM ? (t.INT + t.GAS) / t.NOM * 100 : 0; t.MES = t.DIAS ? t.COSTO / t.DIAS * 30 : 0;
+  return t;
+}
+function dcRecalc() {
+  if (!DC_.d) return;
+  DC_.d.CARTERA.forEach(function(c) {
+    var id = String(c.ID_CHEQUE), on = !!DC_.sel[id], k = dcCalcCheque(c), ov = DC_.ov[id] || {};
+    var r = $id('dc-r-' + id); if (!r) return;
+    r.style.background = on ? '#eff6ff' : ''; r.style.opacity = on ? '1' : '.75';
+    [['dc-di-', 'DIAS', k.DIAS], ['dc-in-', 'INTERES', k.INTERES], ['dc-ga-', 'GASTOS', k.GASTOS]].forEach(function(x) { var e = $id(x[0] + id); if (!e) return; e.disabled = !on; if (ov[x[1]] === undefined && document.activeElement !== e) e.value = on ? x[2] : ''; e.style.borderColor = ov[x[1]] !== undefined ? '#d97706' : ''; });
+    var ne = $id('dc-ne-' + id); if (ne) ne.textContent = on ? fmt(k.NETO) : '—';
+  });
+  var t = dcTot(), el = $id('dc-tot');
+  if (el) el.innerHTML = t.N ? '<div class="g4" style="gap:8px">' + [['Cheques', t.N], ['Valor nominal', fmt(t.NOM)], ['Interés', fmt(t.INT)], ['Gastos', fmt(t.GAS)]].map(function(x) { return '<div class="stat"><div class="stat-label">' + x[0] + '</div><div class="stat-val" style="font-size:17px">' + x[1] + '</div></div>'; }).join('') + '</div>' +
+    (t.DESC ? '<div class="al al-w" style="margin-top:8px;font-size:13px">Menos deuda por cheques rechazados: <b>' + fmt(t.DESC) + '</b></div>' : '') +
+    '<div class="al ' + (t.NETO > 0 ? 'al-g' : 'al-r') + '" style="margin-top:8px;font-size:15px">Neto a recibir: <b>' + fmt(t.NETO) + '</b> · costo real <b>' + dcPct(t.COSTO) + ' %</b> del nominal (' + dcPct(t.MES) + ' % por mes, ' + dcPct(t.DIAS) + ' días promedio)</div>' : '<div class="tdim" style="font-size:12px">Tildá los cheques para ver el cálculo.</div>';
+  dcCobResto();
+}
+// ── Formas de cobro (efectivo, transferencia, otra) ──
+function dcCobPintar() {
+  var el = $id('dc-cob'); if (!el) return;
+  el.innerHTML = DC_.cob.map(function(c, i) {
+    return '<div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap"><select class="fs" style="max-width:170px" onchange="DC_.cob[' + i + '].FORMA=this.value">' + ((DC_.d && DC_.d.FORMAS) || ['EFECTIVO']).map(function(f) { return '<option value="' + f + '"' + (c.FORMA === f ? ' selected' : '') + '>' + ({ EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', OTRO: 'Otra forma' }[f] || f) + '</option>'; }).join('') + '</select>' +
+      '<select class="fs" style="max-width:240px" onchange="DC_.cob[' + i + '].ID_CAJA=this.value">' + dcOptCajas(c.ID_CAJA) + '</select>' +
+      '<input class="fi tr" type="number" min="0" step="0.01" style="max-width:160px" placeholder="Importe" value="' + dcEsc(c.IMPORTE) + '" oninput="DC_.cob[' + i + '].IMPORTE=this.value;dcCobResto()">' +
+      (DC_.cob.length > 1 ? '<button class="btn btn-s btn-sm" onclick="DC_.cob.splice(' + i + ',1);dcCobPintar()">×</button>' : '') + '</div>';
+  }).join('') + '<div id="dc-cob-r" style="font-size:12px"></div>';
+  dcCobResto();
+}
+function dcCobAgregar() { DC_.cob.push({ FORMA: 'TRANSFERENCIA', ID_CAJA: '', IMPORTE: '' }); dcCobPintar(); }
+function dcCobResto() {
+  var el = $id('dc-cob-r'); if (!el) return;
+  var t = dcTot(), s = dcR2(DC_.cob.reduce(function(a, c) { return a + dcN(c.IMPORTE); }, 0)), dif = dcR2(t.NETO - s);
+  // con una sola forma, el importe se completa solo con el neto
+  if (DC_.cob.length === 1 && t.N) { var inp = document.querySelector('#dc-cob input'); if (inp && document.activeElement !== inp && (DC_.cob[0].IMPORTE === '' || DC_.cob[0]._auto)) { DC_.cob[0].IMPORTE = t.NETO > 0 ? t.NETO : ''; DC_.cob[0]._auto = true; inp.value = DC_.cob[0].IMPORTE; s = dcN(DC_.cob[0].IMPORTE); dif = dcR2(t.NETO - s); } }
+  el.innerHTML = !t.N ? '' : Math.abs(dif) <= 0.01 ? '<span style="color:#15803d">✓ Lo recibido es igual al neto</span>' : '<span style="color:#b91c1c">' + (dif > 0 ? 'Falta asignar ' : 'Sobra ') + fmt(Math.abs(dif)) + '</span>';
+}
+function dcFotoSel(inp) {
+  var f = inp.files && inp.files[0]; if (!f) return;
+  var rd = new FileReader(); rd.onload = function() { var im = new Image(); im.onload = function() { DC_.foto = asComprimir(im, 1600, 0.72); $id('dc-foto-v').innerHTML = '<img src="' + DC_.foto + '" style="max-height:80px;margin-top:4px;border-radius:6px">'; }; im.src = rd.result; }; rd.readAsDataURL(f);
+}
+async function dcGrabar() {
+  var t = dcTot(), ids = Object.keys(DC_.sel).filter(function(k) { return DC_.sel[k]; });
+  if (!$v('dc-fin')) { toast('Elegí la financiera', 'r2'); return; }
+  if (!ids.length) { toast('Tildá al menos un cheque', 'r2'); return; }
+  if ($v('dc-tasa') === '' || $v('dc-gp') === '' || $v('dc-dc') === '') { toast('Completá la tasa, el % de gastos y los días de clearing', 'r2'); return; }
+  if (!($v('dc-rec') || '').trim()) { toast('Escribí quién recibió la plata', 'r2'); return; }
+  var b = $id('dc-ok'); b.disabled = true; b.textContent = 'Grabando…';
+  try {
+    var idFoto = '';
+    if (DC_.foto) { var up = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'LIQ_CHEQUE', ref: 'descuento', data: DC_.foto }); if (!up || !up.ok) throw new Error((up && up.error) || 'No se pudo subir la foto'); idFoto = String(up.id); }
+    var d = { ID_FINANCIERA: $v('dc-fin'), FECHA: $v('dc-fecha'), TASA: $v('dc-tasa'), GASTOS_PCT: $v('dc-gp'), DIAS_CLEARING: $v('dc-dc'), DESC_RECHAZOS: $v('dc-desc') || 0, RECIBIO: $v('dc-rec'), OBS: $v('dc-obs'), ID_FOTO: idFoto,
+      CHEQUES: ids.map(function(id) { var o = DC_.ov[id] || {}, x = { ID_CHEQUE: id }; ['DIAS', 'INTERES', 'GASTOS'].forEach(function(k) { if (o[k] !== undefined) x[k] = o[k]; }); return x; }),
+      COBROS: DC_.cob.map(function(c) { return { FORMA: c.FORMA, ID_CAJA: c.ID_CAJA, IMPORTE: c.IMPORTE }; }) };
+    var r = await gsRun('gsDC_Grabar', d);
+    if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo grabar');
+    closeModal(); if (typeof chLimpiarCache === 'function') chLimpiarCache();
+    toast(r.NRO + ' grabada: ' + r.CANT + (r.CANT === 1 ? ' cheque' : ' cheques') + ', neto ' + fmt(r.NETO) + ' ✓', 'g');
+    if (typeof renderCheques === 'function' && $id('page-cheques') && !$id('page-cheques').classList.contains('hidden')) renderCheques();
+    showModal('<div class="mh"><span class="mt">✅ Liquidación ' + dcEsc(r.NRO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">Quedó grabada en ' + dcEsc(r.FINANCIERA) + ' con ' + r.CANT + (r.CANT === 1 ? ' cheque' : ' cheques') + '. Neto ' + fmt(r.NETO) + '.</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Listo</button><button class="btn btn-p" onclick="dcPdf(' + r.ID_LIQ + ')">📄 PDF de la liquidación</button></div>');
+  } catch (e) { toast(e.message || String(e), 'r2'); b.disabled = false; b.textContent = 'Grabar liquidación'; }
+}
+// ── PDF de la liquidación (como la hoja de la financiera) ──
+async function dcPdf(id) {
+  var r; try { r = await gsRun('gsDC_Ver', id); } catch (e) { toast(e.message, 'r2'); return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo abrir', 'r2'); return; }
+  var l = r.LIQ, t = r.TOT;
+  var cuerpo = (typeof pcEncImp === 'function' ? pcEncImp('Liquidación de descuento de cheques', l.NRO, l.ESTADO === 'ANULADA' ? 'ANULADA' : '') : '<h1>Liquidación ' + dcEsc(l.NRO) + '</h1>') +
+    '<div class="dat"><div><b>Fecha</b>' + fmtD(l.FECHA) + '</div><div><b>Financiera</b>' + dcEsc(r.FINANCIERA.NOMBRE) + '</div><div><b>Tasa mensual</b>' + dcPct(l.TASA) + ' %</div><div><b>Gastos · clearing</b>' + dcPct(l.GASTOS_PCT) + ' % · ' + l.DIAS_CLEARING + ' días</div></div>' +
+    '<table class="det"><thead><tr><th>Librador</th><th>N° cheque</th><th>Banco</th><th>Fecha vto.</th><th class="n">Días</th><th class="n">Valor nominal</th><th class="n">Interés</th><th class="n">Gastos</th><th class="n">Neto</th></tr></thead><tbody>' +
+    r.DET.map(function(x) { return '<tr><td>' + dcEsc(x.LIBRADOR) + '</td><td>' + dcEsc(x.NRO_CHEQUE) + '</td><td>' + dcEsc(x.BANCO) + '</td><td>' + fmtD(x.FECHA_VTO) + '</td><td class="n">' + x.DIAS + '</td><td class="n">' + fmt(x.NOMINAL) + '</td><td class="n">' + fmt(x.INTERES) + '</td><td class="n">' + fmt(x.GASTOS) + '</td><td class="n">' + fmt(x.NETO) + '</td></tr>'; }).join('') +
+    '<tr class="tot"><td colspan="5" class="n"><b>Total</b></td><td class="n"><b>' + fmt(t.NOMINAL) + '</b></td><td class="n"><b>' + fmt(t.INTERES) + '</b></td><td class="n"><b>' + fmt(t.GASTOS) + '</b></td><td class="n"><b>' + fmt(dcR2(t.NOMINAL - t.INTERES - t.GASTOS)) + '</b></td></tr>' +
+    (t.DESC_RECHAZOS ? '<tr><td colspan="8" class="n">Menos deuda por cheques rechazados</td><td class="n">−' + fmt(t.DESC_RECHAZOS) + '</td></tr>' : '') +
+    '<tr class="tot"><td colspan="8" class="n"><b>Neto recibido</b></td><td class="n"><b>' + fmt(t.NETO) + '</b></td></tr></tbody></table>' +
+    '<h2>Cómo se recibió</h2><div>' + r.COBROS.map(function(c) { return dcEsc({ EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', OTRO: 'Otra forma' }[c.FORMA] || c.FORMA) + ' en ' + dcEsc(c.CAJA) + ': <b>' + fmt(c.IMPORTE) + '</b>'; }).join(' · ') + '</div>' +
+    '<div class="nota">Costo real del descuento: ' + dcPct(t.COSTO_PCT) + ' % del nominal (' + dcPct(t.COSTO_MES_PCT) + ' % por mes, ' + dcPct(t.DIAS_PROM) + ' días promedio). Cargó: ' + dcEsc(l.USUARIO) + '.' + (l.OBS ? ' Observaciones: ' + dcEsc(l.OBS) : '') + '</div>' +
+    (l.ESTADO === 'ANULADA' ? '<div class="nota" style="color:#b91c1c;font-weight:700">LIQUIDACIÓN ANULADA' + (l.MOTIVO ? ': ' + dcEsc(l.MOTIVO) : '') + '</div>' : '') +
+    '<div class="firmas"><div>Recibió: ' + dcEsc(l.RECIBIO) + '</div><div>Firma</div><div>Por la financiera</div></div>';
+  pcImprimir('Liquidacion ' + l.NRO + ' ' + r.FINANCIERA.NOMBRE, cuerpo, false);
+}
+// ── Liquidaciones hechas e informe (por período y financiera) ──
+async function dcLista() {
+  try { await dcCargar(); } catch (e) { toast(e.message, 'r2'); return; }
+  var hoy = new Date(), ini = new Date(hoy.getFullYear(), hoy.getMonth(), 1), iso = function(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
+  closeModal();
+  showModal('<div class="mh"><span class="mt">📊 Descuentos de cheques</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="fbar mb3" style="gap:8px;flex-wrap:wrap"><input id="dcl-d" class="fi" type="date" style="width:150px" value="' + iso(ini) + '" onchange="dcListaPintar()"><input id="dcl-h" class="fi" type="date" style="width:150px" value="' + iso(hoy) + '" onchange="dcListaPintar()">' +
+    '<select id="dcl-f" class="fs" style="width:200px" onchange="dcListaPintar()"><option value="">Todas las financieras</option>' + DC_.d.FINANCIERAS.map(function(f) { return '<option value="' + f.ID_FINANCIERA + '">' + dcEsc(f.NOMBRE) + '</option>'; }).join('') + '</select>' +
+    '<label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="dcl-an" onchange="dcListaPintar()"> ver anuladas</label></div><div id="dcl-b"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-s" onclick="dcFinancieras()">🏦 Financieras y deudas</button><button class="btn btn-p" onclick="dcAbrir()">🧾 Nueva liquidación</button></div>', 'md-xl');
+  dcListaPintar();
+}
+function dcListaPintar() {
+  var el = $id('dcl-b'); if (!el) return;
+  var d0 = dcFechaMs($v('dcl-d')) - 13 * 3600000, d1 = dcFechaMs($v('dcl-h')) + 13 * 3600000, fi = $v('dcl-f'), an = $id('dcl-an') && $id('dcl-an').checked;
+  var l = DC_.d.LIQS.filter(function(x) { return x.FECHA >= d0 && x.FECHA <= d1 && (!fi || String(x.ID_FINANCIERA) === fi) && (an || x.ESTADO === 'VIGENTE'); });
+  var vig = l.filter(function(x) { return x.ESTADO === 'VIGENTE'; }), s = { NOM: 0, INT: 0, GAS: 0, NETO: 0, DP: 0 };
+  vig.forEach(function(x) { s.NOM += x.NOMINAL; s.INT += x.INTERES; s.GAS += x.GASTOS; s.NETO += x.NETO; s.DP += x.NOMINAL * x.DIAS_PROM; });
+  var cos = s.NOM ? (s.INT + s.GAS) / s.NOM * 100 : 0, dp = s.NOM ? s.DP / s.NOM : 0, mes = dp ? cos / dp * 30 : 0;
+  // resumen por financiera
+  var pf = {}; vig.forEach(function(x) { var k = x.FINANCIERA; pf[k] = pf[k] || { N: 0, NOM: 0, C: 0, DP: 0 }; pf[k].N++; pf[k].NOM += x.NOMINAL; pf[k].C += x.INTERES + x.GASTOS; pf[k].DP += x.NOMINAL * x.DIAS_PROM; });
+  el.innerHTML = '<div class="g4 mb3" style="gap:8px">' + [['Valor nominal descontado', fmt(s.NOM)], ['Costo (interés + gastos)', fmt(dcR2(s.INT + s.GAS))], ['Neto recibido', fmt(s.NETO)], ['Costo real', dcPct(cos) + ' % · ' + dcPct(mes) + ' %/mes']].map(function(x) { return '<div class="stat"><div class="stat-label">' + x[0] + '</div><div class="stat-val" style="font-size:16px">' + x[1] + '</div></div>'; }).join('') + '</div>' +
+    (Object.keys(pf).length > 1 ? '<div class="tw mb3"><table style="font-size:12.5px"><thead><tr><th>Financiera</th><th class="tr">Liquidaciones</th><th class="tr">Nominal</th><th class="tr">Costo</th><th class="tr">Costo real</th><th class="tr">% por mes</th></tr></thead><tbody>' + Object.keys(pf).sort().map(function(k) { var p = pf[k], c = p.NOM ? p.C / p.NOM * 100 : 0, dd = p.NOM ? p.DP / p.NOM : 0; return '<tr><td>' + dcEsc(k) + '</td><td class="tr">' + p.N + '</td><td class="tr mono">' + fmt(p.NOM) + '</td><td class="tr mono">' + fmt(p.C) + '</td><td class="tr">' + dcPct(c) + ' %</td><td class="tr"><b>' + dcPct(dd ? c / dd * 30 : 0) + ' %</b></td></tr>'; }).join('') + '</tbody></table></div>' : '') +
+    (l.length ? '<div class="tw"><table style="font-size:12.5px"><thead><tr><th>N°</th><th>Fecha</th><th>Financiera</th><th class="tr">Cheques</th><th class="tr">Nominal</th><th class="tr">Interés</th><th class="tr">Gastos</th><th class="tr">Neto</th><th class="tr">Costo real</th><th>Estado</th><th></th></tr></thead><tbody>' +
+      l.map(function(x) { return '<tr' + (x.ESTADO !== 'VIGENTE' ? ' style="opacity:.55"' : '') + '><td><b>' + dcEsc(x.NRO) + '</b></td><td>' + fmtD(x.FECHA) + '</td><td>' + dcEsc(x.FINANCIERA) + '<div class="tdim" style="font-size:11px">' + dcPct(x.TASA) + ' % + ' + dcPct(x.GASTOS_PCT) + ' % · recibió ' + dcEsc(x.RECIBIO) + '</div></td><td class="tr">' + x.CANT + '</td><td class="tr mono">' + fmt(x.NOMINAL) + '</td><td class="tr mono">' + fmt(x.INTERES) + '</td><td class="tr mono">' + fmt(x.GASTOS) + '</td><td class="tr mono"><b>' + fmt(x.NETO) + '</b>' + (x.DESC_RECHAZOS ? '<div class="tdim" style="font-size:11px">−' + fmt(x.DESC_RECHAZOS) + ' rechazados</div>' : '') + '</td><td class="tr">' + dcPct(x.COSTO_PCT) + ' %<div class="tdim" style="font-size:11px">' + dcPct(x.COSTO_MES_PCT) + ' %/mes</div></td><td>' + (x.ESTADO === 'VIGENTE' ? '<span class="badge b-green">Vigente</span>' : '<span class="badge b-gray" title="' + dcEsc(x.MOTIVO) + '">Anulada</span>') + '</td>' +
+        '<td style="white-space:nowrap"><button class="btn btn-xs btn-info" onclick="dcPdf(' + x.ID_LIQ + ')">PDF</button>' + (x.ID_FOTO ? ' <button class="btn btn-xs btn-s" onclick="asVerImg(' + Number(x.ID_FOTO) + ',\'Hoja de ' + dcEsc(x.NRO) + '\')">📷</button>' : '') + (x.ESTADO === 'VIGENTE' ? ' <button class="btn btn-xs btn-s" onclick="dcAnular(' + x.ID_LIQ + ',\'' + dcEsc(x.NRO) + '\')">Anular</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>'
+      : '<div class="al al-b">No hay liquidaciones en ese período.</div>');
+}
+async function dcAnular(id, nro) {
+  var m = await uiPedir('Motivo de la anulación de ' + nro + ' (los cheques vuelven a cartera y la plata sale de la caja):', { obligatorio: true }); if (m === null || !String(m).trim()) return;
+  var r; try { r = await gsRun('gsDC_Anular', id, m); } catch (e) { toast(e.message, 'r2'); return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  toast(r.NRO + ' anulada ✓', 'g'); if (typeof chLimpiarCache === 'function') chLimpiarCache(); dcLista();
+}
+// ── Financieras, deudas por cheques rechazados y pagos ──
+async function dcFinancieras() {
+  try { await dcCargar(); } catch (e) { toast(e.message, 'r2'); return; }
+  var d = DC_.d; closeModal();
+  showModal('<div class="mh"><span class="mt">🏦 Financieras</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="tw mb3"><table style="font-size:13px"><thead><tr><th>Financiera</th><th class="tr">Tasa mensual</th><th class="tr">Gastos</th><th class="tr">Clearing</th><th class="tr">Deuda por rechazados</th><th></th></tr></thead><tbody>' +
+    (d.FINANCIERAS.length ? d.FINANCIERAS.map(function(f) { return '<tr' + (f.ACTIVO ? '' : ' style="opacity:.55"') + '><td><b>' + dcEsc(f.NOMBRE) + '</b>' + (f.CONTACTO || f.TELEFONO ? '<div class="tdim" style="font-size:11px">' + dcEsc([f.CONTACTO, f.TELEFONO].filter(Boolean).join(' · ')) + '</div>' : '') + '</td><td class="tr">' + dcPct(f.TASA) + ' %</td><td class="tr">' + (f.GASTOS_PCT === '' ? '—' : dcPct(f.GASTOS_PCT) + ' %') + '</td><td class="tr">' + (f.DIAS_CLEARING === '' ? '—' : f.DIAS_CLEARING + ' días') + '</td><td class="tr mono" style="' + (f.DEUDA > 0 ? 'color:#b91c1c;font-weight:700' : '') + '">' + (f.DEUDA > 0 ? fmt(f.DEUDA) : '—') + '</td>' +
+      '<td style="white-space:nowrap"><button class="btn btn-xs btn-s" onclick="dcFinEditar(' + f.ID_FINANCIERA + ')">Editar</button>' + (f.DEUDA > 0 ? ' <button class="btn btn-xs btn-w" onclick="dcPagar(' + f.ID_FINANCIERA + ')">Pagar deuda</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="6" class="tc tdim">No hay financieras cargadas.</td></tr>') + '</tbody></table></div>' +
+    '<div class="card"><div class="card-hd"><span class="card-title">Movimientos con financieras (rechazos, pagos, descuentos)</span></div><div class="tw" style="max-height:260px;overflow:auto"><table style="font-size:12px"><thead><tr><th>Fecha</th><th>Financiera</th><th>Qué</th><th>Detalle</th><th class="tr">Importe</th><th></th></tr></thead><tbody>' +
+    (d.MOVS.length ? d.MOVS.map(function(m) { var q = { DEUDA: ['Debemos: cheque rechazado', '#b91c1c'], PAGO: ['Pago aparte', '#15803d'], DESCUENTO_LIQ: ['Descontado en liquidación', '#15803d'] }[m.TIPO] || [m.TIPO, '#475569']; return '<tr' + (m.ESTADO !== 'VIGENTE' ? ' style="opacity:.5;text-decoration:line-through"' : '') + '><td>' + fmtD(m.FECHA) + '</td><td>' + dcEsc(m.FINANCIERA) + '</td><td style="color:' + q[1] + '">' + q[0] + '</td><td>' + dcEsc(m.CHEQUE || m.LIQ || m.OBS) + '</td><td class="tr mono">' + fmt(m.IMPORTE) + '</td><td>' + (m.TIPO === 'PAGO' && m.ESTADO === 'VIGENTE' ? '<button class="btn btn-xs btn-s" onclick="dcAnularPago(' + m.ID_MOV + ')">Anular</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="6" class="tc tdim" style="padding:10px">Sin movimientos.</td></tr>') + '</tbody></table></div></div>' +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-s" onclick="dcLista()">📊 Liquidaciones</button><button class="btn btn-p" onclick="dcFinEditar(\'\')">＋ Nueva financiera</button></div>', 'md-xl');
+}
+function dcFinEditar(id, volverALiq) {
+  var f = id ? dcFin(id) : null;
+  DC_.volverLiq = !!volverALiq;
+  var cuerpo = '<div class="mh"><span class="mt">' + (f ? 'Editar ' + dcEsc(f.NOMBRE) : 'Nueva financiera') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="fg mb3"><label class="fl">Nombre *</label><input id="dcf-n" class="fi" value="' + dcEsc(f ? f.NOMBRE : '') + '"></div>' +
+    '<div class="g3" style="gap:8px"><div class="fg"><label class="fl">Tasa mensual % *</label><input id="dcf-t" class="fi" type="number" min="0" step="0.01" value="' + (f ? f.TASA : '') + '"></div><div class="fg"><label class="fl">Gastos %</label><input id="dcf-g" class="fi" type="number" min="0" step="0.01" value="' + (f && f.GASTOS_PCT !== '' ? f.GASTOS_PCT : '') + '"></div><div class="fg"><label class="fl">Días de clearing</label><input id="dcf-c" class="fi" type="number" min="0" step="1" value="' + (f && f.DIAS_CLEARING !== '' ? f.DIAS_CLEARING : '') + '"></div></div>' +
+    '<div class="g2" style="gap:8px"><div class="fg"><label class="fl">Contacto</label><input id="dcf-co" class="fi" value="' + dcEsc(f ? f.CONTACTO : '') + '"></div><div class="fg"><label class="fl">Teléfono</label><input id="dcf-te" class="fi" value="' + dcEsc(f ? f.TELEFONO : '') + '"></div></div>' +
+    (f ? '<label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="dcf-a"' + (f.ACTIVO ? ' checked' : '') + '> Activa</label>' : '') +
+    '<div class="tdim" style="font-size:11.5px;margin-top:6px">La tasa, los gastos y el clearing son los sugeridos: en cada liquidación se pueden cambiar, y queda lo último que se usó.</div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="' + (volverALiq ? 'closeModal();dcAbrir()' : 'dcFinancieras()') + '">Volver</button><button class="btn btn-p" id="dcf-ok" onclick="dcFinGuardar(\'' + (f ? f.ID_FINANCIERA : '') + '\')">Guardar</button></div>';
+  closeModal(); showModal(cuerpo);
+}
+async function dcFinGuardar(id) {
+  var b = $id('dcf-ok'); b.disabled = true;
+  var d = { ID_FINANCIERA: id, NOMBRE: $v('dcf-n'), TASA: $v('dcf-t'), GASTOS_PCT: $v('dcf-g'), DIAS_CLEARING: $v('dcf-c'), CONTACTO: $v('dcf-co'), TELEFONO: $v('dcf-te'), ACTIVO: $id('dcf-a') ? ($id('dcf-a').checked ? 1 : 0) : 1 };
+  if ($v('dcf-t') === '') { toast('Poné la tasa mensual', 'r2'); b.disabled = false; return; }
+  var r; try { r = await gsRun('gsDC_Financiera', d); } catch (e) { toast(e.message, 'r2'); b.disabled = false; return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); b.disabled = false; return; }
+  toast(r.NOMBRE + ' guardada ✓', 'g');
+  if (DC_.volverLiq) { closeModal(); await dcAbrir(); var s = $id('dc-fin'); if (s) { s.value = r.ID_FINANCIERA; dcFinCambia(); } } else dcFinancieras();
+}
+function dcPagar(idFin) {
+  var f = dcFin(idFin); if (!f) return;
+  closeModal(); showModal('<div class="mh"><span class="mt">Pagar a ' + dcEsc(f.NOMBRE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="al al-w mb3" style="font-size:13px">Se deben <b>' + fmt(f.DEUDA) + '</b> por cheques rechazados. También se puede descontar de la próxima liquidación.</div>' +
+    '<div class="g2" style="gap:8px"><div class="fg"><label class="fl">Importe *</label><input id="dcp-i" class="fi" type="number" min="0" step="0.01" value="' + f.DEUDA + '"></div><div class="fg"><label class="fl">Fecha</label><input id="dcp-f" class="fi" type="date" value="' + chHoyISO() + '"></div></div>' +
+    '<div class="fg"><label class="fl">Caja o cuenta de donde sale *</label><select id="dcp-c" class="fs">' + dcOptCajas('') + '</select></div><div class="fg"><label class="fl">Observaciones</label><input id="dcp-o" class="fi"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="dcFinancieras()">Volver</button><button class="btn btn-w" id="dcp-ok" onclick="dcPagarOk(' + f.ID_FINANCIERA + ')">Registrar pago</button></div>');
+}
+async function dcPagarOk(idFin) {
+  var b = $id('dcp-ok'); b.disabled = true;
+  var r; try { r = await gsRun('gsDC_Pagar', { ID_FINANCIERA: idFin, IMPORTE: $v('dcp-i'), FECHA: $v('dcp-f'), ID_CAJA: $v('dcp-c'), OBS: $v('dcp-o') }); } catch (e) { toast(e.message, 'r2'); b.disabled = false; return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); b.disabled = false; return; }
+  toast('Pago registrado · queda ' + fmt(r.SALDO) + ' ✓', 'g'); dcFinancieras();
+}
+async function dcAnularPago(id) {
+  var m = await uiPedir('Motivo de la anulación del pago (la plata vuelve a la caja y la deuda queda pendiente):', { obligatorio: true }); if (m === null || !String(m).trim()) return;
+  var r; try { r = await gsRun('gsDC_AnularPago', id, m); } catch (e) { toast(e.message, 'r2'); return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  toast('Pago anulado ✓', 'g'); dcFinancieras();
 }
 </script>
 
@@ -11115,15 +11354,70 @@ async function pcCostos() {
   var n = r.filas.length;
   $id('pc-body').innerHTML = '<div class="card"><div class="fbar no-print" style="gap:8px;flex-wrap:wrap"><label class="fl" style="margin:0">Mes</label><input class="fi" type="month" id="pcc-mes" value="' + mes + '" style="width:160px"/>' +
     '<button class="btn btn-s btn-sm" onclick="pcCostosExcel()"><i class="fas fa-file-download"></i> Excel</button>' +
+    '<button class="btn btn-s btn-sm" onclick="pcCostosImp()"><i class="fas fa-print"></i> Imprimir / PDF / Compartir la lista</button>' +
     (pcPuede('EDITAR') ? '<button class="btn btn-p btn-sm" onclick="pcProrratear()"><i class="fas fa-balance-scale"></i> Prorratear gastos fijos del mes</button>' : '') +
     '<button class="btn btn-s btn-sm" onclick="pcPreciosRec()"><i class="fas fa-tags"></i> Precios de servicios</button>' +
     '<span class="tdim" style="font-size:11px">Reparto: ' + (r.metodo === 'MATERIALES' ? 'según los materiales de cada cubierta' : r.metodo === 'MINUTOS' ? 'según minutos de cada cubierta' : 'igual por cubierta') + ' · se aplica al cierre del mes</span></div>' +
-    '<div class="tw"><table style="font-size:12px" id="pc-tbl-costos"><thead><tr><th>Terminada</th><th>OT</th><th>Marca grabada · DOT</th><th>Cliente</th><th>Cubierta</th><th class="tr">Materiales</th><th class="tr">Herramental</th><th class="tr">Min</th><th class="tr">Mano de obra</th><th class="tr">Fijos</th><th class="tr">Total</th></tr></thead><tbody>' +
-    r.filas.map(function(f) { return '<tr><td>' + fmtD(f.FECHA_FIN) + '</td><td class="mono">' + pcEsc(f.NRO_OT) + '</td><td class="mono"><b>' + pcEsc(f.MARCA) + '</b><div style="font-size:10px">DOT: ' + pcDotTxt(pcDotDe(f)) + '</div></td><td>' + pcEsc(f.CLIENTE) + '</td><td style="font-size:11px">' + pcEsc(f.TIPO + ' ' + f.MEDIDA + ' · ' + f.TRABAJO) + '</td><td class="tr mono">' + fmt(f.MATERIALES) + '</td><td class="tr mono">' + fmt(f.HERRAMENTAL) + '</td><td class="tr">' + pcDur(f.MINUTOS) + '</td><td class="tr mono">' + fmt(f.MO) + '</td><td class="tr mono">' + fmt(f.FIJOS) + '</td><td class="tr mono"><b>' + fmt(f.TOTAL) + '</b></td></tr>'; }).join('') +
-    (n ? '<tr style="font-weight:700"><td colspan="5">Total ' + n + ' cubiertas (promedio ' + fmt(t.tot / n) + ')</td><td class="tr mono">' + fmt(t.mat) + '</td><td class="tr mono">' + fmt(t.herr) + '</td><td></td><td class="tr mono">' + fmt(t.mo) + '</td><td class="tr mono">' + fmt(t.fij) + '</td><td class="tr mono">' + fmt(t.tot) + '</td></tr>' : '') +
+    '<div class="tw"><table style="font-size:12px" id="pc-tbl-costos"><thead><tr><th>Terminada</th><th>OT</th><th>Marca grabada · DOT</th><th>Cliente</th><th>Cubierta</th><th class="tr">Materiales</th><th class="tr">Herramental</th><th class="tr">Min</th><th class="tr">Mano de obra</th><th class="tr">Fijos</th><th class="tr">Total</th><th class="no-print"></th></tr></thead><tbody>' +
+    r.filas.map(function(f, i) { return '<tr><td>' + fmtD(f.FECHA_FIN) + '</td><td class="mono">' + pcEsc(f.NRO_OT) + '</td><td class="mono"><b>' + pcEsc(f.MARCA) + '</b><div style="font-size:10px">DOT: ' + pcDotTxt(pcDotDe(f)) + '</div></td><td>' + pcEsc(f.CLIENTE) + '</td><td style="font-size:11px">' + pcEsc([f.TIPO, f.MEDIDA].filter(Boolean).join(' ') + (f.TRABAJO ? ' · ' + f.TRABAJO : '')) + '</td><td class="tr mono">' + fmt(f.MATERIALES) + '</td><td class="tr mono">' + fmt(f.HERRAMENTAL) + '</td><td class="tr">' + pcDur(f.MINUTOS) + '</td><td class="tr mono">' + fmt(f.MO) + '</td><td class="tr mono">' + fmt(f.FIJOS) + '</td><td class="tr mono"><b>' + fmt(f.TOTAL) + '</b></td><td class="no-print" style="white-space:nowrap"><button class="btn btn-s btn-sm" title="Ver el costo completo de esta cubierta" onclick="pcCostoVer(' + i + ')"><i class="fas fa-eye"></i> Ver</button> <button class="btn btn-s btn-sm" title="Imprimir, guardar PDF o compartir" onclick="pcCostoVer(' + i + ',true)"><i class="fas fa-print"></i></button></td></tr>'; }).join('') +
+    (n ? '<tr style="font-weight:700"><td colspan="5">Total ' + n + ' cubiertas (promedio ' + fmt(t.tot / n) + ')</td><td class="tr mono">' + fmt(t.mat) + '</td><td class="tr mono">' + fmt(t.herr) + '</td><td></td><td class="tr mono">' + fmt(t.mo) + '</td><td class="tr mono">' + fmt(t.fij) + '</td><td class="tr mono">' + fmt(t.tot) + '</td><td class="no-print"></td></tr>' : '') +
     '</tbody></table>' + (n ? '' : '<div class="tdim" style="padding:12px">No hay cubiertas terminadas en ' + mes + '.</div>') + '</div>' +
     (r.prorrateos.length ? '<div class="tdim" style="padding:8px 14px;font-size:11px">Prorrateos hechos: ' + r.prorrateos.map(function(p) { return p.MES + ' (' + p.METODO + ', ' + fmt(p.FIJOS_MES) + ' entre ' + p.CUBIERTAS + ')'; }).join(' · ') + '</div>' : '') + '</div>';
   $id('pcc-mes').addEventListener('change', function() { PC_.mes = this.value; pcCostos(); });
+}
+// Costo completo de UNA cubierta: insumos por estación, herramental, minutos con su costo, fijos y total.
+// imp=true: va directo a la hoja para imprimir, guardar PDF o compartir.
+async function pcCostoVer(i, imp) {
+  var f = PC_.costos && PC_.costos.filas[i]; if (!f) return;
+  var r = await gsRun('gsPC_CostoDetalle', f.ID_OT, f.ID_CUB);
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo traer el detalle', 'r2'); return; }
+  PC_.costoDet = r;
+  if (imp) { pcCostoImp(); return; }
+  showModal('<div class="mh"><span class="mt">Costo de la cubierta ' + pcEsc(r.CUB.MARCA) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' + pcCostoDetHtml(r, false) + '</div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-p" onclick="pcCostoImp()"><i class="fas fa-print"></i> Imprimir / Guardar PDF / Compartir</button></div>', 'md-lg');
+}
+function pcCostoDetHtml(r, imp) {
+  var c = r.CUB, T = r.TOTALES, tb = imp ? 'class="det"' : 'style="font-size:12px;width:100%"', n = imp ? 'n' : 'tr mono';
+  var sub = function(t) { return imp ? '<h2>' + t + '</h2>' : '<div style="font-weight:700;margin:12px 0 4px">' + t + '</div>'; };
+  var dato = function(k, v) { return imp ? '<div><b>' + k + '</b>' + v + '</div>' : '<div><span class="tdim" style="font-size:10px;text-transform:uppercase">' + k + '</span><div>' + v + '</div></div>'; };
+  var h = '<div class="dat" style="display:grid;grid-template-columns:repeat(4,auto);gap:4px 18px">' + dato('Marca grabada', '<b>' + pcEsc(c.MARCA) + '</b>') + dato('N° DOT', pcDotTxt(c.DOT)) + dato('Orden', pcEsc(c.NRO_OT)) + dato('Terminada', fmtD(c.FECHA_FIN)) +
+    dato('Cliente', pcEsc(c.CLIENTE)) + dato('Cubierta', pcEsc(c.TIPO + ' ' + c.MEDIDA + (c.FABRICANTE ? ' · ' + c.FABRICANTE : ''))) + dato('Trabajo', pcEsc(c.TRABAJO)) + dato('Banda', pcEsc(c.BANDA || '—')) + '</div>' +
+    (c.REPROCESOS ? '<div class="nota" style="font-size:11px;color:#92400e">Tuvo ' + c.REPROCESOS + ' reproceso(s): se suma el costo de todas las pasadas.</div>' : '');
+  h += sub('Materiales');
+  h += '<table ' + tb + '><thead><tr><th>Estación</th><th>Insumo</th><th class="' + n + '">Cantidad</th><th class="' + n + '">Costo unit.</th><th class="' + n + '">Costo</th></tr></thead><tbody>' +
+    (r.MATERIALES.length ? r.MATERIALES.map(function(m) { return '<tr><td>' + pcEsc(m.ESTACION) + (m.PASADA > 1 ? ' <small>(pasada ' + m.PASADA + ')</small>' : '') + '</td><td>' + pcEsc(m.INSUMO) + (m.REEMPLAZO ? '<div style="font-size:10px">en lugar de ' + pcEsc(m.REEMPLAZO) + '</div>' : '') + (m.NO_USO ? '<div style="font-size:10px">no se usó</div>' : '') + '</td><td class="' + n + '">' + (m.AJUSTE ? '' : Number(m.REAL || 0).toLocaleString('es-AR', { maximumFractionDigits: m.REAL && Math.abs(m.REAL) < 1 ? 4 : 2 }) + ' ' + pcEsc(m.UNIDAD)) + '</td><td class="' + n + '">' + (m.AJUSTE ? '' : fmt(m.COSTO_UNIT)) + '</td><td class="' + n + '">' + fmt(m.COSTO) + '</td></tr>'; }).join('') : '<tr><td colspan="5">Sin consumos registrados</td></tr>') +
+    '<tr class="tot" style="font-weight:700"><td colspan="4">Total materiales</td><td class="' + n + '">' + fmt(T.MATERIALES) + '</td></tr></tbody></table>';
+  h += sub('Herramental');
+  h += '<table ' + tb + '><thead><tr><th>Pieza</th><th>Herramental</th><th class="' + n + '">Uso</th><th class="' + n + '">Costo de este uso</th></tr></thead><tbody>' +
+    (r.HERRAMENTAL.length ? r.HERRAMENTAL.map(function(x) { return '<tr><td>' + pcEsc(x.PIEZA) + '</td><td>' + pcEsc(x.NOMBRE) + '</td><td class="' + n + '">' + (x.AJUSTE ? '' : x.USO + ' de ' + x.MAX) + '</td><td class="' + n + '">' + fmt(x.COSTO) + '</td></tr>'; }).join('') : '<tr><td colspan="4">Sin herramental</td></tr>') +
+    '<tr class="tot" style="font-weight:700"><td colspan="3">Total herramental</td><td class="' + n + '">' + fmt(T.HERRAMENTAL) + '</td></tr></tbody></table>';
+  h += sub('Tiempo y mano de obra');
+  h += '<table ' + tb + '><thead><tr><th>Estación</th><th class="' + n + '">Tiempo real</th><th class="' + n + '">Tiempo previsto</th><th class="' + n + '">Mano de obra</th></tr></thead><tbody>' +
+    (r.TIEMPOS.length ? r.TIEMPOS.map(function(t) { return '<tr><td>' + pcEsc(t.ESTACION) + (t.PASADA > 1 ? ' <small>(pasada ' + t.PASADA + ')</small>' : '') + '</td><td class="' + n + '">' + pcDur(t.MINUTOS) + '</td><td class="' + n + '">' + (t.STD ? pcDur(t.STD) : '—') + '</td><td class="' + n + '">' + fmt(t.COSTO) + '</td></tr>'; }).join('') : '<tr><td colspan="4">Sin tiempos registrados</td></tr>') +
+    '<tr class="tot" style="font-weight:700"><td>Total</td><td class="' + n + '">' + pcDur(T.MINUTOS) + '</td><td></td><td class="' + n + '">' + fmt(T.MO) + '</td></tr></tbody></table>' +
+    '<div class="nota" style="font-size:10px">Costo del minuto de mano de obra: ' + fmt(r.MINUTO_MO) + '</div>';
+  h += sub('Resumen');
+  h += '<table ' + tb + '><tbody><tr><td>Materiales</td><td class="' + n + '">' + fmt(T.MATERIALES) + '</td></tr><tr><td>Herramental</td><td class="' + n + '">' + fmt(T.HERRAMENTAL) + '</td></tr><tr><td>Mano de obra (' + pcDur(T.MINUTOS) + ')</td><td class="' + n + '">' + fmt(T.MO) + '</td></tr>' +
+    '<tr><td>Gastos fijos (' + (r.METODO_FIJOS === 'MATERIALES' ? 'según materiales' : r.METODO_FIJOS === 'MINUTOS' ? 'según minutos' : 'igual por cubierta') + ')</td><td class="' + n + '">' + fmt(T.FIJOS) + '</td></tr>' +
+    '<tr class="tot" style="font-weight:700;font-size:14px"><td>COSTO TOTAL (sin IVA)</td><td class="' + n + '">' + fmt(T.TOTAL) + '</td></tr></tbody></table>';
+  return h;
+}
+function pcCostoImp() {
+  var r = PC_.costoDet; if (!r) return;
+  pcImprimir('Costo cubierta ' + r.CUB.MARCA, pcEncImp('COSTO DE LA CUBIERTA', r.CUB.MARCA, 'DOT: ' + (r.CUB.DOT || 'sin DOT')) + pcCostoDetHtml(r, true) + '<div class="nota">Costos sin IVA.</div>');
+}
+// Lista del mes para imprimir, guardar PDF o compartir
+function pcCostosImp() {
+  var r = PC_.costos; if (!r) return;
+  var t = { mat: 0, herr: 0, mo: 0, fij: 0, tot: 0, min: 0 };
+  r.filas.forEach(function(f) { t.mat += f.MATERIALES; t.herr += f.HERRAMENTAL; t.mo += f.MO; t.fij += f.FIJOS; t.tot += f.TOTAL; t.min += f.MINUTOS; });
+  var n = r.filas.length;
+  var h = pcEncImp('COSTO POR CUBIERTA TERMINADA', PC_.mes, n + ' cubiertas') +
+    '<table class="res"><thead><tr><th style="width:9%">Terminada</th><th style="width:9%">OT</th><th style="width:14%">Marca grabada · DOT</th><th>Cliente</th><th>Cubierta</th><th class="n">Materiales</th><th class="n">Herram.</th><th class="n">Min</th><th class="n">Mano obra</th><th class="n">Fijos</th><th class="n">Total</th></tr></thead><tbody>' +
+    r.filas.map(function(f) { return '<tr><td>' + fmtD(f.FECHA_FIN) + '</td><td>' + pcEsc(f.NRO_OT) + '</td><td><b>' + pcEsc(f.MARCA) + '</b><div>DOT: ' + pcDotTxt(pcDotDe(f)) + '</div></td><td>' + pcEsc(f.CLIENTE) + '</td><td>' + pcEsc([f.TIPO, f.MEDIDA].filter(Boolean).join(' ') + (f.TRABAJO ? ' · ' + f.TRABAJO : '')) + '</td><td class="n">' + fmt(f.MATERIALES) + '</td><td class="n">' + fmt(f.HERRAMENTAL) + '</td><td class="n">' + pcDur(f.MINUTOS) + '</td><td class="n">' + fmt(f.MO) + '</td><td class="n">' + fmt(f.FIJOS) + '</td><td class="n"><b>' + fmt(f.TOTAL) + '</b></td></tr>'; }).join('') +
+    (n ? '<tr class="tot" style="font-weight:700"><td colspan="5">Total ' + n + ' cubiertas · promedio ' + fmt(t.tot / n) + '</td><td class="n">' + fmt(t.mat) + '</td><td class="n">' + fmt(t.herr) + '</td><td class="n">' + pcDur(t.min) + '</td><td class="n">' + fmt(t.mo) + '</td><td class="n">' + fmt(t.fij) + '</td><td class="n">' + fmt(t.tot) + '</td></tr>' : '<tr><td colspan="11">No hay cubiertas terminadas en ' + pcEsc(PC_.mes) + '</td></tr>') +
+    '</tbody></table><div class="nota">Costos sin IVA. Gastos fijos ' + (r.metodo === 'MATERIALES' ? 'según los materiales de cada cubierta' : r.metodo === 'MINUTOS' ? 'según minutos' : 'igual por cubierta') + '.</div>';
+  pcImprimir('Costos cubiertas ' + PC_.mes, h, true);
 }
 function pcCostosExcel() {
   var r = PC_.costos; if (!r) return;
