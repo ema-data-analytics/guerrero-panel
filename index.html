@@ -1432,7 +1432,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031130';
+var EMA_BUILD = '202611031133';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -10937,7 +10937,7 @@ async function pcPreciosRec() {
       '<select class="fi" id="pcpr-tra" style="width:auto">' + opts(uniq('TRA'), 'Todos los trabajos') + '</select>' +
       '<select class="fi" id="pcpr-ver" style="width:auto"><option value="">Todos los precios</option><option value="C">Solo los que cambian</option><option value="S">Solo sube</option><option value="B">Solo baja</option><option value="N">Sin precio en la lista</option><option value="E">Solo los elegidos</option></select>' +
     '</div>' +
-    '<div class="tw" style="max-height:52vh"><table style="font-size:13px"><thead><tr><th style="width:28px"><input type="checkbox" id="pcpr-todos" title="Elegir todos los que se ven"/></th><th>Artículo</th><th>Base</th><th class="tr">Costo<div style="font-weight:400;font-size:10px">sin IVA</div></th><th class="tr">Precio de venta<div style="font-weight:400;font-size:10px">sin IVA</div></th><th class="tr">Precio de venta<div style="font-weight:400;font-size:10px">con IVA</div></th><th class="tr">En la lista hoy</th><th class="tr">Diferencia</th></tr></thead><tbody id="pcpr-tb"></tbody></table></div>' +
+    '<div class="tw" style="max-height:52vh"><table style="font-size:13px"><thead><tr><th style="width:28px"><input type="checkbox" id="pcpr-todos" title="Elegir todos los que se ven"/></th><th>Artículo</th><th>Base</th><th class="tr">Costo</th><th class="tr">Precio de venta<div style="font-weight:400;font-size:10px">sin IVA</div></th><th class="tr">Precio de venta<div style="font-weight:400;font-size:10px">con IVA</div></th><th class="tr">En la lista hoy</th><th class="tr">Diferencia</th></tr></thead><tbody id="pcpr-tb"></tbody></table></div>' +
     '<div id="pcpr-pie" class="tdim" style="font-size:12px;margin-top:8px"></div>' +
     (r.FUERA && (r.FUERA.MARCA || r.FUERA.APRENDIZAJE) ? '<div class="tdim" style="font-size:11px">No entran: ' + [r.FUERA.MARCA ? r.FUERA.MARCA + ' receta' + (r.FUERA.MARCA === 1 ? '' : 's') + ' por marca de cubierta' : '', r.FUERA.APRENDIZAJE ? r.FUERA.APRENDIZAJE + ' receta' + (r.FUERA.APRENDIZAJE === 1 ? '' : 's') + ' en aprendizaje (sin cantidades ni cubiertas terminadas)' : ''].filter(function(x) { return x; }).join(' · ') + '.</div>' : '') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-p" id="pcpr-ok"><i class="fas fa-paper-plane"></i> Mandar a aprobar</button></div>', 'md-lg');
@@ -10978,13 +10978,15 @@ function pcprPintar() {
     return '<tr' + (f.CAMBIA ? '' : ' style="opacity:.75"') + '><td>' + (f.CAMBIA ? '<input type="checkbox" data-k="' + pcEsc(f.KEY) + '"' + (PCPR_.sel[f.KEY] ? ' checked' : '') + '/>' : '') + '</td>' +
       '<td><b>' + pcEsc(f.NOMBRE) + '</b><div class="tdim" style="font-size:11px">' + pcEsc(f.LIN) + (f.TRA ? ' · ' + pcEsc(f.TRA) : '') + '</div></td>' +
       '<td style="font-size:12px">' + pcEsc(f.BASE) + (f.RENTABILIDAD ? '<div class="tdim" style="font-size:11px">rentab. ' + pct(f.RENTABILIDAD) + '</div>' : '') + '</td>' +
-      '<td class="tr mono">' + fmt(f.COSTO) + '</td><td class="tr mono">' + fmt(f.SIN_IVA) + '</td>' +
-      '<td class="tr mono" style="font-size:14px"><b>' + fmt(f.CON_IVA) + '</b><div><a href="#" style="font-size:11px;font-family:inherit" onclick="event.preventDefault();pcprVer(\'' + pcEsc(f.KEY).replace(/'/g, '') + '\')">' + (PCPR_.ver[f.KEY] ? 'ocultar cálculo' : 'ver cálculo') + '</a></div></td>' +
+      '<td class="tr mono" style="color:var(--text)">' + fmt(f.COSTO) + '</td><td class="tr mono" style="color:var(--text)">' + fmt(f.SIN_IVA) + '</td>' +
+      '<td class="tr mono" style="font-size:14px;color:var(--text)"><b>' + fmt(f.CON_IVA) + '</b><div class="tdim" style="font-size:10px;max-width:120px;margin-left:auto">' + pcprFormula(f) + '</div><div><a href="#" style="font-size:11px;font-family:inherit" onclick="event.preventDefault();pcprVer(\'' + pcEsc(f.KEY).replace(/'/g, '') + '\')">' + (PCPR_.ver[f.KEY] ? 'ocultar cálculo' : 'ver cálculo') + '</a></div></td>' +
       '<td class="tr mono">' + (f.ACTUAL ? fmt(f.ACTUAL) : '<span class="tdim">sin precio</span>') + '</td>' +
       '<td class="tr mono" style="color:' + col + '">' + (!f.CAMBIA ? 'igual' : f.ACTUAL > 0 ? (dif > 0 ? '+' : '−') + fmt(Math.abs(dif)) + '<div style="font-size:11px">' + (dif > 0 ? '+' : '−') + pct(Math.abs(dif) / f.ACTUAL) + '</div>' : 'nuevo') + '</td></tr>' + (PCPR_.ver[f.KEY] ? pcprCalculo(f) : '');
   }).join('') : '<tr><td colspan="8" class="tdim">No hay precios con ese filtro.</td></tr>';
   pcprPie();
 }
+function pcprFormula(f) { var g = PCPR_.r.REGLA, ren = f.RENTABILIDAD || g.RENTABILIDAD, n = function(x) { return (Math.round(x * 1000) / 1000).toLocaleString('es-AR'); };
+  return 'costo × ' + n(1 + ren) + ' ÷ ' + n(1 - g.IMP_VENTA) + ' × ' + n(1 + g.IVA); }
 function pcprVer(k) { PCPR_.ver[k] = !PCPR_.ver[k]; pcprPintar(); }
 // La cuenta paso a paso de una fila, con los mismos números que usa el sistema
 function pcprCalculo(f) {
