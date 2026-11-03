@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "82589e43eca6"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "4ab5aa517171"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1438,7 +1438,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031445';
+var EMA_BUILD = '202611031449';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1808,7 +1808,7 @@ async function dbExtras() {
       cs.map(function(c) { return '<div class="dbr" onclick="navTo(\'caja\')"><div>' + (c.TIPO === 'BANCO' ? '🏦 ' : '💵 ') + dbEsc(c.CAJA_DESC) + '</div><div class="m" style="color:' + ((Number(c.SALDO) || 0) < 0 ? '#fca5a5' : '#e6ebf5') + '">' + dbM(c.SALDO) + '</div></div>'; }).join(''); }
   catch (e) { var el2 = $id('db-cajas'); if (el2) el2.innerHTML = '<h3>Caja y bancos</h3><div class="dbnota">No tenés permiso para ver las cajas.</div>'; }
   try { var lst = [], vistos = {};
-    try { var cb = await gsRun('gsINS_Cobertura', { ALERTA: 1 }); ((cb && cb.ok && cb.filas) || []).forEach(function(f) { vistos[String(f.NOMBRE)] = 1; lst.push({ n: f.NOMBRE, r: f.NIVEL === 'r', txt: f.STOCK <= 0 ? 'sin stock' : f.DIAS === null || f.DIAS === undefined ? 'sin dato de consumo' : f.DIAS <= 0 ? 'se acaba hoy' : 'quedan ' + dbN(f.DIAS, 'día', 'días'), p: f.STOCK <= 0 ? 0 : Math.min(1, (f.DIAS || 0) / 15) }); }); } catch (ec) {}
+    try { var cb = await gsRun('gsINS_Cobertura', { ALERTA: 1 }); ((cb && cb.ok && cb.filas) || []).forEach(function(f) { vistos[String(f.NOMBRE)] = 1; lst.push({ n: f.NOMBRE, r: f.NIVEL === 'r', txt: f.STOCK <= 0 ? 'sin stock' : f.DIAS === null || f.DIAS === undefined ? 'sin dato de consumo' : f.DIAS <= 0 ? 'se acaba hoy' : f.DIAS === 1 ? 'queda 1 día' : 'quedan ' + f.DIAS + ' días', p: f.STOCK <= 0 ? 0 : Math.min(1, (f.DIAS || 0) / 15) }); }); } catch (ec) {}
     var s = await gsRun('gsST_General');
     ((s && s.INSUMOS) || []).concat((s && s.ARTICULOS) || []).forEach(function(x) { if (x.MINIMO > 0 && x.STOCK < x.MINIMO && !vistos[String(x.NOMBRE)]) lst.push({ n: x.NOMBRE, r: x.STOCK <= 0, txt: x.STOCK + ' de mínimo ' + x.MINIMO + ' ' + (x.UNIDAD || ''), p: Math.max(0, x.STOCK / x.MINIMO), pr: x.POR_RECIBIR || 0 }); });
     lst.sort(function(a, b) { return (a.r ? 0 : 1) - (b.r ? 0 : 1) || a.p - b.p; });
@@ -14355,14 +14355,15 @@ function cbAyuda() {
 // Aviso al abrir el sistema (una vez por ingreso)
 async function cobAvisoInicio() {
   try {
-    if (document.body.classList.contains('modo-puesto') || !puedeVerPagina('stock-insumos')) return;
+    // En el celular (menú de botones) también se avisa; en los puestos de trabajo (tablet de estación, TV, fichaje) no
+    if ((document.body.classList.contains('modo-puesto') && !document.body.classList.contains('modo-movil')) || !puedeVerPagina('stock-insumos')) return;
     var tk = SES && SES.token; if (!tk || window._cbAvisado === tk) return;
     window._cbAvisado = tk;
     var r = await gsRun('gsINS_Cobertura', { ALERTA: 1 });
     if (!r || !r.ok || !(r.rojas + r.amarillas) || !SES || SES.token !== tk) return;
     var li = r.filas.map(function(f) {
       return '<li><b style="color:' + (f.NIVEL === 'r' ? '#dc2626' : '#a16207') + '">' + (f.NIVEL === 'r' ? '🔴 ' : '🟡 ') + cbEsc(f.NOMBRE) + '</b>: ' +
-        (f.STOCK <= 0 ? '<b>sin stock</b>' : f.DIAS === null ? 'sin dato de consumo' : f.DIAS <= 0 ? '<b>se acaba hoy</b>' : 'quedan ' + f.DIAS + ' día' + (f.DIAS === 1 ? '' : 's') + ' (se acaba el ' + cbFecha(f.SE_ACABA, true) + ')') +
+        (f.STOCK <= 0 ? '<b>sin stock</b>' : f.DIAS === null ? 'sin dato de consumo' : f.DIAS <= 0 ? '<b>se acaba hoy</b>' : (f.DIAS === 1 ? 'queda 1 día' : 'quedan ' + f.DIAS + ' días') + ' (se acaba el ' + cbFecha(f.SE_ACABA, true) + ')') +
         (f.NIVEL === 'r' ? ' · <b>pedir YA</b>' : ' · pedir antes del ' + cbFecha(f.PEDIR_ANTES, true)) + (f.FUENTE === 'ESTIMADO' ? ' <span class="cb-f cb-fE">ESTIMADO</span>' : '') + '</li>';
     }).join('');
     showModal('<div class="mh"><span class="mt">⚠ Insumos por acabarse</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 cb-av" style="font-size:14px">' +
@@ -14456,6 +14457,7 @@ function npPintarTabla() {
   var el = $id('np-tabla'); if (!el) return;
   var vis = npVisibles(), todosProv = (NP_.d.PROVEEDORES || []);
   var allSel = vis.length && vis.every(function(x) { return x.f.sel; });
+  if (window.innerWidth < 760) return npPintarCel(el, vis, todosProv, allSel);
   el.innerHTML = '<table class="np-tb"><thead><tr><th style="width:28px"><input type="checkbox" ' + (allSel ? 'checked' : '') + ' onchange="npTodos(this.checked)" title="Todos"></th><th>Producto</th><th class="hm">Stock</th><th style="width:150px">Pedir</th><th style="width:210px">Proveedor</th><th style="width:120px">Costo c/u sin IVA</th><th class="hm" style="width:110px">Subtotal</th></tr></thead><tbody>' +
     (vis.length ? vis.map(function(x) {
       var f = x.f, it = f.it, i = x.i, ops = it.PROVS || [], idsOp = {}; ops.forEach(function(o) { idsOp[o.ID_PROVEEDOR] = 1; });
@@ -14474,6 +14476,26 @@ function npPintarTabla() {
         '<td><input class="fi" inputmode="decimal" value="' + npN(f.costo) + '" onchange="npSet(' + i + ',\'costo\',this.value)"></td>' +
         '<td class="hm mono" style="text-align:right">' + fmt(f.cant * f.costo) + '</td></tr>';
     }).join('') : '<tr><td colspan="7" class="tdim" style="padding:18px;text-align:center">No hay productos en la lista. Agregá con el buscador.</td></tr>') + '</tbody></table>';
+}
+// En el celular: una tarjeta por producto (la tabla no entra)
+function npSelProv(f, i, todosProv) {
+  var it = f.it, ops = it.PROVS || [], idsOp = {}; ops.forEach(function(o) { idsOp[o.ID_PROVEEDOR] = 1; });
+  return '<select class="fi" onchange="npSet(' + i + ',\'prov\',this.value)"><option value="">— elegir proveedor —</option>' +
+    (ops.length ? '<optgroup label="Con precio">' + ops.map(function(o) { return '<option value="' + npEsc(o.ID_PROVEEDOR) + '"' + (o.ID_PROVEEDOR === f.prov ? ' selected' : '') + '>' + npEsc(o.NOMBRE) + ' · ' + fmt(o.COSTO) + '</option>'; }).join('') + '</optgroup>' : '') +
+    '<optgroup label="Todos los proveedores">' + todosProv.filter(function(p) { return !idsOp[p.ID_PROVEEDOR]; }).map(function(p) { return '<option value="' + npEsc(p.ID_PROVEEDOR) + '"' + (p.ID_PROVEEDOR === f.prov ? ' selected' : '') + '>' + npEsc(p.NOMBRE) + '</option>'; }).join('') + '</optgroup></select>';
+}
+function npPintarCel(el, vis, todosProv, allSel) {
+  el.style.border = '0';
+  el.innerHTML = '<label style="display:block;margin:0 0 8px;font-size:14px"><input type="checkbox" ' + (allSel ? 'checked' : '') + ' onchange="npTodos(this.checked)"> Tildar todos</label>' +
+    (vis.length ? vis.map(function(x) { var f = x.f, it = f.it, i = x.i;
+      return '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;margin-bottom:8px;' + (f.sel ? '' : 'opacity:.5') + '">' +
+        '<label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" style="margin-top:4px" ' + (f.sel ? 'checked' : '') + ' onchange="npSet(' + i + ',\'sel\',this.checked)"><span><b>' + npEsc(it.NOMBRE) + '</b><br>' +
+        '<span class="np-ch ' + (it.MOTIVO === 'Agregado a mano' ? 'np-m' : it.NIVEL === 'r' ? 'np-r' : 'np-y') + '">' + npEsc(it.MOTIVO) + '</span>' + (it.STOCK !== undefined ? ' <span class="tdim" style="font-size:12px">stock ' + npN(it.STOCK) + ' ' + npEsc(it.UNIDAD) + '</span>' : '') + '</span></label>' +
+        ((it.YA_PEDIDO || []).length ? '<div style="font-size:12px;color:#b45309;margin-top:4px">⚠ Ya pedido: ' + npEsc(it.YA_PEDIDO.join(' · ')) + '</div>' : '') +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><div><div class="tdim" style="font-size:11px">Pedir (' + npEsc(it.PRES_TXT) + ')</div><input class="fi" inputmode="decimal" value="' + npN(f.cant) + '" onchange="npSet(' + i + ',\'cant\',this.value)">' +
+        (it.CANT_PRES > 1 ? '<div class="tdim" style="font-size:11px">= ' + npN(f.cant * it.CANT_PRES) + ' ' + npEsc(it.UNIDAD) + '</div>' : '') + '</div>' +
+        '<div><div class="tdim" style="font-size:11px">Costo c/u sin IVA</div><input class="fi" inputmode="decimal" value="' + npN(f.costo) + '" onchange="npSet(' + i + ',\'costo\',this.value)"><div class="tdim" style="font-size:11px">subtotal ' + fmt(f.cant * f.costo) + '</div></div></div>' +
+        '<div style="margin-top:8px">' + npSelProv(f, i, todosProv) + '</div></div>'; }).join('') : '<div class="tdim" style="padding:14px;text-align:center">No hay productos en la lista.</div>');
 }
 var npBusT = null;
 function npBuscar(q) {
