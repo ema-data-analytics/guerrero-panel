@@ -1484,7 +1484,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031757';
+var EMA_BUILD = '202611031922';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1552,6 +1552,91 @@ window.addEventListener('focus', function() { emaChequearVersion(); });
 window.addEventListener('online', function() { emaChequearVersion(); });
 document.addEventListener('click', function() { if (Date.now() - EMA_ULT_CHK > 15000) emaChequearVersion(); }, true);
 document.addEventListener('touchstart', function() { if (Date.now() - EMA_ULT_CHK > 15000) emaChequearVersion(); }, { capture: true, passive: true });
+
+// ── 03/11/2026: Imprimir / Guardar PDF / Compartir en TODAS las grillas ──
+// A cada grilla (.tw con una tabla) se le agrega arriba un botón que saca la grilla tal como se ve (con el filtro puesto),
+// con el título de la pantalla, la fecha y el logo. Se hace en un solo lugar para que aparezca en todas las pantallas.
+function gridTitulo_(tw) {
+  var card = tw.closest('.card'), t = '';
+  if (card) { var ct = card.querySelector('.card-title, .ct, h3, h2'); if (ct) t = ct.textContent.trim(); }
+  var pg = tw.closest('[id^="page-"]'), pt = pg ? pg.querySelector('.page-title, h1, h2') : null;
+  var mo = tw.closest('.mo'), mt = mo ? mo.querySelector('.mt') : null;
+  var base = mt ? mt.textContent.trim() : (pt ? pt.textContent.trim() : document.title);
+  return t && t !== base ? base + ' · ' + t : base;
+}
+// Copia limpia de la grilla: sin botones ni columnas de acciones, y los campos de carga como texto
+function gridClon_(tb) {
+  var cl = tb.cloneNode(true);
+  // los campos de carga se imprimen como texto
+  var srcIn = tb.querySelectorAll('input, select, textarea'), dstIn = cl.querySelectorAll('input, select, textarea');
+  for (var i = 0; i < dstIn.length; i++) {
+    var o = srcIn[i], v = '';
+    if (o.tagName === 'SELECT') v = o.selectedIndex >= 0 ? o.options[o.selectedIndex].text : '';
+    else if (o.type === 'checkbox' || o.type === 'radio') v = o.checked ? '☑' : '☐';
+    else v = o.value;
+    var sp = document.createElement('span'); sp.textContent = v; dstIn[i].parentNode.replaceChild(sp, dstIn[i]);
+  }
+  var quitar = cl.querySelectorAll('.no-print, button, .grid-imp');
+  for (var j = 0; j < quitar.length; j++) quitar[j].parentNode && quitar[j].parentNode.removeChild(quitar[j]);
+  cl.removeAttribute('style'); cl.removeAttribute('id'); cl.className = 'res';
+  return cl;
+}
+function gridImprimir(btn) {
+  var tw = btn._tw; if (!tw) return;
+  var tb = tw.querySelector('table'); if (!tb) { toast('No hay grilla para imprimir', 'r2'); return; }
+  var cl = gridClon_(tb);
+  var filas = cl.querySelectorAll('tbody tr').length, cols = 0;
+  var r0 = cl.querySelector('thead tr') || cl.querySelector('tr'); if (r0) cols = r0.children.length;
+  var tit = gridTitulo_(tw), hoy = typeof fmtD === 'function' ? fmtD(new Date()) : new Date().toLocaleDateString('es-AR');
+  var h = (typeof pcEncImp === 'function' ? pcEncImp(tit, hoy, filas + ' renglones') : '<h1>' + tit + '</h1>') + cl.outerHTML;
+  if (typeof pcImprimir === 'function') pcImprimir(tit + ' ' + hoy.replace(/\//g, '-'), h, cols > 7);
+  else { var w = window.open('', '_blank'); w.document.write(h); w.document.close(); w.print(); }
+}
+function gridPonerBotones_() {
+  var tws = document.querySelectorAll('.tw');
+  for (var i = 0; i < tws.length; i++) {
+    var tw = tws[i];
+    if (tw._gimp || tw.dataset.noimp || !tw.querySelector('table') || tw.closest('.no-print') || tw.offsetParent === null && !tw.closest('.mo')) continue;
+    if (tw.querySelectorAll('tbody tr').length === 0) continue;
+    var b = document.createElement('button');
+    b.className = 'btn btn-s btn-sm grid-imp no-print'; b.type = 'button';
+    b.innerHTML = '<i class="fas fa-print"></i> Imprimir / PDF';
+    b.title = 'Imprimir, guardar PDF o compartir esta grilla tal como se ve';
+    b.style.cssText = 'float:right;margin:4px 6px 4px 0;font-size:11px;padding:3px 9px';
+    b._tw = tw; b.onclick = function() { gridImprimir(this); };
+    var bx = document.createElement('button');
+    bx.className = 'btn btn-s btn-sm grid-imp no-print'; bx.type = 'button';
+    bx.innerHTML = '<i class="fas fa-file-excel"></i> Excel';
+    bx.title = 'Descargar esta grilla a Excel, tal como se ve';
+    bx.style.cssText = b.style.cssText; bx._tw = tw; bx.onclick = function() { gridExcel(this); };
+    tw.parentNode.insertBefore(b, tw); tw.parentNode.insertBefore(bx, tw); tw._gimp = b;
+  }
+}
+// Excel de la grilla tal como se ve: los importes y cantidades van como números (se pueden sumar en Excel)
+function gridExcel(btn) {
+  var tw = btn._tw; if (!tw || typeof XLSX === 'undefined') { toast('No se pudo armar el Excel', 'r2'); return; }
+  var tb = tw.querySelector('table'); if (!tb) return;
+  var cl = gridClon_(tb), cs = cl.querySelectorAll('td');
+  for (var i = 0; i < cs.length; i++) {
+    var t = cs[i].textContent.replace(/\s+/g, ' ').trim();
+    if (!/^0\d/.test(t) && (/^-?\$?\s?\d{1,3}(\.\d{3})*(,\d+)?$/.test(t) || /^-?\$?\s?\d+(,\d+)?$/.test(t))) {
+      var n = parseFloat(t.replace(/[$\s]/g, '').replace(/\./g, '').replace(',', '.'));
+      if (!isNaN(n)) { cs[i].setAttribute('data-t', 'n'); cs[i].setAttribute('data-v', String(n)); }
+    }
+  }
+  var tit = gridTitulo_(tw), wb = XLSX.utils.table_to_book(cl, { sheet: 'DATOS', raw: true });
+  var ws = wb.Sheets['DATOS'];
+  Object.keys(ws).forEach(function(k) { var c = ws[k]; if (k.charAt(0) !== '!' && c && c.t === 's' && /^-?\d+(\.\d+)?$/.test(c.v) && !/^-?0\d/.test(c.v) && c.v.length < 16) { c.t = 'n'; c.v = parseFloat(c.v); delete c.w; } });
+  var nom = tit.replace(/[^A-Za-z0-9ÁÉÍÓÚáéíóúÑñ ]+/g, ' ').trim().replace(/\s+/g, '_').slice(0, 60) || 'GRILLA';
+  XLSX.writeFile(wb, nom + '_' + (typeof fechaISO === 'function' ? fechaISO(new Date()) : 'hoy') + '.xlsx');
+}
+var GRID_T_ = null;
+(function() {
+  if (typeof MutationObserver === 'undefined') return;
+  var ob = new MutationObserver(function() { if (GRID_T_) clearTimeout(GRID_T_); GRID_T_ = setTimeout(gridPonerBotones_, 400); });
+  var arrancar = function() { ob.observe(document.body, { childList: true, subtree: true }); gridPonerBotones_(); };
+  if (document.body) arrancar(); else document.addEventListener('DOMContentLoaded', arrancar);
+})();
 </script>
 <style>
 #ema-ver-nueva{position:fixed;left:50%;transform:translateX(-50%);top:8px;z-index:100000;background:#2563eb;color:#fff;border:0;border-radius:999px;padding:12px 20px;font-size:16px;line-height:1.25;font-weight:800;box-shadow:0 6px 20px rgba(37,99,235,.55);cursor:pointer;white-space:normal;text-align:center;width:max-content;max-width:calc(100vw - 16px);animation:emaLatido 1.6s ease-in-out infinite;touch-action:manipulation}
@@ -9190,7 +9275,8 @@ function recPintar() {
   el.innerHTML = '<div class="page-hd"><div><div class="page-title">Recetas</div><div class="page-sub">Qué lleva cada cubierta según tipo, medida y trabajo. Con esto se calcula el costo y se controla cada estación.</div></div>' +
     '<div class="flex gap2 no-print" style="flex-wrap:wrap">' +
     (agrega ? '<button class="btn btn-p" onclick="recEditor(null)"><i class="fas fa-plus"></i> Nueva receta</button>' : '') +
-    '<button class="btn btn-s" onclick="recExcelDescargar()"><i class="fas fa-file-download"></i> Descargar Excel</button>' +
+    '<button class="btn btn-s" onclick="recExcelDescargar(this)"><i class="fas fa-file-download"></i> Descargar Excel</button>' +
+    '<button class="btn btn-s" onclick="recImprimirLista(this)"><i class="fas fa-print"></i> Imprimir / PDF</button>' +
     (agrega && edita ? '<button class="btn btn-s" onclick="recExcelSubir()"><i class="fas fa-file-upload"></i> Subir Excel</button>' : '') +
     (edita ? '<button class="btn btn-s" onclick="recParametros()"><i class="fas fa-sliders-h"></i> Líneas, tipos y trabajos</button>' : '') +
     '</div></div>' +
@@ -9223,6 +9309,8 @@ function recTabla() {
       '<td class="tr">' + (r.RENTABILIDAD ? Math.round(r.RENTABILIDAD * 100) + '%' : '—') + '</td><td class="tr">' + r.VERSION + '</td>' +
       '<td class="no-print" style="white-space:nowrap">' +
       (edita && r.ESTADO === 'VIGENTE' ? '<button class="btn btn-s btn-sm" onclick="recEditor(' + r.ID_RECETA + ')">Editar</button> ' : '<button class="btn btn-s btn-sm" onclick="recEditor(' + r.ID_RECETA + ',false,true)">Ver</button> ') +
+      (edita && r.ESTADO === 'VIGENTE' ? '<button class="btn btn-s btn-sm" onclick="recEditor(' + r.ID_RECETA + ',false,true)" title="Ver la receta sin modificarla">Ver</button> ' : '') +
+      '<button class="btn btn-s btn-sm" onclick="recImprimir([' + r.ID_RECETA + '])" title="Imprimir, guardar PDF o compartir esta receta"><i class="fas fa-print"></i></button> ' +
       (agrega ? '<button class="btn btn-s btn-sm" onclick="recEditor(' + r.ID_RECETA + ',true)" title="Crear otra receta partiendo de esta">Copiar</button> ' : '') +
       (agrega && !r.MARCA && r.ESTADO === 'VIGENTE' ? '<button class="btn btn-s btn-sm" onclick="recEditor(' + r.ID_RECETA + ',\'MARCA\')" title="Misma receta para una marca de cubierta que usa otras cantidades">Variante por marca</button> ' : '') +
       (anula ? (r.ESTADO === 'VIGENTE' ? '<button class="btn btn-s btn-sm" onclick="recAnular(' + r.ID_RECETA + ',false)">Anular</button>' : '<button class="btn btn-s btn-sm" onclick="recAnular(' + r.ID_RECETA + ',true)">Reactivar</button>') : '') +
@@ -9388,11 +9476,66 @@ async function recParamGuardar(tabla, fila) {
 }
 
 // ── Excel ────────────────────────────────────────────────────────
-async function recExcelDescargar() {
+// 03/11/2026: baja solo las recetas que se ven en pantalla (con el filtro puesto), de a varias a la vez y mostrando el avance.
+// Antes bajaba las 239 vigentes de a una: tardaba minutos y parecía que no hacía nada.
+// Imprimir / guardar PDF / compartir una o varias recetas (una por hoja), con lugar para anotar la cantidad real en el taller
+async function recImprimir(ids, btn) {
+  var txt = btn ? btn.innerHTML : '', dets = [];
+  if (btn) btn.disabled = true;
+  try {
+    for (var k = 0; k < ids.length; k += 8) {
+      var rs = await Promise.all(ids.slice(k, k + 8).map(function(id) { return gsRun('gsREC_Detalle', id); }));
+      dets = dets.concat(rs);
+      if (btn) btn.textContent = 'Armando... ' + dets.length + ' de ' + ids.length;
+    }
+  } finally { if (btn) { btn.disabled = false; btn.innerHTML = txt; } }
+  dets = dets.filter(function(r) { return r && r.ok; });
+  if (!dets.length) { toast('No se pudo leer la receta', 'r2'); return; }
+  var est = {}; (REC_.d.estaciones || []).forEach(function(e) { est[String(e.ID_ESTACION)] = e; });
+  var nf = function(n) { return Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: Math.abs(n) < 1 ? 6 : 3 }); };
+  var h = dets.map(function(r, i) {
+    var x = r.receta, tot = 0, ant = null;
+    var filas = r.lineas.slice().sort(function(a, b) { var ea = est[a.ID_ESTACION], eb = est[b.ID_ESTACION]; return ((ea && +ea.ORDEN) || 99) - ((eb && +eb.ORDEN) || 99); }).map(function(l) {
+      var e = est[l.ID_ESTACION], ins = l.ID_INSUMO ? recIns(l.ID_INSUMO) : null; tot += l.COSTO || 0;
+      var nom = ins ? ins.NOMBRE_INSUMO : (l.DESCRIPCION || '—'), mismo = e && ant === l.ID_ESTACION; ant = l.ID_ESTACION;
+      return '<tr' + (/^FUBP/.test(l.ID_INSUMO) ? ' style="background:#fff4d6;font-weight:bold"' : '') + '><td>' + (mismo ? '' : recEsc(e ? e.NOMBRE : '—')) + '</td><td>' + recEsc(nom) + (l.TIPO_LINEA !== 'INSUMO' ? ' <small>(' + recEsc(l.TIPO_LINEA.toLowerCase()) + ')</small>' : '') + (l.DESCRIPCION && ins ? '<div style="font-size:9px;color:#555">' + recEsc(l.DESCRIPCION) + '</div>' : '') + '</td>' +
+        '<td class="n">' + nf(l.CANTIDAD) + '</td><td>' + recEsc(l.UNIDAD) + '</td><td class="n">' + fmt(l.PRECIO) + '</td><td class="n">' + fmt(l.COSTO) + '</td><td style="width:70px"></td><td class="ck">☐</td></tr>';
+    }).join('');
+    var tit = x.TIPO + ' · ' + x.MEDIDA + ' · ' + x.TRABAJO + (x.MARCA ? ' · ' + x.MARCA : '');
+    return '<div' + (i < dets.length - 1 ? ' style="page-break-after:always;break-after:page"' : '') + '>' + pcEncImp('RECETA', tit, 'Versión ' + x.VERSION + ' · ' + x.ESTADO) +
+      '<div class="dat"><div><b>Tipo</b>' + recEsc(x.TIPO) + '</div><div><b>Medida</b>' + recEsc(x.MEDIDA) + '</div><div><b>Trabajo</b>' + recEsc(x.TRABAJO) + '</div><div><b>Marca de cubierta</b>' + recEsc(x.MARCA || 'General') + '</div></div>' +
+      '<table class="det"><thead><tr><th style="width:17%">Estación</th><th>Insumo</th><th class="n" style="width:9%">Cantidad</th><th style="width:6%">Unidad</th><th class="n" style="width:11%">Precio</th><th class="n" style="width:11%">Costo</th><th style="width:11%">Cantidad real</th><th class="ck">OK</th></tr></thead><tbody>' + filas +
+      '<tr class="tot" style="font-weight:700"><td colspan="5">Costo de materiales por cubierta (sin IVA)</td><td class="n">' + fmt(tot) + '</td><td colspan="2"></td></tr></tbody></table>' +
+      (x.OBSERVACIONES ? '<div class="nota">' + recEsc(x.OBSERVACIONES) + '</div>' : '') +
+      '<div class="nota">Cantidades por cubierta. En el taller: tildá OK si está bien o anotá la cantidad real.</div>' +
+      '<div class="firmas"><div>Revisó</div><div>Fecha</div><div>Cargó en el sistema</div></div></div>';
+  }).join('');
+  pcImprimir(dets.length === 1 ? 'Receta ' + dets[0].receta.TIPO + ' ' + dets[0].receta.MEDIDA + ' ' + dets[0].receta.TRABAJO : 'Recetas ' + dets.length, h);
+}
+// La lista que se ve en pantalla (con el filtro puesto): cada receta en su hoja
+function recImprimirLista(btn) {
+  var ids = recFiltradas().map(function(r) { return r.ID_RECETA; });
+  if (!ids.length) { toast('No hay recetas con ese filtro', 'r2'); return; }
+  if (ids.length > 40) { toast('Son ' + ids.length + ' recetas: filtrá un poco más (hasta 40)', 'r2'); return; }
+  recImprimir(ids, btn);
+}
+async function recExcelDescargar(btn) {
   var d = REC_.d, filas = [REC_XLS_COLS];
-  var vig = d.recetas.filter(function(r) { return r.ESTADO === 'VIGENTE'; });
+  var vig = recFiltradas().filter(function(r) { return r.ESTADO === 'VIGENTE'; });
+  if (!vig.length) { toast('No hay recetas vigentes con ese filtro', 'r2'); return; }
+  var txt = btn ? btn.innerHTML : '', det = new Array(vig.length), hechos = 0;
+  if (btn) btn.disabled = true;
+  try {
+    for (var k = 0; k < vig.length; k += 8) {
+      var tanda = vig.slice(k, k + 8);
+      var rs = await Promise.all(tanda.map(function(v) { return gsRun('gsREC_Detalle', v.ID_RECETA); }));
+      rs.forEach(function(r, x) { det[k + x] = r; });
+      hechos += tanda.length;
+      if (btn) btn.textContent = 'Armando el Excel... ' + hechos + ' de ' + vig.length;
+    }
+  } finally { if (btn) { btn.disabled = false; btn.innerHTML = txt; } }
   for (var i = 0; i < vig.length; i++) {
-    var r = await gsRun('gsREC_Detalle', vig[i].ID_RECETA);
+    var r = det[i];
     if (!r || !r.ok) continue;
     r.lineas.forEach(function(l, j) {
       var est = d.estaciones.filter(function(e) { return String(e.ID_ESTACION) === String(l.ID_ESTACION); })[0];
@@ -9416,7 +9559,8 @@ async function recExcelDescargar() {
     ['5. Si la receta ya existe y cambia algo, se guarda como versión nueva (la anterior queda en el historial).'],
     ['6. Subí el archivo con "Subir Excel": primero ves qué va a pasar y después confirmás.']
   ]), 'INSTRUCCIONES');
-  XLSX.writeFile(wb, 'RECETAS_' + fechaISO(new Date()) + '.xlsx');
+  XLSX.writeFile(wb, 'RECETAS_' + (REC_.f.tipo ? REC_.f.tipo + '_' : '') + (REC_.f.trabajo ? REC_.f.trabajo.replace(/\s+/g, '_') + '_' : '') + fechaISO(new Date()) + '.xlsx');
+  toast('Excel descargado: ' + vig.length + ' receta(s) ✓', 'g');
 }
 
 function recExcelSubir() {
