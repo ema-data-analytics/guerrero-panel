@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "fba5a909a1ad"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "080ebbd56985"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -21,6 +21,7 @@
   var q = location.search + location.hash;
   if (/[?&#]docs/.test(q)) window.EMA_MODO_DOCS = true;
   if (/[?&#]cascos/.test(q)) window.EMA_MODO_CASCOS = true;
+  if (/[?&#]tablero/.test(q)) window.EMA_MODO_TABLERO = true;
   if (window.EMA_MODO_DOCS || window.EMA_MODO_CASCOS) { var m = document.createElement('meta'); m.name = 'theme-color'; m.content = '#1f2a5c'; document.head.appendChild(m); }
 })();
 // Sin acceso directo: el sistema se instala en el celular como «Vulcan» (Agregar a pantalla de inicio) y abre el menú del celular
@@ -293,6 +294,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
       <div class="nav-item" data-page="carga-produccion"><span class="nav-icon"><i class="fas fa-cog"></i></span> Producción</div>
       <div class="nav-item" data-page="ordenes-trabajo"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Órdenes de Trabajo</div>
       <div class="nav-item" data-page="produccion-cubiertas"><span class="nav-icon"><i class="fas fa-fire"></i></span> Producción por cubierta</div>
+      <div class="nav-item" data-page="tablero-linea"><span class="nav-icon"><i class="fas fa-tv"></i></span> Tablero de la línea</div>
       <div class="nav-item" data-page="documentos"><span class="nav-icon"><i class="fas fa-file-pdf"></i></span> Documentos para el cliente</div>
       <div class="nav-item" data-page="puesto-estacion"><span class="nav-icon"><i class="fas fa-tablet-alt"></i></span> Puesto de estación</div>
       <div class="nav-item" data-page="recetas"><span class="nav-icon"><i class="fas fa-flask"></i></span> Recetas</div>
@@ -371,6 +373,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-recetas" class="hidden"></div>
     <div id="page-stock-insumos" class="hidden"></div>
     <div id="page-produccion-cubiertas" class="hidden"></div>
+    <div id="page-tablero-linea" class="hidden"></div>
     <div id="page-documentos" class="hidden"></div>
     <div id="page-inicio-movil" class="hidden"></div>
     <div id="page-avance" class="hidden"></div>
@@ -697,7 +700,7 @@ function _mcDelAll(){ _MC={}; }
 // El servidor devuelve un "pase" (token) que acompaña cada llamada.
 // ══════════════════════════════════════════════════════════════════
 var PAGINA_MODULO = {
-  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'precios-nuevos':'VENTAS', 'catalogo-tienda':'VENTAS', 'margen':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
+  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'tablero-linea':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'precios-nuevos':'VENTAS', 'catalogo-tienda':'VENTAS', 'margen':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
   'carga-gastos':'GASTOS', 'carga-financiero':'ADMINISTRACION', 'carga-transporte':'ADMINISTRACION',
   'carga-impositivo':'ADMINISTRACION', 'carga-sueldos':'ADMINISTRACION', 'asistencia':'ADMINISTRACION', 'fichaje':'PRODUCCION', 'carga-combustible':'COMBUSTIBLE',
   'cheques':'COBRANZAS', 'cobranzas':'COBRANZAS', 'caja':'COBRANZAS', 'cta-cte-clientes':'COBRANZAS',
@@ -1127,6 +1130,7 @@ function getPage(name) {
     'asistencia': function(){ if(typeof renderAsistencia!=='undefined') renderAsistencia(); },
     'fichaje': function(){ if(typeof renderFichaje!=='undefined') renderFichaje(); },
     'produccion-cubiertas': function(){ if(typeof renderProdCub!=='undefined') renderProdCub(); },
+    'tablero-linea': function(){ if(typeof renderTablero!=='undefined') renderTablero(); },
     'puesto-estacion': function(){ if(typeof renderPuesto!=='undefined') renderPuesto(); },
     'precios-nuevos': function(){ if(typeof renderPrecios!=='undefined') renderPrecios(); },
     'documentos': function(){ if(typeof renderDocs!=='undefined') renderDocs(); },
@@ -1279,7 +1283,9 @@ async function appInit() {
   // Pantalla de estaciones sola: para los operarios (siempre) y con el link ?puesto para quien no sea administrador. Los administradores ven el sistema completo.
   var rolP = String((SES && SES.rol) || '').toUpperCase(), adminP = rolP.indexOf('SUPER') !== -1 || rolP.indexOf('ADMIN') !== -1;
   // Pantalla de fichaje (tablet de la entrada): siempre sola, sin menú, también para un administrador
-  if (window.EMA_MODO_FICHAJE && puedeVerPagina('fichaje')) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-fichaje'); inicio = 'fichaje'; document.title = 'Vulcan Fichaje'; }
+  // Tablero de la línea en un televisor de la planta (?tablero): pantalla grande, sin menú
+  if (window.EMA_MODO_TABLERO && puedeVerPagina('tablero-linea')) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-tablero'); inicio = 'tablero-linea'; document.title = 'Vulcan Línea'; }
+  else if (window.EMA_MODO_FICHAJE && puedeVerPagina('fichaje')) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-fichaje'); inicio = 'fichaje'; document.title = 'Vulcan Fichaje'; }
   // Documentos para el cliente (?docs) y carga de cascos desde el celular (?cascos): pantalla sola, sin menú
   else if (window.EMA_MODO_DOCS && puedeVerPagina('documentos')) { document.body.classList.add('modo-puesto'); inicio = 'documentos'; document.title = 'Vulcan Documentos'; }
   else if (window.EMA_MODO_CASCOS && puedeVerPagina('produccion-cubiertas')) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-cascos'); if (typeof PC_ !== 'undefined') PC_.tab = 'cascos'; inicio = 'produccion-cubiertas'; document.title = 'Vulcan Recepción'; }
@@ -1289,14 +1295,14 @@ async function appInit() {
   else if (!adminP && rolP.indexOf('VENDE') !== -1 && window.innerWidth >= 760 && puedeVerPagina('precios-nuevos')) { document.body.classList.add('modo-puesto'); inicio = 'precios-nuevos'; document.title = 'Vulcan Precios'; }
   // Celular: un solo link para todo. Si no entró por un acceso directo, arranca en el menú del celular (botones grandes según sus permisos)
   // El operario va directo a sus estaciones (ya quedó en modo puesto): el menú es para los demás
-  if (!document.body.classList.contains('modo-puesto') && !window.EMA_MODO_FICHAJE && !window.EMA_MODO_DOCS && !window.EMA_MODO_CASCOS && !window.EMA_MODO_PRECIOS && !window.EMA_MODO_PUESTO && window.innerWidth < 760) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-movil'); inicio = 'inicio-movil'; }
+  if (!document.body.classList.contains('modo-puesto') && !window.EMA_MODO_FICHAJE && !window.EMA_MODO_TABLERO && !window.EMA_MODO_DOCS && !window.EMA_MODO_CASCOS && !window.EMA_MODO_PRECIOS && !window.EMA_MODO_PUESTO && window.innerWidth < 760) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-movil'); inicio = 'inicio-movil'; }
   _hist.pagina = null;
   histReplace({ ema: 1, base: 1 });
   if (inicio) navTo(inicio);
   // Aviso de insumos por acabarse, una vez por ingreso
-  if (typeof cobAvisoInicio === 'function') setTimeout(cobAvisoInicio, 1500);
+  if (typeof cobAvisoInicio === 'function' && !window.EMA_MODO_TABLERO) setTimeout(cobAvisoInicio, 1500);
   // Aviso de asistencia (quién falta hoy, certificados para revisar), una vez por ingreso
-  if (typeof asAvisoInicio === 'function' && !window.EMA_MODO_FICHAJE) setTimeout(asAvisoInicio, 2500);
+  if (typeof asAvisoInicio === 'function' && !window.EMA_MODO_FICHAJE && !window.EMA_MODO_TABLERO) setTimeout(asAvisoInicio, 2500);
 }
 
 async function loadConfig(cacheOnly) {
@@ -1432,7 +1438,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031135';
+var EMA_BUILD = '202611031222';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -11245,6 +11251,8 @@ async function puCargar() {
   PU_.eq = await pEq;
   if (PU_.est) await puPesajeCargar(); else PU_.pes = null;
   puPintar();
+  // Viene del tablero de la línea: abre esa cubierta (su mapa de estaciones) para seguir desde ahí
+  if (PU_.irA && PU_.est) { var ir = PU_.irA; PU_.irA = null; if (puCubD(ir.cub)) puPanel(ir.ot, ir.cub); else toast('Esa cubierta no está en este puesto', 'r2'); }
 }
 // Después de confirmar un paso: se actualiza la cubierta acá mismo, sin volver a pedir todo al servidor
 function puMarcarHecha(idCub, est) {
@@ -12499,6 +12507,182 @@ async function puRtGuardar() {
     toast(av.length ? '⚠ Retiro guardado. Consumo alto: ' + av.join(', ') : 'Retiro guardado ✓' + (r.SIN_STOCK.length ? ' · sin stock en el sistema: ' + r.SIN_STOCK.join(', ') : ''), av.length ? 'r2' : 'g');
     PU_.vista = 'lista'; await puCargar();
   } catch (e) { toast(e.message, 'r2'); }
+}
+</script>
+
+<script>
+// ================================================================
+// TABLERO DE LA LÍNEA (03/11/2026): cómo va cada estación en este momento.
+// Mapa de estaciones con color según cómo están (libre, en tiempo, cerca del tiempo, atrasada o trabada),
+// cuántas cubiertas se están trabajando y cuántas esperan en cada una, los tiempos (real contra normal),
+// todas las cubiertas a la vez (cuadro) y el recorrido de una sola. Se actualiza solo.
+// Pantalla grande para un televisor en la planta: link ?tablero (sin menú).
+// ================================================================
+var TB_ = { linea: '', d: null, timer: null, reloj: null, grande: false, cada: 20 };
+try { TB_.linea = localStorage.getItem('tb_linea') || ''; } catch (e) {}
+
+(function() {
+  var st = document.createElement('style');
+  st.textContent =
+    '.tb-hd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.tb-hd h2{margin:0;font-size:22px;flex:1;min-width:200px}' +
+    '.tb-lin{display:flex;gap:6px}.tb-lin button{border:1.5px solid var(--border);background:var(--surface,#fff);border-radius:9px;padding:8px 14px;font-weight:700;font-size:14px;cursor:pointer;color:var(--text)}.tb-lin button.on{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb);color:#fff}' +
+    '.tb-act{font-size:12px;color:var(--dim,#64748b)}' +
+    '.tb-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}' +
+    '.tb-k{background:var(--surface,#fff);border:1px solid var(--border);border-radius:12px;padding:10px 12px}.tb-k small{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim,#64748b)}.tb-k b{font-size:26px;line-height:1.2;display:block}.tb-k span{font-size:12px;color:var(--dim,#64748b)}' +
+    '.tb-k.alerta{border-color:#dc2626;background:#fef2f2}.tb-k.alerta b{color:#b91c1c}' +
+    '.tb-map{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:8px}' +
+    '@media(max-width:1100px){.tb-map{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:640px){.tb-map{grid-template-columns:1fr}.tb-kpis{grid-template-columns:1fr 1fr}}' +
+    '.tb-wrap{padding:16px}body.modo-tablero .tb-wrap{padding:4px}.tb-paso .tb-c{justify-self:center}' +
+    '.tb-est{border:2px solid #cbd5e1;border-radius:14px;background:#f8fafc;padding:10px;display:flex;flex-direction:column;gap:6px;min-height:170px;position:relative}' +
+    '.tb-est.verde{background:#ecfdf5;border-color:#16a34a}.tb-est.amarillo{background:#fefce8;border-color:#ca8a04}.tb-est.rojo{background:#fef2f2;border-color:#dc2626}.tb-est.libre{background:#f8fafc;border-color:#cbd5e1}' +
+    '.tb-est .n{font-size:12px;font-weight:800;color:var(--dim,#64748b)}.tb-est .nom{font-size:15px;font-weight:800;line-height:1.15}' +
+    '.tb-est .est-st{position:absolute;top:8px;right:10px;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;background:#e2e8f0;color:#334155}' +
+    '.tb-est.verde .est-st{background:#16a34a;color:#fff}.tb-est.amarillo .est-st{background:#ca8a04;color:#fff}.tb-est.rojo .est-st{background:#dc2626;color:#fff}' +
+    '.tb-ch{display:block;width:100%;text-align:left;border:1px solid rgba(0,0,0,.12);background:#fff;border-radius:9px;padding:5px 7px;font-size:12px;cursor:pointer;color:var(--text)}' +
+    '.tb-ch b{font-family:monospace;font-size:13px}.tb-ch .op{color:var(--dim,#64748b)}.tb-ch .t{float:right;font-family:monospace;font-weight:700}' +
+    '.tb-bar{height:5px;background:#e2e8f0;border-radius:3px;margin-top:3px;overflow:hidden}.tb-bar i{display:block;height:100%;background:#16a34a}.tb-bar i.am{background:#ca8a04}.tb-bar i.ro{background:#dc2626}' +
+    '.tb-esp{display:flex;flex-wrap:wrap;gap:4px}.tb-esp button{border:1px dashed #94a3b8;background:transparent;border-radius:7px;padding:2px 6px;font-family:monospace;font-size:11px;cursor:pointer;color:var(--text)}' +
+    '.tb-pie{margin-top:auto;font-size:11px;color:var(--dim,#64748b);border-top:1px solid rgba(0,0,0,.08);padding-top:5px}' +
+    '.tb-ley{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim,#64748b);margin:6px 0 16px}.tb-ley span{display:flex;align-items:center;gap:5px}.tb-ley i{width:14px;height:14px;border-radius:4px;display:inline-block;border:2px solid}' +
+    '.tb-mx{overflow:auto;border:1px solid var(--border);border-radius:12px;background:var(--surface,#fff)}.tb-mx table{border-collapse:collapse;width:100%;font-size:12px}' +
+    '.tb-mx th,.tb-mx td{border-bottom:1px solid var(--border);padding:5px 6px;text-align:center;white-space:nowrap}.tb-mx th{position:sticky;top:0;background:var(--surface2,#f1f5f9);font-size:11px}.tb-mx td.c{text-align:left}' +
+    '.tb-mx tr{cursor:pointer}.tb-mx tr:hover td{background:#f8fafc}' +
+    '.tb-c{display:inline-block;min-width:26px;height:22px;line-height:22px;border-radius:6px;font-weight:800;font-size:12px}' +
+    '.tb-c.HECHA{background:#16a34a;color:#fff}.tb-c.EN_CURSO{background:#2563eb;color:#fff;animation:tbpul 1.4s infinite}.tb-c.ESPERA{background:#fde68a;color:#78350f}.tb-c.FALTA{background:#e2e8f0;color:#94a3b8}.tb-c.NO_PASA{background:transparent;color:#cbd5e1}' +
+    '@keyframes tbpul{0%,100%{opacity:1}50%{opacity:.55}}' +
+    '.tb-vacio{padding:30px;text-align:center;color:var(--dim,#64748b);font-size:15px}' +
+    '.tb-paso{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--border)}' +
+    // Pantalla grande (televisor de la planta)
+    'body.modo-tablero #sidebar,body.modo-tablero #mob-menu{display:none!important}body.modo-tablero #main{padding:10px!important}' +
+    'body.modo-tablero .tb-est .nom{font-size:19px}body.modo-tablero .tb-ch{font-size:15px}body.modo-tablero .tb-ch b{font-size:16px}body.modo-tablero .tb-k b{font-size:34px}body.modo-tablero .tb-est{min-height:210px}';
+  document.head.appendChild(st);
+})();
+
+function tbEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function tbMin(m) { m = Math.round(m || 0); if (m < 60) return m + ' min'; var h = Math.floor(m / 60), r = m % 60; return h + ' h' + (r ? ' ' + r + ' min' : ''); }
+function tbReloj(s) { s = Math.max(0, Math.round(s || 0)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' : '') + (m < 10 && h ? '0' : '') + m + ':' + (x < 10 ? '0' : '') + x; }
+function tbHora(ms) { var d = new Date(ms); return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes(); }
+function tbEl() { return $id('page-tablero-linea'); }
+
+async function renderTablero() {
+  var el = tbEl(); if (!el) return;
+  if (window.EMA_MODO_TABLERO) { document.body.classList.add('modo-tablero'); TB_.grande = true; }
+  if (!TB_.d) el.innerHTML = '<div class="card"><div class="card-body tdim">Cargando el tablero…</div></div>';
+  await tbCargar();
+  tbProgramar();
+}
+function tbVisible() { var el = tbEl(); return !!(el && !el.classList.contains('hidden') && el.offsetParent !== null); }
+function tbProgramar() {
+  if (TB_.timer) clearInterval(TB_.timer); if (TB_.reloj) clearInterval(TB_.reloj);
+  TB_.timer = setInterval(function() { if (tbVisible() && !document.querySelector('.mo')) tbCargar(); }, TB_.cada * 1000);
+  // Los relojes corren en pantalla cada segundo, sin pedir nada al servidor
+  TB_.reloj = setInterval(function() {
+    if (!tbVisible() || !TB_.d) return;
+    var dt = Date.now() + (TB_.dt || 0);
+    document.querySelectorAll('#page-tablero-linea [data-ini]').forEach(function(x) { x.textContent = tbReloj((dt - (+x.getAttribute('data-ini'))) / 1000); });
+  }, 1000);
+}
+async function tbCargar() {
+  var r;
+  try { r = await gsRun('gsPC_Tablero', TB_.linea); } catch (e) { var el = tbEl(); if (el && !TB_.d) el.innerHTML = '<div class="al al-r">' + tbEsc(e.message) + '</div>'; return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo cargar el tablero', 'r2'); return; }
+  TB_.d = r; TB_.linea = r.LINEA; TB_.dt = r.AHORA - Date.now(); TB_.recibido = Date.now();
+  tbPintar();
+}
+function tbLinea(l) { TB_.linea = l; try { localStorage.setItem('tb_linea', l); } catch (e) {} TB_.d = null; renderTablero(); }
+function tbGrande() {
+  TB_.grande = !TB_.grande; document.body.classList.toggle('modo-tablero', TB_.grande);
+  try { if (TB_.grande && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); else if (!TB_.grande && document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+  tbPintar();
+}
+
+// Estado de una estación: libre · en tiempo · cerca del tiempo · atrasada o trabada
+function tbEstadoEst(e, primera) {
+  var std = e.MIN_STD || 0, peor = 0;
+  e.EN_CURSO.forEach(function(x) { var seg = x.SEG; if (!x.PARADO && x.INI) seg = (Date.now() + (TB_.dt || 0) - x.INI) / 1000; if (std > 0) peor = Math.max(peor, seg / 60 / std); });
+  if (e.COCINANDO) { peor = ((Date.now() + (TB_.dt || 0)) - e.COCINANDO.INICIO) / 60000 / (e.COCINANDO.MIN || 1); }
+  var esp = e.ESPERANDO.length, trab = e.EN_CURSO.length + (e.COCINANDO ? 1 : 0);
+  if (!trab && !esp) return ['libre', 'LIBRE'];
+  // En la primera estación, las que esperan son las de la carga que todavía no empezaron: no es atraso
+  if (primera) { if (peor > 1.3) return ['rojo', 'ATRASADA']; if (!trab) return ['amarillo', 'ESPERAN · NADIE']; return peor > 0.9 ? ['amarillo', 'OJO'] : ['verde', 'EN TIEMPO']; }
+  if (peor > 1.3 || esp >= 3) return ['rojo', peor > 1.3 ? 'ATRASADA' : 'SE ACUMULA'];
+  if (peor > 0.9 || (esp && !trab) || esp === 2) return ['amarillo', esp && !trab ? 'ESPERAN · NADIE' : 'OJO'];
+  return ['verde', 'EN TIEMPO'];
+}
+function tbPintar() {
+  var el = tbEl(), d = TB_.d; if (!el || !d) return;
+  var R = d.RESUMEN, ahora = Date.now() + (TB_.dt || 0);
+  var h = '<div class="tb-hd"><h2>🏭 Tablero de la línea</h2>' +
+    '<div class="tb-lin">' + d.LINEAS.map(function(l) { return '<button class="' + (l === d.LINEA ? 'on' : '') + '" onclick="tbLinea(\'' + tbEsc(l) + '\')">' + (l === 'AGRICOLA' ? 'Agrícola' : l === 'CAMIONES' ? 'Camiones' : tbEsc(l)) + '</button>'; }).join('') + '</div>' +
+    '<button class="btn btn-s btn-sm" onclick="tbCargar()"><i class="fas fa-sync"></i> Actualizar</button>' +
+    '<button class="btn btn-s btn-sm" onclick="tbGrande()"><i class="fas fa-tv"></i> ' + (TB_.grande ? 'Salir de pantalla grande' : 'Pantalla grande') + '</button>' +
+    '<span class="tb-act">Actualizado ' + tbHora(ahora) + ' · se actualiza solo cada ' + TB_.cada + ' s</span></div>';
+  // Números de toda la línea
+  var fin = R.FIN ? tbHora(R.FIN) : '—';
+  h += '<div class="tb-kpis">' +
+    '<div class="tb-k"><small>En la línea</small><b>' + R.EN_LINEA + '</b><span>' + R.TRABAJANDO + ' trabajándose · ' + R.ESPERANDO + ' esperando' + (R.LISTAS ? ' · ' + R.LISTAS + ' para terminar' : '') + '</span></div>' +
+    '<div class="tb-k"><small>Terminadas hoy</small><b style="color:#16a34a">' + R.TERMINADAS_HOY + '</b><span>' + (R.RECHAZADAS_HOY ? R.RECHAZADAS_HOY + ' rechazadas hoy' : 'sin rechazos hoy') + '</span></div>' +
+    '<div class="tb-k"><small>Termina la carga (aprox.)</small><b>' + fin + '</b><span>' + (R.FIN ? 'faltan ' + tbMin(R.FIN_MIN) + ' de trabajo' : 'no hay cubiertas en línea') + '</span></div>' +
+    '<div class="tb-k' + (R.CUELLO && R.CUELLO.ESPERANDO >= 3 ? ' alerta' : '') + '"><small>Dónde se traba</small><b style="font-size:20px">' + (R.CUELLO ? R.CUELLO.NRO + ' · ' + tbEsc(R.CUELLO.NOMBRE) : 'Nada trabado') + '</b><span>' + (R.CUELLO ? R.CUELLO.ESPERANDO + ' cubierta' + (R.CUELLO.ESPERANDO === 1 ? '' : 's') + ' esperando' : '') + '</span></div>' +
+    '<div class="tb-k"><small>Órdenes de servicio en línea</small><b>' + R.ORDENES.length + '</b><span>' + (R.ORDENES.length ? R.ORDENES.map(function(o) { return tbEsc(o.NRO_OT) + ' (' + o.N + ')'; }).join(' · ') : 'ninguna en línea') + (R.SUPLENTES ? ' · ' + R.SUPLENTES + ' suplente' + (R.SUPLENTES === 1 ? '' : 's') : '') + '</span></div></div>';
+  if (!R.EN_LINEA) h += '<div class="al al-b mb3">No hay cubiertas en la línea ' + (d.LINEA === 'AGRICOLA' ? 'agrícola' : 'de camiones') + ' ahora. Cuando se arme y empiece una orden de servicio, acá se ve cada estación en vivo.</div>';
+  // Mapa de estaciones
+  h += '<div class="tb-map">' + d.ESTACIONES.map(function(e, ix) {
+    var s = tbEstadoEst(e, ix === 0), std = e.MIN_STD;
+    var cur = e.EN_CURSO.map(function(x) {
+      var ini = x.PARADO ? 0 : ahora - x.SEG * 1000 - (Date.now() - TB_.recibido), pct = std ? Math.min(100, x.SEG / 60 / std * 100) : 0, cls = x.SEG / 60 > std * 1.3 ? 'ro' : x.SEG / 60 > std * 0.9 ? 'am' : '';
+      return '<button class="tb-ch" onclick="tbCub(\'' + tbEsc(x.ID_CUB) + '\')" title="Marca grabada ' + tbEsc(x.MARCA) + '"><span class="t"' + (x.PARADO ? '' : ' data-ini="' + Math.round(ahora - x.SEG * 1000) + '"') + '>' + tbReloj(x.SEG) + '</span><b>' + tbEsc(x.MARCA) + '</b>' + (x.PARADO ? ' <span style="color:#ca8a04;font-weight:700">⏸ parado</span>' : '') +
+        '<div class="op">' + tbEsc(x.OPERARIO || 'sin operario') + ' · normal ' + tbMin(std) + '</div><div class="tb-bar"><i class="' + cls + '" style="width:' + Math.round(pct) + '%"></i></div></button>';
+    }).join('');
+    if (e.COCINANDO) {
+      var c = e.COCINANDO, trans = (ahora - c.INICIO) / 60000, pc = Math.min(100, trans / (c.MIN || 1) * 100);
+      cur = '<div class="tb-ch" style="cursor:default"><span class="t" data-ini="' + c.INICIO + '">' + tbReloj((ahora - c.INICIO) / 1000) + '</span><b>🔥 Cocinando ' + c.N + '</b><div class="op">' + tbEsc(c.NRO_OT) + ' · ' + tbMin(c.MIN) + ' · termina ' + tbHora(c.INICIO + c.MIN * 60000) + '</div><div class="tb-bar"><i style="width:' + Math.round(pc) + '%"></i></div></div>';
+    }
+    var esp = e.ESPERANDO.length ? '<div style="font-size:12px;font-weight:700">⏳ ' + (ix === 0 ? 'Por empezar: ' : 'Esperando: ') + e.ESPERANDO.length + '</div><div class="tb-esp">' + e.ESPERANDO.slice(0, 8).map(function(x) { return '<button onclick="tbCub(\'' + tbEsc(x.ID_CUB) + '\')" title="Esperando desde ' + tbHora(x.DESDE) + '">' + tbEsc(x.MARCA) + '</button>'; }).join('') + (e.ESPERANDO.length > 8 ? '<span style="font-size:11px">+' + (e.ESPERANDO.length - 8) + '</span>' : '') + '</div>' : '';
+    var real = e.ES_AUTOCLAVE ? 'cocción ' + tbMin(std) : (e.N_REAL >= 3 ? 'real ' + tbMin(e.PROM_REAL) + ' · ' : '') + 'normal ' + tbMin(std) + (e.OPERARIOS > 1 ? ' · ' + e.OPERARIOS + ' operarios' : '');
+    return '<div class="tb-est ' + s[0] + '"><span class="est-st">' + s[1] + '</span><span class="n">ESTACIÓN ' + e.NRO + '</span><span class="nom">' + tbEsc(e.NOMBRE) + '</span>' +
+      (cur || (e.ESPERANDO.length ? '' : '<div class="tdim" style="font-size:12px">Nadie trabajando</div>')) + esp +
+      '<div class="tb-pie">Hoy: <b>' + e.HECHAS_HOY + '</b> hecha' + (e.HECHAS_HOY === 1 ? '' : 's') + ' · ' + real + '</div></div>';
+  }).join('') + '</div>';
+  h += '<div class="tb-ley"><span><i style="background:#ecfdf5;border-color:#16a34a"></i>En tiempo</span><span><i style="background:#fefce8;border-color:#ca8a04"></i>Cerca del tiempo normal, 2 esperando o esperan y nadie trabaja</span><span><i style="background:#fef2f2;border-color:#dc2626"></i>Pasada del tiempo (+30%) o 3 o más esperando</span><span><i style="background:#f8fafc;border-color:#cbd5e1"></i>Libre</span></div>';
+  // Todas las cubiertas a la vez: una fila por cubierta, una columna por estación
+  if (d.CUBIERTAS.length) {
+    var cs = d.CUBIERTAS.slice().sort(function(a, b) { return b.HECHAS - a.HECHAS || a.MARCA.localeCompare(b.MARCA); });
+    h += '<div class="card-title" style="margin:6px 0 8px;font-size:15px">Todas las cubiertas de la línea</div><div class="tb-mx"><table><thead><tr><th class="c" style="text-align:left">Marca grabada · DOT</th>' +
+      d.ESTACIONES.map(function(e) { return '<th title="' + tbEsc(e.NOMBRE) + '">' + e.NRO + '</th>'; }).join('') + '<th>Avance</th><th>Le falta</th></tr></thead><tbody>' +
+      cs.map(function(c) {
+        return '<tr onclick="tbCub(\'' + tbEsc(c.ID_CUB) + '\')"><td class="c"><b style="font-family:monospace">' + tbEsc(c.MARCA) + '</b> <span class="tdim">DOT ' + tbEsc(c.DOT || 'sin DOT') + '</span><div class="tdim" style="font-size:11px">' + tbEsc(c.CLIENTE) + ' · ' + tbEsc(c.MEDIDA) + ' · ' + tbEsc(c.TRABAJO) + (c.PASADA > 1 ? ' · reproceso' : '') + '</div></td>' +
+          c.PASOS.map(function(p) { return '<td><span class="tb-c ' + p.E + '" title="' + tbEsc(p.NRO + ' · ' + p.NOMBRE) + '">' + (p.E === 'HECHA' ? '✓' : p.E === 'EN_CURSO' ? '▶' : p.E === 'ESPERA' ? '⏳' : p.E === 'NO_PASA' ? '—' : '·') + '</span></td>'; }).join('') +
+          '<td>' + c.HECHAS + '/' + c.TOTAL + '</td><td>' + (c.ESTADO_EST === 'LISTA' ? 'para terminar' : tbMin(c.FALTA_MIN)) + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<div class="tb-ley" style="margin-top:8px"><span><span class="tb-c HECHA">✓</span> Hecha</span><span><span class="tb-c EN_CURSO">▶</span> Trabajándose ahora</span><span><span class="tb-c ESPERA">⏳</span> Esperando para entrar</span><span><span class="tb-c FALTA">·</span> Falta</span><span><span class="tb-c NO_PASA">—</span> Su trabajo no pasa por ahí</span></div>';
+  }
+  h += '<div class="tdim" style="font-size:11px;margin-top:6px">Tiempos: «normal» son los minutos de cada estación (Recetas → Líneas, tipos y trabajos / Configuración); «real» es el promedio de los últimos 30 días cuando hay 3 o más registros. Los relojes salen de EMPEZAR y TERMINÉ en la tablet: si no se tocan, el tablero sabe dónde está cada cubierta pero no cuánto tardó. La hora de fin es estimada.</div>';
+  el.innerHTML = '<div class="tb-wrap">' + h + '</div>';
+}
+// Recorrido de una cubierta: estación por estación, con quién, cuándo y cuánto tardó
+function tbCub(id) {
+  var c = (TB_.d.CUBIERTAS || []).filter(function(x) { return String(x.ID_CUB) === String(id); })[0]; if (!c) return;
+  var ahora = Date.now() + (TB_.dt || 0);
+  var est = { HECHA: ['#16a34a', '✓ Hecha'], EN_CURSO: ['#2563eb', '▶ Trabajándose'], ESPERA: ['#ca8a04', '⏳ Esperando'], FALTA: ['#94a3b8', 'Falta'], NO_PASA: ['#cbd5e1', 'No pasa'] };
+  var h = '<div class="mh"><span class="mt">Marca grabada <b style="font-family:monospace">' + tbEsc(c.MARCA) + '</b> · DOT ' + tbEsc(c.DOT || 'sin DOT') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div style="margin-bottom:8px">' + tbEsc(c.CLIENTE) + ' · ' + tbEsc(c.MEDIDA) + ' · ' + tbEsc(c.TRABAJO) + ' · ' + tbEsc(c.NRO_OT) + (c.PASADA > 1 ? ' · <b>reproceso</b>' : '') + '</div>' +
+    '<div class="al ' + (c.ESTADO_EST === 'ESPERA' ? 'al-w' : 'al-b') + ' mb3" style="font-size:14px">' +
+    (c.ESTADO_EST === 'LISTA' ? 'Pasó por todas las estaciones: falta terminarla en la oficina.' : (function() { var p = c.PASOS.filter(function(x) { return x.ID === c.DONDE; })[0] || {}; return (c.ESTADO_EST === 'ESPERA' ? 'Esperando para entrar a ' : c.ESTADO_EST === 'COCINANDO' ? 'Cocinándose en ' : c.ESTADO_EST === 'PARADO' ? 'Reloj parado en ' : 'Trabajándose en ') + '<b>' + tbEsc(p.NRO + ' · ' + p.NOMBRE) + '</b>' + (c.OPERARIO ? ' · ' + tbEsc(c.OPERARIO) : '') + (c.ESTADO_EST !== 'ESPERA' ? ' · ' + tbReloj(c.SEG) : ' · desde las ' + tbHora(c.DESDE)) + '. Le faltan aprox. <b>' + tbMin(c.FALTA_MIN) + '</b>.'; })()) + '</div>' +
+    c.PASOS.map(function(p) {
+      var e = est[p.E] || est.FALTA, info = p.E === 'HECHA' ? (p.FECHA ? tbHora(p.FECHA) + ' · ' : '') + tbEsc(p.OPERARIO || '') + (p.MIN_REAL ? ' · ' + tbMin(p.MIN_REAL) + ' (normal ' + tbMin(p.MIN_STD) + ')' : '') : p.E === 'NO_PASA' ? 'su trabajo no pasa por acá' : 'normal ' + tbMin(p.MIN_STD);
+      return '<div class="tb-paso"><span class="tb-c ' + p.E + '">' + (p.E === 'HECHA' ? '✓' : p.NRO) + '</span><div><b>' + p.NRO + ' · ' + tbEsc(p.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + info + '</div></div><span style="font-size:12px;font-weight:700;color:' + e[0] + '">' + e[1] + '</span></div>';
+    }).join('') + '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button>' +
+    (puedeVerPagina('puesto-estacion') && c.DONDE ? '<button class="btn btn-p" onclick="tbIrPuesto(\'' + tbEsc(c.ID_OT) + '\',\'' + tbEsc(c.ID_CUB) + '\')"><i class="fas fa-tablet-alt"></i> Abrir en el puesto</button>' : '') + '</div>';
+  showModal(h, 'md-lg');
+}
+// Desde el tablero, el encargado abre esa cubierta en el puesto de estación (modo «recorro todas las estaciones»)
+function tbIrPuesto(ot, cub) {
+  closeModal();
+  if (typeof PU_ === 'undefined') return;
+  PU_.est = 'TODAS'; try { localStorage.setItem('pu_est', 'TODAS'); } catch (e) {}
+  PU_.vista = 'lista'; PU_.irA = { ot: ot, cub: cub };
+  navTo('puesto-estacion');
 }
 </script>
 
@@ -17365,6 +17549,7 @@ var MV_OPC = [
   ['cascos', '📥', 'Recibir cascos', 'Boleta del cliente con su firma', 'produccion-cubiertas', 'cascos', 'RECEPCION ENCARGADO_PLANTA VENDEDOR'],
   ['documentos', '📄', 'Documentos', 'Orden, remito o certificado en PDF', 'documentos', '', 'RECEPCION ENCARGADO_PLANTA VENDEDOR FACTURACION'],
   ['cubierta', '🔎', 'Buscar cubierta', 'Dónde está y toda su vida', 'documentos', 'CUB', 'RECEPCION ENCARGADO_PLANTA VENDEDOR FACTURACION'],
+  ['tablero', '📺', 'Tablero de la línea', 'Cómo va cada estación ahora', 'tablero-linea', '', 'ENCARGADO_PLANTA'],
   ['cargas', '🏭', 'Cargas en la línea', 'Cada orden de servicio y sus cubiertas', 'produccion-cubiertas', 'os', 'ENCARGADO_PLANTA'],
   ['puesto-estacion', '🛠', 'Estaciones', 'Trabajo en la línea', 'puesto-estacion', '', 'ENCARGADO_PLANTA OPERADOR'],
   ['plan', '📅', 'Plan de mañana', 'Dejar todo listo el día anterior', 'produccion-cubiertas', 'plan', 'ENCARGADO_PLANTA'],
