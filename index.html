@@ -1438,7 +1438,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031232';
+var EMA_BUILD = '202611031240';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12518,7 +12518,7 @@ async function puRtGuardar() {
 // todas las cubiertas a la vez (cuadro) y el recorrido de una sola. Se actualiza solo.
 // Pantalla grande para un televisor en la planta: link ?tablero (sin menú).
 // ================================================================
-var TB_ = { vista: 'linea', linea: '', d: null, timer: null, reloj: null, grande: false, cada: 20 };
+var TB_ = { vista: 'planta', linea: '', d: null, timer: null, reloj: null, grande: false, cada: 20 };
 try { TB_.linea = localStorage.getItem('tb_linea') || ''; } catch (e) {}
 
 (function() {
@@ -12594,6 +12594,7 @@ function tbProgramar() {
     if (!tbVisible() || !TB_.d) return;
     var dt = Date.now() + (TB_.dt || 0);
     document.querySelectorAll('#page-tablero-linea [data-ini]').forEach(function(x) { x.textContent = tbReloj((dt - (+x.getAttribute('data-ini'))) / 1000); });
+    var ck = $id('tp-clk'); if (ck) { var dd = new Date(dt); ck.textContent = tbHora(dt) + ':' + (dd.getSeconds() < 10 ? '0' : '') + dd.getSeconds(); }
   }, 1000);
 }
 async function tbCargar() {
@@ -12625,6 +12626,7 @@ function tbEstadoEst(e, primera) {
   return ['verde', 'EN TIEMPO'];
 }
 function tbPintar() {
+  if (TB_.vista === 'planta') return tbPintarPlanta();
   var el = tbEl(), d = TB_.d; if (!el || !d) return;
   var R = d.RESUMEN, ahora = Date.now() + (TB_.dt || 0);
   var h = '<div class="tb-hd"><h2>🏭 Tablero de la línea</h2>' +
@@ -12638,11 +12640,11 @@ function tbPintar() {
     '<div class="tb-k"><small>En la línea</small><b>' + R.EN_LINEA + '</b><span>' + R.TRABAJANDO + ' trabajándose · ' + R.ESPERANDO + ' esperando' + (R.LISTAS ? ' · ' + R.LISTAS + ' para terminar' : '') + '</span></div>' +
     '<div class="tb-k"><small>Terminadas hoy</small><b style="color:#16a34a">' + R.TERMINADAS_HOY + '</b><span>' + (R.RECHAZADAS_HOY ? R.RECHAZADAS_HOY + ' rechazadas hoy' : 'sin rechazos hoy') + '</span></div>' +
     '<div class="tb-k"><small>Termina la carga (aprox.)</small><b>' + fin + '</b><span>' + (R.FIN ? 'faltan ' + tbMin(R.FIN_MIN) + ' de trabajo' : 'no hay cubiertas en línea') + '</span></div>' +
-    '<div class="tb-k' + (R.CUELLO && R.CUELLO.ESPERANDO >= 3 ? ' alerta' : '') + '"><small>Dónde se traba</small><b style="font-size:20px">' + (R.CUELLO ? R.CUELLO.NRO + ' · ' + tbEsc(R.CUELLO.NOMBRE) : 'Nada trabado') + '</b><span>' + (R.CUELLO ? R.CUELLO.ESPERANDO + ' cubierta' + (R.CUELLO.ESPERANDO === 1 ? '' : 's') + ' esperando' : '') + '</span></div>' +
+    (function() { var cu = R.CUELLO && R.CUELLO.ESPERANDO >= 2 ? R.CUELLO : null; return '<div class="tb-k' + (cu && cu.ESPERANDO >= 3 ? ' alerta' : '') + '"><small>Dónde se traba</small><b style="font-size:20px">' + (cu ? cu.NRO + ' · ' + tbEsc(cu.NOMBRE) : 'Nada trabado') + '</b><span>' + (cu ? cu.ESPERANDO + ' cubiertas esperando' : 'ninguna estación con 2 o más esperando') + '</span></div>'; })() +
     '<div class="tb-k"><small>Órdenes de servicio en línea</small><b>' + R.ORDENES.length + '</b><span>' + (R.ORDENES.length ? R.ORDENES.map(function(o) { return tbEsc(o.NRO_OT) + ' (' + o.N + ')'; }).join(' · ') : 'ninguna en línea') + (R.SUPLENTES ? ' · ' + R.SUPLENTES + ' suplente' + (R.SUPLENTES === 1 ? '' : 's') : '') + '</span></div></div>';
   if (!R.EN_LINEA) h += '<div class="al al-b mb3">No hay cubiertas en la línea ' + (d.LINEA === 'AGRICOLA' ? 'agrícola' : 'de camiones') + ' ahora. Cuando se arme y empiece una orden de servicio, acá se ve cada estación en vivo.</div>';
   // Vista: la línea con una columna por estación y cada cubierta como un botón grande, o el cuadro de todas
-  h += '<div class="tb-vis" style="margin-bottom:10px"><button class="' + (TB_.vista !== 'cuadro' ? 'on' : '') + '" onclick="TB_.vista=\'linea\';tbPintar()">🏭 La línea</button><button class="' + (TB_.vista === 'cuadro' ? 'on' : '') + '" onclick="TB_.vista=\'cuadro\';tbPintar()">▦ Cuadro por cubierta</button></div>';
+  h += '<div class="tb-vis" style="margin-bottom:10px"><button onclick="TB_.vista=\'planta\';tbPintar()">📺 Vista planta</button><button class="' + (TB_.vista !== 'cuadro' ? 'on' : '') + '" onclick="TB_.vista=\'linea\';tbPintar()">🏭 La línea</button><button class="' + (TB_.vista === 'cuadro' ? 'on' : '') + '" onclick="TB_.vista=\'cuadro\';tbPintar()">▦ Cuadro por cubierta</button></div>';
   if (TB_.vista !== 'cuadro') {
     var listas = d.CUBIERTAS.filter(function(c) { return c.ESTADO_EST === 'LISTA'; });
     h += '<div class="tb-line">' + d.ESTACIONES.map(function(e, ix) {
@@ -12711,6 +12713,150 @@ function tbIrPuesto(ot, cub) {
   PU_.est = 'TODAS'; try { localStorage.setItem('pu_est', 'TODAS'); } catch (e) {}
   PU_.vista = 'lista'; PU_.irA = { ot: ot, cub: cub };
   navTo('puesto-estacion');
+}
+</script>
+<script>
+// ================================================================
+// TABLERO · VISTA «PLANTA» (03/11/2026): sala de control para el televisor.
+// Fondo oscuro, números grandes, la línea dibujada como una cinta con las estaciones,
+// cada cubierta dibujada como una cubierta con un anillo de tiempo, tarjetas con el avance
+// de cada una y un gráfico de ocupación por estación. Se lee de lejos, sin letra chica.
+// ================================================================
+(function() {
+  var st = document.createElement('style');
+  st.textContent =
+    '.tp{background:radial-gradient(1200px 600px at 20% -10%,#1e3a8a33,transparent),linear-gradient(180deg,#0b1220,#0f172a);color:#e2e8f0;border-radius:20px;padding:18px 20px 22px;font-family:inherit;min-height:calc(100vh - 40px)}' +
+    'body.modo-tablero .tp{border-radius:0;min-height:100vh}body.modo-tablero #main{padding:0!important}body.modo-tablero .tb-wrap{padding:0}' +
+    '.tp-hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}.tp-tt{flex:1;min-width:260px}.tp-tt b{display:block;font-size:26px;letter-spacing:.02em;color:#fff}.tp-tt span{font-size:13px;color:#94a3b8;letter-spacing:.12em;text-transform:uppercase}' +
+    '.tp-clk{font-family:monospace;font-size:38px;font-weight:900;color:#fff;letter-spacing:.04em}' +
+    '.tp-btn{border:1px solid #334155;background:#111a2e;color:#e2e8f0;border-radius:10px;padding:8px 13px;font-weight:700;font-size:13px;cursor:pointer}.tp-btn.on{background:#2563eb;border-color:#2563eb;color:#fff}' +
+    '.tp-kp{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:16px}' +
+    '.tp-k{background:linear-gradient(160deg,#111a2e,#0d1526);border:1px solid #1e293b;border-radius:18px;padding:14px 16px;display:flex;gap:12px;align-items:center;min-height:104px}' +
+    '.tp-k .ico{flex:0 0 52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px}' +
+    '.tp-k .v{font-size:44px;font-weight:900;line-height:1;color:#fff}.tp-k .l{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;margin-top:4px}.tp-k .s{font-size:13px;color:#cbd5e1;margin-top:3px}' +
+    '.tp-k.al{border-color:#ef4444;box-shadow:0 0 0 1px #ef4444 inset,0 0 22px #ef444455}' +
+    '.tp-cin{position:relative;background:#0d1526;border:1px solid #1e293b;border-radius:20px;padding:12px 10px 10px;margin-bottom:16px;overflow-x:auto}' +
+    '.tp-cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(112px,1fr);gap:4px;position:relative;min-width:100%}' +
+    '.tp-col{display:flex;flex-direction:column;align-items:center;min-width:0}' +
+    '.tp-arr{height:262px;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding-bottom:6px}' +
+    '.tp-tr{position:absolute;left:40px;right:40px;top:296px;height:10px;border-radius:6px;background:repeating-linear-gradient(90deg,#334155 0 22px,#1e293b 22px 34px);animation:tpcinta 1.6s linear infinite;z-index:0}' +
+    '@keyframes tpcinta{to{background-position:34px 0}}' +
+    '.tp-nd{position:relative;z-index:1;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:26px;color:#fff;background:#334155;border:4px solid #0b1220;box-shadow:0 0 0 3px #475569}' +
+    '.tp-nd.verde{background:#16a34a;box-shadow:0 0 0 3px #22c55e,0 0 26px #22c55e88}.tp-nd.amarillo{background:#d97706;box-shadow:0 0 0 3px #f59e0b,0 0 26px #f59e0b88}.tp-nd.rojo{background:#dc2626;box-shadow:0 0 0 3px #ef4444,0 0 30px #ef4444aa;animation:tppul 1.2s infinite}.tp-nd.fin{background:#16a34a;box-shadow:0 0 0 3px #22c55e}' +
+    '@keyframes tppul{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}' +
+    '.tp-nm{margin-top:8px;text-align:center;font-weight:800;font-size:14px;line-height:1.15;color:#f1f5f9;min-height:34px;padding:0 2px;overflow-wrap:anywhere}' +
+    '.tp-pl{margin-top:5px;font-size:11px;font-weight:900;letter-spacing:.06em;padding:3px 9px;border-radius:20px;background:#1e293b;color:#94a3b8}' +
+    '.tp-pl.verde{background:#14532d;color:#86efac}.tp-pl.amarillo{background:#78350f;color:#fde68a}.tp-pl.rojo{background:#7f1d1d;color:#fecaca}' +
+    '.tp-mt{margin-top:5px;font-size:12px;color:#94a3b8;text-align:center}' +
+    '.tp-cu{background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;color:#fff}' +
+    '.tp-cu .mk{font-family:monospace;font-weight:900;font-size:15px;margin-top:2px;letter-spacing:.02em}.tp-cu .rl{font-family:monospace;font-weight:900;font-size:20px;line-height:1}.tp-cu .op{font-size:11px;color:#94a3b8;max-width:128px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '.tp-gira{animation:tpgira 4s linear infinite;transform-origin:50% 50%}@keyframes tpgira{to{transform:rotate(360deg)}}' +
+    '.tp-cola{display:flex;flex-wrap:wrap;justify-content:center;gap:3px;max-width:128px}.tp-cola button{background:none;border:0;padding:0;cursor:pointer}' +
+    '.tp-ce{font-size:12px;font-weight:800;color:#fbbf24}' +
+    '.tp-bot{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1fr);gap:16px}' +
+    '.tp-pn{background:#0d1526;border:1px solid #1e293b;border-radius:20px;padding:14px}.tp-pn h3{margin:0 0 10px;font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8}' +
+    '.tp-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}' +
+    '.tp-cd{display:flex;gap:12px;align-items:center;background:#111a2e;border:1px solid #1e293b;border-left:6px solid #475569;border-radius:16px;padding:10px 12px;cursor:pointer;text-align:left;color:#e2e8f0}' +
+    '.tp-cd.ok{border-left-color:#3b82f6}.tp-cd.ojo{border-left-color:#f59e0b}.tp-cd.mal{border-left-color:#ef4444}.tp-cd.esp{border-left-color:#fbbf24}.tp-cd.coc{border-left-color:#f97316}.tp-cd.lis{border-left-color:#22c55e}.tp-cd.emp{border-left-color:#64748b}' +
+    '.tp-cd .mk{font-family:monospace;font-weight:900;font-size:18px;color:#fff}.tp-cd .dn{font-size:12px;color:#cbd5e1;margin-top:2px}.tp-cd .ch{display:inline-block;margin-top:4px;font-size:11px;font-weight:900;padding:2px 8px;border-radius:10px}' +
+    '.tp-seg{display:flex;gap:2px;margin-top:6px}.tp-seg i{flex:1;height:7px;border-radius:2px;background:#334155}.tp-seg i.H{background:#22c55e}.tp-seg i.C{background:#3b82f6}.tp-seg i.E{background:#fbbf24}.tp-seg i.N{background:transparent;border:1px dashed #334155}' +
+    '.tp-br{display:grid;grid-template-columns:34px 1fr 60px;gap:8px;align-items:center;margin:7px 0;font-size:13px}.tp-br .n{font-weight:900;color:#fff;text-align:center;background:#1e293b;border-radius:8px;padding:3px 0}' +
+    '.tp-br .b{height:20px;background:#111a2e;border-radius:6px;overflow:hidden;display:flex}.tp-br .b i{display:block;height:100%}.tp-br .t{font-family:monospace;color:#cbd5e1;text-align:right}' +
+    '.tp-ley{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#cbd5e1;margin-top:12px}.tp-ley span{display:flex;gap:6px;align-items:center}.tp-ley i{width:14px;height:14px;border-radius:50%;display:inline-block}' +
+    '@media(max-width:1300px){.tp-kp{grid-template-columns:repeat(3,minmax(0,1fr))}.tp-bot{grid-template-columns:1fr}}@media(max-width:640px){.tp-kp{grid-template-columns:1fr 1fr}.tp-k .v{font-size:32px}.tp-clk{font-size:26px}}';
+  document.head.appendChild(st);
+})();
+var TP_COL = { ok: '#3b82f6', ojo: '#f59e0b', mal: '#ef4444', par: '#94a3b8', coc: '#f97316', esp: '#fbbf24', emp: '#64748b', lis: '#22c55e' };
+// Una cubierta dibujada: banda con dibujo, llanta y un anillo que se llena (tiempo o avance)
+function tpCubSvg(tam, pct, color, gira, apagada) {
+  var r = 46, c = 2 * Math.PI * r, p = Math.max(0, Math.min(1, pct || 0));
+  return '<svg width="' + tam + '" height="' + tam + '" viewBox="0 0 100 100" style="display:block' + (apagada ? ';opacity:.55' : '') + '">' +
+    '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="#1e293b" stroke-width="7"/>' +
+    (p > 0 ? '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="7" stroke-linecap="round" stroke-dasharray="' + (c * p).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 50 50)"/>' : '') +
+    '<g' + (gira ? ' class="tp-gira"' : '') + '><circle cx="50" cy="50" r="38" fill="#0a0f1a"/><circle cx="50" cy="50" r="34" fill="none" stroke="#2b3647" stroke-width="7" stroke-dasharray="5 3.2"/>' +
+    '<circle cx="50" cy="50" r="19" fill="' + (apagada ? '#475569' : color) + '"/><circle cx="50" cy="50" r="8" fill="#0a0f1a"/>' +
+    '<rect x="47" y="13" width="6" height="9" rx="2" fill="#475569"/></g></svg>';
+}
+// Anillo de avance con un texto en el medio
+function tpAnillo(tam, pct, color, txt, sub) {
+  var r = 42, c = 2 * Math.PI * r, p = Math.max(0, Math.min(1, pct || 0));
+  return '<svg width="' + tam + '" height="' + tam + '" viewBox="0 0 100 100" style="display:block;flex:0 0 auto"><circle cx="50" cy="50" r="' + r + '" fill="none" stroke="#1e293b" stroke-width="11"/>' +
+    '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="11" stroke-linecap="round" stroke-dasharray="' + (c * p).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 50 50)"/>' +
+    '<text x="50" y="' + (sub ? 50 : 58) + '" text-anchor="middle" font-size="' + (sub ? 22 : 24) + '" font-weight="900" fill="#fff">' + txt + '</text>' + (sub ? '<text x="50" y="70" text-anchor="middle" font-size="12" fill="#94a3b8">' + sub + '</text>' : '') + '</svg>';
+}
+// Estado de una cubierta para el color
+function tpCls(x, std) {
+  if (x.ESTADO_EST === 'LISTA') return 'lis'; if (x.ESTADO_EST === 'COCINANDO') return 'coc'; if (x.ESTADO_EST === 'PARADO') return 'par';
+  if (x.ESTADO_EST === 'ESPERA') return x.HECHAS ? 'esp' : 'emp';
+  var m = x.SEG / 60; return std && m > std * 1.3 ? 'mal' : std && m > std * 0.9 ? 'ojo' : 'ok';
+}
+var TP_TXT = { ok: '▶ TRABAJANDO', ojo: '▶ CERCA DEL TIEMPO', mal: '▶ ATRASADA', par: '⏸ PARADO', coc: '🔥 COCINANDO', esp: '⏳ ESPERANDO', emp: 'POR EMPEZAR', lis: '✓ LISTA' };
+function tbPintarPlanta() {
+  var el = tbEl(), d = TB_.d; if (!el || !d) return;
+  var R = d.RESUMEN, ahora = Date.now() + (TB_.dt || 0), E = d.ESTACIONES, stdDe = {};
+  E.forEach(function(e) { stdDe[e.ID_ESTACION] = e.MIN_STD; });
+  var pasosTot = 0, pasosOk = 0; d.CUBIERTAS.forEach(function(c) { pasosTot += c.TOTAL; pasosOk += c.HECHAS; });
+  var totCarga = d.CUBIERTAS.length + R.TERMINADAS_HOY, avance = totCarga ? (pasosOk + R.TERMINADAS_HOY * 10) / (pasosTot + R.TERMINADAS_HOY * 10) : 0;
+  var cu = R.CUELLO && R.CUELLO.ESPERANDO >= 2 ? R.CUELLO : null;
+  var linNom = d.LINEA === 'AGRICOLA' ? 'Línea agrícola' : 'Línea camiones';
+  var h = '<div class="tp"><div class="tp-hd"><div class="tp-tt"><span>Vulcan Tread · tablero en vivo</span><b>🏭 ' + linNom + '</b></div>' +
+    d.LINEAS.map(function(l) { return '<button class="tp-btn' + (l === d.LINEA ? ' on' : '') + '" onclick="tbLinea(\'' + tbEsc(l) + '\')">' + (l === 'AGRICOLA' ? 'Agrícola' : l === 'CAMIONES' ? 'Camiones' : tbEsc(l)) + '</button>'; }).join('') +
+    '<button class="tp-btn" onclick="TB_.vista=\'linea\';tbPintar()">Columnas</button><button class="tp-btn" onclick="TB_.vista=\'cuadro\';tbPintar()">Cuadro</button>' +
+    '<button class="tp-btn" onclick="tbGrande()">' + (TB_.grande ? '✕ Salir' : '📺 Pantalla grande') + '</button>' +
+    '<div class="tp-clk" id="tp-clk">' + tbHora(ahora) + '</div></div>';
+  // Números grandes
+  var k = function(ico, bg, v, l, s, al) { return '<div class="tp-k' + (al ? ' al' : '') + '"><div class="ico" style="background:' + bg + '">' + ico + '</div><div><div class="v">' + v + '</div><div class="l">' + l + '</div>' + (s ? '<div class="s">' + s + '</div>' : '') + '</div></div>'; };
+  h += '<div class="tp-kp">' +
+    '<div class="tp-k">' + tpAnillo(86, avance, '#22c55e', Math.round(avance * 100) + '%', 'avance') + '<div><div class="l">Avance de la carga</div><div class="s">' + (R.ORDENES.map(function(o) { return tbEsc(o.NRO_OT); }).join(' · ') || 'sin carga') + '</div></div></div>' +
+    k('🔵', '#1e3a8a', R.TRABAJANDO, 'Trabajando', 'de ' + R.EN_LINEA + ' en la línea') +
+    k('⏳', '#78350f', R.ESPERANDO, 'Esperando', R.ESPERANDO ? 'para entrar a una estación' : 'nadie esperando') +
+    k('✅', '#14532d', R.TERMINADAS_HOY, 'Terminadas hoy', R.RECHAZADAS_HOY ? R.RECHAZADAS_HOY + ' rechazada' + (R.RECHAZADAS_HOY === 1 ? '' : 's') : 'sin rechazos') +
+    k('🏁', '#312e81', R.FIN ? tbHora(R.FIN) : '—', 'Termina aprox.', R.FIN ? 'faltan ' + tbMin(R.FIN_MIN) : 'no hay carga') +
+    k(cu ? '⚠️' : '👍', cu ? '#7f1d1d' : '#14532d', cu ? cu.NRO : 'OK', cu ? 'Se traba acá' : 'Sin trabas', cu ? tbEsc(cu.NOMBRE) + ' · ' + cu.ESPERANDO + ' esperando' : 'ninguna estación acumula', !!(cu && cu.ESPERANDO >= 3)) + '</div>';
+  // La línea como una cinta
+  var listas = d.CUBIERTAS.filter(function(c) { return c.ESTADO_EST === 'LISTA'; });
+  h += '<div class="tp-cin"><div class="tp-cols"><div class="tp-tr"></div>' + E.map(function(e, ix) {
+    var s = tbEstadoEst(e, ix === 0), std = e.MIN_STD, arr = '';
+    if (e.COCINANDO) {
+      var c = e.COCINANDO, pc = (ahora - c.INICIO) / 60000 / (c.MIN || 1);
+      arr += '<div class="tp-cu" style="cursor:default">' + tpAnillo(116, pc, '#f97316', '🔥 ' + c.N, 'cocinando') + '<div class="rl" data-ini="' + c.INICIO + '" style="color:#fdba74">' + tbReloj((ahora - c.INICIO) / 1000) + '</div><div class="op">sale ' + tbHora(c.INICIO + c.MIN * 60000) + '</div></div>';
+    } else {
+      e.EN_CURSO.slice(0, 2).forEach(function(x) {
+        var cl = x.PARADO ? 'par' : x.SEG / 60 > std * 1.3 ? 'mal' : x.SEG / 60 > std * 0.9 ? 'ojo' : 'ok', col = TP_COL[cl];
+        arr += '<button class="tp-cu" onclick="tbCub(\'' + tbEsc(x.ID_CUB) + '\')">' + tpCubSvg(e.EN_CURSO.length > 1 ? 74 : 96, std ? x.SEG / 60 / std : 0, col, !x.PARADO) +
+          '<div class="mk">' + tbEsc(x.MARCA) + '</div><div class="rl" style="color:' + col + '"' + (x.PARADO ? '' : ' data-ini="' + Math.round(ahora - x.SEG * 1000) + '"') + '>' + tbReloj(x.SEG) + '</div><div class="op">' + tbEsc(x.OPERARIO || '') + '</div></button>';
+      });
+      if (e.EN_CURSO.length > 2) arr += '<div class="tp-ce" style="color:#93c5fd">+' + (e.EN_CURSO.length - 2) + ' trabajando</div>';
+    }
+    if (e.ESPERANDO.length) {
+      arr += '<div class="tp-ce">' + (e.ES_AUTOCLAVE ? '🔥 juntando ' : ix === 0 ? 'por empezar ' : '⏳ esperan ') + e.ESPERANDO.length + '</div><div class="tp-cola">' + e.ESPERANDO.slice(0, 8).map(function(x) {
+        return '<button title="Marca grabada ' + tbEsc(x.MARCA) + '" onclick="tbCub(\'' + tbEsc(x.ID_CUB) + '\')">' + tpCubSvg(28, 0, ix === 0 ? '#64748b' : '#fbbf24', false, ix === 0) + '</button>'; }).join('') + (e.ESPERANDO.length > 8 ? '<span class="tp-ce">+' + (e.ESPERANDO.length - 8) + '</span>' : '') + '</div>';
+    }
+    return '<div class="tp-col"><div class="tp-arr">' + arr + '</div><div class="tp-nd ' + s[0] + '">' + e.NRO + '</div><div class="tp-nm">' + tbEsc(e.NOMBRE) + '</div><span class="tp-pl ' + s[0] + '">' + s[1] + '</span>' +
+      '<div class="tp-mt">hoy ' + e.HECHAS_HOY + ' · ' + (e.ES_AUTOCLAVE ? tbMin(std) : (e.N_REAL >= 3 ? tbMin(e.PROM_REAL) + ' / ' : '') + tbMin(std)) + '</div></div>';
+  }).join('') +
+    '<div class="tp-col"><div class="tp-arr">' + (listas.length ? '<div class="tp-ce" style="color:#86efac">listas ' + listas.length + '</div><div class="tp-cola">' + listas.map(function(x) { return '<button onclick="tbCub(\'' + tbEsc(x.ID_CUB) + '\')" title="' + tbEsc(x.MARCA) + '">' + tpCubSvg(34, 1, '#22c55e', false) + '</button>'; }).join('') + '</div>' : '') +
+    '<div style="font-size:44px;font-weight:900;color:#22c55e;line-height:1">' + R.TERMINADAS_HOY + '</div><div class="op" style="color:#86efac">terminadas hoy</div></div><div class="tp-nd fin">✓</div><div class="tp-nm">Listas para terminar</div><span class="tp-pl verde">' + listas.length + '</span></div>' +
+    '</div></div>';
+  // Abajo: una tarjeta por cubierta + gráfico por estación
+  var orden = { mal: 0, ojo: 1, ok: 2, coc: 3, par: 4, esp: 5, lis: 6, emp: 7 };
+  var cs = d.CUBIERTAS.map(function(c) { var std = stdDe[c.DONDE] || 0; return { c: c, cl: tpCls(c, std), std: std }; }).sort(function(a, b) { return orden[a.cl] - orden[b.cl] || b.c.HECHAS - a.c.HECHAS; });
+  h += '<div class="tp-bot"><div class="tp-pn"><h3>Cada cubierta · ' + d.CUBIERTAS.length + ' en la línea</h3><div class="tp-cards">' + (cs.length ? cs.map(function(o) {
+    var c = o.c, col = TP_COL[o.cl], p = c.PASOS.filter(function(x) { return x.ID === c.DONDE; })[0];
+    var donde = c.ESTADO_EST === 'LISTA' ? 'pasó por todas' : p ? (c.ESTADO_EST === 'ESPERA' ? 'para entrar a ' : 'en ') + p.NRO + ' · ' + tbEsc(p.NOMBRE) : '';
+    var t = c.ESTADO_EST === 'ESPERA' ? (c.HECHAS ? ' · <span data-ini="' + c.DESDE + '">' + tbReloj((ahora - c.DESDE) / 1000) + '</span>' : '') : c.ESTADO_EST === 'LISTA' ? '' : ' · <span' + (c.ESTADO_EST === 'PARADO' ? '' : ' data-ini="' + Math.round(ahora - c.SEG * 1000) + '"') + '>' + tbReloj(c.SEG) + '</span>';
+    return '<button class="tp-cd ' + o.cl + '" onclick="tbCub(\'' + tbEsc(c.ID_CUB) + '\')">' + tpAnillo(64, c.TOTAL ? c.HECHAS / c.TOTAL : 0, col, c.HECHAS + '/' + c.TOTAL) +
+      '<div style="min-width:0;flex:1"><div class="mk">' + tbEsc(c.MARCA) + '</div><div class="dn">' + donde + '</div><span class="ch" style="background:' + col + '22;color:' + col + '">' + TP_TXT[o.cl] + t + '</span>' +
+      '<div class="tp-seg">' + c.PASOS.map(function(x) { return '<i class="' + (x.E === 'HECHA' ? 'H' : x.E === 'EN_CURSO' ? 'C' : x.E === 'ESPERA' ? 'E' : x.E === 'NO_PASA' ? 'N' : '') + '" title="' + tbEsc(x.NRO + ' · ' + x.NOMBRE) + '"></i>'; }).join('') + '</div></div></button>';
+  }).join('') : '<div style="color:#94a3b8;padding:20px">No hay cubiertas en la línea ahora.</div>') + '</div></div>';
+  var mx = Math.max(3, E.reduce(function(m, e) { return Math.max(m, e.EN_CURSO.length + e.ESPERANDO.length); }, 0));
+  h += '<div class="tp-pn"><h3>Cubiertas por estación</h3>' + E.map(function(e) {
+    var a = e.COCINANDO ? e.COCINANDO.N : e.EN_CURSO.length, b = e.ESPERANDO.length;
+    return '<div class="tp-br"><span class="n">' + e.NRO + '</span><div class="b"><i style="width:' + (a / mx * 100) + '%;background:' + (e.COCINANDO ? '#f97316' : '#3b82f6') + '"></i><i style="width:' + (b / mx * 100) + '%;background:#fbbf24"></i></div><span class="t">' + a + ' · ' + b + '</span></div>';
+  }).join('') + '<div class="tp-ley" style="margin-top:6px"><span><i style="background:#3b82f6"></i>trabajando</span><span><i style="background:#fbbf24"></i>esperando</span><span><i style="background:#f97316"></i>cocinando</span></div></div></div>';
+  h += '<div class="tp-ley"><span><i style="background:#3b82f6"></i>En tiempo</span><span><i style="background:#f59e0b"></i>Cerca del tiempo normal</span><span><i style="background:#ef4444"></i>Atrasada (+30%)</span><span><i style="background:#f97316"></i>Cocinando</span><span><i style="background:#fbbf24"></i>Esperando</span><span><i style="background:#64748b"></i>Por empezar</span><span><i style="background:#22c55e"></i>Lista / hecha</span>' +
+    '<span style="color:#64748b">El anillo de cada cubierta se llena con el tiempo de la estación (o con el avance de la cubierta en las tarjetas). Se actualiza solo.</span></div></div>';
+  el.innerHTML = '<div class="tb-wrap">' + h + '</div>';
 }
 </script>
 
