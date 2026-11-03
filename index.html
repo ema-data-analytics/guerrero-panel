@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "878f7b7be0d1"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d185a51880f4"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1484,7 +1484,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611031930';
+var EMA_BUILD = '202611032043';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -9238,7 +9238,7 @@ async function insImportarRevisar(filas) {
 // Modificar = versión nueva (la anterior queda guardada). Nada se borra.
 // ================================================================
 var REC_ = { d: null, f: { q: '', tipo: '', trabajo: '', estado: 'VIGENTE', sinVinc: false }, ed: null };
-var REC_XLS_COLS = ['TIPO', 'MEDIDA', 'TRABAJO', 'BANDA', 'RENTABILIDAD', 'ESTACION', 'TIPO_LINEA', 'INSUMO', 'DESCRIPCION', 'CANTIDAD', 'UNIDAD', 'PRECIO_REF', 'OBSERVACIONES'];
+var REC_XLS_COLS = ['TIPO', 'MEDIDA', 'TRABAJO', 'BANDA', 'MARCA', 'RENTABILIDAD', 'ESTACION', 'TIPO_LINEA', 'INSUMO', 'DESCRIPCION', 'CANTIDAD', 'UNIDAD', 'PRECIO_REF', 'OBSERVACIONES'];
 var REC_TL_TXT = { INSUMO: 'Insumo', HERRAMENTAL: 'Herramental', MANO_OBRA: 'Mano de obra', OTRO: 'Otro' };
 
 function recEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -9541,12 +9541,12 @@ async function recExcelDescargar(btn) {
     if (!r || !r.ok) continue;
     r.lineas.forEach(function(l, j) {
       var est = d.estaciones.filter(function(e) { return String(e.ID_ESTACION) === String(l.ID_ESTACION); })[0];
-      filas.push([r.receta.TIPO, r.receta.MEDIDA, r.receta.TRABAJO, r.receta.ID_BANDA, j === 0 && r.receta.RENTABILIDAD ? Math.round(r.receta.RENTABILIDAD * 100) : '', est ? est.NOMBRE : '', l.TIPO_LINEA, l.ID_INSUMO, l.DESCRIPCION, l.CANTIDAD, l.UNIDAD, l.ID_INSUMO ? '' : (l.PRECIO_REF || ''), j === 0 ? r.receta.OBSERVACIONES : '']);
+      filas.push([r.receta.TIPO, r.receta.MEDIDA, r.receta.TRABAJO, r.receta.ID_BANDA, r.receta.MARCA || '', j === 0 && r.receta.RENTABILIDAD ? Math.round(r.receta.RENTABILIDAD * 100) : '', est ? est.NOMBRE : '', l.TIPO_LINEA, l.ID_INSUMO, l.DESCRIPCION, l.CANTIDAD, l.UNIDAD, (l.PRECIO_REF || ''), j === 0 ? r.receta.OBSERVACIONES : '']);
     });
   }
   var wb = XLSX.utils.book_new();
   var ws = XLSX.utils.aoa_to_sheet(filas);
-  ws['!cols'] = [12, 14, 18, 14, 8, 22, 12, 14, 40, 10, 8, 10, 30].map(function(w) { return { wch: w }; });
+  ws['!cols'] = [12, 14, 18, 14, 12, 8, 22, 12, 14, 40, 10, 8, 10, 30].map(function(w) { return { wch: w }; });
   XLSX.utils.book_append_sheet(wb, ws, 'RECETAS');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['TIPO', 'LINEA']].concat(d.tipos.map(function(t) { return [t.TIPO, t.LINEA]; }))), 'TIPOS');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['TRABAJO']].concat(d.trabajos.map(function(t) { return [t.TRABAJO]; }))), 'TRABAJOS');
@@ -9554,7 +9554,7 @@ async function recExcelDescargar(btn) {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['INSUMO', 'NOMBRE', 'UNIDAD', 'RUBRO']].concat(d.insumos.map(function(i) { return [i.ID_INSUMO, i.NOMBRE_INSUMO, i.UNIDAD_MEDIDA, i.RUBRO]; }))), 'INSUMOS');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
     ['CÓMO USAR ESTA PLANILLA'],
-    ['1. Una fila por renglón. Las filas con el mismo TIPO + MEDIDA + TRABAJO (+ BANDA) forman una receta.'],
+    ['1. Una fila por renglón. Las filas con el mismo TIPO + MEDIDA + TRABAJO (+ BANDA + MARCA) forman una receta. MARCA vacía = receta general; con marca = variante para esa marca de cubierta.'],
     ['2. INSUMO = código de la hoja INSUMOS. Si no lo tenés, dejalo vacío y escribí DESCRIPCION y PRECIO_REF (queda "sin vincular").'],
     ['3. CANTIDAD = por cubierta, en la unidad del insumo. Herramental (inner, envelope, llanta): 1 pieza; el costo se reparte según sus usos.'],
     ['4. TIPO_LINEA: INSUMO, HERRAMENTAL, MANO_OBRA u OTRO. ESTACION: opcional (nombre de la hoja ESTACIONES).'],
