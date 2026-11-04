@@ -1487,7 +1487,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611041841';
+var EMA_BUILD = '202611041945';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13952,7 +13952,7 @@ function pnPintar() {
   }
   var insV = PN_.div === 'INS', cats = []; if (insV) (PN_.d.PRECIOS || []).forEach(function(p) { if (p.RUBRO === 'INSUMOS' && p.DESCRIPCION && cats.indexOf(p.DESCRIPCION) === -1) cats.push(p.DESCRIPCION); }); cats.sort();
   h += pnDivBar() +
-    '<div class="pn-busca"><input id="pn-q" type="search" inputmode="search" autocomplete="off" placeholder="' + (insV ? 'Buscá por nombre o código (ej: parche, raspa, AA0775)' : 'Buscá medida, marca, diseño o uso (ej: 295 80 lisa · 295 mixta · 275 taco)') + '" value="' + pnEsc(PN_.q) + '" oninput="pnBuscar(this.value)"/>' +
+    '<div class="pn-busca"><input id="pn-q" type="search" inputmode="search" autocomplete="off" placeholder="' + (insV ? 'Buscá por nombre o código (ej: parche, raspa, AA0775)' : 'Buscá medida, marca, diseño o uso (ej: 295 80 lisa · 295 mixta · 275 taco)') + '" value="' + pnEsc(PN_.q) + '" oninput="pnBuscar(this.value)" onfocus="setTimeout(pnVerRes,250)"/>' +
     '<div class="pn-chips">' + (insV ? [['', 'Todo']].concat(cats.map(function(c) { return [c, c.charAt(0) + c.slice(1).toLowerCase()]; })) : PN_RUBROS).map(function(r) { return '<button class="pn-chip' + (PN_.rubro === r[0] ? ' on' : '') + '" onclick="pnRubro(\'' + r[0] + '\')">' + r[1] + '</button>'; }).join('') + '</div>' +
     (insV ? '' : '<div class="pn-chips"><button class="pn-chip' + (!PN_.marca ? ' on' : '') + '" onclick="pnMarca(\'\')">Todas las marcas</button>' +
     Object.keys(marcas).sort().map(function(m) { return '<button class="pn-chip' + (PN_.marca === m ? ' on' : '') + '" onclick="pnMarca(\'' + pnEsc(m) + '\')">' + pnEsc(m) + '</button>'; }).join('') + '</div>' + pnDibChips()) + '</div>' +
@@ -14017,7 +14017,14 @@ function pnTarjeta(p) {
   return h;
 }
 function pnPlazos(s) { if (!s) return []; return String(s).split('|').map(function(x) { var a = x.split(':'); return [a[0], Number(a[1])]; }).filter(function(z) { return z[0] && z[1]; }); }
-function pnBuscar(v) { PN_.q = v; PN_.max = 40; clearTimeout(PN_.t); PN_.t = setTimeout(pnResultados, 150); }
+function pnBuscar(v) { PN_.q = v; PN_.max = 40; clearTimeout(PN_.t); PN_.t = setTimeout(function() { pnResultados(); pnVerRes(); }, 120); }
+// Mientras se escribe, los resultados tienen que quedar a la vista justo debajo del buscador (en el celular el teclado tapa media pantalla
+// y antes quedaban abajo de las promociones: parecía que no filtraba). 04/11/2026
+function pnVerRes() {
+  var r = $id('pn-res'), b = document.querySelector('.pn-busca'); if (!r || !b) return;
+  var alto = b.getBoundingClientRect().height, top = r.getBoundingClientRect().top;
+  if (top > alto + 40 || top < alto - 4) window.scrollTo(0, Math.max(0, window.scrollY + top - alto - 4));
+}
 function pnDiv(d) { PN_.div = d; PN_.rubro = ''; PN_.marca = ''; PN_.dib = ''; PN_.promo = 0; PN_.max = 40; pnPintar(); }
 function pnRubro(r) { PN_.rubro = r; PN_.max = 40; pnPintar(); var i = $id('pn-q'); if (i && PN_.q) i.focus(); }
 function pnMarca(m) { PN_.marca = m; PN_.max = 40; pnPintar(); }
