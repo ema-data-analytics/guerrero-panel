@@ -1289,6 +1289,9 @@ function histClickTab(txt, intentos) {
 function histHayVentana() {
   if ($id('pc-tour') && typeof pcTourCerrar === 'function') { pcTourCerrar(); return true; }
   var v = $id('pc-vista'); if (v) { v.remove(); return true; }
+  // Lista de precios: foto agrandada y hoja de cotización / listas PDF (se cierran con ATRÁS, la cotización queda guardada)
+  var fv = $id('pn-fv'); if (fv) { fv.remove(); return true; }
+  var po = $id('pn-ov'); if (po) { po.remove(); return true; }
   var m = document.querySelectorAll('#modals .mo'); if (m.length) { m[m.length - 1].remove(); return true; }
   return false;
 }
@@ -1484,7 +1487,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611041557';
+var EMA_BUILD = '202611041841';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13799,7 +13802,10 @@ function tbAutoclave(idEst) {
 .pn-ov{position:fixed;inset:0;z-index:70;background:rgba(15,23,42,.55);display:flex;align-items:flex-end;justify-content:center}
 .pn-hoja{background:var(--surface,#fff);color:var(--text);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:14px 14px calc(16px + env(safe-area-inset-bottom))}
 .pn-hoja h3{margin:0;font-size:18px;flex:1}
-.pn-hc{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pn-hc{display:flex;align-items:center;gap:8px;margin:-14px -14px 8px;padding:10px 14px;position:sticky;top:-14px;z-index:2;background:var(--surface,#fff);border-bottom:1px solid var(--border)}
+.pn-hc .vol{border:1px solid var(--border);background:var(--bg);border-radius:9px;font-size:14px;font-weight:700;padding:8px 12px;cursor:pointer;color:var(--text)}
+.pn-env{border:2px solid #16a34a;background:#f0fdf4;border-radius:12px;padding:12px;margin:0 0 10px;color:#14532d}.pn-env b{font-size:15px}
+.pn-env div{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.pn-env button{border-radius:10px;padding:11px 8px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:#fff;color:#1f2937}.pn-env button.n{background:#16a34a;border-color:#16a34a;color:#fff}
 .pn-hc .x{border:0;background:var(--bg);border-radius:8px;font-size:18px;padding:6px 11px;cursor:pointer;color:var(--text)}
 .pn-ci{display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);padding:9px 0}
 .pn-ci .d{flex:1;min-width:0}.pn-ci .d b{display:block;font-size:14.5px}.pn-ci .d span{font-size:12px;color:var(--dim)}
@@ -14153,7 +14159,7 @@ function pnBarra() {
 function pnHoja() {
   var its = pnSelItems(); pnHojaCerrar(); PN_.hsig = '';
   if (!its.length) return;
-  var h = '<div class="pn-hoja" onclick="event.stopPropagation()"><div class="pn-hc"><h3>🧾 Cotización</h3><button class="x" onclick="pnHojaCerrar()">✕</button></div>' +
+  var h = '<div class="pn-hoja" onclick="event.stopPropagation()"><div class="pn-hc"><button class="vol" onclick="pnHojaCerrar()">← Volver</button><h3 style="flex:1;margin:0">🧾 Cotización</h3></div><div id="pn-env"></div>' +
     '<div id="pn-ci-list"></div>' +
     '<div class="pn-dbox"><div class="tl">DESCUENTO GENERAL (para todo) · tocá el número y escribilo</div>' +
     '<div class="pn-dctl"><button type="button" onclick="pnDesc(-1)">−1</button><div class="pn-dw"><input id="pn-dsc" type="text" inputmode="decimal" autocomplete="off" value="' + String(PN_.desc || 0).replace('.', ',') + '" onfocus="this.select()" oninput="pnDescTxt(this.value)" onblur="this.value=String(PN_.desc||0).replace(\'.\',\',\')" onkeydown="if(event.key===\'Enter\'){this.blur()}"><b>%</b></div><button type="button" onclick="pnDesc(1)">+1</button></div>' +
@@ -14268,8 +14274,14 @@ function pnCotTexto() {
 }
 function pnCotWhats() {
   var t = pnCotTexto(); pnGuardar();
-  if (navigator.share) { navigator.share({ text: t }).catch(function() {}); return; }
-  window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+  if (navigator.share) { navigator.share({ text: t }).then(pnEnviada, function() {}); return; }
+  window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank'); pnEnviada();
+}
+// Al volver de WhatsApp: aviso arriba de la cotización con «Nueva cotización» (la vacía) o «Volver a la lista» (la deja guardada).
+function pnEnviada() {
+  var e = $id('pn-env'); if (!e) return;
+  e.innerHTML = '<div class="pn-env"><b>✓ Cotización enviada</b><div><button class="n" onclick="pnVaciar();window.scrollTo(0,0)">🆕 Nueva cotización</button><button onclick="pnHojaCerrar()">← Volver a la lista</button></div></div>';
+  var h = e.closest('.pn-hoja'); if (h) h.scrollTop = 0;
 }
 function pnCotHtml() {
   var its = pnSelItems(), tot = 0, filas = '', hayD = false;   // 02/11/2026 (Anibal): al cliente va solo el precio final con el descuento incluido; el descuento se ve en la pantalla de carga
@@ -14309,7 +14321,7 @@ function pnCotPdf(btn) {
   if (PN_.pdf) {
     var f = new File([PN_.pdf], pnPdfNombre(), { type: 'application/pdf' });
     pnGuardar();
-    if (navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: 'Cotización Vulcan Tread', text: 'Cotización Vulcan Tread Neumáticos' + (PN_.cli ? ' · ' + PN_.cli : '') }).catch(function() {}); }
+    if (navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: 'Cotización Vulcan Tread', text: 'Cotización Vulcan Tread Neumáticos' + (PN_.cli ? ' · ' + PN_.cli : '') }).then(pnEnviada, function() {}); }
     else { pnCotPdfBajar(); toast('Este aparato no deja compartir archivos: se descargó el PDF.', 'w'); }
     return;
   }
@@ -14320,7 +14332,7 @@ function pnCotPdf(btn) {
       .from(cont.firstChild).outputPdf('blob').then(function(blob) { cont.remove(); PN_.pdf = blob; pnPdfBotones();
           // Se intenta abrir el menú de compartir solo; si el celular pide otro toque, queda el botón «Enviar a WhatsApp».
           var f2 = new File([blob], pnPdfNombre(), { type: 'application/pdf' });
-          if (navigator.canShare && navigator.canShare({ files: [f2] })) navigator.share({ files: [f2], title: 'Cotización Vulcan Tread', text: 'Cotización Vulcan Tread Neumáticos' + (PN_.cli ? ' · ' + PN_.cli : '') }).catch(function() {}); },
+          if (navigator.canShare && navigator.canShare({ files: [f2] })) navigator.share({ files: [f2], title: 'Cotización Vulcan Tread', text: 'Cotización Vulcan Tread Neumáticos' + (PN_.cli ? ' · ' + PN_.cli : '') }).then(pnEnviada, function() {}); },
         function(e) { cont.remove(); toast('No se pudo armar el PDF', 'r2'); pnPdfBotones(); });
   });
 }
