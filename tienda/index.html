@@ -167,7 +167,7 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return
 function esIns(a){return a.r==='INSUMOS';}
 function dis(a){if(a.x)return {m:'',n:a.n,i:'',k:''};if(esIns(a)){var s=D.secs[a.g]||['','',''];return {m:s[1],n:a.n,i:s[2]?'brio/'+s[2]:'',k:s[0]};}return D.dis[a.s];}
 function nomArt(a){if(a.x)return a.n+(a.k==='REC'?'':' (servicio: coordinamos la entrega del casco)');return esIns(a)?a.n+' (cód. '+a.c+')':a.me+' '+mNom(dis(a).m)+' '+dis(a).n;}
-function setDiv(d){S.div=d;S.rub='';S.mar='';S.lim=40;['C','R','S','G','I'].forEach(function(x){var b=$('dv'+x);if(b)b.className=({C:'CUB',R:'REC',S:'SRV',G:'GOM',I:'INS'})[x]===d?'on':'';});$('q').placeholder=d==='INS'?'Buscá por nombre o código: parche, válvula, raspa, AA0775...':d==='SRV'?'Buscá medida o trabajo: 18.4 38, 295 80, retacado...':d==='REC'||d==='GOM'?'Buscá por nombre o medida':'Buscá tu medida: 205/55R16, 2055516, 295 80 22.5, AT3...';try{history.replaceState(null,'',d==='INS'?'#insumos':EXTDIV[d]?'#'+EXTDIV[d]:location.pathname+location.search);}catch(e){}chips();filtrar();}
+function setDiv(d){S.div=d;S.rub='';S.mar='';S.lim=40;['C','R','S','G','I'].forEach(function(x){var b=$('dv'+x);if(b)b.className=({C:'CUB',R:'REC',S:'SRV',G:'GOM',I:'INS'})[x]===d?'on':'';});$('q').placeholder=d==='INS'?'Buscá por nombre o código: parche, válvula, raspa, AA0775...':d==='SRV'?'Buscá medida o trabajo: 18.4 38, 295 80, retacado...':d==='REC'||d==='GOM'?'Buscá por nombre o medida':'Buscá medida, marca o dibujo: 205/55R16, 295 80 lisa, AT...';try{history.replaceState(null,'',d==='INS'?'#insumos':EXTDIV[d]?'#'+EXTDIV[d]:location.pathname+location.search);}catch(e){}chips();filtrar();}
 function tit(s){s=String(s).toLowerCase();return s.charAt(0).toUpperCase()+s.slice(1);}
 function mNom(m){return m==='GT RADIAL'?'GT Radial':m;}
 function logo(m){return LOGOK[m]?'<img src="logos/'+LOGOK[m]+'.png" alt="'+esc(m)+'">':'<b>'+esc(m)+'</b>';}
@@ -244,10 +244,11 @@ function match(a,q){
   var pal=String(tx).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^A-Z0-9]+/);
   var ws=q.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/\s+/).filter(function(x){return x;});
   var qd=dig(q);
-  if(qd.length>=5&&dig(a.me).indexOf(qd)===0)return true;
+  // Medida escrita pegada (29580225) o separada (295 80 22.5): los números se controlan juntos contra la medida. Las palabras (lisa, giti…) se controlan igual.
+  var medOk=qd.length>=5&&dig(a.me).indexOf(qd)===0;
   for(var i=0;i<ws.length;i++){var w=norm(ws[i]);if(!w)continue;
-    // Con números: como antes (medida pegada o separada). Solo letras: tiene que estar dentro de una misma palabra (así «lisa» no encuentra «WANLI SA302»).
-    if(/[0-9]/.test(w)){if(t.indexOf(w)<0)return false;}
+    // Con números: contra el texto, salvo que la medida ya coincida. Solo letras: dentro de una misma palabra (así «lisa» no encuentra «WANLI SA302»).
+    if(/[0-9]/.test(w)){if(!medOk&&t.indexOf(w)<0)return false;}
     else{var ok=false;for(var j=0;j<pal.length;j++)if(pal[j].indexOf(w)!==-1){ok=true;break;}if(!ok)return false;}}
   return true;
 }
