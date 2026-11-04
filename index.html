@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7199b61f48bf"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "fd218ddb8a5e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1484,7 +1484,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611041540';
+var EMA_BUILD = '202611041557';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13823,12 +13823,14 @@ function tbAutoclave(idEst) {
 .pn-hb button{border-radius:10px;padding:12px 8px;font-size:14.5px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text)}
 .pn-hb .wa{background:#1fa855;border-color:#1fa855;color:#fff}.pn-hb .pdf{background:#14213d;border-color:#14213d;color:#fff}.pn-hb .full{grid-column:1/-1}
 .pn-hb button:disabled{opacity:.6}
+.pn-fp{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}.pn-fp button{border-radius:9px;padding:8px 10px;font-size:13.5px;font-weight:700;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer}
+.pn-fp button.on{background:#14213d;border-color:#14213d;color:#fff}.pn-fpt{font-size:11.5px;color:var(--dim);margin-top:6px}
 #page-precios-nuevos.con-bar .pn-wrap{padding-bottom:90px}
 </style>
 <script>
 // ── Precios de cubiertas nuevas (para vendedores, pensado para el celular) ──
 // Lee las tablas pn_precios / pn_promos / pn_promo_items desde el servidor (gsPN_Datos).
-var PN_ = { div: 'CUB', d: null, q: '', rubro: '', marca: '', dib: '', promo: 0, max: 40, idx: null, sel: {}, orden: [], cli: '', pdf: null, lista: '30%', desc: 0, dItem: {}, mg: null };
+var PN_ = { div: 'CUB', d: null, q: '', rubro: '', marca: '', dib: '', promo: 0, max: 40, idx: null, sel: {}, orden: [], cli: '', pdf: null, lista: '30%', desc: 0, dItem: {}, mg: null, fp: 'CONT' };
 function pnEl() { return $id('page-precios-nuevos'); }
 function pnEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function pnPlata(n) { n = Number(n) || 0; return '$ ' + Math.round(n).toLocaleString('es-AR'); }
@@ -13857,7 +13859,7 @@ async function renderPrecios() {
 }
 // Al mandar por WhatsApp el celular sale de la app; si al volver la página se recarga, se vuelve a la misma búsqueda y posición.
 function pnGuardar() {
-  try { sessionStorage.setItem('pn_estado', JSON.stringify({ q: PN_.q, rubro: PN_.rubro, marca: PN_.marca, dib: PN_.dib, promo: PN_.promo, max: PN_.max, y: window.scrollY || 0, sel: PN_.sel, orden: PN_.orden, cli: PN_.cli, pago: PN_.pago, lista: PN_.lista, desc: PN_.desc, dItem: PN_.dItem, ext: PN_.ext || {} })); } catch (e) {}
+  try { sessionStorage.setItem('pn_estado', JSON.stringify({ q: PN_.q, rubro: PN_.rubro, marca: PN_.marca, dib: PN_.dib, promo: PN_.promo, max: PN_.max, y: window.scrollY || 0, sel: PN_.sel, orden: PN_.orden, cli: PN_.cli, pago: PN_.pago, lista: PN_.lista, desc: PN_.desc, dItem: PN_.dItem, fp: PN_.fp, ext: PN_.ext || {} })); } catch (e) {}
 }
 function pnRestaurar() {
   if (PN_.restaurado) return 0;
@@ -13865,7 +13867,7 @@ function pnRestaurar() {
   try {
     var e = JSON.parse(sessionStorage.getItem('pn_estado') || 'null');
     if (!e) return 0;
-    PN_.q = e.q || ''; PN_.rubro = e.rubro || ''; PN_.marca = e.marca || ''; PN_.dib = e.dib || ''; PN_.promo = e.promo || 0; PN_.max = e.max || 40; PN_.sel = e.sel || {}; PN_.orden = e.orden || []; PN_.cli = e.cli || ''; PN_.pago = e.pago || ''; PN_.lista = e.lista || '30%'; PN_.desc = Number(e.desc) || 0; PN_.dItem = e.dItem || {}; PN_.ext = e.ext || {};
+    PN_.q = e.q || ''; PN_.rubro = e.rubro || ''; PN_.marca = e.marca || ''; PN_.dib = e.dib || ''; PN_.promo = e.promo || 0; PN_.max = e.max || 40; PN_.sel = e.sel || {}; PN_.orden = e.orden || []; PN_.cli = e.cli || ''; PN_.pago = e.pago || ''; PN_.lista = e.lista || '30%'; PN_.desc = Number(e.desc) || 0; PN_.dItem = e.dItem || {}; PN_.fp = e.fp || 'CONT'; PN_.ext = e.ext || {};
     return e.y || 0;
   } catch (x) { return 0; }
 }
@@ -14084,11 +14086,32 @@ function pnUnit(p) {
   });
   return u;
 }
+// ── Forma de pago: recargo por cheque a plazo (config pn_cheques) y por tarjeta (config tienda_cuotas, Mercado Pago). A confirmar con los dueños (04/11/2026). ──
+function pnFpLista() {
+  var f = (PN_.d && PN_.d.FORMA_PAGO) || {}, out = [['CONT', 'Contado', 0]];
+  var leer = function(txt, pre, nom) { String(txt || '').split(',').forEach(function(x) { var m = /^\s*(\d+)\s*:\s*([0-9.,]+)\s*$/.exec(x); if (m) out.push([pre + m[1], nom(m[1]), parseFloat(m[2].replace(',', '.')) / 100]); }); };
+  leer(f.CHEQUES, 'CH', function(n) { return 'Cheque ' + n + ' días'; });
+  leer(f.TARJETA, 'TJ', function(n) { return 'Tarjeta ' + n + ' cuotas'; });
+  return out;
+}
+function pnFpSel() { var l = pnFpLista(), r = l[0]; l.forEach(function(x) { if (x[0] === PN_.fp) r = x; }); return r; }
+function pnFpPct(r) { return (Math.round(r * 10000) / 100).toLocaleString('es-AR') + '%'; }
+function pnFpHtml() {
+  var sel = pnFpSel();
+  return '<div class="pn-fp">' + pnFpLista().map(function(x) { return '<button type="button" class="' + (x[0] === sel[0] ? 'on' : '') + '" onclick="pnFp(\'' + x[0] + '\')">' + pnEsc(x[1]) + (x[2] ? ' <small>+' + pnFpPct(x[2]) + '</small>' : '') + '</button>'; }).join('') + '</div>' +
+    '<div class="pn-fpt">Recargo por forma de pago: a confirmar con los dueños.</div>';
+}
+function pnFp(k) {
+  PN_.fp = k; var x = pnFpSel();
+  PN_.pago = x[1]; PN_.pagoDe = ''; var pg = $id('pn-pago'); if (pg) pg.value = PN_.pago;
+  var w = $id('pn-fp'); if (w) w.innerHTML = pnFpHtml();
+  PN_.pdf = null; pnGuardar(); pnBarra(); pnHojaAct();
+}
 function pnSelItems() {
   return PN_.orden.filter(function(id) { return PN_.sel[id] && pnPorId(id); }).map(function(id) {
     // Cada cubierta con su propio descuento, o el general
     var propio = PN_.dItem && PN_.dItem[id] !== undefined && PN_.dItem[id] !== null, dp = propio ? PN_.dItem[id] : (PN_.desc || 0), d = dp / 100;
-    var p = pnPorId(id), u = pnUnit(p), un = Math.round(u.precio * (1 - d));
+    var p = pnPorId(id), u = pnUnit(p), un = Math.round(u.precio * (1 - d) * (1 + pnFpSel()[2]));
     return { p: p, cant: PN_.sel[id], base: u.precio, unit: un, nota: u.nota, lista: u.lista, sub: un * PN_.sel[id], R: pnMgR(p, u.precio), d: d, dp: dp, propio: propio };
   });
 }
@@ -14138,6 +14161,7 @@ function pnHoja() {
     '<div id="pn-sem"></div></div>' +
     '<div class="pn-tot"><span>Total (IVA incluido)</span><b id="pn-tot-v"></b></div>' +
     '<input class="pn-cli" id="pn-cli" autocomplete="off" placeholder="Cliente (buscá o escribí)" value="' + pnEsc(PN_.cli) + '" oninput="pnCliElegir(this.value)"/><div id="pn-cli-sug" class="pn-sug"></div>' +
+    '<div id="pn-fp">' + pnFpHtml() + '</div>' +
     '<input class="pn-cli" id="pn-pago" placeholder="Forma de pago (ej: 0-30-60-90)" value="' + pnEsc(PN_.pago || '') + '" oninput="PN_.pago=this.value;PN_.pagoDe=\'\';PN_.pdf=null;pnGuardar();pnPdfBotones()"/>' +
     '<div class="pn-hb"><button class="wa full" id="pn-pdf-b" onclick="pnCotPdf(this)">💬 Mandar por WhatsApp</button>' +
     '<button onclick="pnCotWhats()">✉ Enviar solo texto</button><button id="pn-pdf-d" onclick="pnCotPdfBajar()" disabled>⬇ Descargar PDF</button>' +
@@ -14238,7 +14262,8 @@ function pnCotTexto() {
     tot += x.sub;
     t += '\n• ' + x.cant + ' x ' + (x.p.EXT ? x.p.MEDIDA + ' (' + x.p.DISENO + ')' : x.p.MEDIDA + ' ' + x.p.MARCA + ' ' + x.p.DISENO + (pnDibTxt(x.p) ? ' (' + pnDibTxt(x.p) + ')' : '')) + '\n   ' + pnPlata(x.unit) + ' c/u' + (x.nota ? ' (' + x.nota + ')' : '') + ' · Subtotal ' + pnPlata(x.sub);
   });
-  t += '\n\n*Total: ' + pnPlata(tot) + '* (IVA incluido)\nPrecios con IVA incluido. Sujetos a cambio y disponibilidad.';
+  var fpx = pnFpSel();
+  t += '\n\n*Total: ' + pnPlata(tot) + '* (IVA incluido)' + (fpx[2] ? '\nPrecios para pago con ' + fpx[1].toLowerCase() + '.' : '') + '\nPrecios con IVA incluido. Sujetos a cambio y disponibilidad.';
   return t;
 }
 function pnCotWhats() {
@@ -14251,7 +14276,7 @@ function pnCotHtml() {
   var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
   its.forEach(function(x, i) {
     tot += x.sub;
-    filas += '<tr style="background:' + (i % 2 ? '#f7f8fa' : '#fff') + '"><td style="padding:7px 8px;font-family:Inter,Arial,sans-serif;border:0">' + (x.p.FOTO ? '<img src="' + pnEsc(pnFotoUrl(x.p)) + '" crossorigin="anonymous" style="width:44px;height:44px;object-fit:cover;float:left;margin:0 8px 0 0;border-radius:5px;border:1px solid #e5e7eb"/>' : '') + '<b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><div style="font-size:11px;color:#555">' + pnEsc(x.p.DISENO) + (pnDibTxt(x.p) ? ' · <b>' + pnEsc(pnDibTxt(x.p)) + '</b>' : '') + ' · Cód. ' + pnEsc(x.p.CODIGO) + (x.nota ? ' · <b style="color:#c2410c">' + pnEsc(x.nota) + '</b>' : '') + '</div></td>' +
+    filas += '<tr style="background:' + (i % 2 ? '#f7f8fa' : '#fff') + '"><td style="padding:7px 8px;font-family:Inter,Arial,sans-serif;border:0">' + (x.p.FOTO ? '<img src="' + pnEsc(pnFotoUrl(x.p)) + '" crossorigin="anonymous" style="width:72px;height:72px;object-fit:cover;float:left;margin:0 10px 0 0;border-radius:6px;border:1px solid #e5e7eb"/>' : '') + '<b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><div style="font-size:11px;color:#555">' + pnEsc(x.p.DISENO) + (pnDibTxt(x.p) ? ' · <b>' + pnEsc(pnDibTxt(x.p)) + '</b>' : '') + ' · Cód. ' + pnEsc(x.p.CODIGO) + (x.nota ? ' · <b style="color:#c2410c">' + pnEsc(x.nota) + '</b>' : '') + '</div></td>' +
       '<td style="padding:7px 8px;text-align:center">' + x.cant + '</td>' + (hayD ? '<td style="padding:7px 8px;text-align:right;white-space:nowrap;color:#666">' + pnPlata(x.base) + '</td><td style="padding:7px 8px;text-align:center;white-space:nowrap;color:#15803d;font-weight:700">' + (x.d ? String(x.dp).replace('.', ',') + '%' : '—') + '</td>' : '') + '<td style="padding:7px 8px;text-align:right;white-space:nowrap">' + pnPlata(x.unit) + '</td><td style="padding:7px 8px;text-align:right;white-space:nowrap"><b>' + pnPlata(x.sub) + '</b></td></tr>';
   });
   var v = '';  // vendedor: se agrega cuando se arme el registro de ventas por vendedor
