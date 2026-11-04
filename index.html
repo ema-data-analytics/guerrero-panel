@@ -1484,7 +1484,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611032043';
+var EMA_BUILD = '202611041415';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13824,6 +13824,15 @@ var PN_ = { div: 'CUB', d: null, q: '', rubro: '', marca: '', promo: 0, max: 40,
 function pnEl() { return $id('page-precios-nuevos'); }
 function pnEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function pnPlata(n) { n = Number(n) || 0; return '$ ' + Math.round(n).toLocaleString('es-AR'); }
+// Búsqueda (04/11/2026): una palabra con solo letras se busca dentro de UNA palabra del producto
+// (así "lisa" no encuentra "WANLI SA302", pero "max" sí encuentra "KMAX"); con números busca en cualquier parte, como antes.
+function pnPalabras(s) { return String(s || '').toUpperCase().replace(/×/g, 'X').normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^A-Z0-9]+/).filter(function(w) { return w; }); }
+function pnTokPasa(x, t) {
+  if (/[0-9]/.test(t)) return x.n.indexOf(t) !== -1 || (/^[0-9]+$/.test(t) && x.dig.indexOf(t) !== -1);
+  var w = x.w || pnPalabras(x.n);
+  for (var i = 0; i < w.length; i++) if (w[i].indexOf(t) !== -1) return true;
+  return false;
+}
 function pnNorm(s) { return String(s || '').toUpperCase().replace(/×/g, 'X').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]/g, ''); }
 function pnFecha(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
 var PN_RUBROS = [['', 'Todos'], ['AUTO', '🚗 Auto'], ['CAMIONETA', '🛻 Camioneta'], ['CAMION', '🚚 Camión'], ['AGRICOLA', '🚜 Agrícola'], ['INDUSTRIAL', '🏗 Industrial']];
@@ -13860,7 +13869,7 @@ function pnIndexar() {
   PN_.proMap = proMap; PN_.porPn = porPn;
   PN_.idx = (d.PRECIOS || []).map(function(p) {
     var h = [p.MEDIDA, p.MARCA, p.DISENO, p.NOMBRE, p.CODIGO, p.DESCRIPCION, p.COD_PROV, p.RUBRO, p.DATOS].join(' ');
-    return { p: p, n: pnNorm(h), dig: pnNorm(h).replace(/[^0-9]/g, '') };
+    return { p: p, n: pnNorm(h), dig: pnNorm(h).replace(/[^0-9]/g, ''), w: pnPalabras(h) };
   });
   var ordR = { AUTO: 1, CAMIONETA: 2, CAMION: 3, AGRICOLA: 4, INDUSTRIAL: 5 };
   PN_.idx.sort(function(a, b) {
@@ -13893,7 +13902,7 @@ function pnPintar() {
   }
   var insV = PN_.div === 'INS', cats = []; if (insV) (PN_.d.PRECIOS || []).forEach(function(p) { if (p.RUBRO === 'INSUMOS' && p.DESCRIPCION && cats.indexOf(p.DESCRIPCION) === -1) cats.push(p.DESCRIPCION); }); cats.sort();
   h += pnDivBar() +
-    '<div class="pn-busca"><input id="pn-q" type="search" inputmode="search" autocomplete="off" placeholder="' + (insV ? 'Buscá por nombre o código (ej: parche, raspa, AA0775)' : 'Buscá medida, marca o diseño (ej: 295 80 22.5)') + '" value="' + pnEsc(PN_.q) + '" oninput="pnBuscar(this.value)"/>' +
+    '<div class="pn-busca"><input id="pn-q" type="search" inputmode="search" autocomplete="off" placeholder="' + (insV ? 'Buscá por nombre o código (ej: parche, raspa, AA0775)' : 'Buscá medida, marca, diseño o uso (ej: 295 80 lisa · 295 mixta · 275 taco)') + '" value="' + pnEsc(PN_.q) + '" oninput="pnBuscar(this.value)"/>' +
     '<div class="pn-chips">' + (insV ? [['', 'Todo']].concat(cats.map(function(c) { return [c, c.charAt(0) + c.slice(1).toLowerCase()]; })) : PN_RUBROS).map(function(r) { return '<button class="pn-chip' + (PN_.rubro === r[0] ? ' on' : '') + '" onclick="pnRubro(\'' + r[0] + '\')">' + r[1] + '</button>'; }).join('') + '</div>' +
     (insV ? '' : '<div class="pn-chips"><button class="pn-chip' + (!PN_.marca ? ' on' : '') + '" onclick="pnMarca(\'\')">Todas las marcas</button>' +
     Object.keys(marcas).sort().map(function(m) { return '<button class="pn-chip' + (PN_.marca === m ? ' on' : '') + '" onclick="pnMarca(\'' + pnEsc(m) + '\')">' + pnEsc(m) + '</button>'; }).join('') + '</div>') + '</div>' +
@@ -13912,8 +13921,7 @@ function pnFiltrar() {
     if (PN_.marca && !esI && p.MARCA !== PN_.marca) return false;
     if (PN_.promo && !(PN_.porPn[p.ID_PN] || []).some(function(it) { return it.ID_PROMO === PN_.promo; })) return false;
     for (var i = 0; i < toks.length; i++) {
-      var t = toks[i];
-      if (x.n.indexOf(t.n) === -1 && !(t.dig && x.dig.indexOf(t.n) !== -1)) return false;
+      if (!pnTokPasa(x, toks[i].n)) return false;
     }
     return true;
   });
@@ -14351,7 +14359,7 @@ function pnAnxTop() {
     '<div class="pn-acc">' + (lvEsAdmin() ? '<button class="btn btn-sm" onclick="lvAbrir()">🗂 Versiones de la lista</button>' : '') + '</div></div>';
 }
 function pnAnxTok() { return String(PN_ANX.q || '').trim().split(/\s+/).map(function(t) { return pnNorm(t); }).filter(function(t) { return t; }); }
-function pnAnxPasa(txt, toks) { var n = pnNorm(txt), dg = n.replace(/[^0-9]/g, ''); return toks.every(function(t) { return n.indexOf(t) !== -1 || (/^[0-9]+$/.test(t) && dg.indexOf(t) !== -1); }); }
+function pnAnxPasa(txt, toks) { var x = { n: pnNorm(txt), dig: pnNorm(txt).replace(/[^0-9]/g, ''), w: pnPalabras(txt) }; return toks.every(function(t) { return pnTokPasa(x, t); }); }
 function pnAnxRes() {
   var r = $id('pn-res2'), d = PN_ANX.d; if (!r || !d) return;
   var toks = pnAnxTok(), lista = [], h = '';
@@ -14414,7 +14422,7 @@ function lvBuscar() {
   var q = String($v('lv-q') || '').trim(), box = $id('lv-sug'); if (!box) return;
   if (q.length < 2 || !PN_.idx) { box.innerHTML = ''; return; }
   var toks = q.split(/\s+/).map(function(t) { return pnNorm(t); }).filter(function(t) { return t; });
-  var r = PN_.idx.filter(function(x) { return toks.every(function(t) { return x.n.indexOf(t) !== -1 || (/^[0-9]+$/.test(t) && x.dig.indexOf(t) !== -1); }); }).slice(0, 60);
+  var r = PN_.idx.filter(function(x) { return toks.every(function(t) { return pnTokPasa(x, t); }); }).slice(0, 60);
   box.innerHTML = r.length ? '<div class="tw" style="max-height:220px"><table style="font-size:12px"><tbody>' + r.map(function(x) { return '<tr><td>' + pnEsc(x.p.NOMBRE) + '</td><td class="mono tr">' + pnPlata(x.p.PRECIO_CON_IVA) + '</td><td><button class="btn btn-xs" onclick="lvAgregar(' + x.p.ID_PN + ')">Cambiar</button></td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="tdim">No encontré ese producto.</div>';
 }
 function lvAgregar(id) {
