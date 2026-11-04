@@ -1484,7 +1484,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611041520';
+var EMA_BUILD = '202611041540';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -14139,8 +14139,8 @@ function pnHoja() {
     '<div class="pn-tot"><span>Total (IVA incluido)</span><b id="pn-tot-v"></b></div>' +
     '<input class="pn-cli" id="pn-cli" autocomplete="off" placeholder="Cliente (buscá o escribí)" value="' + pnEsc(PN_.cli) + '" oninput="pnCliElegir(this.value)"/><div id="pn-cli-sug" class="pn-sug"></div>' +
     '<input class="pn-cli" id="pn-pago" placeholder="Forma de pago (ej: 0-30-60-90)" value="' + pnEsc(PN_.pago || '') + '" oninput="PN_.pago=this.value;PN_.pagoDe=\'\';PN_.pdf=null;pnGuardar();pnPdfBotones()"/>' +
-    '<div class="pn-hb"><button class="wa full" onclick="pnCotWhats()">💬 Mandar texto por WhatsApp</button>' +
-    '<button class="pdf" id="pn-pdf-b" onclick="pnCotPdf(this)">📄 Armar PDF</button><button id="pn-pdf-d" onclick="pnCotPdfBajar()" disabled>⬇ Descargar PDF</button>' +
+    '<div class="pn-hb"><button class="wa full" id="pn-pdf-b" onclick="pnCotPdf(this)">💬 Mandar por WhatsApp</button>' +
+    '<button onclick="pnCotWhats()">✉ Enviar solo texto</button><button id="pn-pdf-d" onclick="pnCotPdfBajar()" disabled>⬇ Descargar PDF</button>' +
     '<button class="full" onclick="pnVaciar()">🗑 Vaciar cotización</button></div></div>';
   var ov = document.createElement('div'); ov.id = 'pn-ov'; ov.className = 'pn-ov'; ov.onclick = pnHojaCerrar; ov.innerHTML = h;
   document.body.appendChild(ov);
@@ -14277,14 +14277,14 @@ function pnPdfNombre() { return 'Cotizacion_Vulcan_' + (PN_.cli ? PN_.cli.replac
 function pnPdfBotones() {
   var b = $id('pn-pdf-b'), d = $id('pn-pdf-d'); if (!b) return;
   b.disabled = false; d.disabled = !PN_.pdf;
-  b.textContent = PN_.pdf ? '📤 Enviar PDF' : '📄 Armar PDF';
+  b.textContent = PN_.pdf ? '📤 Enviar a WhatsApp (PDF con fotos listo)' : '💬 Mandar por WhatsApp';
 }
 // Armar el PDF tarda unos segundos; compartir necesita un toque del usuario, por eso es en dos pasos: Armar → Enviar.
 function pnCotPdf(btn) {
   if (PN_.pdf) {
     var f = new File([PN_.pdf], pnPdfNombre(), { type: 'application/pdf' });
     pnGuardar();
-    if (navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: 'Cotización Vulcan Tread' }).catch(function() {}); }
+    if (navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: 'Cotización Vulcan Tread', text: 'Cotización Vulcan Tread Neumáticos' + (PN_.cli ? ' · ' + PN_.cli : '') }).catch(function() {}); }
     else { pnCotPdfBajar(); toast('Este aparato no deja compartir archivos: se descargó el PDF.', 'w'); }
     return;
   }
@@ -14292,7 +14292,10 @@ function pnCotPdf(btn) {
   pnPdfCargar(function() {
     var cont = document.createElement('div'); cont.style.cssText = 'position:absolute;left:-10000px;top:0;width:700px'; cont.innerHTML = pnCotHtml(); document.body.appendChild(cont);
     html2pdf().set({ margin: 8, filename: pnPdfNombre(), image: { type: 'jpeg', quality: 0.95 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 820, scrollX: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } })
-      .from(cont.firstChild).outputPdf('blob').then(function(blob) { cont.remove(); PN_.pdf = blob; pnPdfBotones(); },
+      .from(cont.firstChild).outputPdf('blob').then(function(blob) { cont.remove(); PN_.pdf = blob; pnPdfBotones();
+          // Se intenta abrir el menú de compartir solo; si el celular pide otro toque, queda el botón «Enviar a WhatsApp».
+          var f2 = new File([blob], pnPdfNombre(), { type: 'application/pdf' });
+          if (navigator.canShare && navigator.canShare({ files: [f2] })) navigator.share({ files: [f2], title: 'Cotización Vulcan Tread', text: 'Cotización Vulcan Tread Neumáticos' + (PN_.cli ? ' · ' + PN_.cli : '') }).catch(function() {}); },
         function(e) { cont.remove(); toast('No se pudo armar el PDF', 'r2'); pnPdfBotones(); });
   });
 }
