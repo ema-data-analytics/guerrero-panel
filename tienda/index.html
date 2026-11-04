@@ -195,7 +195,7 @@ function cargarVivo(){
     $('estadoDatos').innerHTML='';
     CFG.wa=r.wa||'';CFG.envio_modo=r.envio_modo||'B';CFG.mp=!!r.mp;CFG.transf=!!r.transf;CFG.cuotas=r.cuotas||'';
     VIVO={};
-    for(var i=0;i<r.arts.length;i++){VIVO[r.arts[i][0]]=1;var a=BYID[r.arts[i][0]];if(a){a.p=r.arts[i][1];a.st=r.arts[i][2];a.ok=true;a.t=r.arts[i][3]||'';}}
+    for(var i=0;i<r.arts.length;i++){VIVO[r.arts[i][0]]=1;var a=BYID[r.arts[i][0]];if(a){a.p=r.arts[i][1];a.st=r.arts[i][2];a.ok=true;a.t=r.arts[i][3]||'';var fo=r.arts[i][4];if(fo&&a.s&&D.dis[a.s]&&!D.dis[a.s].i)D.dis[a.s].i=fo;}}
     EXT=[];(r.extra||[]).forEach(function(e){if(BYID[e.id]&&!BYID[e.id].x)return;var o={id:e.id,n:e.n,c:e.c,p:e.p,st:e.st,k:e.k,me:e.me,tr:e.tr,li:e.li,x:1,ok:true,r:'X'+e.k,sp:''};BYID[e.id]=o;VIVO[e.id]=1;EXT.push(o);});
     for(var k in CAR){var b=BYID[k];if(!b||!b.ok||b.st<=0)delete CAR[k];else if(CAR[k]>b.st)CAR[k]=b.st;}
     guardar();cuenta();
