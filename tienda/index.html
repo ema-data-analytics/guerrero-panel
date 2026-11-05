@@ -72,7 +72,7 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 .tot{border-top:1px solid var(--li)}
 .wa{display:block;text-align:center;color:#128c7e;font-weight:700;font-size:14px;margin-top:8px;text-decoration:none}
 #carga{position:fixed;left:50%;transform:translateX(-50%);bottom:70px;background:var(--az);color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;z-index:40}
-.cuo-cont{font-size:14px;margin:4px 0 8px}.cuo{border:1px solid #d5d9e0;border-radius:10px;padding:8px 10px;margin:8px 0}.cuo-d{font-size:14px;color:#333}.cuo-cft{font-size:14px;color:#333;margin:2px 0 6px}.cuo-n{font-size:11px;color:#666;margin-top:6px}.cq{font-size:12px;color:#1f3d1f;margin-top:1px}.sinimp{font-size:10.5px;color:#666;margin:0 0 2px}
+.cuo-cont{font-size:14px;margin:4px 0 8px}.cuo{border:1px solid #d5d9e0;border-radius:10px;padding:8px 10px;margin:8px 0}.cuo-d{font-size:14px;color:#333}.cuo-cft{font-size:14px;color:#333;margin:2px 0 6px}.cuo-n{font-size:11px;color:#666;margin-top:6px}.cq{font-size:12px;color:#1f3d1f;margin-top:1px}.sinimp{font-size:10.5px;color:#666;margin:0 0 2px}.arrep{display:block;margin-top:4px;background:#fff;color:#b91c1c;border:2px solid #b91c1c;border-radius:6px;font-size:11px;font-weight:800;padding:2px 8px;cursor:pointer}.vend{font-size:11px;color:#555;margin:0 0 8px;line-height:1.35}.arr-f input,.arr-f textarea{width:100%;box-sizing:border-box;margin:3px 0 8px;padding:9px;border:1px solid #ccc;border-radius:8px;font-size:15px;font-family:inherit}
 .vc{display:block;margin-top:2px;background:none;border:0;color:#1d4f91;text-decoration:underline;font-size:12px;padding:0;cursor:pointer}.cuo-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}.cuo-box{background:#fff;border-radius:14px;max-width:420px;width:100%;max-height:90vh;overflow:auto;padding:14px}
 </style>
 </head>
@@ -80,7 +80,7 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 <div class="wmk"></div>
 <header><div class="hd">
 <div class="lg"><img src="../logo_vulcan.jpg" alt="Vulcan Tread"></div>
-<h1>Vulcan Tread Neumáticos<small>Tienda online · precios con IVA y stock al día</small></h1>
+<h1>Vulcan Tread Neumáticos<small>Tienda online · precios con IVA y stock al día</small><button class="arrep" onclick="arrepAbrir()">BOTÓN DE ARREPENTIMIENTO</button></h1>
 <div class="tabs"></div>
 <button class="cartbtn" onclick="abrirCarro()">Pedido<b id="nc">0</b></button>
 </div></header>
@@ -96,7 +96,7 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 <div class="info"><span id="cnt"></span><span>Precios finales con IVA. Sujetos a cambio sin previo aviso.</span></div>
 <div class="grid" id="grid"></div>
 <button class="btn l more" id="more" onclick="mas()">Ver más</button>
-<footer>Vulcan Tread Neumáticos S.R.L. · Salta, Argentina · Imágenes ilustrativas de cada fabricante</footer>
+<footer><div><b>VULCAN TREAD NEUMÁTICOS S.R.L. · CUIT 30-71937385-9 · IVA Responsable Inscripto · Casa 1 M:4, Barrio Santa Clara de Asís, Salta (4400) · ventas@vulcantread.com</b></div><div style="margin-top:4px"><a href="#" onclick="arrepAbrir();return false">Botón de arrepentimiento</a> · Tenés 10 días corridos para arrepentirte de la compra (Ley 24.240, art. 34) · Imágenes ilustrativas de cada fabricante</div></footer>
 </main>
 <div id="carga">Actualizando precios y stock…</div>
 
@@ -130,6 +130,7 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 <div class="r"><span>Total con IVA</span><span id="tot">$ 0</span></div>
 <div class="err" id="err"></div>
 <div class="aviso" id="waNota" style="margin:0 0 8px"><b>📲 Tu pedido nos llega por WhatsApp.</b> Al tocar el botón se abre WhatsApp con el pedido escrito: <b>tocá ENVIAR</b> ahí para que lo recibamos.</div>
+<div class="vend" id="vendNota">Vendedor: VULCAN TREAD NEUMÁTICOS S.R.L. · CUIT 30-71937385-9 · IVA Responsable Inscripto · Casa 1 M:4, Barrio Santa Clara de Asís, Salta (4400) · ventas@vulcantread.com. Podés arrepentirte dentro de los 10 días corridos de recibido el pedido con el <a href="#" onclick="arrepAbrir();return false">botón de arrepentimiento</a>.</div>
 <a class="btn" id="bConf" href="#" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;width:100%;padding:14px;background:#25d366;font-size:16px" onclick="return confirmar(this)">Enviar pedido por WhatsApp</a>
 <a class="wa" id="waLink" href="#" target="_blank" rel="noopener">¿Dudas? Escribinos por WhatsApp</a>
 </div></div></div>
@@ -276,6 +277,17 @@ function mas(){S.lim+=40;pintar();}
 // Cuotas: se muestran siempre que haya planes (05/11/2026, Anibal). Se cobran con Mercado Pago (medio principal de la venta web).
 // Res. 4/2025 SIC art. 2 c): al lado del precio final, en letra más chica, el precio sin impuestos nacionales (todo el catálogo es IVA 21%)
 function sinImp(P){return '<div class="sinimp">Precio sin impuestos nacionales: '+pesos(Math.round(P/1.21))+'</div>';}
+// Botón de arrepentimiento (Disp. 954/2025 y Ley 24.240 art. 34): a la vista desde el primer acceso, sin registrarse. Se manda por WhatsApp o por mail.
+function arrepAbrir(){var ov=document.createElement('div');ov.className='cuo-ov';ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  ov.innerHTML='<div class="cuo-box arr-f"><b style="font-size:17px">Botón de arrepentimiento</b><p style="font-size:13px;margin:6px 0 10px">Podés arrepentirte de tu compra dentro de los <b>10 días corridos</b> desde que recibiste el producto o se celebró el contrato (Ley 24.240, art. 34), sin costo ni explicaciones. No hace falta registrarse. Te respondemos dentro de las 24 horas con el código de tu pedido de arrepentimiento.</p>'+
+  '<label>Nombre y apellido *<input id="arN" autocomplete="name"></label><label>DNI o CUIT *<input id="arD" inputmode="numeric"></label><label>Fecha o número del pedido *<input id="arP"></label><label>Teléfono o mail para responderte *<input id="arC"></label><label>Comentario (opcional)<textarea id="arM" rows="2"></textarea></label>'+
+  '<div id="arE" style="color:#b91c1c;font-size:13px;min-height:16px"></div><button class="btn" style="width:100%;padding:12px;background:#25d366" onclick="arrepEnviar(\'wa\')">Enviar por WhatsApp</button><button class="btn l" style="width:100%;margin-top:6px" onclick="arrepEnviar(\'mail\')">Enviar por mail</button><button class="btn l" style="width:100%;margin-top:6px" onclick="this.closest(\'.cuo-ov\').remove()">Cerrar</button>'+
+  '<div class="vend" style="margin-top:8px">VULCAN TREAD NEUMÁTICOS S.R.L. · CUIT 30-71937385-9 · ventas@vulcantread.com</div></div>';document.body.appendChild(ov);}
+function arrepEnviar(via){var v=function(i){return ($(i).value||'').trim();},n=v('arN'),d=v('arD'),p=v('arP'),c=v('arC');
+  if(n.length<3||d.length<7||!p||c.length<6){$('arE').textContent='Completá los datos con asterisco';return;}
+  var t='BOTÓN DE ARREPENTIMIENTO\nMe arrepiento de la compra (Ley 24.240, art. 34).\nNombre: '+n+'\nDNI/CUIT: '+d+'\nPedido: '+p+'\nContacto: '+c+(v('arM')?'\nComentario: '+v('arM'):'')+'\nPor favor envíenme el código de identificación del arrepentimiento.';
+  var u=via==='wa'?'https://wa.me/'+(CFG.wa||'5493874150840')+'?text='+encodeURIComponent(t):'mailto:ventas@vulcantread.com?subject='+encodeURIComponent('Botón de arrepentimiento - '+n)+'&body='+encodeURIComponent(t);
+  window.open(u,'_blank');$('arE').style.color='#166534';$('arE').textContent=via==='wa'?'Se abrió WhatsApp con tu pedido escrito: tocá ENVIAR.':'Se abrió tu mail con el pedido escrito: tocá ENVIAR.';}
 function hayCuotas(){return !!(VIVO&&planesCuotas(CFG.cuotas,1000).length);}
 // En la tarjeta: el plan más largo, con total y CFT al lado (Res. 51-E/2017: si se anuncia la cuota, va el CFT)
 function cuoLinea(a){var pl=planesCuotas(CFG.cuotas,a.p);if(!pl.length)return '';var p=pl[pl.length-1];return '<div class="cq">o '+p.n+' cuotas de <b>'+pesos(p.cuota)+'</b> · total '+pesos(p.total)+' · CFT '+pct(p.cft)+'</div>';}
