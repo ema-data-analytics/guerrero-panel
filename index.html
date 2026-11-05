@@ -1494,7 +1494,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611051650';
+var EMA_BUILD = '202611051657';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -14268,7 +14268,7 @@ function pnPct(x) { /* se corta para abajo: si dice 10% es porque llega al 10% *
 function pnTopesTxt(R) { return R === null || !PN_.mgD ? '' : '🟢 hasta ' + pnPct(pnMgTope(R, PN_.mgD.VERDE)) + ' · 🟡 hasta ' + pnPct(pnMgTope(R, PN_.mgD.AMARILLO)); }
 function pnDesc(v, abs, de) {
   if (de !== 'txt' && document.activeElement && document.activeElement.id === 'pn-dsc') document.activeElement.blur();
-  PN_.desc = Math.max(0, Math.min(90, Math.round((abs ? v : (PN_.desc || 0) + v) * 10) / 10)); PN_.pdf = null; PN_.dscDe = de || '';
+  PN_.desc = Math.max(-100, Math.min(90, Math.round((abs ? v : (PN_.desc || 0) + v) * 10) / 10));   // negativo = sube el precio (05/11/2026, Anibal); el cliente ve solo el precio final PN_.pdf = null; PN_.dscDe = de || '';
   pnGuardar(); pnBarra(); pnHojaAct();
 }
 function pnDescTxt(t) { var v = parseFloat(String(t).replace(',', '.')); if (isNaN(v)) v = 0; pnDesc(v, true, 'txt'); }
@@ -14313,7 +14313,7 @@ function pnDescItem(id, t, limpiar) {
   var v = parseFloat(String(t).replace(',', '.'));
   PN_.dItem = PN_.dItem || {};
   if (limpiar || String(t).trim() === '' || isNaN(v)) { delete PN_.dItem[id]; if (limpiar) { var e = $id('pn-di-' + id); if (e) e.value = ''; } }
-  else PN_.dItem[id] = Math.max(0, Math.min(90, Math.round(v * 10) / 10));
+  else PN_.dItem[id] = Math.max(-100, Math.min(90, Math.round(v * 10) / 10));
   PN_.pdf = null; pnGuardar(); pnBarra(); pnHojaAct();
 }
 function pnHojaAct() {
@@ -14334,7 +14334,7 @@ function pnHojaAct() {
     var dot = '';
     if (x.R !== null && PN_.mgD) { var g = pnMgGan(x.R, x.d), c = pnMgCol(g); dot = '<div style="font-size:11.5px;margin-top:2px"><span style="color:' + c[0] + ';font-weight:800">● ' + (g < 0 ? 'Pierde ' + pnPct(-g) : 'Gana ' + pnPct(g)) + '</span> · ' + pnTopesTxt(x.R) + '</div>'; var sn = x.base / 1.21 * x.cant; sinD += sn * (1 - x.d); cosT += x.R * sn; }
     else todos = false;
-    var inf = $id('pn-inf-' + id); if (inf) inf.innerHTML = '<b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><span>' + pnEsc(x.p.DISENO) + (pnDibTxt(x.p) ? ' · ' + pnEsc(pnDibTxt(x.p)) : '') + ' · ' + (x.d ? '<s>' + pnPlata(x.base) + '</s> ' : '') + pnPlata(x.unit) + ' c/u' + (x.d ? ' (' + pnPct(x.d) + (x.propio ? ' propio' : '') + ')' : '') + (x.lista ? ' · Lista ' + pnEsc(x.lista) : '') + (x.nota ? ' · ' + pnEsc(x.nota) : '') + '</span>' + dot;
+    var inf = $id('pn-inf-' + id); if (inf) inf.innerHTML = '<b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><span>' + pnEsc(x.p.DISENO) + (pnDibTxt(x.p) ? ' · ' + pnEsc(pnDibTxt(x.p)) : '') + ' · ' + (x.d > 0 ? '<s>' + pnPlata(x.base) + '</s> ' : '') + pnPlata(x.unit) + ' c/u' + (x.d ? ' (' + (x.d < 0 ? '+' + pnPct(-x.d) + ' sobre lista' : pnPct(x.d)) + (x.propio ? ' propio' : '') + ')' : '') + (x.lista ? ' · Lista ' + pnEsc(x.lista) : '') + (x.nota ? ' · ' + pnEsc(x.nota) : '') + '</span>' + dot;
     var n = $id('pn-n-' + id); if (n) n.textContent = x.cant;
     var st = $id('pn-st-' + id); if (st) st.textContent = pnPlata(x.sub);
     var di = $id('pn-di-' + id); if (di && document.activeElement !== di) di.value = x.propio ? String(x.dp).replace('.', ',') : '';
@@ -14352,6 +14352,7 @@ function pnHojaAct() {
       S.innerHTML = '<div class="pn-sem" style="border-color:' + c2[0] + ';background:' + c2[1] + '"><div class="pn-luz">' + ['#dc2626', '#d97706', '#16a34a'].map(function(k) { return '<span style="background:' + (k === c2[0] ? k : '#e5e7eb') + '"></span>'; }).join('') + '</div>' +
         '<div style="flex:1"><div style="font-weight:800;color:' + c2[0] + ';font-size:13px">' + c2[2] + ' · ' + c2[3] + '</div><div style="font-size:24px;font-weight:800;color:' + c2[0] + '">' + (g2 < 0 ? 'Pierde ' + pnPct(-g2) : 'Gana ' + pnPct(g2)) + '</div>' +
         (tot < totL - 0.5 ? '<div style="font-size:12.5px">Descuento total: <b>' + pnPlata(totL - tot) + '</b> (' + pnPct(1 - tot / totL) + ')</div>' : '') +
+        (PN_.desc < 0 || its.some(function(x) { return x.d < 0; }) ? '<div style="font-size:12.5px">Precio subido sobre lista (descuento negativo). El cliente ve solo el precio final.</div>' : '') +
         (Rg !== null ? '<div style="font-size:12.5px">Descuento general: 🟢 hasta <b>' + pnPct(pnMgTope(Rg, PN_.mgD.VERDE)) + '</b> · 🟡 hasta <b>' + pnPct(pnMgTope(Rg, PN_.mgD.AMARILLO)) + '</b> · no gana nada en <b>' + pnPct(pnMgTope(Rg, 0)) + '</b></div>' : '') +
         (propios ? '<div class="tdim" style="font-size:11px">' + propios + ' producto' + (propios === 1 ? ' tiene' : 's tienen') + ' su propio descuento.</div>' : '') +
         (todos ? '' : '<div class="tdim" style="font-size:11px">Hay productos sin costo cargado: no entran en el cálculo.</div>') + '</div></div>'; }
