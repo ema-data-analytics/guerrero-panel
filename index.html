@@ -838,6 +838,12 @@ async function doLogin() {
   SES = { usuario: data.usuario, nombre: data.nombre, rol: data.rol, token: data.token, permisos: data.permisos, suc: data.sucursal || 'TODAS', sucNombre: data.sucursalNombre || '', planta: data.planta !== false };
   document.getElementById('lp').value = '';
   errEl.style.display = 'none';
+  emaEntrar_();
+}
+// La sesión queda guardada solo en esta pestaña (sessionStorage): al tocar «Actualizar» o recargar no hay que volver a poner la clave.
+// Se borra al salir o al cerrar la pestaña; si el pase venció, el servidor lo rechaza y vuelve a la entrada (05/11/2026).
+function emaEntrar_() {
+  try { sessionStorage.setItem('ema_ses', JSON.stringify(SES)); } catch (e) {}
   document.getElementById('login-wrap').style.display = 'none';
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('sb-nm').textContent = SES.nombre;
@@ -850,6 +856,7 @@ async function doLogin() {
 function doLogout(motivo) {
   var tk = SES && SES.token;
   SES = null;
+  try { sessionStorage.removeItem('ema_ses'); } catch (e) {}
   _mcDelAll();
   if (typeof _dsPeriodo !== 'undefined') _dsPeriodo = 'mes';   // el proximo usuario arranca en "Este mes"
   if (tk && motorSupabase()) { sbLlamar('gsLogout', [tk]).catch(function() {}); }
@@ -1487,7 +1494,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611051258';
+var EMA_BUILD = '202611051305';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1529,7 +1536,7 @@ function emaAvisoActualizado() {
 }
 function emaActualizar(v) {
   try { sessionStorage.setItem('ema_recarga_' + v, '1'); sessionStorage.setItem('ema_actualizado', v); } catch (e) {}
-  location.replace(location.pathname + '?v=' + v + location.hash);
+  location.replace(location.pathname + '?v=' + v + '&t=' + Date.now() + location.hash);
 }
 // Siempre un botón azul a la vista (en la entrada, en el celular, en la tablet y en la PC) hasta que lo tocan
 function emaBotonNueva(v) {
@@ -1545,6 +1552,14 @@ function emaChequearVersion() {
     emaBotonNueva(v);
   });
 }
+(function emaRestaurarSesion_() {
+  var go = function() {
+    var x = null; try { x = JSON.parse(sessionStorage.getItem('ema_ses') || 'null'); } catch (e) {}
+    if (!x || !x.token || SES || !$id('login-wrap') || !$id('app')) return;
+    SES = x; emaEntrar_();
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function() { setTimeout(go, 0); }); else setTimeout(go, 0);
+})();
 setTimeout(function() { emaVersionPintar(); emaAvisoActualizado(); emaChequearVersion(); }, 1500);
 setInterval(emaVersionPintar, 5000);
 setInterval(emaChequearVersion, 30000);
