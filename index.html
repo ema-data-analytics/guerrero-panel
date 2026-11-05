@@ -1494,7 +1494,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611051401';
+var EMA_BUILD = '202611051642';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -4267,7 +4267,7 @@ async function feImprimir(r) {
     '.vpie{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px}.vpie svg,.vpie img{width:100px;height:100px}.vag{border:3px solid #b91c1c;color:#b91c1c;font-weight:800;text-align:center;padding:4px;margin-bottom:6px;font-size:13px}</style>';
   var copia = function(cual) {
     return '<div class="vh">' + (prueba ? '<div class="vag">COMPROBANTE DE PRUEBA (' + vEsc(fe.AMBIENTE) + ') · SIN VALIDEZ FISCAL</div>' : '') + (an ? '<div class="vag">ANULADA · ' + vEsc(v.MOTIVO_ANULACION || '') + '</div>' : '') +
-      '<div class="vb vc"><div><img src="' + logo + '" crossorigin="anonymous" style="height:76px"/><div class="vm" style="margin-top:6px">' + vEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantread.com</div><div class="vm" style="margin-top:8px;text-decoration:underline">I.V.A. ' + vEsc(em.COND_IVA === 'IVA RESPONSABLE INSCRIPTO' ? 'Responsable Inscripto' : em.COND_IVA) + '</div></div>' +
+      '<div class="vb vc"><div><img src="' + logo + '" crossorigin="anonymous" style="height:76px"/><div class="vm" style="margin-top:6px">' + vEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantreadsrl.com.ar</div><div class="vm" style="margin-top:8px;text-decoration:underline">I.V.A. ' + vEsc(em.COND_IVA === 'IVA RESPONSABLE INSCRIPTO' ? 'Responsable Inscripto' : em.COND_IVA) + '</div></div>' +
       '<div class="vl"><span class="le">' + vEsc(fe.LETRA) + '</span><small>Cod.' + String(fe.COD_CBTE).padStart(3, '0') + '</small>' + (esA ? '<div class="vm" style="margin-top:6px">Operacion Sujeta a Retencion</div>' : '') + '</div>' +
       '<div><div class="vt">' + tit + '</div><div class="vn">' + vEsc(nro[0] || '') + ' ' + vEsc(nro[1] || '') + ' <span style="font-size:12px;font-weight:400">(' + cual + ')</span></div>' +
       '<div style="font-size:13px;margin-left:30px"><span class="vk">Fecha:</span> <b style="font-size:15px">' + fmtD(v.FECHA) + '</b> &nbsp; ' + hora + '<br><span class="vk">Hoja:</span> <b>1</b> de <b>1</b></div>' +
@@ -11197,7 +11197,7 @@ function remVulcanImp(x, filas, nItems) {
   var filasArr = String(filas).split('</tr>').filter(function(t) { return t.indexOf('<tr') !== -1; }).map(function(t) { return t + '</tr>'; });
   var copia = function(cual, fil, nh) {
     return '<div class="rv">' +
-      '<div class="rb" style="display:flex;justify-content:space-between;gap:6px;overflow:hidden"><div style="flex:1 1 auto;min-width:0"><img src="' + logo + '" crossorigin="anonymous" style="height:46px"/><div class="rm" style="margin-top:2px">' + pcEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantread.com<br><u>I.V.A. Responsable Inscripto</u></div></div>' +
+      '<div class="rb" style="display:flex;justify-content:space-between;gap:6px;overflow:hidden"><div style="flex:1 1 auto;min-width:0"><img src="' + logo + '" crossorigin="anonymous" style="height:46px"/><div class="rm" style="margin-top:2px">' + pcEsc(em.DOMICILIO || '') + '<br>E-Mail: ventas@vulcantreadsrl.com.ar<br><u>I.V.A. Responsable Inscripto</u></div></div>' +
       '<div style="text-align:right;font-size:11px;line-height:1.25;flex:0 0 46%;min-width:0"><div style="font-size:9.5px">(' + cual + ')' + (hojas.length > 1 ? ' · Hoja ' + nh + ' de ' + hojas.length : '') + '</div><div style="font-size:11px;font-weight:800;margin-top:1px">REMITO</div><div style="font-size:14.5px;font-weight:800;white-space:nowrap;margin-bottom:1px">' + pcEsc(x.NRO) + '</div>' +
       '<div>Fecha: <b>' + fmtD(x.FECHA) + '</b></div><div>Hora: <b>' + hora + '</b></div><div style="font-size:9.5px;margin-top:2px;line-height:1.25">C.U.I.T.: ' + pcEsc(cuitF(em.CUIT)) + '<br>Ing.Brutos: ' + pcEsc(em.IIBB || '') + '<br>Inicio de Actividades: ' + pcEsc(ini) + '</div>' +
       '<div style="font-size:6.5px;border:1px solid #111;display:inline-block;padding:0 4px;margin-top:2px">X · Documento no válido como factura</div></div></div>' +
