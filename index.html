@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "fd218ddb8a5e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "89b55448fa50"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1494,7 +1494,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611051727';
+var EMA_BUILD = '202611051746';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -9659,7 +9659,8 @@ var PC_ = { d: null, tab: 'cascos', filas: [], sel: {}, ot: null, fEspera: '', k
     '.pc-fila3{grid-template-columns:1fr 1fr!important;gap:10px}.pc-fila3>.fg:first-child{grid-column:1/-1}.pc-fila3 .fi{height:44px;font-size:16px}.pc-fila3 .fg{margin-bottom:0}' +
     '#pc-k-ok{flex:1;min-height:50px;font-size:16px}#pc-k-mas{min-height:50px}#pc-k-t tr td{background:transparent!important}' +
     '#pc-k-tant td{display:inline-block!important;width:auto!important;margin:0 10px 4px 0;vertical-align:middle}#pc-k-tant td:empty{display:none!important}#pc-k-tant td:first-child{font-size:15px}#pc-k-tant .btn-xs{min-height:32px;min-width:32px}}' +
-    '#pc-k-err .al{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}';
+    '#pc-k-err .al{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}' +
+    '.pc-rec-it{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1.5px solid var(--border,#e2e8f0);border-radius:10px;margin:0 0 8px;cursor:pointer;font-size:14px}.pc-rec-it input{width:24px;height:24px;flex:0 0 24px}.pc-rec-it:has(input:checked){border-color:#16a34a;background:#f0fdf4}.pc-rec-it.ya{opacity:.6}';
   document.head.appendChild(st); })();
 var PC_EST_TXT = { EN_ESPERA: 'En espera', EN_OT: 'En OT', TERMINADA: 'Terminada', RECHAZADA: 'Rechazada', ENTREGADA: 'Entregada', ANULADA: 'Anulada',
   PENDIENTE: 'Pendiente', EN_PROCESO: 'En proceso', RETIRADA: 'Retirada', ARMADA: 'Armada', CERRADA: 'Cerrada', REPROCESO: 'Reproceso: espera otra carga', REPROCESADA: 'Reprocesada' };
@@ -9884,6 +9885,7 @@ async function pcImpOTrab(id) {
   var d = PC_.d, o = (d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0];
   if (!o) { toast('No encontré la orden de trabajo', 'r2'); return; }
   var firma = ''; if (o.FIRMA_ID) { try { var fi = await asImg('vt_as_img_get', { tok: SES.token, nid: Number(o.FIRMA_ID) }); if (fi && fi.ok) firma = fi.data; } catch (ef) { firma = ''; } }
+  var firmaR = ''; if (o.RECEP_FIRMA_ID) { try { var fr = await asImg('vt_as_img_get', { tok: SES.token, nid: Number(o.RECEP_FIRMA_ID) }); if (fr && fr.ok) firmaR = fr.data; } catch (er) { firmaR = ''; } }
   var cs = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(id) && c.ESTADO !== 'ANULADA'; }).sort(function(a, b) { return a.ID_CUB - b.ID_CUB; });
   var cli = d.clientes.filter(function(c) { return String(c.ID_CLIENTE) === String(o.ID_CLIENTE); })[0] || {};
   // Diseño compacto (como la orden del sistema anterior): datos en una grilla y renglones finos
@@ -9900,21 +9902,26 @@ async function pcImpOTrab(id) {
     '<tr>' + cel('Teléfono', pcEsc(cli.TELEFONO || '—')) + cel('Cubiertas', cs.length) + cel('Parche', pcEsc(pcParcheTxt(o))) + '</tr>' +
     (o.OBSERVACIONES ? '<tr><td class="l">Observaciones</td><td class="v" colspan="5" style="font-weight:400">' + pcEsc(o.OBSERVACIONES) + '</td></tr>' : '') + '</table>' +
     '<table class="otd"><thead><tr><th></th><th>Marca grabada</th><th>Identificación</th><th>N° DOT</th><th>Medida</th><th>Marca</th><th>Trabajo</th><th>Observaciones</th></tr></thead><tbody>' +
-    cs.map(function(c, i) { return '<tr><td class="n">' + (i + 1) + '</td><td><b>' + pcEsc(c.MARCA || '') + '</b></td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcDotTxt(c.DOT) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + pcCambioTrab(c.ID_CUB) + (String(c.PARCHE_INCLUIDO || '') ? '<div style="font-size:8.5px;color:#444">' + pcEsc(pcParcheTxt(c)) + ' (solo esta)</div>' : '') + '</td><td style="width:18%"></td></tr>'; }).join('') +
+    cs.map(function(c, i) { return '<tr' + (c.RECEP === 'FALTA' ? ' style="color:#b91c1c"' : '') + '><td class="n">' + (i + 1) + '</td><td><b>' + pcEsc(c.MARCA || '') + '</b>' + (c.RECEP === 'FALTA' ? '<div style="font-size:8.5px;font-weight:700">NO LLEGÓ A PLANTA</div>' : '') + '</td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcDotTxt(c.DOT) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + pcCambioTrab(c.ID_CUB) + (String(c.PARCHE_INCLUIDO || '') ? '<div style="font-size:8.5px;color:#444">' + pcEsc(pcParcheTxt(c)) + ' (solo esta)</div>' : '') + '</td><td style="width:18%"></td></tr>'; }).join('') +
     '</tbody></table><div class="nota" style="font-size:9px">Cada cubierta se sigue por su marca grabada. DOT: el que trae la cubierta (sin DOT si no tiene o no se lee). Identificación: N° interno del casco.</div>' +
-    (firma ? '<div class="firmas" style="margin-top:22px"><div style="border-top:0"><img src="' + firma + '" style="max-height:70px;max-width:100%;display:block;margin:0 auto"><div style="border-top:1px solid #111;padding-top:3px">Entregó (cliente): ' + pcEsc(o.FIRMA_NOMBRE || '') + ' · ' + fmtDT(+o.FIRMA_FECHA) + '</div></div><div style="align-self:flex-end">Recibió (Vulcan Tread)</div></div>'
-      : '<div class="firmas" style="margin-top:30px"><div>Entregó (cliente)</div><div>Recibió (Vulcan Tread)</div></div>');
+    (o.RECEP_OBS ? '<div style="font-size:10px;margin-top:6px"><b>Observaciones de la recepción:</b> ' + pcEsc(o.RECEP_OBS) + '</div>' : '') +
+    '<div class="firmas" style="margin-top:22px">' +
+      (firma ? '<div style="border-top:0"><img src="' + firma + '" style="max-height:70px;max-width:100%;display:block;margin:0 auto"><div style="border-top:1px solid #111;padding-top:3px">Entregó: ' + pcEsc(o.FIRMA_NOMBRE || '') + (o.ENT_DNI ? ' · DNI ' + pcEsc(o.ENT_DNI) : '') + '<br>' + fmtDT(+o.FIRMA_FECHA) + '</div></div>' : '<div style="align-self:flex-end">Entregó (nombre, DNI y firma)</div>') +
+      (firmaR ? '<div style="border-top:0"><img src="' + firmaR + '" style="max-height:70px;max-width:100%;display:block;margin:0 auto"><div style="border-top:1px solid #111;padding-top:3px">Recibió en planta (Vulcan Tread): ' + pcEsc(o.RECEP_USUARIO || '') + '<br>' + fmtDT(+o.RECEP_FECHA) + (o.RECEP_ESTADO === 'PARCIAL' ? ' · <b>recepción parcial</b>' : '') + '</div></div>' : '<div style="align-self:flex-end">Recibió en planta (Vulcan Tread)</div>') +
+    '</div>';
   pcImprimir('Orden de trabajo ' + (o.NRO_MANUAL ? 'boleta ' + o.NRO_MANUAL : o.NRO), h);
 }
 // ── Firma del cliente en la pantalla (celular o tablet): reemplaza la firma del talonario de papel ──
 function pcFirmaOT(id) {
   var o = (PC_.d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0]; if (!o) return;
   var n = PC_.d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(id) && c.ESTADO !== 'ANULADA'; }).length;
-  showModal('<div class="mh"><span class="mt">✍ Firma del cliente · ' + pcEsc(pcOTCorto(o)) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
-    '<div style="font-size:14px;margin-bottom:6px"><b>' + pcEsc(o.CLIENTE) + '</b> deja <b>' + n + (n === 1 ? ' casco' : ' cascos') + '</b>. Firmá con el dedo en el recuadro.</div>' +
+  showModal('<div class="mh"><span class="mt">✍ Firma de quien entrega · ' + pcEsc(pcOTCorto(o)) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div style="font-size:14px;margin-bottom:6px">Se entregan <b>' + n + (n === 1 ? ' casco' : ' cascos') + '</b> de <b>' + pcEsc(o.CLIENTE) + '</b>. Quien los trae (cliente, chofer o vendedor) firma con el dedo en el recuadro y se hace cargo de lo que entrega.</div>' +
     '<canvas id="pc-fir-c" style="width:100%;height:200px;border:2px dashed var(--border);border-radius:10px;background:#fff;touch-action:none"></canvas>' +
-    '<div class="flex gap2 mt2" style="align-items:flex-end;flex-wrap:wrap"><div style="flex:1 1 220px"><label class="fl">Aclaración (nombre de quien firma)</label><input class="fi" id="pc-fir-n" style="width:100%" placeholder="Nombre y apellido"></div><button class="btn btn-s" onclick="pcFirmaBorrar()">Borrar</button></div>' +
+    '<div class="flex gap2 mt2" style="align-items:flex-end;flex-wrap:wrap"><div style="flex:1 1 220px"><label class="fl">Nombre y apellido de quien entrega *</label><input class="fi" id="pc-fir-n" style="width:100%" placeholder="Nombre y apellido"></div><div style="flex:0 1 160px"><label class="fl">DNI</label><input class="fi" id="pc-fir-dni" inputmode="numeric" style="width:100%" placeholder="Solo números"></div><button class="btn btn-s" onclick="pcFirmaBorrar()">Borrar</button></div>' +
+    '<div class="mt2" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label class="btn btn-s" style="cursor:pointer">📷 Foto del DNI (opcional)<input type="file" accept="image/*" capture="environment" style="display:none" onchange="pcDniFoto(this)"></label><span id="pc-dni-v" class="tdim" style="font-size:12px"></span></div>' +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pc-fir-ok" onclick="pcFirmaGuardar(' + id + ')">Guardar firma</button></div>', 'md-lg');
+  PC_.dniFoto = '';
   setTimeout(function() {
     var cv = $id('pc-fir-c'); if (!cv) return; var r = cv.getBoundingClientRect(); cv.width = Math.round(r.width); cv.height = Math.round(r.height);
     var g = cv.getContext('2d'); g.lineWidth = 2.5; g.lineCap = 'round'; g.strokeStyle = '#111'; PC_.firmaHay = false; var on = false;
@@ -9923,6 +9930,64 @@ function pcFirmaOT(id) {
     cv.onpointermove = function(e) { if (!on) return; var p = pt(e); g.lineTo(p.x, p.y); g.stroke(); PC_.firmaHay = true; };
     cv.onpointerup = cv.onpointercancel = function() { on = false; };
   }, 80);
+}
+// Lienzo de firma con el dedo (se usa para quien entrega y para quien recibe)
+function pcLienzo(idc, flag) {
+  var cv = $id(idc); if (!cv) return; var r = cv.getBoundingClientRect(); cv.width = Math.round(r.width); cv.height = Math.round(r.height);
+  var g = cv.getContext('2d'); g.lineWidth = 2.5; g.lineCap = 'round'; g.strokeStyle = '#111'; PC_[flag] = false; var on = false;
+  var pt = function(e) { var b = cv.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; };
+  cv.onpointerdown = function(e) { on = true; var p = pt(e); g.beginPath(); g.moveTo(p.x, p.y); cv.setPointerCapture(e.pointerId); };
+  cv.onpointermove = function(e) { if (!on) return; var p = pt(e); g.lineTo(p.x, p.y); g.stroke(); PC_[flag] = true; };
+  cv.onpointerup = cv.onpointercancel = function() { on = false; };
+}
+function pcLienzoJpg(cv) { var c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = cv.height; var g2 = c2.getContext('2d'); g2.fillStyle = '#fff'; g2.fillRect(0, 0, c2.width, c2.height); g2.drawImage(cv, 0, 0); return c2.toDataURL('image/jpeg', 0.8); }
+// ── Recepción en planta (05/11/2026, Anibal): quien recibe tilda casco por casco lo que llegó y firma. Su usuario, fecha y hora quedan grabados (el «sello»).
+// Lo que no llegó queda «no llegó a planta» y no puede entrar a una orden de servicio hasta recibirlo.
+function pcRecEstado(o) {
+  var e = o.RECEP_ESTADO || '';
+  if (e === 'RECIBIDA') return ['b-green', '✓ Recibida en planta'];
+  if (e === 'PARCIAL') return ['b-orange', 'Recibida en parte'];
+  if (e === 'PENDIENTE') return ['b-red', 'Falta recibir en planta'];
+  return ['', ''];
+}
+function pcRecibirOT(id) {
+  var o = (PC_.d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0]; if (!o) return;
+  var cs = PC_.d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(id) && c.ESTADO !== 'ANULADA'; }).sort(function(a, b) { return a.ID_CUB - b.ID_CUB; });
+  PC_.recSel = {}; cs.forEach(function(c) { if (c.RECEP === 'SI') PC_.recSel[c.ID_CUB] = true; });
+  var quien = (window.SES && (SES.nombre || SES.usuario)) || '';
+  showModal('<div class="mh"><span class="mt">📥 Recepción en planta · ' + pcEsc(pcOTCorto(o)) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div style="font-size:14px;margin-bottom:8px"><b>' + pcEsc(o.CLIENTE) + '</b>' + (o.FIRMA_ID ? ' · entregó <b>' + pcEsc(o.FIRMA_NOMBRE || '') + '</b>' + (o.ENT_DNI ? ' (DNI ' + pcEsc(o.ENT_DNI) + ')' : '') + (o.ENT_FOTO_ID ? ' · <a href="javascript:void(0)" onclick="pcVerImg(' + o.ENT_FOTO_ID + ')">ver foto del DNI</a>' : '') : ' · <span style="color:#b91c1c">todavía no firmó quien entrega</span>') + '</div>' +
+    '<div class="tdim" style="font-size:13px;margin-bottom:6px">Mirá cada casco y tocá los que <b>llegaron</b> (fijate la marca grabada y la medida). Lo que no tildes queda como «no llegó».</div>' +
+    '<div id="pc-rec-l">' + cs.map(function(c) { var ya = c.RECEP === 'SI';
+      return '<label class="pc-rec-it' + (ya ? ' ya' : '') + '"><input type="checkbox" data-id="' + c.ID_CUB + '"' + (ya ? ' checked disabled' : '') + ' onchange="PC_.recSel[' + c.ID_CUB + ']=this.checked;pcRecCont()"/><span><b class="mono">' + pcEsc(c.MARCA || ('N° ' + (c.ID_CASCO || c.ID_CUB))) + '</b> · ' + pcEsc(c.MEDIDA) + ' · ' + pcEsc(c.FABRICANTE || '') + '<br><small>' + pcEsc(c.TRABAJO) + ' · ' + pcDotTxt(c.DOT) + (ya ? ' · ya recibido' : c.RECEP === 'FALTA' ? ' · <b style="color:#b91c1c">no había llegado</b>' : '') + '</small></span></label>'; }).join('') + '</div>' +
+    '<div class="flex gap2 mt2" style="flex-wrap:wrap;align-items:center"><button class="btn btn-s btn-sm" onclick="document.querySelectorAll(\'#pc-rec-l input:not(:disabled)\').forEach(function(k){k.checked=true;PC_.recSel[k.dataset.id]=true;});pcRecCont()">Llegaron todos</button><b id="pc-rec-n"></b></div>' +
+    '<div class="fg mt2"><label class="fl">Observaciones (opcional)</label><input class="fi" id="pc-rec-obs" style="width:100%" placeholder="Ej: falta 1, llegó con un corte en el flanco…"></div>' +
+    '<div class="fl mt2">Firma de quien recibe' + (quien ? ': <b>' + pcEsc(quien) + '</b>' : '') + '</div>' +
+    '<canvas id="pc-rec-c" style="width:100%;height:170px;border:2px dashed var(--border);border-radius:10px;background:#fff;touch-action:none"></canvas>' +
+    '<div class="tdim" style="font-size:12px">Queda grabado con tu usuario, la fecha y la hora. <button class="btn btn-s btn-xs" onclick="var cv=$id(\'pc-rec-c\');cv.getContext(\'2d\').clearRect(0,0,cv.width,cv.height);PC_.recFirma=false">Borrar firma</button></div>' +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pc-rec-ok" onclick="pcRecibirGuardar(' + id + ')">Confirmar recepción</button></div>', 'md-lg');
+  setTimeout(function() { pcLienzo('pc-rec-c', 'recFirma'); pcRecCont(); }, 80);
+}
+async function pcVerImg(nid) { try { var r = await asImg('vt_as_img_get', { tok: SES.token, nid: Number(nid) }); if (r && r.ok) { var ov = document.createElement('div'); ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:12px'; ov.onclick = function() { ov.remove(); }; ov.innerHTML = '<img src="' + r.data + '" style="max-width:100%;max-height:100%;border-radius:8px">'; document.body.appendChild(ov); } else toast('No se pudo abrir la foto', 'r2'); } catch (e) { toast(e.message, 'r2'); } }
+function pcRecCont() { var t = document.querySelectorAll('#pc-rec-l input').length, n = document.querySelectorAll('#pc-rec-l input:checked').length, e = $id('pc-rec-n'); if (e) { e.textContent = 'Llegaron ' + n + ' de ' + t; e.style.color = n === t ? '#15803d' : '#b45309'; } }
+async function pcRecibirGuardar(id) {
+  var o = (PC_.d.ordTrabajo || []).filter(function(x) { return String(x.ID_OTRAB) === String(id); })[0], b = $id('pc-rec-ok');
+  var ids = []; document.querySelectorAll('#pc-rec-l input:checked:not(:disabled)').forEach(function(k) { ids.push(Number(k.dataset.id)); });
+  if (!ids.length) { toast('Tildá los cascos que llegaron', 'r2'); return; }
+  if (!PC_.recFirma) { toast('Falta la firma de quien recibe', 'r2'); return; }
+  b.disabled = true; b.textContent = 'Guardando…';
+  try {
+    var fi = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'FIRMA_REC', ref: o.NRO, data: pcLienzoJpg($id('pc-rec-c')) });
+    if (!fi || !fi.ok) { toast((fi && fi.error) || 'No se pudo guardar la firma', 'r2'); return; }
+    var r = await gsRun('gsPC_OTrabRecibir', { ID_OTRAB: id, RECIBIDAS: ids, FIRMA_ID: String(fi.id), OBS: $v('pc-rec-obs') });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    closeModal(); toast(r.FALTAN ? 'Recibidos ' + r.RECIBIDAS + ' · faltan ' + r.FALTAN + ' (no pueden entrar a la línea)' : 'Recepción confirmada ✓ · ' + r.RECIBIDAS + ' cascos', r.FALTAN ? 'w' : 'g');
+    await pcRecargar(); pcImpOTrab(id);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Confirmar recepción'; } }
+}
+function pcDniFoto(inp) {
+  var f = inp.files && inp.files[0]; PC_.dniFoto = ''; if (!f) return;
+  var rd = new FileReader(); rd.onload = function() { var im = new Image(); im.onload = function() { PC_.dniFoto = asComprimir(im, 1400, 0.72); var v = $id('pc-dni-v'); if (v) v.innerHTML = '<img src="' + PC_.dniFoto + '" style="height:60px;border-radius:6px;vertical-align:middle"> ✓ cargada'; }; im.src = rd.result; }; rd.readAsDataURL(f);
 }
 function pcFirmaBorrar() { var cv = $id('pc-fir-c'); if (!cv) return; cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); PC_.firmaHay = false; }
 async function pcFirmaGuardar(id) {
@@ -9934,10 +9999,14 @@ async function pcFirmaGuardar(id) {
     var c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = cv.height; var g2 = c2.getContext('2d'); g2.fillStyle = '#fff'; g2.fillRect(0, 0, c2.width, c2.height); g2.drawImage(cv, 0, 0);
     var fi = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'FIRMA_OT', ref: o.NRO, data: c2.toDataURL('image/jpeg', 0.8) });
     if (!fi || !fi.ok) { toast((fi && fi.error) || 'No se pudo guardar la firma', 'r2'); return; }
-    var r = await gsRun('gsPC_OTrabFirma', id, String(fi.id), nm);
+    var dni = ($v('pc-fir-dni') || '').replace(/[^0-9]/g, ''), fd = '';
+    if (PC_.dniFoto) { var fo = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'DNI_ENT', ref: o.NRO, data: PC_.dniFoto }); if (!fo || !fo.ok) { toast((fo && fo.error) || 'No se pudo guardar la foto del DNI', 'r2'); return; } fd = String(fo.id); }
+    var r = await gsRun('gsPC_OTrabFirma', id, String(fi.id), nm, dni, fd);
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
-    o.FIRMA_ID = String(fi.id); o.FIRMA_NOMBRE = nm; o.FIRMA_FECHA = Date.now();
-    closeModal(); toast('Firma guardada ✓', 'g'); if (PC_.tab === 'cascos') pcPintar(); pcImpOTrab(id);
+    o.FIRMA_ID = String(fi.id); o.FIRMA_NOMBRE = nm; o.FIRMA_FECHA = Date.now(); o.ENT_DNI = dni; o.ENT_FOTO_ID = fd;
+    closeModal(); toast('Firma de entrega guardada ✓', 'g'); pcPintar();
+    // Si los cascos están en planta, se sigue con la recepción en el mismo celular
+    if (o.RECEP_ESTADO === 'PENDIENTE' || o.RECEP_ESTADO === 'PARCIAL') setTimeout(function() { pcRecibirOT(id); }, 200);
   } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Guardar firma'; } }
 }
 // Orden de servicio: hoja de carga de la línea, con casilleros para tildar cada estación en papel
@@ -10026,7 +10095,7 @@ function pcCascos() {
   var d = PC_.d;
   if (!PC_.kf.length) PC_.kf = [pcCasVacio()];
   var ult = PC_.ultOT ? (d.ordTrabajo || []).filter(function(o) { return o.NRO === PC_.ultOT; })[0] : null;
-  var h = pcAvisoLinea() + (ult ? '<div class="al al-g mb3" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>✓ Grabada · ' + (ult.NRO_MANUAL ? 'Boleta N° <b style="font-size:18px">' + pcEsc(ult.NRO_MANUAL) + '</b> <span style="font-size:12px">(sistema ' + pcEsc(ult.NRO) + ')</span>' : 'N° de orden <b style="font-size:18px">' + pcEsc(ult.NRO) + '</b>') + ' · ' + pcEsc(ult.CLIENTE) + '<br><span style="font-size:12px">' + (ult.FIRMA_ID ? '✓ Firmada por ' + pcEsc(ult.FIRMA_NOMBRE) + '. Mandale el comprobante al cliente.' : 'Hacé firmar al cliente en la pantalla y mandale el comprobante.') + '</span></span><span class="flex gap2" style="flex-wrap:wrap">' + (ult.FIRMA_ID ? '' : '<button class="btn btn-p btn-sm" onclick="pcFirmaOT(' + ult.ID_OTRAB + ')">✍ Firma del cliente</button>') + '<button class="btn ' + (ult.FIRMA_ID ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="pcImpOTrab(' + ult.ID_OTRAB + ')"><i class="fas fa-file-pdf"></i> Comprobante (PDF)</button></span></div>' : '') +
+  var h = pcAvisoLinea() + (ult ? '<div class="al al-g mb3" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>✓ Grabada · ' + (ult.NRO_MANUAL ? 'Boleta N° <b style="font-size:18px">' + pcEsc(ult.NRO_MANUAL) + '</b> <span style="font-size:12px">(sistema ' + pcEsc(ult.NRO) + ')</span>' : 'N° de orden <b style="font-size:18px">' + pcEsc(ult.NRO) + '</b>') + ' · ' + pcEsc(ult.CLIENTE) + '<br><span style="font-size:12px">' + (ult.FIRMA_ID ? '✓ Entregó: ' + pcEsc(ult.FIRMA_NOMBRE) : '1) Que firme quien entrega los cascos') + ' · ' + (ult.RECEP_ESTADO === 'RECIBIDA' ? '✓ Recibida en planta por ' + pcEsc(ult.RECEP_USUARIO || '') : ult.RECEP_ESTADO === 'PARCIAL' ? 'Recibida en parte: faltan cascos' : '2) Confirmar la recepción en planta') + '</span></span><span class="flex gap2" style="flex-wrap:wrap">' + (ult.FIRMA_ID ? '' : '<button class="btn btn-p btn-sm" onclick="pcFirmaOT(' + ult.ID_OTRAB + ')">✍ Firma de quien entrega</button>') + (ult.RECEP_ESTADO === 'PENDIENTE' || ult.RECEP_ESTADO === 'PARCIAL' ? '<button class="btn btn-p btn-sm" onclick="pcRecibirOT(' + ult.ID_OTRAB + ')">📥 Confirmar recepción</button>' : '') + '<button class="btn ' + (ult.RECEP_ESTADO === 'RECIBIDA' ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="pcImpOTrab(' + ult.ID_OTRAB + ')"><i class="fas fa-file-pdf"></i> Comprobante (PDF)</button></span></div>' : '') +
     '<div class="card mb3"><div class="card-hd"><span class="card-title">Carga de la boleta: cascos y orden de trabajo</span><span class="tdim" style="font-size:12px">Se cargan los cascos con su trabajo y al grabar queda hecha la orden de trabajo.</span></div><div class="card-body">' +
     '<div class="pc-fila3"><div class="fg"><label class="fl">Cliente *</label><input class="fi" id="pc-k-cli" list="pc-clientes" placeholder="Escribí el nombre..." value="' + pcEsc(pcCliTxt(PC_.kcli)) + '"/>' + pcCliList() + '</div>' +
     pcNroAuto('pc-k-man') +
@@ -10163,7 +10232,7 @@ function pcOTrab() {
   h += '<div class="card"><div class="card-hd"><span class="card-title">Órdenes de trabajo en curso (' + lo.length + ')</span><span class="tdim" style="font-size:12px">Las terminadas y anuladas están en "Historial"</span></div><div class="tw"><table style="font-size:12px" id="pc-o-lista"><thead><tr><th>N° de orden</th><th>Fecha</th><th>Cliente</th><th>Sistema</th><th class="tr">Cubiertas</th><th class="tr">Esperando</th><th class="tr">En la línea</th><th>Parche</th><th></th></tr></thead><tbody>' +
     (lo.length ? lo.map(function(x) { var o = x.o;
       return '<tr><td class="mono"><b>' + pcEsc(o.NRO_MANUAL ? 'Boleta ' + o.NRO_MANUAL : o.NRO) + '</b></td><td>' + fmtD(+o.FECHA) + '</td><td>' + pcEsc(o.CLIENTE) + '</td><td class="mono">' + pcEsc(o.NRO_MANUAL ? o.NRO : '—') + '</td><td class="tr">' + x.mias.length + '</td><td class="tr">' + x.pend + '</td><td class="tr">' + x.linea + '</td><td style="white-space:nowrap">' + pcParcheBadge(o) + (x.mias.filter(function(c) { return String(c.PARCHE_INCLUIDO || ''); }).length ? ' <span class="badge b-orange">' + x.mias.filter(function(c) { return String(c.PARCHE_INCLUIDO || ''); }).length + (x.mias.filter(function(c) { return String(c.PARCHE_INCLUIDO || ''); }).length === 1 ? ' excepción' : ' excepciones') + '</span>' : '') + ' <button class="btn btn-s btn-xs" onclick="pcParcheForm(' + o.ID_OTRAB + ')">Cambiar</button></td>' +
-        '<td style="white-space:nowrap"><button class="btn btn-s btn-xs" title="Imprimir" onclick="pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-print"></i></button> ' + (pcPuede('ANULAR') && x.pend === x.mias.length ? '<button class="btn btn-s btn-xs" onclick="pcOTrabAnular(' + o.ID_OTRAB + ')">Anular</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="9" class="tc tdim" style="padding:16px">No hay órdenes de trabajo en curso.</td></tr>') + '</tbody></table></div></div>';
+        '<td style="white-space:nowrap">' + (pcRecEstado(o)[1] ? '<span class="badge ' + pcRecEstado(o)[0] + '">' + pcRecEstado(o)[1] + '</span> ' : '') + (o.FIRMA_ID ? '' : '<button class="btn btn-s btn-xs" onclick="pcFirmaOT(' + o.ID_OTRAB + ')">✍ Entrega</button> ') + (o.RECEP_ESTADO === 'PENDIENTE' || o.RECEP_ESTADO === 'PARCIAL' ? '<button class="btn btn-p btn-xs" onclick="pcRecibirOT(' + o.ID_OTRAB + ')">📥 Recibir</button> ' : '') + '<button class="btn btn-s btn-xs" title="Imprimir" onclick="pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-print"></i></button> ' + (pcPuede('ANULAR') && x.pend === x.mias.length ? '<button class="btn btn-s btn-xs" onclick="pcOTrabAnular(' + o.ID_OTRAB + ')">Anular</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="9" class="tc tdim" style="padding:16px">No hay órdenes de trabajo en curso.</td></tr>') + '</tbody></table></div></div>';
   $id('pc-body').innerHTML = h;
   $id('pc-o-cli').addEventListener('change', function() { var n = pcCliId(this.value); if (n === PC_.ocli) return; PC_.ocli = n; PC_.otr = {}; pcOTrabItems(); });
   pcOTrabItems();
@@ -10573,12 +10642,13 @@ function pcArmar() {
     '<div class="tw"><table style="font-size:12px" id="pc-tbl-armar"><thead><tr><th title="Tilda todas las que se ven, hasta completar la carga"><label style="cursor:pointer;white-space:nowrap"><input type="checkbox" id="pc-a-todas"/> Entra</label></th><th>Suplente</th><th>Marca grabada *</th><th>N° interno</th><th>DOT</th><th>Línea</th><th>Tipo</th><th>Medida</th><th>Trabajo</th><th>Cliente</th><th>OT</th><th>Boleta</th><th>Recibida</th></tr></thead><tbody>' +
     esp.sort(function(a, b) { return (b.REPROCESO_PEND ? 1 : 0) - (a.REPROCESO_PEND ? 1 : 0) || (a.FECHA_RECEPCION || 0) - (b.FECHA_RECEPCION || 0) || a.ID_CUB - b.ID_CUB; }).map(function(c) {
       var s = PC_.sel[c.ID_CUB] || '';
-      var dis = c.ID_RECETA ? '' : ' disabled title="Sin receta: cargala en Recetas"';
-      return '<tr class="pc-a-tr" data-id="' + c.ID_CUB + '" data-txt="' + pcEsc(pcArmTxt(c)) + '"' + (c.ID_RECETA ? '' : ' style="opacity:.5"') + '>' +
+      var noRec = c.RECEP === 'PEND' || c.RECEP === 'FALTA';
+      var dis = noRec ? ' disabled title="Todavía no se recibió en planta"' : c.ID_RECETA ? '' : ' disabled title="Sin receta: cargala en Recetas"';
+      return '<tr class="pc-a-tr" data-id="' + c.ID_CUB + '" data-txt="' + pcEsc(pcArmTxt(c)) + '"' + (c.ID_RECETA && !noRec ? '' : ' style="opacity:.5"') + '>' +
         '<td><input type="checkbox" class="pc-ck" data-id="' + c.ID_CUB + '" data-v="TITULAR" style="width:18px;height:18px"' + (s === 'TITULAR' ? ' checked' : '') + dis + '/></td>' +
         '<td><input type="checkbox" class="pc-ck" data-id="' + c.ID_CUB + '" data-v="SUPLENTE"' + (s === 'SUPLENTE' ? ' checked' : '') + dis + '/></td>' +
         '<td>' + (c.MARCA ? '<b class="mono">' + pcEsc(c.MARCA) + '</b>' : '<input class="fi pc-mk" data-id="' + c.ID_CUB + '" value="' + pcEsc(PC_.mk[c.ID_CUB] || '') + '" placeholder="Grabada" style="width:110px;text-transform:uppercase"' + (c.ID_RECETA ? '' : ' disabled') + '/>') + '</td>' +
-        '<td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcDotTxt(c.DOT) + '</td><td>' + pcEsc(pcLineaDeTipo(c.TIPO)) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + (c.ID_RECETA ? '' : ' <span class="badge b-red">sin receta</span> <button class="btn btn-p btn-xs" onclick="event.stopPropagation();pcArmTrab(' + c.ID_CUB + ')">Cambiar trabajo</button>') + (c.REPROCESO_PEND ? ' <span class="badge b-orange">reproceso de ' + pcEsc(pcNroOS(c.REPROCESO_PEND)) + ': solo autoclave, control y pintura</span>' : '') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + '</td><td class="mono">' + pcEsc(c.NRO_MANUAL || '') + '</td><td>' + fmtD(c.FECHA_RECEPCION) + '</td></tr>';
+        '<td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcDotTxt(c.DOT) + '</td><td>' + pcEsc(pcLineaDeTipo(c.TIPO)) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + (c.ID_RECETA ? '' : ' <span class="badge b-red">sin receta</span> <button class="btn btn-p btn-xs" onclick="event.stopPropagation();pcArmTrab(' + c.ID_CUB + ')">Cambiar trabajo</button>') + (noRec ? ' <span class="badge b-red">' + (c.RECEP === 'FALTA' ? 'no llegó a planta' : 'sin recibir en planta') + '</span> <button class="btn btn-p btn-xs" onclick="event.stopPropagation();pcRecibirOT(' + c.ID_OTRAB + ')">Recibir</button>' : '') + (c.REPROCESO_PEND ? ' <span class="badge b-orange">reproceso de ' + pcEsc(pcNroOS(c.REPROCESO_PEND)) + ': solo autoclave, control y pintura</span>' : '') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + '</td><td class="mono">' + pcEsc(c.NRO_MANUAL || '') + '</td><td>' + fmtD(c.FECHA_RECEPCION) + '</td></tr>';
     }).join('') + '</tbody></table>' + (esp.length ? '' : '<div class="tdim" style="padding:12px">No hay cubiertas en espera.</div>') + '</div>' +
     '<div class="fr mt3" style="border-top:1px solid var(--border);padding-top:12px"></div>' +
     '<div class="fr"><div class="fg" id="pc-tope-wrap" style="display:none"><label class="fl">Carga mezclada: tope</label><select class="fs" id="pc-tope">' + d.lineas.filter(function(l) { return l.ACTIVO != 0; }).map(function(l) { return '<option value="' + l.LINEA + '">' + l.LINEA + ' (' + l.CAPACIDAD + ' + ' + l.SUPLENTES + ')</option>'; }).join('') + '</select></div>' +
@@ -10624,7 +10694,7 @@ function pcArmTodas(si) {
   document.querySelectorAll('#pc-tbl-armar .pc-a-tr').forEach(function(tr) {
     if (tr.style.display === 'none') return;
     var id = tr.dataset.id, c = pcArmCub(id);
-    if (!c || !c.ID_RECETA) return;
+    if (!c || !c.ID_RECETA || c.RECEP === 'PEND' || c.RECEP === 'FALTA') return;
     if (!si) { if (PC_.sel[id]) pcArmMarcar(id, ''); return; }
     if (PC_.sel[id]) return;
     var l = pcArmLugar(c);
