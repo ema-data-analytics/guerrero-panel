@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "73561c809010"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "b7bd2aacb158"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1504,7 +1504,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611052104';
+var EMA_BUILD = '202611052328';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -9713,7 +9713,7 @@ var PC_SECC = {
   entregas: ['Entregas (remitos)', 'Cubiertas terminadas para entregar al cliente, con remito y foto firmada.'],
   rech: ['Rechazadas', 'Cubiertas no aptas: para devolver al cliente.'],
   costos: ['Costos de producción', 'Insumos reales y costo de cada cubierta y de cada carga.'],
-  herramental: ['Herramental del autoclave', 'Inner y envelope: piezas con usos.'],
+  herramental: ['Herramental del autoclave', 'Inner, envelope y llantas: cada pieza con su marca de fuego, usos e historial.'],
   equipos: ['Herramientas de las estaciones', 'Herramientas de cada estación y entregas al personal.'],
   alarmas: ['Alarmas de producción', 'Stock bajo y cosas atrasadas.'],
   hist: ['Historial de producción', 'Lo que ya pasó: cubiertas, órdenes de trabajo, órdenes de servicio y entregas.'],
@@ -11715,35 +11715,81 @@ async function pcPesAnular(id) {
   var m = await uiPedir('¿Por qué se anula este pesaje?', { obligatorio: true }); if (!m) return;
   try { var r = await gsRun('gsPC_PesajeAnular', id, m); if (!r.ok) return toast(r.error, 'r2'); toast('Anulado', 'g'); pcPesaje(); } catch (e) { toast(e.message, 'r2'); }
 }
+// ── HERRAMENTAL (inner / envelope): grilla ABM (05/11/2026, Anibal). Cada pieza con su marca de fuego obligatoria; sin marca no se usa en la línea. ──
 async function pcHerramental() {
   $id('pc-body').innerHTML = '<div class="tdim">Cargando...</div>';
   var r = await gsRun('gsPC_Piezas');
   PC_.piezas = r;
-  var disp = function(id) { return r.piezas.filter(function(p) { return p.ID_INSUMO === id && p.ESTADO === 'DISPONIBLE'; }).length; };
-  $id('pc-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">Alta de piezas</span></div><div class="card-body"><div class="tdim mb3" style="font-size:12px">Cada inner, envelope o llanta es una pieza con su código. En cada estación se elige qué pieza se usó: así se sabe cuántos usos lleva y en qué cubiertas estuvo.</div>' +
-    // Formulario en grilla: cada fila alineada (etiquetas de una línea, campos de la misma altura)
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 16px;align-items:end">' +
-    '<div style="grid-column:1/-1"><label class="fl">Herramental (pieza)</label><select class="fs" id="pch-ins" style="width:100%">' + r.herramental.map(function(h) { return '<option value="' + pcEsc(h.ID_INSUMO) + '" data-usos="' + h.MAX_USOS + '">' + pcEsc(h.ID_INSUMO + ' — ' + h.NOMBRE) + ' (' + disp(h.ID_INSUMO) + ' disponibles)</option>'; }).join('') + '</select></div>' +
-    '<div><label class="fl">Cantidad de piezas</label><input class="fi" type="number" min="1" max="200" id="pch-n" value="1" style="width:100%"/></div>' +
-    '<div><label class="fl">Usos máximos</label><input class="fi" type="number" min="0" id="pch-u" placeholder="del insumo" style="width:100%"/></div>' +
-    '<div style="grid-column:1/-1"><label class="fl">Marcas vulcanizadas</label><textarea class="fi" id="pch-m" rows="2" placeholder="Ej.: IN-019, EV-028 (una por renglón o separadas por coma)" style="text-transform:uppercase;width:100%"></textarea><div class="tdim" style="font-size:11px;margin-top:4px">Si las escribís, se da de alta una pieza por marca y la marca es su código. Si las dejás vacías, se usa la cantidad.</div></div>' +
-    '<div style="grid-column:1/-1"><button class="btn btn-p" onclick="pcAltaPiezas()">Dar de alta</button></div></div></div></div>' +
-    '<div class="card"><div class="tw"><table style="font-size:12px" id="pc-tbl-piezas"><thead><tr><th>Marca (código)</th><th>Herramental</th><th class="tr">Usos</th><th>Estado</th><th>Últimos usos</th><th></th></tr></thead><tbody>' +
-    r.piezas.map(function(p) { return '<tr' + (p.ESTADO === 'BAJA' ? ' style="opacity:.55"' : '') + '><td class="mono"><b>' + pcEsc(p.CODIGO) + '</b></td><td>' + pcEsc(p.NOMBRE) + '</td><td class="tr">' + p.USOS + ' / ' + (p.MAX_USOS || '∞') + '</td><td>' + (p.ESTADO === 'DISPONIBLE' ? '<span class="badge b-green">disponible</span>' : '<span class="badge b-gray">baja</span>') + '</td>' +
-      '<td style="font-size:11px">' + p.HISTORIAL.slice(-3).map(function(h) { return pcEsc(h.NRO_OT + ' ' + h.MARCA); }).join(' · ') + '</td>' +
-      '<td style="white-space:nowrap">' + (pcPuede('EDITAR') ? '<button class="btn btn-w btn-xs" onclick="pcPiezaMarca(' + p.ID_PIEZA + ')">Marca</button> ' : '') + (p.ESTADO === 'DISPONIBLE' ? (pcPuede('ANULAR') ? '<button class="btn btn-s btn-xs" onclick="pcBajaPieza(' + p.ID_PIEZA + ',false)">Dar de baja</button>' : '') : (pcPuede('ANULAR') ? '<button class="btn btn-s btn-xs" onclick="pcBajaPieza(' + p.ID_PIEZA + ',true)">Reactivar</button>' : '')) + '</td></tr>'; }).join('') +
-    '</tbody></table>' + (r.piezas.length ? '' : '<div class="tdim" style="padding:12px">No hay piezas cargadas.</div>') + '</div></div>';
+  var F = PC_.pzF = PC_.pzF || { q: '', ins: '', est: 'ACTIVAS', pag: 0 };
+  var opt = function(l, v) { return l.map(function(x) { return '<option value="' + pcEsc(x[0]) + '"' + (v === x[0] ? ' selected' : '') + '>' + pcEsc(x[1]) + '</option>'; }).join(''); };
+  var sinM = r.piezas.filter(function(p) { return p.ESTADO === 'SIN_MARCA'; }).length;
+  $id('pc-body').innerHTML = (sinM ? '<div class="al al-r mb3">⚠ ' + sinM + ' pieza' + (sinM === 1 ? '' : 's') + ' sin marca de fuego (entraron por compra): no se pueden usar en la línea hasta cargarles la marca con ✏ Marca.</div>' : '') +
+    '<div class="card mb3"><div class="card-hd"><span class="card-title">Piezas de herramental (inner, envelope, llantas)</span>' + (pcPuede('AGREGAR') ? '<button class="btn btn-p btn-sm" onclick="pcAltaPiezasAbrir()">＋ Alta de piezas</button>' : '') + '</div><div class="card-body">' +
+    '<div class="pc-otf"><div class="fg" style="grid-column:span 2"><label class="fl">Buscar</label><input class="fi" placeholder="Marca de fuego, herramental, OS o marca grabada de la cubierta" value="' + pcEsc(F.q) + '" oninput="PC_.pzF.q=this.value;PC_.pzF.pag=0;pcPzGrilla()"></div>' +
+    '<div class="fg" style="grid-column:span 2"><label class="fl">Herramental</label><select class="fs" onchange="PC_.pzF.ins=this.value;PC_.pzF.pag=0;pcPzGrilla()">' + opt([['', 'Todos']].concat(r.herramental.map(function(h) { return [h.ID_INSUMO, h.ID_INSUMO + ' — ' + h.NOMBRE]; })), F.ins) + '</select></div>' +
+    '<div class="fg"><label class="fl">Estado</label><select class="fs" onchange="PC_.pzF.est=this.value;PC_.pzF.pag=0;pcPzGrilla()">' + opt([['ACTIVAS', 'Disponibles y sin marca'], ['DISPONIBLE', 'Disponibles'], ['SIN_MARCA', 'Sin marca de fuego'], ['BAJA', 'De baja'], ['', 'Todas']], F.est) + '</select></div>' +
+    '<div class="fg" style="align-self:end"><button class="btn btn-s" onclick="PC_.pzF={q:\'\',ins:\'\',est:\'ACTIVAS\',pag:0};pcHerramental()">Limpiar filtros</button></div></div>' +
+    '<div id="pc-pz-g" class="mt2"></div></div></div>';
+  pcPzGrilla();
+}
+function pcPzGrilla() {
+  var r = PC_.piezas, F = PC_.pzF, el = $id('pc-pz-g'); if (!el || !r) return;
+  var q = String(F.q || '').toUpperCase().trim().split(/\s+/).filter(Boolean);
+  var l = r.piezas.filter(function(p) {
+    if (F.ins && p.ID_INSUMO !== F.ins) return false;
+    if (F.est === 'ACTIVAS' && p.ESTADO === 'BAJA') return false;
+    if (F.est && F.est !== 'ACTIVAS' && p.ESTADO !== F.est) return false;
+    if (q.length) { var t = [p.CODIGO, p.ID_INSUMO, p.NOMBRE].concat(p.HISTORIAL.map(function(h) { return h.NRO_OT + ' ' + h.MARCA; })).join(' ').toUpperCase(); if (!q.every(function(w) { return t.indexOf(w) !== -1; })) return false; }
+    return true;
+  }).sort(function(a, b) { return (a.ESTADO === 'SIN_MARCA' ? 0 : 1) - (b.ESTADO === 'SIN_MARCA' ? 0 : 1) || String(a.CODIGO).localeCompare(String(b.CODIGO)); });
+  var por = 50, pags = Math.max(1, Math.ceil(l.length / por)); if (F.pag >= pags) F.pag = pags - 1; var desde = F.pag * por;
+  var est = function(e) { return e === 'DISPONIBLE' ? '<span class="badge b-green">disponible</span>' : e === 'SIN_MARCA' ? '<span class="badge b-red">sin marca</span>' : '<span class="badge b-gray">de baja</span>'; };
+  el.innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> pieza' + (l.length === 1 ? '' : 's') + (pags > 1 ? ' · página ' + (F.pag + 1) + ' de ' + pags : '') + '</div>' +
+    '<div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px" id="pc-pz-tab"><thead><tr><th>Marca de fuego</th><th>Alta</th><th>Herramental</th><th class="tr">Usos</th><th>Estado</th><th>Último uso</th><th>Acciones</th></tr></thead><tbody>' +
+    (l.length ? l.slice(desde, desde + por).map(function(p) { var u = p.HISTORIAL[p.HISTORIAL.length - 1], sm = p.ESTADO === 'SIN_MARCA';
+      return '<tr' + (p.ESTADO === 'BAJA' ? ' style="opacity:.6"' : '') + '><td class="mono"><b>' + (sm ? '<span style="color:var(--danger)">sin marca</span><div class="pc-nota">' + pcEsc(p.CODIGO) + '</div>' : pcEsc(p.CODIGO)) + '</b></td><td>' + (p.FECHA_ALTA ? fmtD(+p.FECHA_ALTA) : '—') + '</td><td class="pc-wr">' + pcEsc(p.ID_INSUMO + ' — ' + p.NOMBRE) + '</td><td class="tr">' + p.USOS + ' / ' + (p.MAX_USOS || '∞') + '</td><td>' + est(p.ESTADO) + '</td>' +
+        '<td>' + (u ? fmtD(+u.FECHA) + ' · ' + pcEsc(u.NRO_OT) : '—') + '</td>' +
+        '<td><div class="pc-acc">' + pcBtnAbm('btn-s', '👁 Historial', 'pcPiezaVer(' + p.ID_PIEZA + ')', 'Todos los usos: fecha, OS, cubierta') +
+          (pcPuede('EDITAR') ? pcBtnAbm(sm ? 'btn-p' : 'btn-s', '✏ Marca', 'pcPiezaMarca(' + p.ID_PIEZA + ')', 'Cargar o corregir la marca de fuego') : '') +
+          (pcPuede('ANULAR') ? (p.ESTADO === 'BAJA' ? pcBtnAbm('btn-s', '↺ Reactivar', 'pcBajaPieza(' + p.ID_PIEZA + ',true)') : pcBtnAbm('btn-d', '✖ Baja', 'pcBajaPiezaPedir(' + p.ID_PIEZA + ')', 'Dar de baja (rota, gastada…)')) : '') + '</div></td></tr>'; }).join('')
+      : '<tr><td colspan="7" class="tc tdim" style="padding:16px">No hay piezas con esos filtros.</td></tr>') + '</tbody></table></div>' +
+    (pags > 1 ? '<div class="flex gap2 mt2" style="justify-content:center"><button class="btn btn-s btn-sm"' + (F.pag ? '' : ' disabled') + ' onclick="PC_.pzF.pag--;pcPzGrilla()">‹ Anterior</button><span style="align-self:center">' + (F.pag + 1) + ' / ' + pags + '</span><button class="btn btn-s btn-sm"' + (F.pag < pags - 1 ? '' : ' disabled') + ' onclick="PC_.pzF.pag++;pcPzGrilla()">Siguiente ›</button></div>' : '');
+}
+function pcPiezaVer(id) {
+  var p = (PC_.piezas.piezas || []).filter(function(x) { return String(x.ID_PIEZA) === String(id); })[0]; if (!p) return;
+  showModal('<div class="mh"><span class="mt">Historial · ' + pcEsc(p.ESTADO === 'SIN_MARCA' ? 'sin marca (' + p.CODIGO + ')' : 'marca de fuego ' + p.CODIGO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="mb2" style="font-size:13px"><b>' + pcEsc(p.ID_INSUMO + ' — ' + p.NOMBRE) + '</b><br>Alta: ' + (p.FECHA_ALTA ? fmtD(+p.FECHA_ALTA) : '—') + ' · Usos: <b>' + p.USOS + ' / ' + (p.MAX_USOS || '∞') + '</b> · Estado: ' + pcEsc(p.ESTADO) + (p.OBSERVACIONES ? '<br><span class="tdim">' + pcEsc(p.OBSERVACIONES) + '</span>' : '') + '</div>' +
+    '<div class="tw pc-abm"><table style="font-size:12px"><thead><tr><th class="tr">Uso</th><th>Fecha</th><th>OS</th><th>Línea</th><th>Cubierta (marca grabada · DOT)</th><th>Medida</th><th>Cliente</th></tr></thead><tbody>' +
+    (p.HISTORIAL.length ? p.HISTORIAL.slice().reverse().map(function(h) { return '<tr><td class="tr">' + h.NRO_USO + '</td><td>' + fmtD(+h.FECHA) + '</td><td class="mono">' + pcEsc(h.NRO_OT) + '</td><td>' + pcEsc(h.LINEA || '') + '</td><td class="mono">Marca grabada ' + pcEsc(h.MARCA || '—') + ' · DOT ' + pcEsc(h.DOT || 'sin DOT') + '</td><td>' + pcEsc(h.MEDIDA || '') + '</td><td class="pc-wr">' + pcEsc(h.CLIENTE || '') + '</td></tr>'; }).join('') : '<tr><td colspan="7" class="tdim tc" style="padding:12px">Todavía no se usó.</td></tr>') +
+    '</tbody></table></div></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>', 'md-lg');
+}
+function pcAltaPiezasAbrir() {
+  var r = PC_.piezas;
+  showModal('<div class="mh"><span class="mt">＋ Alta de piezas</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="tdim mb2" style="font-size:12px">Cada inner, envelope o llanta es una pieza con su <b>marca de fuego</b>. Es obligatoria: es la que se elige en la estación y con la que se sigue la pieza (usos, cubiertas en las que estuvo).</div>' +
+    '<div class="fg"><label class="fl">Herramental *</label><select class="fs" id="pch-ins">' + r.herramental.map(function(h) { return '<option value="' + pcEsc(h.ID_INSUMO) + '">' + pcEsc(h.ID_INSUMO + ' — ' + h.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Marcas de fuego * (una por pieza)</label><textarea class="fi" id="pch-m" rows="4" placeholder="Ej.: IN-019, IN-020 (una por renglón o separadas por coma)" style="text-transform:uppercase"></textarea></div>' +
+    '<div class="fg"><label class="fl">Usos máximos</label><input class="fi" type="number" min="0" id="pch-u" placeholder="los del insumo"/></div>' +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pch-ok" onclick="pcAltaPiezas()">Dar de alta</button></div>');
+}
+async function pcBajaPiezaPedir(id) {
+  var m = await uiPedir('¿Por qué se da de baja la pieza? (rota, gastada, perdida…)', { obligatorio: true }); if (m === null) return;
+  var r = await gsRun('gsPC_BajaPieza', id, false, 'baja: ' + m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Pieza dada de baja ✓', 'g'); pcHerramental();
 }
 async function pcAltaPiezas() {
   var mks = String($v('pch-m') || '').split(/[\n,;]+/).map(function(x) { return x.trim(); }).filter(function(x) { return x; });
-  var r = await gsRun('gsPC_AltaPiezas', $v('pch-ins'), $v('pch-n'), $v('pch-u'), '', mks);
-  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
-  toast('Piezas: ' + r.codigos.join(', ') + ' ✓', 'g'); pcHerramental();
+  if (!mks.length) { toast('Escribí la marca de fuego de cada pieza', 'r2'); return; }
+  var b = $id('pch-ok'); if (b) b.disabled = true;
+  try {
+    var r = await gsRun('gsPC_AltaPiezas', $v('pch-ins'), mks.length, $v('pch-u'), '', mks);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    closeModal(); toast('Piezas: ' + r.codigos.join(', ') + ' ✓', 'g'); pcHerramental();
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
 }
 function pcPiezaMarca(id) {
   var p = (PC_.piezas.piezas || []).filter(function(x) { return String(x.ID_PIEZA) === String(id); })[0]; if (!p) return;
-  showModal('<div class="mh"><span class="mt">Marca vulcanizada · ' + pcEsc(p.NOMBRE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
-    '<div class="tdim mb2" style="font-size:12px">Código actual: <b class="mono">' + pcEsc(p.CODIGO) + '</b> · ' + p.USOS + ' usos. Escribí la marca que tiene vulcanizada la pieza: es la que se elige en la estación.</div>' +
+  showModal('<div class="mh"><span class="mt">Marca de fuego · ' + pcEsc(p.NOMBRE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="tdim mb2" style="font-size:12px">Código actual: <b class="mono">' + pcEsc(p.CODIGO) + '</b> · ' + p.USOS + ' usos. Escribí la marca de fuego que tiene la pieza: es la que se elige en la estación.</div>' +
     '<div class="fg"><label class="fl">Marca</label><input class="fi" id="pcpm-m" value="' + pcEsc(/#\d+$/.test(p.CODIGO) ? '' : p.CODIGO) + '" style="text-transform:uppercase"/></div>' +
     '<button class="btn btn-p mt3" id="pcpm-ok" onclick="pcPiezaMarcaOk(' + p.ID_PIEZA + ')"><i class="fas fa-save"></i> Guardar</button></div>');
   setTimeout(function() { var e = $id('pcpm-m'); if (e) e.focus(); }, 50);
