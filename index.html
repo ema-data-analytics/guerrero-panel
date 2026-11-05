@@ -1494,7 +1494,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611051657';
+var EMA_BUILD = '202611051727';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -9652,6 +9652,13 @@ var PC_ = { d: null, tab: 'cascos', filas: [], sel: {}, ot: null, fEspera: '', k
     '.pc-celda{display:flex;align-items:center;gap:4px;white-space:nowrap}#pc-k-t td{vertical-align:middle}#pc-k-t .fi,#pc-k-t .fs{height:38px;box-sizing:border-box}' +
     '#pc-k-t{min-width:0!important;width:100%}#pc-k-t thead{display:none}#pc-k-t tr{display:grid;grid-template-columns:64px repeat(4,minmax(0,1fr));gap:8px 12px;padding:12px 0;border-bottom:2px solid var(--border,#e2e8f0)}#pc-k-t td:nth-child(2){display:none}#pc-k-t td:nth-child(1){order:1}#pc-k-t td:nth-child(4){order:2}#pc-k-t td:nth-child(3){order:3}#pc-k-t td:nth-child(6){order:4}#pc-k-t td:nth-child(8){order:5}#pc-k-t td:nth-child(10){order:6;align-self:end}#pc-k-t td:nth-child(5){order:7}#pc-k-t td:nth-child(7){order:8}#pc-k-t td:nth-child(9){order:9}#pc-k-t td:nth-child(1){font-size:18px;font-weight:700}#pc-k-t td{display:block;border:0;padding:0;min-width:0}#pc-k-t td[data-l]:before{content:attr(data-l);display:block;font-size:11px;font-weight:600;color:var(--text3,#64748b);margin-bottom:3px}#pc-k-t .fi,#pc-k-t .fs{width:100%!important;min-width:0!important}#pc-k-t .pc-celda .fi{flex:1}#pc-k-t td:last-child:empty{visibility:hidden}' +
     '@media(max-width:820px){#pc-k-t tr{grid-template-columns:1fr 1fr}#pc-k-t td:nth-child(10){order:10}}' +
+    // Celular (05/11/2026, Anibal: «muy alargado»): cada casco es una tarjeta de ancho completo, campos grandes, sin botones de Excel/Imprimir encima
+    '@media(max-width:700px){#pc-k-t,#pc-k-t tbody{display:block;width:100%}#pc-k-t tr{grid-template-columns:1fr 1fr;gap:10px;padding:12px;margin:0 0 12px;border:1px solid var(--border,#e2e8f0);border-radius:12px;background:var(--surface,#fff);box-shadow:0 1px 3px rgba(0,0,0,.06)}' +
+    '#pc-k-t td:nth-child(1){order:1;font-size:16px}#pc-k-t td:nth-child(4){order:2;text-align:right}#pc-k-t td:nth-child(8),#pc-k-t td:nth-child(9){grid-column:1/-1}#pc-k-t td:nth-child(10){order:10;grid-column:1/-1;text-align:right}#pc-k-t td:nth-child(10):empty{display:none}' +
+    '#pc-k-t .fi,#pc-k-t .fs{height:44px;font-size:16px}#pc-k-t .pc-celda .btn{min-width:40px;height:44px}#pc-k-t td[data-l]:before{font-size:12px}' +
+    '.pc-fila3{grid-template-columns:1fr 1fr!important;gap:10px}.pc-fila3>.fg:first-child{grid-column:1/-1}.pc-fila3 .fi{height:44px;font-size:16px}.pc-fila3 .fg{margin-bottom:0}' +
+    '#pc-k-ok{flex:1;min-height:50px;font-size:16px}#pc-k-mas{min-height:50px}#pc-k-t tr td{background:transparent!important}' +
+    '#pc-k-tant td{display:inline-block!important;width:auto!important;margin:0 10px 4px 0;vertical-align:middle}#pc-k-tant td:empty{display:none!important}#pc-k-tant td:first-child{font-size:15px}#pc-k-tant .btn-xs{min-height:32px;min-width:32px}}' +
     '#pc-k-err .al{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}';
   document.head.appendChild(st); })();
 var PC_EST_TXT = { EN_ESPERA: 'En espera', EN_OT: 'En OT', TERMINADA: 'Terminada', RECHAZADA: 'Rechazada', ENTREGADA: 'Entregada', ANULADA: 'Anulada',
@@ -10025,7 +10032,7 @@ function pcCascos() {
     pcNroAuto('pc-k-man') +
     '<div class="fg"><label class="fl">Fecha</label><input class="fi" type="date" id="pc-k-f" value="' + fechaISO(new Date()) + '"/></div></div>' +
     pcMedidasList() + '<datalist id="pc-fabricantes">' + (d.marcas || []).map(function(m) { return '<option value="' + pcEsc(m) + '">'; }).join('') + '</datalist>' +
-    '<div class="tw"><table style="font-size:12px" class="pc-rec" id="pc-k-t"><thead><tr><th style="width:40px">#</th><th>N° interno</th><th>Tipo *</th><th title="La pone el sistema al grabar">Marca grabada</th><th title="El que trae la cubierta. Si no tiene o no se lee, vacío">DOT</th><th>Medida *</th><th>Marca</th><th>Trabajo</th><th>Observaciones</th><th></th></tr></thead><tbody id="pc-k-filas"></tbody></table></div>' +
+    '<div class="tw" data-noimp="1"><table style="font-size:12px" class="pc-rec" id="pc-k-t"><thead><tr><th style="width:40px">#</th><th>N° interno</th><th>Tipo *</th><th title="La pone el sistema al grabar">Marca grabada</th><th title="El que trae la cubierta. Si no tiene o no se lee, vacío">DOT</th><th>Medida *</th><th>Marca</th><th>Trabajo</th><th>Observaciones</th><th></th></tr></thead><tbody id="pc-k-filas"></tbody></table></div>' +
     '<div id="pc-k-err" class="mt3"></div><div class="flex gap2 mt3"><button class="btn btn-s btn-sm" id="pc-k-mas" onclick="PC_.kf.push(pcCasVacio());pcCasFilas()"><i class="fas fa-plus"></i> Otro casco</button>' +
     '<button class="btn btn-p" id="pc-k-ok" onclick="pcCasGrabar()"><i class="fas fa-save"></i> Grabar boleta</button><span class="tdim" style="font-size:12px;align-self:center">Si dejás el trabajo vacío, el casco queda sin orden y lo asignás después en "2 · Órdenes de trabajo".</span></div></div></div>' +
     '<div class="card"><div class="card-hd"><span class="card-title">Cascos declarados con anterioridad</span><span class="badge b-blue" id="pc-k-n"></span></div><div id="pc-k-ant"></div></div>';
@@ -10088,7 +10095,7 @@ function pcCasAnt() {
   var cli = PC_.kcli, ks = (PC_.d.cascos || []).filter(function(k) { return cli && String(k.ID_CLIENTE) === String(cli) && (k.ESTADO === 'NUEVO' || k.ESTADO === 'EN_OT'); }).sort(function(a, b) { return b.ID_CASCO - a.ID_CASCO; });
   $id('pc-k-n').textContent = cli ? ks.length + ' en curso' : '';
   if (!cli) { el.innerHTML = '<div class="tdim" style="padding:12px">Elegí el cliente y acá aparecen sus cascos que todavía están en curso. Lo anterior está en "Historial".</div>'; return; }
-  el.innerHTML = '<div class="tw"><table style="font-size:12px" id="pc-k-tant"><thead><tr><th>N° interno</th><th>Marca grabada</th><th>Fecha</th><th>Tipo</th><th>DOT</th><th>Medida</th><th>Marca</th><th>Estado</th><th></th></tr></thead><tbody>' +
+  el.innerHTML = '<div class="tw tw-cards"><table style="font-size:12px" id="pc-k-tant"><thead><tr><th>N° interno</th><th>Marca grabada</th><th>Fecha</th><th>Tipo</th><th>DOT</th><th>Medida</th><th>Marca</th><th>Estado</th><th></th></tr></thead><tbody>' +
     (ks.length ? ks.map(function(k) { var e = PC_CAS_EST[k.ESTADO] || ['b-gray', k.ESTADO];
       return '<tr' + (k.ESTADO === 'ANULADO' ? ' style="opacity:.5"' : '') + '><td class="mono"><b>' + k.ID_CASCO + '</b></td><td class="mono"><b>' + pcEsc(k.MARCA || '') + '</b></td><td>' + fmtD(+k.FECHA) + '</td><td>' + pcEsc(k.TIPO) + '</td><td class="mono">' + pcDotTxt(k.DOT) + (pcPuede('EDITAR') ? ' <button class="btn btn-s btn-xs" title="Cargar o corregir el DOT" onclick="pcDotEditar(' + k.ID_CASCO + ')">✎</button>' : '') + '</td><td class="mono">' + pcEsc(k.MEDIDA) + '</td><td>' + pcEsc(k.MARCA_FAB) + '</td>' +
         '<td><span class="badge ' + e[0] + '">' + e[1] + '</span>' + (k.ID_OTRAB ? ' <span class="mono" style="font-size:11px">' + pcEsc(pcNroOTrab(k.ID_OTRAB)) + '</span>' : '') + '</td>' +
