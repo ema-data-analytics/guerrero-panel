@@ -72,7 +72,7 @@ main{max-width:1180px;margin:0 auto;padding:14px 16px 90px}
 .tot{border-top:1px solid var(--li)}
 .wa{display:block;text-align:center;color:#128c7e;font-weight:700;font-size:14px;margin-top:8px;text-decoration:none}
 #carga{position:fixed;left:50%;transform:translateX(-50%);bottom:70px;background:var(--az);color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;z-index:40}
-.cuo-cont{font-size:14px;margin:4px 0 8px}.cuo{border:1px solid #d5d9e0;border-radius:10px;padding:8px 10px;margin:8px 0}.cuo-d{font-size:14px;color:#333}.cuo-cft{font-size:14px;color:#333;margin:2px 0 6px}.cuo-n{font-size:11px;color:#666;margin-top:6px}
+.cuo-cont{font-size:14px;margin:4px 0 8px}.cuo{border:1px solid #d5d9e0;border-radius:10px;padding:8px 10px;margin:8px 0}.cuo-d{font-size:14px;color:#333}.cuo-cft{font-size:14px;color:#333;margin:2px 0 6px}.cuo-n{font-size:11px;color:#666;margin-top:6px}.cq{font-size:12px;color:#1f3d1f;margin-top:1px}
 .vc{display:block;margin-top:2px;background:none;border:0;color:#1d4f91;text-decoration:underline;font-size:12px;padding:0;cursor:pointer}.cuo-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}.cuo-box{background:#fff;border-radius:14px;max-width:420px;width:100%;max-height:90vh;overflow:auto;padding:14px}
 </style>
 </head>
@@ -273,7 +273,10 @@ function filtrar(){
   S.res=r;pintar();
 }
 function mas(){S.lim+=40;pintar();}
-function hayCuotas(){return !!(VIVO&&CFG.mp&&planesCuotas(CFG.cuotas,1000).length);}
+// Cuotas: se muestran siempre que haya planes (05/11/2026, Anibal). Se cobran con Mercado Pago (medio principal de la venta web).
+function hayCuotas(){return !!(VIVO&&planesCuotas(CFG.cuotas,1000).length);}
+// En la tarjeta: el plan más largo, con total y CFT al lado (Res. 51-E/2017: si se anuncia la cuota, va el CFT)
+function cuoLinea(a){var pl=planesCuotas(CFG.cuotas,a.p);if(!pl.length)return '';var p=pl[pl.length-1];return '<div class="cq">o '+p.n+' cuotas de <b>'+pesos(p.cuota)+'</b> · total '+pesos(p.total)+' · CFT '+pct(p.cft)+'</div>';}
 function verCuotas(id){var a=BYID[id];if(!a)return;var d=dis(a);var ov=document.createElement('div');ov.className='cuo-ov';ov.onclick=function(e){if(e.target===ov)ov.remove();};
   ov.innerHTML='<div class="cuo-box"><b>'+esc(nomArt(a))+'</b>'+cuotasHtml(a.p,planesCuotas(CFG.cuotas,a.p))+'<button class="btn l" style="width:100%;margin-top:8px" onclick="this.closest(\'.cuo-ov\').remove()">Cerrar</button></div>';document.body.appendChild(ov);}
 function cardIns(a){
@@ -286,7 +289,7 @@ function cardIns(a){
   else acc='<div class="qty"><button onclick="paso('+a.id+',-1)">−</button><input id="q'+a.id+'" value="'+(q||1)+'" inputmode="numeric"><button onclick="paso('+a.id+',1)">+</button></div>'+
     '<button class="btn'+(q?' o':'')+'" id="b'+a.id+'" onclick="agregar('+a.id+')">'+(q?'En pedido ('+q+')':'Agregar')+'</button>';
   return '<div class="card'+(sin?' cardx':'')+'"><div class="ph">'+im+'</div><div class="bdy"><div class="nin">'+esc(a.n)+'</div><div class="sp">'+esc(tit(d.m))+'</div><div class="cod">Cód. '+esc(a.c)+' '+est+'</div>'+
-  '<div class="pr">'+pesos(a.p)+' <small>c/IVA'+(hayCuotas()?' · contado':'')+'</small></div>'+(hayCuotas()&&!sin?'<button class="vc" onclick="verCuotas('+a.id+')">Ver cuotas</button>':'')+'<div class="add">'+acc+'</div></div></div>';
+  '<div class="pr">'+pesos(a.p)+' <small>c/IVA'+(hayCuotas()?' · contado':'')+'</small></div>'+(hayCuotas()&&!sin?cuoLinea(a)+'<button class="vc" onclick="verCuotas('+a.id+')">Ver todas las cuotas</button>':'')+'<div class="add">'+acc+'</div></div></div>';
 }
 function card(a){
   var d=dis(a);var im=d.i?'<img class="t" loading="lazy" src="img/'+esc(d.i)+'" alt="'+esc(d.n)+'">':'<div class="noimg">'+logo(d.m)+'<span>Imagen no disponible</span></div>';
@@ -299,7 +302,7 @@ function card(a){
   else acc='<div class="qty"><button onclick="paso('+a.id+',-1)">−</button><input id="q'+a.id+'" value="'+(q||1)+'" inputmode="numeric"><button onclick="paso('+a.id+',1)">+</button></div>'+
     '<button class="btn'+(q?' o':'')+'" id="b'+a.id+'" onclick="agregar('+a.id+')">'+(q?'En pedido ('+q+')':'Agregar')+'</button>';
   return '<div class="card'+(sin?' cardx':'')+'"><div class="ph">'+mk+im+'</div><div class="bdy"><div class="med">'+esc(a.me)+'</div><div class="dis"><b>'+esc(mNom(d.m))+'</b> '+esc(d.n)+dibTag(a)+'</div><div class="sp">'+esc(a.sp)+' '+est+'</div>'+
-  '<div class="pr">'+pesos(a.p)+' <small>c/IVA'+(hayCuotas()?' · contado':'')+'</small></div>'+(hayCuotas()&&!sin?'<button class="vc" onclick="verCuotas('+a.id+')">Ver cuotas</button>':'')+'<div class="add">'+acc+'</div></div></div>';
+  '<div class="pr">'+pesos(a.p)+' <small>c/IVA'+(hayCuotas()?' · contado':'')+'</small></div>'+(hayCuotas()&&!sin?cuoLinea(a)+'<button class="vc" onclick="verCuotas('+a.id+')">Ver todas las cuotas</button>':'')+'<div class="add">'+acc+'</div></div></div>';
 }
 function cardX(a){
   var q=CAR[a.id]||0, srv=a.k!=='REC', sin=!srv&&a.st<=0;
@@ -340,7 +343,7 @@ function cq(k,d){var a=BYID[k];var v=(CAR[k]||0)+d;if(a&&v>a.st){v=a.st;$('err')
 function setEnt(e){
   ENT=e;$('eR').className=e==='RETIRO'?'on':'';$('eE').className=e==='ENVIO'?'on':'';
   $('envBox').style.display=e==='ENVIO'?'block':'none';
-  var n=$('entNota'),pago='transferencia bancaria'+(CFG.mp?' o Mercado Pago (tarjetas)':'');
+  var n=$('entNota'),pago='Mercado Pago (tarjeta en 1 pago o en cuotas) o transferencia bancaria';
   if(e==='RETIRO')n.innerHTML='Después de mandar el pedido te mostramos cómo pagar: '+pago+'. Cuando el pago esté acreditado te avisamos por WhatsApp para que pases a retirarlo.';
   else if(CFG.envio_modo==='A')n.innerHTML='<b>El flete lo pagás vos a la empresa de transporte</b> cuando lo recibís. Ahora pagás solo las cubiertas ('+pago+') y te avisamos por WhatsApp cuando lo despachamos.';
   else n.innerHTML='<b>Envío a convenir.</b> Calculamos el costo del flete y te mandamos el total por WhatsApp, con el link para pagar. Ahora no pagás nada.';
