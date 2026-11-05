@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "89b55448fa50"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "943ea33302f7"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1494,7 +1494,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611051746';
+var EMA_BUILD = '202611051818';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -9748,7 +9748,9 @@ function pcMedKey(tipo) { return 'pc-medidas-' + String(tipo || 'X').toUpperCase
 function pcMedidasList() {
   var d = PC_.d, por = {}, todas = {};
   var add = function(tipo, m) { m = String(m || '').trim(); if (!m || m.toUpperCase() === 'TODAS') return; var k = pcMedKey(tipo); por[k] = por[k] || {}; por[k][m] = true; todas[m] = true; };
-  (d.tipos || []).forEach(function(t) { var lin = pcLineaDeTipo(t.TIPO); (d.medidas || []).forEach(function(m) { if (m.LINEA === lin) add(t.TIPO, m.MEDIDA); }); });
+  // Solo las medidas del tipo elegido (camión → medidas de camión). Las que no tienen tipo en el maestro de artículos salen para todos los de la línea.
+  var TIPO_RUB = { CAMION: 'CAMION', COLECTIVO: 'CAMION', CAMIONETA: 'CAMIONETA', AUTO: 'AUTO' };
+  (d.tipos || []).forEach(function(t) { var lin = pcLineaDeTipo(t.TIPO), rb = TIPO_RUB[String(t.TIPO).toUpperCase()]; (d.medidas || []).forEach(function(m) { if (m.LINEA !== lin) return; var ts = m.TIPOS || []; if (!rb || !ts.length || ts.indexOf(rb) !== -1) add(t.TIPO, m.MEDIDA); }); });
   d.recetas.forEach(function(r) { add(r.TIPO, r.MEDIDA); });
   var dl = function(id, o) { return '<datalist id="' + id + '">' + Object.keys(o).sort().map(function(x) { return '<option value="' + pcEsc(x) + '">'; }).join('') + '</datalist>'; };
   return dl('pc-medidas', todas) + Object.keys(por).map(function(k) { return dl(k, por[k]); }).join('');
@@ -9943,6 +9945,15 @@ function pcLienzo(idc, flag) {
 function pcLienzoJpg(cv) { var c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = cv.height; var g2 = c2.getContext('2d'); g2.fillStyle = '#fff'; g2.fillRect(0, 0, c2.width, c2.height); g2.drawImage(cv, 0, 0); return c2.toDataURL('image/jpeg', 0.8); }
 // ── Recepción en planta (05/11/2026, Anibal): quien recibe tilda casco por casco lo que llegó y firma. Su usuario, fecha y hora quedan grabados (el «sello»).
 // Lo que no llegó queda «no llegó a planta» y no puede entrar a una orden de servicio hasta recibirlo.
+// Órdenes cargadas (desde afuera o en la planta) que todavía no se recibieron: arriba de todo en «Recibir cascos»
+function pcPorRecibir(ult) {
+  var d = PC_.d, l = (d.ordTrabajo || []).filter(function(o) { return o.ESTADO !== 'ANULADA' && (o.RECEP_ESTADO === 'PENDIENTE' || o.RECEP_ESTADO === 'PARCIAL') && !(ult && o.ID_OTRAB === ult.ID_OTRAB); }).sort(function(a, b) { return b.ID_OTRAB - a.ID_OTRAB; });
+  if (!l.length) return '';
+  return '<div class="card mb3" style="border:2px solid #f59e0b"><div class="card-hd"><span class="card-title">📥 Por recibir en planta (' + l.length + ')</span><span class="tdim" style="font-size:12px">Cascos cargados que todavía no se recibieron</span></div><div class="card-body" style="padding:8px">' +
+    l.map(function(o) { var n = d.cubiertas.filter(function(c) { return String(c.ID_OTRAB) === String(o.ID_OTRAB) && c.ESTADO !== 'ANULADA'; }), fal = n.filter(function(c) { return c.RECEP !== 'SI'; }).length;
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 6px;border-bottom:1px solid var(--border)"><div><b>' + pcEsc(o.CLIENTE) + '</b> · ' + pcEsc(o.NRO_MANUAL ? 'Boleta ' + o.NRO_MANUAL : o.NRO) + '<br><span class="tdim" style="font-size:12px">' + fmtD(+o.FECHA) + ' · ' + n.length + ' casco' + (n.length === 1 ? '' : 's') + (o.RECEP_ESTADO === 'PARCIAL' ? ' · <b style="color:#b45309">faltan ' + fal + '</b>' : '') + ' · ' + (o.FIRMA_ID ? 'entregó ' + pcEsc(o.FIRMA_NOMBRE || '') : '<span style="color:#b91c1c">falta firma de quien entrega</span>') + '</span></div>' +
+        '<div class="flex gap2">' + (o.FIRMA_ID ? '' : '<button class="btn btn-s btn-sm" onclick="pcFirmaOT(' + o.ID_OTRAB + ')">✍ Entrega</button>') + '<button class="btn btn-p btn-sm" onclick="pcRecibirOT(' + o.ID_OTRAB + ')">📥 Recibir</button></div></div>'; }).join('') + '</div></div>';
+}
 function pcRecEstado(o) {
   var e = o.RECEP_ESTADO || '';
   if (e === 'RECIBIDA') return ['b-green', '✓ Recibida en planta'];
@@ -10096,6 +10107,7 @@ function pcCascos() {
   if (!PC_.kf.length) PC_.kf = [pcCasVacio()];
   var ult = PC_.ultOT ? (d.ordTrabajo || []).filter(function(o) { return o.NRO === PC_.ultOT; })[0] : null;
   var h = pcAvisoLinea() + (ult ? '<div class="al al-g mb3" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>✓ Grabada · ' + (ult.NRO_MANUAL ? 'Boleta N° <b style="font-size:18px">' + pcEsc(ult.NRO_MANUAL) + '</b> <span style="font-size:12px">(sistema ' + pcEsc(ult.NRO) + ')</span>' : 'N° de orden <b style="font-size:18px">' + pcEsc(ult.NRO) + '</b>') + ' · ' + pcEsc(ult.CLIENTE) + '<br><span style="font-size:12px">' + (ult.FIRMA_ID ? '✓ Entregó: ' + pcEsc(ult.FIRMA_NOMBRE) : '1) Que firme quien entrega los cascos') + ' · ' + (ult.RECEP_ESTADO === 'RECIBIDA' ? '✓ Recibida en planta por ' + pcEsc(ult.RECEP_USUARIO || '') : ult.RECEP_ESTADO === 'PARCIAL' ? 'Recibida en parte: faltan cascos' : '2) Confirmar la recepción en planta') + '</span></span><span class="flex gap2" style="flex-wrap:wrap">' + (ult.FIRMA_ID ? '' : '<button class="btn btn-p btn-sm" onclick="pcFirmaOT(' + ult.ID_OTRAB + ')">✍ Firma de quien entrega</button>') + (ult.RECEP_ESTADO === 'PENDIENTE' || ult.RECEP_ESTADO === 'PARCIAL' ? '<button class="btn btn-p btn-sm" onclick="pcRecibirOT(' + ult.ID_OTRAB + ')">📥 Confirmar recepción</button>' : '') + '<button class="btn ' + (ult.RECEP_ESTADO === 'RECIBIDA' ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="pcImpOTrab(' + ult.ID_OTRAB + ')"><i class="fas fa-file-pdf"></i> Comprobante (PDF)</button></span></div>' : '') +
+    pcPorRecibir(ult) +
     '<div class="card mb3"><div class="card-hd"><span class="card-title">Carga de la boleta: cascos y orden de trabajo</span><span class="tdim" style="font-size:12px">Se cargan los cascos con su trabajo y al grabar queda hecha la orden de trabajo.</span></div><div class="card-body">' +
     '<div class="pc-fila3"><div class="fg"><label class="fl">Cliente *</label><input class="fi" id="pc-k-cli" list="pc-clientes" placeholder="Escribí el nombre..." value="' + pcEsc(pcCliTxt(PC_.kcli)) + '"/>' + pcCliList() + '</div>' +
     pcNroAuto('pc-k-man') +
