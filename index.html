@@ -1494,7 +1494,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611051642';
+var EMA_BUILD = '202611051650';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13781,6 +13781,7 @@ function tbAutoclave(idEst) {
 .pn-sel{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.pn-sel select{flex:1;min-width:140px;font-size:15px;padding:9px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text)}
 .pn-uni{font-size:12.5px;margin-top:6px}.pn-uni div{background:var(--bg);border-radius:6px;padding:3px 7px;margin-top:3px}.pn-div button.on{background:#14213d;color:#fff}
 .pn-chip{flex:0 0 auto;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);border-radius:20px;padding:6px 12px;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.pn-chip.cero{opacity:.45}.pn-chip small{opacity:.75}.pn-chip.on small{opacity:1}.pn-act{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 8px;font-size:13px}.pn-act span{font-weight:700}.pn-act button{border:1px solid #f59e0b;background:#fffbeb;color:#92400e;border-radius:16px;padding:4px 10px;font-size:13px;cursor:pointer}.pn-act button.all{border-color:#dc2626;background:#fef2f2;color:#b91c1c;font-weight:700}
 .pn-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 .pn-info{font-size:12.5px;color:var(--dim);margin:6px 2px}
 .pn-item{background:var(--surface,#fff);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px}
@@ -13941,7 +13942,7 @@ var PN_FOTO_URL = 'https://ema-data-analytics.github.io/guerrero-panel/tienda/im
 function pnDibSin(t) { return t && t !== 'A CONFIRMAR' ? (PN_DIB_SIN[t] || t) : ''; }
 function pnDibTag(p) { return pnDibTxt(p) ? '<span class="pn-dib">Dibujo: ' + pnEsc(PN_DIB_NOM[p.DIBUJO] || p.DIBUJO) + '</span>' : ''; }
 function pnDibTxt(p) { return p.DIBUJO && p.DIBUJO !== 'A CONFIRMAR' ? p.DIBUJO : ''; }
-function pnDibujo(t) { PN_.dib = (PN_.dib === t ? '' : t); PN_.max = 40; pnPintar(); }
+function pnDibujo(t) { PN_.dib = (PN_.dib === t ? '' : t); PN_.max = pnHayFiltro() ? 300 : 40; pnGuardar(); pnResultados(); }
 function pnDibChips() {
   var cnt = {};
   (PN_.d.PRECIOS || []).forEach(function(p) { if (p.RUBRO === 'INSUMOS' || !pnDibTxt(p)) return; if (PN_.rubro && p.RUBRO !== PN_.rubro) return; if (PN_.marca && p.MARCA !== PN_.marca) return; cnt[p.DIBUJO] = (cnt[p.DIBUJO] || 0) + 1; });
@@ -13967,6 +13968,40 @@ function pnVerFoto(id) {
   document.body.appendChild(ov);
 }
 function pnFotoCerrar() { var o = $id('pn-fv'); if (o) o.remove(); }
+// Filtros (05/11/2026, Anibal: "el filtro tiene que ser lo que mejor funciona"). Cada botón muestra cuántas salen si lo tocás,
+// contando TODO lo demás que está activo (texto, rubro, marca, dibujo, promo). Así el número del botón es lo que se ve en pantalla.
+function pnCon(o) { var s = {}, k, n; for (k in o) { s[k] = PN_[k]; PN_[k] = o[k]; } try { n = pnFiltrar().length; } finally { for (k in s) PN_[k] = s[k]; } return n; }
+function pnFilHtml() {
+  var insV = PN_.div === 'INS', d = PN_.d, h = '';
+  if (insV) {
+    var cats = []; (d.PRECIOS || []).forEach(function(p) { if (p.RUBRO === 'INSUMOS' && p.DESCRIPCION && cats.indexOf(p.DESCRIPCION) === -1) cats.push(p.DESCRIPCION); }); cats.sort();
+    h += '<div class="pn-chips">' + [['', 'Todo']].concat(cats.map(function(c) { return [c, c.charAt(0) + c.slice(1).toLowerCase()]; })).map(function(r) { var n = pnCon({ rubro: r[0] }); if (r[0] && !n && PN_.rubro !== r[0]) return ''; return '<button class="pn-chip' + (PN_.rubro === r[0] ? ' on' : '') + '" onclick="pnRubro(\'' + pnEsc(r[0]) + '\')">' + pnEsc(r[1]) + ' <small>(' + n + ')</small></button>'; }).join('') + '</div>';
+    return h;
+  }
+  h += '<div class="pn-chips">' + PN_RUBROS.map(function(r) { var n = pnCon({ rubro: r[0] }); return '<button class="pn-chip' + (PN_.rubro === r[0] ? ' on' : '') + (n ? '' : ' cero') + '" onclick="pnRubro(\'' + r[0] + '\')">' + r[1] + ' <small>(' + n + ')</small></button>'; }).join('') + '</div>';
+  var marcas = {}; (d.PRECIOS || []).forEach(function(p) { if (p.MARCA && p.RUBRO !== 'INSUMOS') marcas[p.MARCA] = 1; });
+  h += '<div class="pn-chips"><button class="pn-chip' + (!PN_.marca ? ' on' : '') + '" onclick="pnMarca(\'\')">Todas las marcas <small>(' + pnCon({ marca: '' }) + ')</small></button>' +
+    Object.keys(marcas).sort().map(function(m) { var n = pnCon({ marca: m }); if (!n && PN_.marca !== m) return ''; return '<button class="pn-chip' + (PN_.marca === m ? ' on' : '') + '" onclick="pnMarca(\'' + pnEsc(m) + '\')">' + pnEsc(m) + ' <small>(' + n + ')</small></button>'; }).join('') + '</div>';
+  var ks = PN_DIB_ORD.map(function(k) { return [k, pnCon({ dib: k })]; }).filter(function(x) { return x[1] || PN_.dib === x[0]; });
+  if (ks.length) h += '<div class="pn-chips"><button class="pn-chip' + (!PN_.dib ? ' on' : '') + '" onclick="pnDibujo(\'\')">Todos los dibujos <small>(' + pnCon({ dib: '' }) + ')</small></button>' + ks.map(function(x) { return '<button class="pn-chip' + (PN_.dib === x[0] ? ' on' : '') + '" onclick="pnDibujo(\'' + x[0] + '\')">' + pnEsc(PN_DIB_NOM[x[0]] || x[0]) + ' <small>(' + x[1] + ')</small></button>'; }).join('') + '</div>';
+  return h;
+}
+// Lo que está filtrando, siempre a la vista y con su ✕ (antes un texto viejo en la búsqueda dejaba la lista vacía sin que se note)
+function pnActivos() {
+  var a = [];
+  if (String(PN_.q || '').trim()) a.push(['q', 'Búsqueda: «' + PN_.q.trim() + '»']);
+  if (PN_.rubro) { var r = PN_RUBROS.filter(function(x) { return x[0] === PN_.rubro; })[0]; a.push(['rubro', r ? r[1] : PN_.rubro]); }
+  if (PN_.marca) a.push(['marca', PN_.marca]);
+  if (PN_.dib) a.push(['dib', 'Dibujo: ' + (PN_DIB_NOM[PN_.dib] || PN_.dib)]);
+  if (PN_.promo && PN_.proMap && PN_.proMap[PN_.promo]) a.push(['promo', 'Promo: ' + PN_.proMap[PN_.promo].TITULO]);
+  if (!a.length) return '';
+  return '<div class="pn-act"><span>Filtrando por:</span>' + a.map(function(x) { return '<button onclick="pnQuitar(\'' + x[0] + '\')">' + pnEsc(x[1]) + ' ✕</button>'; }).join('') + (a.length > 1 ? '<button class="all" onclick="pnLimpiar()">Limpiar todo</button>' : '') + '</div>';
+}
+function pnQuitar(k) {
+  if (k === 'q') { PN_.q = ''; var i = $id('pn-q'); if (i) i.value = ''; } else if (k === 'promo') PN_.promo = 0; else PN_[k] = '';
+  PN_.max = pnHayFiltro() ? 300 : 40; pnGuardar(); pnResultados();
+}
+function pnHayFiltro() { return !!(String(PN_.q || '').trim() || PN_.rubro || PN_.marca || PN_.dib || PN_.promo); }
 function pnPintar() {
   if (PN_ANX_DIV[PN_.div]) { pnAnexo(); return; }
   var d = PN_.d, el = pnEl();
@@ -13991,9 +14026,7 @@ function pnPintar() {
   var insV = PN_.div === 'INS', cats = []; if (insV) (PN_.d.PRECIOS || []).forEach(function(p) { if (p.RUBRO === 'INSUMOS' && p.DESCRIPCION && cats.indexOf(p.DESCRIPCION) === -1) cats.push(p.DESCRIPCION); }); cats.sort();
   h += pnDivBar() +
     '<div class="pn-busca"><input id="pn-q" type="search" inputmode="search" autocomplete="off" placeholder="' + (insV ? 'Buscá por nombre o código (ej: parche, raspa, AA0775)' : 'Buscá medida, marca, diseño o uso (ej: 295 80 lisa · 295 mixta · 275 taco)') + '" value="' + pnEsc(PN_.q) + '" oninput="pnBuscar(this.value)" onfocus="setTimeout(pnVerRes,250)"/>' +
-    '<div class="pn-chips">' + (insV ? [['', 'Todo']].concat(cats.map(function(c) { return [c, c.charAt(0) + c.slice(1).toLowerCase()]; })) : PN_RUBROS).map(function(r) { return '<button class="pn-chip' + (PN_.rubro === r[0] ? ' on' : '') + '" onclick="pnRubro(\'' + r[0] + '\')">' + r[1] + '</button>'; }).join('') + '</div>' +
-    (insV ? '' : '<div class="pn-chips"><button class="pn-chip' + (!PN_.marca ? ' on' : '') + '" onclick="pnMarca(\'\')">Todas las marcas</button>' +
-    Object.keys(marcas).sort().map(function(m) { return '<button class="pn-chip' + (PN_.marca === m ? ' on' : '') + '" onclick="pnMarca(\'' + pnEsc(m) + '\')">' + pnEsc(m) + '</button>'; }).join('') + '</div>' + pnDibChips()) + '</div>' +
+    '<div id="pn-fil"></div></div>' +
     '<div id="pn-res"></div></div>';
   el.innerHTML = h;
   pnResultados();
@@ -14026,6 +14059,8 @@ function pnFiltrar() {
 function pnResultados() {
   var r = $id('pn-res'); if (!r) return;
   var lista = pnFiltrar(), h = '';
+  var fl = $id('pn-fil'); if (fl) fl.innerHTML = pnFilHtml();
+  h += pnActivos();
   var filtros = [];
   if (PN_.promo && PN_.proMap[PN_.promo]) filtros.push('promo: ' + PN_.proMap[PN_.promo].TITULO);
   var nombresL = [];
@@ -14063,7 +14098,7 @@ function pnTarjeta(p) {
   return h;
 }
 function pnPlazos(s) { if (!s) return []; return String(s).split('|').map(function(x) { var a = x.split(':'); return [a[0], Number(a[1])]; }).filter(function(z) { return z[0] && z[1]; }); }
-function pnBuscar(v) { PN_.q = v; PN_.max = String(v || '').trim() ? 300 : 40; clearTimeout(PN_.t); PN_.t = setTimeout(function() { pnResultados(); pnVerRes(); }, 120); }
+function pnBuscar(v) { PN_.q = v; PN_.max = pnHayFiltro() ? 300 : 40; clearTimeout(PN_.t); PN_.t = setTimeout(function() { pnResultados(); pnVerRes(); }, 120); }
 // Mientras se escribe, los resultados tienen que quedar a la vista justo debajo del buscador (en el celular el teclado tapa media pantalla
 // y antes quedaban abajo de las promociones: parecía que no filtraba). 04/11/2026
 // En el sistema la pantalla se desplaza dentro de #main (no la ventana): se mueve el contenedor que de verdad se desplaza.
@@ -14083,8 +14118,8 @@ function pnVerRes() {
   if (d > 4) sp.scrollTop = sp.scrollTop + d;   // sube el buscador hasta arriba: los resultados quedan justo debajo
 }
 function pnDiv(d) { PN_.div = d; PN_.rubro = ''; PN_.marca = ''; PN_.dib = ''; PN_.promo = 0; PN_.max = 40; pnPintar(); }
-function pnRubro(r) { PN_.rubro = r; PN_.max = 40; pnPintar(); var i = $id('pn-q'); if (i && PN_.q) i.focus(); }
-function pnMarca(m) { PN_.marca = m; PN_.max = 40; pnPintar(); }
+function pnRubro(r) { PN_.rubro = r; PN_.max = pnHayFiltro() ? 300 : 40; pnGuardar(); pnResultados(); }
+function pnMarca(m) { PN_.marca = m; PN_.max = pnHayFiltro() ? 300 : 40; pnGuardar(); pnResultados(); }
 function pnLimpiar() { PN_.q = ''; PN_.rubro = ''; PN_.marca = ''; PN_.dib = ''; PN_.promo = 0; PN_.max = 40; pnGuardar(); pnPintar(); window.scrollTo(0, 0); }
 function pnVerPromo(id) { PN_.promo = (PN_.promo === id ? 0 : id); PN_.max = 40; if (PN_.promo) { PN_.q = ''; PN_.rubro = ''; PN_.marca = ''; PN_.dib = ''; } pnPintar(); var r = $id('pn-res'); if (r && PN_.promo) r.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 function pnTexto(p) {
