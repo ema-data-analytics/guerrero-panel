@@ -1487,7 +1487,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611041959';
+var EMA_BUILD = '202611051236';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13844,10 +13844,25 @@ function pnPlata(n) { n = Number(n) || 0; return '$ ' + Math.round(n).toLocaleSt
 // (así "lisa" no encuentra "WANLI SA302", pero "max" sí encuentra "KMAX"); con números busca en cualquier parte, como antes.
 function pnPalabras(s) { return String(s || '').toUpperCase().replace(/×/g, 'X').normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^A-Z0-9]+/).filter(function(w) { return w; }); }
 function pnTokPasa(x, t) {
-  if (/[0-9]/.test(t)) return x.n.indexOf(t) !== -1 || (/^[0-9]+$/.test(t) && x.dig.indexOf(t) !== -1);
-  var w = x.w || pnPalabras(x.n);
-  for (var i = 0; i < w.length; i++) if (w[i].indexOf(t) !== -1) return true;
+  var w = x.w || pnPalabras(x.n), i;
+  // Solo números (05/11/2026): tiene que coincidir con el comienzo de un número de la medida (295, 80, 225, o pegado 2958022)
+  // o con el comienzo de una palabra (código, índice). Antes se buscaba en todo el texto junto y «295» encontraba «SA302 95W».
+  if (/^[0-9]+$/.test(t)) {
+    var md = x.md || '', ini = x.mdIni || [0];
+    for (i = 0; i < ini.length; i++) if (md.substr(ini[i], t.length) === t) return true;
+    for (i = 0; i < w.length; i++) if (w[i].indexOf(t) === 0) return true;
+    return false;
+  }
+  // Letras y números mezclados (80R22, RSMG162): dentro de una palabra o dentro de la medida.
+  if (/[0-9]/.test(t)) { if ((x.mdn || '').indexOf(t) !== -1) return true; for (i = 0; i < w.length; i++) if (w[i].indexOf(t) !== -1) return true; return false; }
+  for (i = 0; i < w.length; i++) if (w[i].indexOf(t) !== -1) return true;
   return false;
+}
+// Medida para buscar: sus dígitos juntos y dónde empieza cada número (295/80R22.5 → 29580225, empiezan en 0, 3, 5, 7).
+function pnMedIdx(m) {
+  var g = String(m || '').split(/[^0-9]+/).filter(function(z) { return z; }), ini = [], p = 0;
+  g.forEach(function(z) { ini.push(p); p += z.length; });
+  return { md: g.join(''), mdIni: ini.length ? ini : [0], mdn: pnNorm(m) };
 }
 function pnNorm(s) { return String(s || '').toUpperCase().replace(/×/g, 'X').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]/g, ''); }
 function pnFecha(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
@@ -13885,7 +13900,8 @@ function pnIndexar() {
   PN_.proMap = proMap; PN_.porPn = porPn;
   PN_.idx = (d.PRECIOS || []).map(function(p) {
     var h = [p.MEDIDA, p.MARCA, p.DISENO, p.NOMBRE, p.CODIGO, p.DESCRIPCION, p.COD_PROV, p.RUBRO, p.DATOS, pnDibSin(p.DIBUJO)].join(' ');
-    return { p: p, n: pnNorm(h), dig: pnNorm(h).replace(/[^0-9]/g, ''), w: pnPalabras(h) };
+    var mi = pnMedIdx(p.RUBRO === 'INSUMOS' ? '' : p.MEDIDA);
+    return { p: p, n: pnNorm(h), w: pnPalabras(h), md: mi.md, mdIni: mi.mdIni, mdn: mi.mdn };
   });
   var ordR = { AUTO: 1, CAMIONETA: 2, CAMION: 3, AGRICOLA: 4, INDUSTRIAL: 5 };
   PN_.idx.sort(function(a, b) {
@@ -13963,7 +13979,7 @@ function pnPintar() {
 function pnFiltrar() {
   if (PN_.rubro === 'INSUMOS') { PN_.rubro = ''; PN_.div = 'INS'; }
   var toks = String(PN_.q || '').trim().split(/\s+/).filter(function(t) { return t; }).map(function(t) { var n = pnNorm(t); return { n: n, dig: /^[0-9]+$/.test(n) }; }).filter(function(t) { return t.n; });
-  return PN_.idx.filter(function(x) {
+  var r = PN_.idx.filter(function(x) {
     var p = x.p;
     var esI = p.RUBRO === 'INSUMOS';
     if ((PN_.div === 'INS') !== esI) return false;
@@ -13976,6 +13992,14 @@ function pnFiltrar() {
     }
     return true;
   });
+  // Primero las cubiertas cuya medida empieza con el número buscado (295 → todas las 295/…), después el resto, sin perder el orden.
+  var num = toks.filter(function(t) { return t.dig; })[0];
+  if (num) {
+    var a = [], b = [];
+    r.forEach(function(x) { ((x.md || '').indexOf(num.n) === 0 ? a : b).push(x); });
+    r = a.concat(b);
+  }
+  return r;
 }
 function pnResultados() {
   var r = $id('pn-res'); if (!r) return;
@@ -14017,7 +14041,7 @@ function pnTarjeta(p) {
   return h;
 }
 function pnPlazos(s) { if (!s) return []; return String(s).split('|').map(function(x) { var a = x.split(':'); return [a[0], Number(a[1])]; }).filter(function(z) { return z[0] && z[1]; }); }
-function pnBuscar(v) { PN_.q = v; PN_.max = 40; clearTimeout(PN_.t); PN_.t = setTimeout(function() { pnResultados(); pnVerRes(); }, 120); }
+function pnBuscar(v) { PN_.q = v; PN_.max = String(v || '').trim() ? 300 : 40; clearTimeout(PN_.t); PN_.t = setTimeout(function() { pnResultados(); pnVerRes(); }, 120); }
 // Mientras se escribe, los resultados tienen que quedar a la vista justo debajo del buscador (en el celular el teclado tapa media pantalla
 // y antes quedaban abajo de las promociones: parecía que no filtraba). 04/11/2026
 // En el sistema la pantalla se desplaza dentro de #main (no la ventana): se mueve el contenedor que de verdad se desplaza.
@@ -14473,7 +14497,7 @@ function pnAnxTop() {
     '<div class="pn-acc">' + (lvEsAdmin() ? '<button class="btn btn-sm" onclick="lvAbrir()">🗂 Versiones de la lista</button>' : '') + '</div></div>';
 }
 function pnAnxTok() { return String(PN_ANX.q || '').trim().split(/\s+/).map(function(t) { return pnNorm(t); }).filter(function(t) { return t; }); }
-function pnAnxPasa(txt, toks) { var x = { n: pnNorm(txt), dig: pnNorm(txt).replace(/[^0-9]/g, ''), w: pnPalabras(txt) }; return toks.every(function(t) { return pnTokPasa(x, t); }); }
+function pnAnxPasa(txt, toks) { var x = { n: pnNorm(txt), w: pnPalabras(txt), md: '', mdIni: [0], mdn: '' }; return toks.every(function(t) { return pnTokPasa(x, t); }); }
 function pnAnxRes() {
   var r = $id('pn-res2'), d = PN_ANX.d; if (!r || !d) return;
   var toks = pnAnxTok(), lista = [], h = '';
@@ -19049,6 +19073,23 @@ function mgChipsIns() {
 }
 function mgNorm(t) { return String(t || '').toUpperCase().replace(/[\s\/\-.,R]/g, ''); }
 // Lista para tildar varias: cada toque agrega o saca la cubierta (✓). La lista queda abierta hasta «Listo».
+// Búsqueda (05/11/2026): un número solo tiene que coincidir con el comienzo de un número de la medida o de una palabra
+// («295» trae todas las 295/… y ya no «SA302 95W»); la medida pegada (29580225) se compara contra los dígitos de la medida.
+function mgPal(s) { return String(s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^A-Z0-9]+/).filter(function(w) { return w; }); }
+function mgPasa(a, q, qs) {
+  if (a.CODIGO.toUpperCase() === q.toUpperCase()) return true;
+  var med = String(a.MEDIDA || String(a.NOMBRE).split(' ')[0] || ''), md = med.replace(/[^0-9]/g, ''), qd = q.replace(/[^0-9]/g, '');
+  if (/^[0-9\s\/\-.,R]+$/i.test(q) && qd.length >= 5 && md.indexOf(qd) === 0) return true;
+  var w = mgPal(a.NOMBRE + ' ' + a.CODIGO + ' ' + a.MARCA + ' ' + mgDibSin(a.DIBUJO)), gi = [], p = 0;
+  med.split(/[^0-9]+/).forEach(function(g) { if (g) { gi.push(p); p += g.length; } });
+  return qs.every(function(t) {
+    t = mgPal(t).join(''); if (!t) return true;
+    var soloNum = /^[0-9]+$/.test(t), i;
+    if (soloNum) for (i = 0; i < gi.length; i++) if (md.substr(gi[i], t.length) === t) return true;
+    for (i = 0; i < w.length; i++) if (soloNum ? w[i].indexOf(t) === 0 : w[i].indexOf(t) !== -1) return true;
+    return false;
+  });
+}
 function mgBuscar() {
   if ($id('mg-q')) $id('mg-q').placeholder = MG_.div === 'INS' ? 'Nombre o código: parche, raspa, AA0775…' : MG_.div === 'CUB' ? 'Medida, marca, código o dibujo: 295 80 lisa, giti…' : 'Medida o trabajo: 18.4 38, retacado, 295 80…';
   var q = $v('mg-q').trim(), box = $id('mg-sug'); if (!box) return;
@@ -19056,7 +19097,7 @@ function mgBuscar() {
   if (q.length < 2 && !MG_.rubro && !MG_.dib && MG_.div === 'CUB') { box.innerHTML = ''; return; }
   var qs = q.toUpperCase().split(/\s+/).filter(function(w) { return w; }), qn = mgNorm(q);
   var ext = MG_.div === 'REC' || MG_.div === 'SRV' || MG_.div === 'GOM';
-  var r = MG_.d.ARTICULOS.filter(function(a) { if (mgDivDe(a) !== MG_.div) return false; if (ext) { if (MG_.div !== 'GOM' && MG_.rubro && a.LINEA !== MG_.rubro) return false; if (MG_.div === 'SRV' && MG_.fam && mgFam(a.TRABAJO) !== MG_.fam) return false; } else if (MG_.rubro && a.RUBRO !== MG_.rubro) return false; if (MG_.div === 'INS' && MG_.cat && (a.CAT || 'OTROS') !== MG_.cat) return false; if (MG_.div === 'INS' && MG_.fam && String(a.MARCA).replace(/'/g, '') !== MG_.fam) return false; if (MG_.div === 'CUB' && MG_.dib && a.DIBUJO !== MG_.dib) return false; if (q.length < 2) return true; var n = a.NOMBRE.toUpperCase() + ' ' + a.CODIGO + ' ' + a.MARCA.toUpperCase() + ' ' + mgDibSin(a.DIBUJO); return a.CODIGO.toUpperCase() === q.toUpperCase() || mgNorm(a.NOMBRE).indexOf(qn) !== -1 || qs.every(function(w) { return n.indexOf(w) !== -1; }); });
+  var r = MG_.d.ARTICULOS.filter(function(a) { if (mgDivDe(a) !== MG_.div) return false; if (ext) { if (MG_.div !== 'GOM' && MG_.rubro && a.LINEA !== MG_.rubro) return false; if (MG_.div === 'SRV' && MG_.fam && mgFam(a.TRABAJO) !== MG_.fam) return false; } else if (MG_.rubro && a.RUBRO !== MG_.rubro) return false; if (MG_.div === 'INS' && MG_.cat && (a.CAT || 'OTROS') !== MG_.cat) return false; if (MG_.div === 'INS' && MG_.fam && String(a.MARCA).replace(/'/g, '') !== MG_.fam) return false; if (MG_.div === 'CUB' && MG_.dib && a.DIBUJO !== MG_.dib) return false; if (q.length < 2) return true; return mgPasa(a, q, qs); });
   // Antes se cortaba en 30 y quedaban afuera marcas enteras (ej. 295/80R22.5: 39 cubiertas, faltaban Mirage y Wanli). Ahora salen todas, de la más barata a la más cara.
   r.sort(function(a, b) { return (a.CON_IVA || 0) - (b.CON_IVA || 0); });
   var mgTot = r.length; if (r.length > 200) r = r.slice(0, 200);
