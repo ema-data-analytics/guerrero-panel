@@ -1487,7 +1487,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611051236';
+var EMA_BUILD = '202611051258';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13772,7 +13772,7 @@ function tbAutoclave(idEst) {
 .pn-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;align-items:center}
 .pn-tag{font-size:11px;border-radius:6px;padding:2px 7px;background:var(--bg);border:1px solid var(--border);color:var(--dim)}
 .pn-foto{width:64px;height:64px;border-radius:8px;object-fit:cover;flex:none;border:1px solid var(--border);background:#fff;cursor:zoom-in}
-.pn-dib{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.3px;border-radius:6px;padding:1px 7px;margin-left:4px;background:#14213d;color:#fff;vertical-align:1px}
+.pn-dib{display:table;font-size:11px;font-weight:700;letter-spacing:.2px;border-radius:6px;padding:1px 7px;margin:4px 0 0;background:#14213d;color:#fff}
 .pn-dib.conf{background:var(--bg);color:var(--dim);border:1px dashed var(--border);font-weight:600}
 .pn-fv{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
 .pn-fv>div{background:#fff;border-radius:14px;padding:12px;max-width:520px;width:100%;text-align:center;color:#1f2937}
@@ -13917,7 +13917,7 @@ var PN_DIB_ORD = ['LISA', 'MIXTA', 'TACO', 'HT', 'AT', 'MT', 'TURISMO', 'ALTO RE
 var PN_DIB_NOM = { 'LISA': 'Lisa', 'MIXTA': 'Mixta', 'TACO': 'Taco (tracción)', 'HT': 'HT (ruta)', 'AT': 'AT (mixta)', 'MT': 'MT (barro)', 'TURISMO': 'Turismo', 'ALTO RENDIMIENTO': 'Alto rendimiento', 'RUN FLAT': 'Run flat', 'AUXILIO': 'Auxilio', 'A CONFIRMAR': 'A confirmar' };
 var PN_FOTO_URL = 'https://ema-data-analytics.github.io/guerrero-panel/tienda/img/';
 function pnDibSin(t) { return t && t !== 'A CONFIRMAR' ? (PN_DIB_SIN[t] || t) : ''; }
-function pnDibTag(p) { return pnDibTxt(p) ? '<span class="pn-dib">' + pnEsc(p.DIBUJO) + '</span>' : ''; }
+function pnDibTag(p) { return pnDibTxt(p) ? '<span class="pn-dib">Dibujo: ' + pnEsc(PN_DIB_NOM[p.DIBUJO] || p.DIBUJO) + '</span>' : ''; }
 function pnDibTxt(p) { return p.DIBUJO && p.DIBUJO !== 'A CONFIRMAR' ? p.DIBUJO : ''; }
 function pnDibujo(t) { PN_.dib = (PN_.dib === t ? '' : t); PN_.max = 40; pnPintar(); }
 function pnDibChips() {
@@ -13949,7 +13949,7 @@ function pnPintar() {
   if (PN_ANX_DIV[PN_.div]) { pnAnexo(); return; }
   var d = PN_.d, el = pnEl();
   var logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://ema-data-analytics.github.io/guerrero-panel/logo_vulcan.jpg?v=4';
-  var marcas = {}; (d.PRECIOS || []).forEach(function(p) { marcas[p.MARCA] = 1; });
+  var marcas = {}; (d.PRECIOS || []).forEach(function(p) { if (p.MARCA && p.RUBRO !== 'INSUMOS') marcas[p.MARCA] = 1; });
   var h = '<div class="pn-wrap">' +
     '<div class="pn-top"><img src="' + pnEsc(logo) + '" alt="Vulcan Tread"/><div><h2>' + (PN_.div === 'INS' ? 'Lista de precios · Insumos y accesorios' : 'Lista de precios · Cubiertas nuevas') + '</h2><div class="pn-sub">' + (d.PRECIOS || []).filter(function(p) { return (PN_.div === 'INS') === (p.RUBRO === 'INSUMOS'); }).length + (PN_.div === 'INS' ? ' productos' : ' medidas') + ' · precios de venta con IVA' + (d.LISTA_VENTA && d.LISTA_VENTA.ID_LV ? ' · <b>' + pnEsc(d.LISTA_VENTA.NOMBRE) + '</b> vigente desde ' + new Date(d.LISTA_VENTA.DESDE).toLocaleDateString('es-AR') : ' · <b style="color:#b91c1c">sin lista de venta vigente</b>') + '</div></div>' +
     '<div class="pn-acc">' + (lvEsAdmin() ? '<button class="btn btn-sm" onclick="lvAbrir()">🗂 Versiones de la lista</button>' : '') + '<button class="btn btn-sm" onclick="PN_.lpdf=null;pnListasHoja()">📄 Listas PDF</button><button class="btn btn-sm" onclick="pcAyuda(\'precios\')">❓ Ayuda</button>' +
@@ -14023,7 +14023,7 @@ function pnResultados() {
 }
 function pnTarjeta(p) {
   var its = PN_.porPn[p.ID_PN] || [];
-  var h = '<div class="pn-item"><div class="pn-l1">' + (p.FOTO ? '<img class="pn-foto" loading="lazy" src="' + pnEsc(pnFotoUrl(p)) + '" alt="" onclick="pnVerFoto(' + p.ID_PN + ')"/>' : '') + '<div style="flex:1;min-width:0"><div class="pn-med">' + pnEsc(p.MEDIDA) + '</div><div class="pn-mar"><b>' + pnEsc(p.MARCA) + '</b> ' + pnEsc(p.DISENO) + pnDibTag(p) + '</div></div>' +
+  var h = '<div class="pn-item"><div class="pn-l1">' + (p.FOTO ? '<img class="pn-foto" loading="lazy" src="' + pnEsc(pnFotoUrl(p)) + '" alt="" onclick="pnVerFoto(' + p.ID_PN + ')"/>' : '') + '<div style="flex:1;min-width:0"><div class="pn-med">' + pnEsc(p.MEDIDA) + '</div><div class="pn-mar"><b>' + pnEsc(p.MARCA) + '</b>' + (p.MARCA && p.DISENO ? ' · ' : ' ') + pnEsc(p.DISENO) + '</div>' + pnDibTag(p) + '</div>' +
     (function() { var ps = pnPrecioSel(p); return '<div class="pn-pre">' + (ps.lista ? '<div class="pn-ltag">Lista ' + pnEsc(ps.lista) + '</div>' : '') + '<div class="c">' + pnPlata(ps.con) + '</div><div class="s">IVA incluido</div>' + '</div></div>'; })();
   its.forEach(function(it) {
     var pr = PN_.proMap[it.ID_PROMO]; if (!pr) return;
@@ -19013,7 +19013,7 @@ var MG_ = { d: null, items: [], desc: 0, rubro: '', div: 'CUB', cat: '', fam: ''
 var MG_DIB_SIN = { 'LISA': 'LISA LISO', 'MIXTA': 'MIXTA MIXTO', 'TACO': 'TACO TRACCION', 'RUN FLAT': 'RUN FLAT RUNFLAT' };
 var MG_DIB_ORD = ['LISA', 'MIXTA', 'TACO', 'HT', 'AT', 'MT', 'TURISMO', 'ALTO RENDIMIENTO', 'RUN FLAT', 'AUXILIO'];
 function mgDibSin(t) { return t && t !== 'A CONFIRMAR' ? (MG_DIB_SIN[t] || t) : ''; }
-function mgDibTag(a) { if (!mgDibSin(a.DIBUJO)) return ''; return ' <span style="font-size:11px;font-weight:800;border-radius:6px;padding:0 6px;background:#14213d;color:#fff">' + pcEsc(a.DIBUJO) + '</span>'; }
+function mgDibTag(a) { if (!mgDibSin(a.DIBUJO)) return ''; return ' <span style="font-size:11px;font-weight:700;border-radius:6px;padding:0 6px;background:#14213d;color:#fff;white-space:nowrap">Dibujo: ' + pcEsc(a.DIBUJO.charAt(0) + a.DIBUJO.slice(1).toLowerCase()) + '</span>'; }
 function mgChipsDib() {
   var cnt = {}; MG_.d.ARTICULOS.forEach(function(a) { if (mgDivDe(a) !== 'CUB' || !a.DIBUJO) return; if (MG_.rubro && a.RUBRO !== MG_.rubro) return; cnt[a.DIBUJO] = (cnt[a.DIBUJO] || 0) + 1; });
   var ks = MG_DIB_ORD.filter(function(k) { return cnt[k]; }); if (MG_.dib && !cnt[MG_.dib]) MG_.dib = '';
