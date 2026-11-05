@@ -1494,7 +1494,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611051305';
+var EMA_BUILD = '202611051322';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1539,12 +1539,19 @@ function emaActualizar(v) {
   location.replace(location.pathname + '?v=' + v + '&t=' + Date.now() + location.hash);
 }
 // Siempre un botón azul a la vista (en la entrada, en el celular, en la tablet y en la PC) hasta que lo tocan
+// Con versión nueva no se puede seguir trabajando: una pantalla tapa todo (no se cierra) hasta tocar Actualizar (pedido de Anibal 05/11/2026).
 function emaBotonNueva(v) {
-  var b = $id('ema-ver-nueva');
-  if (!b) { b = document.createElement('button'); b.id = 'ema-ver-nueva'; b.type = 'button'; document.body.appendChild(b); }
-  b.onclick = function() { emaActualizar(v || String(Date.now())); };
-  b.innerHTML = '🔄 Hay una versión nueva · <u>Actualizar</u>';
+  var o = $id('ema-ver-nueva');
+  if (!o) {
+    o = document.createElement('div'); o.id = 'ema-ver-nueva'; o.setAttribute('role', 'alertdialog'); o.setAttribute('aria-modal', 'true');
+    o.innerHTML = '<div class="evn-box"><div class="evn-ic">🔄</div><b>Hay una versión nueva del sistema</b><p>Para seguir trabajando tocá Actualizar. No hace falta volver a poner la clave.</p><button type="button" id="ema-ver-nueva-b">Actualizar ahora</button></div>';
+    document.body.appendChild(o);
+  }
+  $id('ema-ver-nueva-b').onclick = function() { this.disabled = true; this.textContent = 'Actualizando…'; emaActualizar(v || String(Date.now())); };
+  try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
 }
+// Mientras está la pantalla de versión nueva, el teclado no escribe en lo que quedó atrás.
+document.addEventListener('keydown', function(e) { var o = document.getElementById('ema-ver-nueva'); if (o && !o.contains(e.target)) { e.preventDefault(); e.stopPropagation(); } }, true);
 var EMA_ULT_CHK = 0;
 function emaChequearVersion() {
   EMA_ULT_CHK = Date.now();
@@ -1657,7 +1664,7 @@ var GRID_T_ = null;
 })();
 </script>
 <style>
-#ema-ver-nueva{position:fixed;left:50%;transform:translateX(-50%);top:8px;z-index:100000;background:#2563eb;color:#fff;border:0;border-radius:999px;padding:12px 20px;font-size:16px;line-height:1.25;font-weight:800;box-shadow:0 6px 20px rgba(37,99,235,.55);cursor:pointer;white-space:normal;text-align:center;width:max-content;max-width:calc(100vw - 16px);animation:emaLatido 1.6s ease-in-out infinite;touch-action:manipulation}
+#ema-ver-nueva{position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.72);display:flex;align-items:center;justify-content:center;padding:20px}#ema-ver-nueva .evn-box{background:#fff;color:#111827;border-radius:16px;padding:24px 20px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:10px;font-size:15px}#ema-ver-nueva .evn-ic{font-size:40px}#ema-ver-nueva b{font-size:19px}#ema-ver-nueva p{margin:0;color:#4b5563}#ema-ver-nueva button{margin-top:6px;background:#2563eb;color:#fff;border:0;border-radius:12px;padding:15px;font-size:17px;font-weight:800;cursor:pointer;animation:emaLatido 1.6s ease-in-out infinite;touch-action:manipulation}
 #ema-ver-ok{position:fixed;left:50%;transform:translateX(-50%);top:8px;z-index:100000;background:#16a34a;color:#fff;border-radius:999px;padding:12px 20px;font-size:16px;font-weight:800;box-shadow:0 6px 20px rgba(22,163,74,.5);text-align:center;max-width:calc(100vw - 16px)}
 .ema-ver{font-size:11px;opacity:.75;text-align:center;margin-top:6px}
 #sb-ver{text-align:left;margin-top:2px}
