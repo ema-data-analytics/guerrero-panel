@@ -1494,7 +1494,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611051322';
+var EMA_BUILD = '202611051401';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13852,7 +13852,7 @@ function tbAutoclave(idEst) {
 .pn-hb .wa{background:#1fa855;border-color:#1fa855;color:#fff}.pn-hb .pdf{background:#14213d;border-color:#14213d;color:#fff}.pn-hb .full{grid-column:1/-1}
 .pn-hb button:disabled{opacity:.6}
 .pn-fp{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}.pn-fp button{border-radius:9px;padding:8px 10px;font-size:13.5px;font-weight:700;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer}
-.pn-fp button.on{background:#14213d;border-color:#14213d;color:#fff}.pn-fpt{font-size:11.5px;color:var(--dim);margin-top:6px}
+.pn-fp button.on{background:#14213d;border-color:#14213d;color:#fff}.pn-fpd{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:3px;margin-top:4px}.pn-fpd div:first-child{font-weight:700}.pn-fpt{font-size:11.5px;color:var(--dim);margin-top:6px}
 #page-precios-nuevos.con-bar .pn-wrap{padding-bottom:90px}
 </style>
 <script>
@@ -14157,19 +14157,53 @@ function pnUnit(p) {
   return u;
 }
 // ── Forma de pago: recargo por cheque a plazo (config pn_cheques) y por tarjeta (config tienda_cuotas, Mercado Pago). A confirmar con los dueños (04/11/2026). ──
+// Forma de pago (05/11/2026, Anibal). Por ley (Ley 25.065 art. 37 y Res. 51-E/2017) el precio de contado es el mismo en efectivo,
+// transferencia, débito y crédito en 1 pago. En cuotas se puede cobrar más, mostrando cuota, total financiado, precio de contado, TEA y CFT.
+// Cheques: uno solo a 30/60/90/120 días, o el pago repartido en 2, 3 o 4 cheques (30-60, 30-60-90, 30-60-90-120) con el recargo de cada plazo.
+function pnFpPlazos(txt) { var o = []; String(txt || '').split(',').forEach(function(x) { var m = /^\s*(\d+)\s*:\s*([0-9.,]+)\s*$/.exec(x); if (m) o.push([+m[1], parseFloat(m[2].replace(',', '.')) / 100]); }); o.sort(function(a, b) { return a[0] - b[0]; }); return o; }
 function pnFpLista() {
-  var f = (PN_.d && PN_.d.FORMA_PAGO) || {}, out = [['CONT', 'Contado', 0]];
-  var leer = function(txt, pre, nom) { String(txt || '').split(',').forEach(function(x) { var m = /^\s*(\d+)\s*:\s*([0-9.,]+)\s*$/.exec(x); if (m) out.push([pre + m[1], nom(m[1]), parseFloat(m[2].replace(',', '.')) / 100]); }); };
-  leer(f.CHEQUES, 'CH', function(n) { return 'Cheque ' + n + ' días'; });
-  leer(f.TARJETA, 'TJ', function(n) { return 'Tarjeta ' + n + ' cuotas'; });
+  var f = (PN_.d && PN_.d.FORMA_PAGO) || {}, out = [['CONT', 'Contado · transferencia · tarjeta 1 pago', 0, null]];
+  var ch = pnFpPlazos(f.CHEQUES);
+  ch.forEach(function(c) { out.push(['CH' + c[0], 'Cheque a ' + c[0] + ' días', c[1], { ch: [c] }]); });
+  for (var n = 2; n <= ch.length; n++) {
+    var pl = ch.slice(0, n), r = pl.reduce(function(a, c) { return a + c[1]; }, 0) / n;
+    out.push(['CHM' + n, n + ' cheques (' + pl.map(function(c) { return c[0]; }).join('-') + ' días)', r, { ch: pl }]);
+  }
+  pnFpPlazos(f.TARJETA).forEach(function(c) { if (c[0] >= 2) out.push(['TJ' + c[0], 'Tarjeta ' + c[0] + ' cuotas', c[1], { cuotas: c[0] }]); });
   return out;
 }
 function pnFpSel() { var l = pnFpLista(), r = l[0]; l.forEach(function(x) { if (x[0] === PN_.fp) r = x; }); return r; }
 function pnFpPct(r) { return (Math.round(r * 10000) / 100).toLocaleString('es-AR') + '%'; }
+function pnFpTot() { return pnSelItems().reduce(function(a, x) { return a + x.sub; }, 0); }
+// Detalle para el cliente según la forma de pago elegida (tot = total con el recargo ya incluido)
+function pnFpDetalle(tot) {
+  var x = pnFpSel(), e = x[3], out = [];
+  if (!e || !(tot > 0)) return out;
+  var base = tot / (1 + x[2]);   // total de contado
+  if (e.ch) {
+    var suma = 0;
+    e.ch.forEach(function(c, i) {
+      var m = i === e.ch.length - 1 ? tot - suma : Math.round(base / e.ch.length * (1 + c[1]));
+      suma += m;
+      out.push((e.ch.length > 1 ? 'Cheque ' + (i + 1) + ' a ' : 'Cheque a ') + c[0] + ' días: ' + pnPlata(m));
+    });
+    out.push('Precio de contado: ' + pnPlata(base));
+  } else if (e.cuotas) {
+    var n = e.cuotas, C = tot / n, lo = 0, hi = 1, i;
+    for (var k = 0; k < 200; k++) { var mid = (lo + hi) / 2, v = C * (1 - Math.pow(1 + mid, -n)) / mid; if (v > base) lo = mid; else hi = mid; }
+    i = (lo + hi) / 2;
+    var tea = (Math.pow(1 + i, 12) - 1) * 100, pc = function(z) { return z.toFixed(2).replace('.', ',') + '%'; };
+    out.push(n + ' cuotas de ' + pnPlata(C) + ' · Total financiado ' + pnPlata(tot));
+    out.push('Precio de contado ' + pnPlata(base) + ' · TEA ' + pc(tea) + ' · CFT ' + pc(tea));
+    out.push('Con tarjeta de crédito por Mercado Pago. CFT: costo financiero total efectivo anual; no hay otros cargos.');
+  }
+  return out;
+}
 function pnFpHtml() {
-  var sel = pnFpSel();
+  var sel = pnFpSel(), det = pnFpDetalle(pnFpTot());
   return '<div class="pn-fp">' + pnFpLista().map(function(x) { return '<button type="button" class="' + (x[0] === sel[0] ? 'on' : '') + '" onclick="pnFp(\'' + x[0] + '\')">' + pnEsc(x[1]) + (x[2] ? ' <small>+' + pnFpPct(x[2]) + '</small>' : '') + '</button>'; }).join('') + '</div>' +
-    '<div class="pn-fpt">Recargo por forma de pago: a confirmar con los dueños.</div>';
+    (det.length ? '<div class="pn-fpd">' + det.map(function(l) { return '<div>' + pnEsc(l) + '</div>'; }).join('') + '</div>' : '') +
+    '<div class="pn-fpt">Efectivo, transferencia, débito o crédito en 1 pago: mismo precio (Ley 25.065). En cuotas se informa TEA y CFT.</div>';
 }
 function pnFp(k) {
   PN_.fp = k; var x = pnFpSel();
@@ -14271,6 +14305,7 @@ function pnHojaAct() {
     var di = $id('pn-di-' + id); if (di && document.activeElement !== di) di.value = x.propio ? String(x.dp).replace('.', ',') : '';
     var dg = $id('pn-dg-' + id); if (dg) dg.style.display = x.propio ? '' : 'none';
   });
+  var fpw = $id('pn-fp'); if (fpw) fpw.innerHTML = pnFpHtml();
   var tv = $id('pn-tot-v'); if (tv) tv.innerHTML = (tot < totL - 0.5 ? '<s style="font-size:13px;color:var(--dim);font-weight:400">' + pnPlata(totL) + '</s> ' : '') + pnPlata(tot);
   var dsc = $id('pn-dsc'); if (dsc && PN_.dscDe !== 'txt') dsc.value = String(PN_.desc || 0).replace('.', ','); PN_.dscDe = '';
   var S = $id('pn-sem');
@@ -14333,7 +14368,7 @@ function pnCotTexto() {
     t += '\n• ' + x.cant + ' x ' + (x.p.EXT ? x.p.MEDIDA + ' (' + x.p.DISENO + ')' : x.p.MEDIDA + ' ' + x.p.MARCA + ' ' + x.p.DISENO + (pnDibTxt(x.p) ? ' (' + pnDibTxt(x.p) + ')' : '')) + '\n   ' + pnPlata(x.unit) + ' c/u' + (x.nota ? ' (' + x.nota + ')' : '') + ' · Subtotal ' + pnPlata(x.sub);
   });
   var fpx = pnFpSel();
-  t += '\n\n*Total: ' + pnPlata(tot) + '* (IVA incluido)' + (fpx[2] ? '\nPrecios para pago con ' + fpx[1].toLowerCase() + '.' : '') + '\nPrecios con IVA incluido. Sujetos a cambio y disponibilidad.';
+  t += '\n\n*Total: ' + pnPlata(tot) + '* (IVA incluido)' + (fpx[2] ? '\nPrecios para pago con ' + fpx[1].toLowerCase() + '.' : '') + pnFpDetalle(tot).map(function(l) { return '\n' + l; }).join('') + '\nPrecios con IVA incluido. Sujetos a cambio y disponibilidad.';
   return t;
 }
 function pnCotWhats() {
@@ -14366,6 +14401,7 @@ function pnCotHtml() {
     '<div style="display:flex;justify-content:space-between;color:#555"><span>Subtotal sin IVA</span><span>' + pnPlata(tot / 1.21) + '</span></div>' +
     '<div style="display:flex;justify-content:space-between;color:#555"><span>IVA 21%</span><span>' + pnPlata(tot - tot / 1.21) + '</span></div>' +
     '<div style="display:flex;justify-content:space-between;font-size:19px;font-weight:800;color:#14213d;margin-top:4px"><span>Total</span><span>' + pnPlata(tot) + '</span></div></div></div>' +
+    (function() { var dt = pnFpDetalle(tot); return dt.length ? '<div style="margin-top:12px;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;font-size:12px;background:#f8fafc"><div style="font-weight:700;color:#14213d;margin-bottom:3px">Forma de pago: ' + pnEsc(pnFpSel()[1]) + '</div>' + dt.map(function(l) { return '<div>' + pnEsc(l) + '</div>'; }).join('') + '</div>' : ''; })() +
     '<div style="margin-top:22px;font-size:11px;color:#666;border-top:1px solid #e5e7eb;padding-top:8px">Precios por unidad, con IVA incluido. Sujetos a cambio sin previo aviso y a disponibilidad de stock.<br/><b>Vulcan Tread Neumáticos S.R.L.</b> · Salta</div></div>';
 }
 function pnPdfCargar(fn) {
