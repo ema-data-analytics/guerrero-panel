@@ -1053,6 +1053,19 @@ function uiPedir(titulo, o) {
   });
 }
 // uiConfirmar(texto, botonSi) → promesa true / false
+// Elegir una opción de una lista corta (botones grandes, sirve en el celular). Devuelve el valor o null.
+function uiElegir(titulo, opciones) {
+  return new Promise(function(res) {
+    var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'ui-elegir-mo';
+    var cerrar = function(v) { mo.remove(); res(v); };
+    mo.innerHTML = '<div class="md"><div class="mh"><span class="mt"></span><button class="mc" data-x="1">×</button></div><div class="mb2" style="display:grid;gap:8px"></div></div>';
+    mo.querySelector('.mt').textContent = titulo;
+    var cont = mo.querySelector('.mb2');
+    opciones.forEach(function(op) { var b = document.createElement('button'); b.className = 'btn btn-s'; b.style.minHeight = '48px'; b.textContent = op[1]; b.onclick = function() { cerrar(op[0]); }; cont.appendChild(b); });
+    mo.querySelector('[data-x]').onclick = function() { cerrar(null); };
+    document.body.appendChild(mo);
+  });
+}
 function uiConfirmar(texto, si) {
   return new Promise(function(res) {
     var cerrar = function(v) { var m = document.getElementById('ui-conf-mo'); if (m) m.remove(); res(v); };
@@ -1511,7 +1524,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611062217';
+var EMA_BUILD = '202611062222';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1700,7 +1713,14 @@ var GRID_T_ = null;
     function cerrar() { abierto = false; if (lst.parentNode) lst.parentNode.removeChild(lst); }
     // data-agregar: si lo escrito no está en la lista, se ofrece «＋ Agregar» y queda elegido ahí mismo
     var nuevoTxt = '';
-    function agregar() { var v = nuevoTxt.toUpperCase(); if (!v) return; var o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); elegir(sel.options.length - 1); }
+    // Con data-agregar-fn="funcion": la función crea el registro (marca, medida, rubro…) y devuelve {value, text}; sin ella se agrega el texto tal cual
+    async function agregar() {
+      var v = nuevoTxt.toUpperCase(); if (!v) return; var fn = sel.getAttribute('data-agregar-fn'), r = { value: v, text: v };
+      cerrar();
+      if (fn && typeof window[fn] === 'function') { try { r = await window[fn](v, sel); } catch (e) { r = null; if (typeof toast === 'function') toast(e.message || 'No se pudo agregar', 'r2'); } if (!r) { pintar(); return; } }
+      var o = document.createElement('option'); o.value = String(r.value); o.textContent = r.text || v; sel.appendChild(o); elegir(sel.options.length - 1);
+      if (typeof toast === 'function') toast('Agregado: ' + (r.text || v) + ' ✓', 'g');
+    }
     function elegir(i) { if (i === -1) { agregar(); return; } sel.selectedIndex = i; cerrar(); pintar(); sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); }
     function lista(q) {
       var h = '', n = 0, grupo = null, exacto = false; idx = []; nuevoTxt = String(q || '').replace(/\s+/g, ' ').trim(); q = norm(q);
@@ -7742,6 +7762,9 @@ function abmInlineClear(page) {
   if (page === 'abm-productos') { _abmCargarSelectsMarcaMedida(null); }
 }
 
+// Alta rápida desde el desplegable: se escribe la marca o la medida que falta y se toca «＋ Agregar»
+async function abmMarcaRapida(t) { var id = await nextId('marcas', 'ID_MARCA'); await ADB.put('marcas', { ID_MARCA: id, MARCA: t, ACTIVO: 1 }); return { value: id, text: t }; }
+async function abmMedidaRapida(t) { var id = await nextId('medidas', 'ID_MEDIDA'); await ADB.put('medidas', { ID_MEDIDA: id, NOMBRE_MEDIDA: t, ACTIVO: 1 }); return { value: id, text: t }; }
 async function _abmCargarSelectsMarcaMedida(d) {
   const [marcas, medidas] = await Promise.all([ADB.getAll('marcas'), ADB.getAll('medidas')]);
   const marcaSel = $id('abm-marca-sel');
@@ -7996,9 +8019,9 @@ function buildABMForm(page, d) {
       '<div class="fg"><label class="fl">Nombre / Modelo *</label><input id="abm-nom" class="fi" value="' + v('MODELO') + '" placeholder="Ej: Alineado 4 ruedas"/></div></div>' +
       '<div id="abm-prod-sm" style="' + (esServ ? 'display:none' : '') + '">' +
       '<div class="fr"><div class="fg"><label class="fl">Marca</label>' +
-      '<select id="abm-marca-sel" class="fs"><option value="">— Sin marca —</option></select></div>' +
+      '<select id="abm-marca-sel" class="fs" data-filtro data-agregar data-agregar-fn="abmMarcaRapida"><option value="">— Sin marca —</option></select></div>' +
       '<div class="fg"><label class="fl">Medida</label>' +
-      '<select id="abm-medida-sel" class="fs"><option value="">— Sin medida —</option></select></div></div>' +
+      '<select id="abm-medida-sel" class="fs" data-filtro data-agregar data-agregar-fn="abmMedidaRapida"><option value="">— Sin medida —</option></select></div></div>' +
       '</div>' +
       '<div class="fr"><div class="fg"><label class="fl">Unidad de Medida</label>' +
       '<select id="abm-unidad" class="fs">' + umOpts + '</select></div>' +
@@ -8480,10 +8503,10 @@ async function renderABMArticulos() {
   '<div class="fr mb3">' +
   '<div class="fg"><label class="fl">Marca</label>' +
   '<input id="art-marca-buscar" class="fi" placeholder="Filtrar marca..." oninput="artFiltrarMarcas()" style="margin-bottom:4px"/>' +
-  '<select id="art-marca" class="fs">'+marcaOpts+'</select></div>' +
+  '<select id="art-marca" class="fs" data-filtro data-agregar data-agregar-fn="abmMarcaRapida">'+marcaOpts+'</select></div>' +
   '<div class="fg"><label class="fl">Medida</label>' +
   '<input id="art-medida-buscar" class="fi" placeholder="Filtrar medida (ej: 295)..." oninput="artFiltrarMedidas()" style="margin-bottom:4px"/>' +
-  '<select id="art-medida" class="fs">'+medidaOpts+'</select></div>' +
+  '<select id="art-medida" class="fs" data-filtro data-agregar data-agregar-fn="abmMedidaRapida">'+medidaOpts+'</select></div>' +
   '</div>' +
   '<div class="al al-b mb3" style="font-size:11px"><i class="fas fa-info-circle"></i> Los precios se cargan <b>SIN IVA (neto)</b>. El sistema calcula automáticamente el precio con IVA.</div>' +
   '<div class="fr mb3">' +
@@ -9171,6 +9194,15 @@ async function insCambiarRubro() {
   } catch (e) { toast('Error: ' + e.message, 'r2'); }
 }
 
+// Rubro nuevo desde el desplegable del insumo: se pregunta para qué se usa (decide si es herramental, reventa, etc.)
+async function insRubroRapido(t) {
+  var uso = await uiElegir('¿Para qué se usa el rubro ' + t + '?', [['PRODUCCION', 'Producción (va en las recetas)'], ['HERRAMENTAL', 'Herramental (se gasta por usos)'], ['CONSUMIBLE', 'Consumible'], ['HERRAMIENTA', 'Herramienta'], ['REVENTA', 'Reventa'], ['OTRO', 'Otro']]);
+  if (!uso) return null;
+  var r = await gsRun('gsINS_GuardarRubro', t, uso, 1);
+  if (!r || r.ok === false) throw new Error((r && r.error) || 'No se pudo crear el rubro');
+  INS_.d.rubros.push({ RUBRO: t, USO: uso, ACTIVO: 1 });
+  return { value: t, text: t };
+}
 // ── Alta / edición ───────────────────────────────────────────────
 function insForm(id) {
   var d = INS_.d, x = null;
@@ -9183,7 +9215,7 @@ function insForm(id) {
     '<div class="mb2">' +
     '<div class="fg"><label class="fl">Nombre *</label><input id="insf-nom" class="fi" value="' + insEsc(v('NOMBRE_INSUMO')) + '" placeholder="Ej: COJÍN BT"/></div>' +
     '<div class="fr"><div class="fg"><label class="fl">Código</label><input id="insf-cod" class="fi" value="' + insEsc(v('ID_INSUMO')) + '"' + (x ? ' readonly style="background:var(--surface2)"' : ' placeholder="Vacío = se genera solo"') + '/></div>' +
-    '<div class="fg"><label class="fl">Rubro *</label><select id="insf-rubro" class="fs">' + rub + '</select></div></div>' +
+    '<div class="fg"><label class="fl">Rubro *</label><select id="insf-rubro" class="fs" data-filtro data-agregar data-agregar-fn="insRubroRapido">' + rub + '</select></div></div>' +
     '<div class="fr"><div class="fg"><label class="fl">Unidad en que se usa *</label><select id="insf-uni" class="fs">' + uni + '</select></div>' +
     '<div class="fg"><label class="fl">Stock mínimo (aviso)</label><input id="insf-min" class="fi" type="number" min="0" step="0.01" value="' + v('STOCK_MINIMO', '') + '"/></div></div>' +
     '<div class="card" style="padding:10px;margin:6px 0;background:var(--surface2)"><div class="fl" style="margin-bottom:6px">Cómo se compra</div>' +
