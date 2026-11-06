@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "06d3a5064361"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "742a0d641324"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1511,7 +1511,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611061219';
+var EMA_BUILD = '202611061336';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -9690,7 +9690,13 @@ function pcEsc(s) { return String(s === undefined || s === null ? '' : s).replac
 function pcBadge(e) { return '<span class="badge ' + (PC_EST_COL[e] || 'b-gray') + '" style="font-size:10px">' + pcEsc(PC_EST_TXT[e] || e) + '</span>'; }
 function pcPuede(a) { return typeof tienePermiso === 'function' ? tienePermiso('PRODUCCION', a) : true; }
 function pcLineaDeTipo(tipo) { var t = (PC_.d.tipos || []).filter(function(x) { return x.TIPO === tipo; })[0]; return t ? t.LINEA : ''; }
+// Colectivos usan las recetas de camiones mientras no tengan propias (igual que el servidor, 06/11/2026)
+var PC_REC_ALT = { COLECTIVO: 'CAMION' };
 function pcRecetaDe(tipo, medida, trabajo, banda, marca) {
+  var r1 = pcRecetaDe1(tipo, medida, trabajo, banda, marca);
+  return r1 || (PC_REC_ALT[String(tipo || '').toUpperCase()] ? pcRecetaDe1(PC_REC_ALT[String(tipo || '').toUpperCase()], medida, trabajo, banda, marca) : null);
+}
+function pcRecetaDe1(tipo, medida, trabajo, banda, marca) {
   var k = function(m) { return String(m || '').toUpperCase().replace(/\s+/g, '').replace(/\./g, ',').replace(/[*X\/]/g, '-'); };
   var mk = function(m) { return String(m || '').toUpperCase().replace(/\s+/g, ' ').trim(); }, mc = mk(marca);
   // Igual que el servidor (pcReceta_): primero la variante de la marca de la cubierta (si hay), después la general; dentro de cada una: medida y después MEDIDA = TODAS
