@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "2d55ab2a9f5a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "066f0807be59"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1511,7 +1511,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611061349';
+var EMA_BUILD = '202611061618';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -15315,11 +15315,33 @@ function twAjustes() {
     '<div style="font-weight:700;margin-top:10px">Mercado Pago</div>' +
     '<label style="display:block;margin:6px 0"><input type="checkbox" id="tw-c-mp"' + (c.tienda_mp_activo === '1' ? ' checked' : '') + '> Mostrar el botón "Pagar con Mercado Pago"</label>' +
     '<div class="tw-caja">Activalo solo cuando estén cargadas las credenciales de Mercado Pago y se haya hecho una compra de prueba.</div>' +
+    '<div id="tw-mp-est" class="tw-caja">Revisando el token de Mercado Pago…</div>' +
+    '<div class="tw-fila"><label>Access Token de Mercado Pago<input id="tw-c-mptok" type="password" autocomplete="off" spellcheck="false" placeholder="Pegá acá el Access Token"></label>' +
+    '<label>Es de<select id="tw-c-mpent"><option value="PRUEBA">Prueba</option><option value="PROD">Producción</option></select></label></div>' +
+    '<div class="tw-btns" style="margin-top:4px"><button class="btn" onclick="twMpTok()">Guardar token</button></div>' +
     '<div style="font-weight:700;margin-top:10px">Cuotas con recargo (con Mercado Pago)</div>' +
     '<label style="display:block;margin:6px 0">Cuotas y recargo sobre el precio de contado<input id="tw-c-cuo" value="' + v('tienda_cuotas') + '" placeholder="3:19,6:34"></label>' +
     '<div class="tw-caja">Ejemplo <b>3:19,6:34</b> = 3 cuotas con 19% y 6 cuotas con 34%. El cliente ve el precio de contado, el valor de cada cuota, el total, la TEA y el CFT. En la cuenta de Mercado Pago hay que ofrecer esas cuotas <b>sin interés para el cliente</b> (las paga Vulcan con el recargo); si no, el cliente paga el interés dos veces. Los recargos de hoy son provisorios: se ajustan con las tasas reales de la cuenta. Dejalo vacío para no ofrecer cuotas.</div>' +
     '<div class="tw-btns"><button class="btn btn-p" onclick="twAjustesGuardar()">Guardar</button><button class="btn" onclick="$id(\'tw-ov\').remove()">Cerrar</button></div></div>';
   var ov = document.createElement('div'); ov.id = 'tw-ov'; ov.className = 'tw-ov'; ov.onclick = function() { ov.remove(); }; ov.innerHTML = h; document.body.appendChild(ov);
+  twMpEst();
+}
+// Token de Mercado Pago: se guarda en el servidor y nunca vuelve a la pantalla (solo de qué entorno es y los últimos 4 caracteres)
+function twMpEstPintar(r) {
+  var e = $id('tw-mp-est'); if (!e) return;
+  if (!r || !r.ok) { e.textContent = (r && r.error) || 'No se pudo ver el token'; return; }
+  e.innerHTML = r.cargado ? '✅ Token cargado: <b>' + (r.entorno === 'PROD' ? 'Producción' : 'Prueba') + '</b>, termina en <b>…' + twEsc(r.fin) + '</b> · ' + twEsc(r.actualizado) + (r.usuario ? ' · ' + twEsc(r.usuario) : '') : '⚠ Todavía no hay token de Mercado Pago cargado.';
+}
+async function twMpEst() { try { twMpEstPintar(await gsRun('gsMP_Estado')); } catch (e) { twMpEstPintar({ ok: false, error: e.message }); } }
+async function twMpTok() {
+  var i = $id('tw-c-mptok'), t = i.value.replace(/\s+/g, '');
+  if (!t) { toast('Pegá el Access Token', 'r2'); return; }
+  try {
+    var r = await gsRun('gsMP_TokenGuardar', { TOKEN: t, ENTORNO: $id('tw-c-mpent').value });
+    i.value = '';
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar el token', 'r2'); return; }
+    twMpEstPintar(r); toast('Token de Mercado Pago guardado', 'g');
+  } catch (e) { i.value = ''; toast(e.message, 'r2'); }
 }
 async function twAjustesGuardar() {
   var m = document.querySelector('input[name="tw-modo"]:checked');
