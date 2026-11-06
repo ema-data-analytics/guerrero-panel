@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "2c5e7790a804"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "06d3a5064361"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1511,7 +1511,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611061205';
+var EMA_BUILD = '202611061219';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16299,36 +16299,81 @@ async function mtOrdAnular(id) {
   toast('Orden anulada ✓', 'g'); MT_.ord = null; await mtRecargar();
 }
 // ── NUEVA ORDEN (dentro de la misma ventana) ──
+// Listas para elegir (nada escrito a mano)
+var MT_PIDE = ['Service completo', 'Revisión antes de viaje', 'Frenos', 'Luces y sistema eléctrico', 'Neumáticos', 'Suspensión', 'Motor', 'Pérdida de aire', 'Pérdida de aceite o líquido', 'Ruido o vibración', 'Ejes y mazas'];
+var MT_FALLAS = ['Gastado', 'Roto', 'Pierde', 'No funciona', 'Falta', 'Flojo', 'Bajo nivel', 'Sucio'];
+var MT_MARCAS = ['SCANIA', 'MERCEDES-BENZ', 'IVECO', 'VOLKSWAGEN', 'FORD', 'VOLVO', 'RENAULT', 'DAF', 'INTERNATIONAL', 'AGRALE', 'HELVETICA', 'RANDON', 'SALTO', 'BONANO', 'MONTENEGRO', 'GENERICO'];
+function mtChips(lista, sel, js) { return '<div class="mt-chips">' + lista.map(function(x, i) { var on = sel.indexOf(x) !== -1; return '<button type="button" class="mt-chip' + (on ? ' on' : '') + '" onclick="' + js + '(' + i + ')">' + (on ? '✔ ' : '') + pcEsc(x) + '</button>'; }).join('') + '</div>'; }
+(function() { var st = document.createElement('style'); st.textContent = '.mt-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}.mt-chip{min-height:42px;padding:6px 14px;border-radius:22px;border:2px solid #cbd5e1;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#334155}.mt-chip.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}.mt-cli{display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #16a34a;border-radius:12px;background:#f0fdf4;margin-bottom:10px}.mt-res{max-height:260px;overflow:auto;margin-bottom:10px}.mt-bar.pegada{box-shadow:0 -60px 0 0 var(--card,#fff)}'; document.head.appendChild(st); })();
+function mtTop() { var m = document.querySelector('main'); if (m) m.scrollTop = 0; window.scrollTo(0, 0); }
 function mtNueva() {
-  var d = MT_.d, N = MT_.N = MT_.N || { tipo: 'SERVICIO_CLIENTE', cli: '', eqs: {}, km: {} };
-  var cli = d.CLIENTES.slice().sort(function(a, b) { return a.NOMBRE < b.NOMBRE ? -1 : 1; });
+  var d = MT_.d, N = MT_.N = MT_.N || { tipo: 'SERVICIO_CLIENTE', cli: '', eqs: {}, km: {}, q: '', pide: [], sol: '', tel: '' };
+  var c = N.cli ? d.CLIENTES.filter(function(x) { return String(x.ID) === String(N.cli); })[0] : null;
   var eqs = d.EQUIPOS.filter(function(e) { return e.ESTADO !== 'BAJA' && (N.tipo !== 'SERVICIO_CLIENTE' ? !e.ID_CLIENTE : String(e.ID_CLIENTE) === String(N.cli)); });
   var tipoN = {}; d.TIPOS.forEach(function(t) { tipoN[t.ID_TIPO] = t.NOMBRE; });
-  $id('mt-body').innerHTML = '<div class="mb3"><button class="btn btn-s" onclick="MT_.nueva=false;MT_.N=null;mtPintar()">← Volver a la lista de órdenes</button></div>' +
+  var h = '<div class="mb3"><button class="btn btn-s" onclick="MT_.nueva=false;MT_.N=null;mtPintar()">← Volver a la lista de órdenes</button></div>' +
     '<div class="card mb3"><div class="card-hd"><span class="card-title">＋ Nueva orden del taller · ' + pcEsc(d.SUC.NOMBRE) + '</span></div><div class="card-body">' +
-    '<div class="fg"><label class="fl">Para quién es *</label><select class="fs" onchange="MT_.N.tipo=this.value;MT_.N.eqs={};mtNueva()">' + mtOpt([['SERVICIO_CLIENTE', 'Servicio a un cliente (empresa)'], ['PREVENTIVO', 'Máquina propia: preventivo'], ['CORRECTIVO', 'Máquina propia: correctivo'], ['ROTURA', 'Máquina propia: rotura']], N.tipo) + '</select></div>' +
-    (N.tipo === 'SERVICIO_CLIENTE' ? '<div class="fg"><label class="fl">Cliente *</label><select class="fs" onchange="MT_.N.cli=this.value;MT_.N.eqs={};mtNueva()"><option value="">— elegí el cliente —</option>' + cli.map(function(c) { return '<option value="' + c.ID + '"' + (String(c.ID) === String(N.cli) ? ' selected' : '') + '>' + pcEsc(c.NOMBRE) + (c.CUIT ? ' · ' + pcEsc(c.CUIT) : '') + '</option>'; }).join('') + '</select></div>' : '') +
-    ((N.tipo !== 'SERVICIO_CLIENTE' || N.cli) ? '<label class="fl">Equipos que entran * <span class="tdim">(tractor y su equipo de arrastre: cada uno con su check list)</span></label>' +
+    '<label class="fl">1. Para quién es</label>' + mtChips(['Cliente (empresa)', 'Máquina propia: preventivo', 'Máquina propia: correctivo', 'Máquina propia: rotura'], [{ SERVICIO_CLIENTE: 'Cliente (empresa)', PREVENTIVO: 'Máquina propia: preventivo', CORRECTIVO: 'Máquina propia: correctivo', ROTURA: 'Máquina propia: rotura' }[N.tipo]], 'mtNTipo');
+  if (N.tipo === 'SERVICIO_CLIENTE') {
+    h += '<label class="fl">2. Cliente</label>';
+    if (c) h += '<div class="mt-cli"><div style="flex:1"><b>' + pcEsc(c.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc([c.CUIT, c.LOCALIDAD].filter(Boolean).join(' · ')) + '</div></div><button class="btn btn-s btn-sm" onclick="MT_.N.cli=\'\';MT_.N.eqs={};mtNueva()">Cambiar</button></div>';
+    else {
+      var q = String(N.q || '').toUpperCase().trim(), res = q.length < 2 ? [] : d.CLIENTES.filter(function(x) { return (x.NOMBRE + ' ' + x.CUIT).toUpperCase().indexOf(q) !== -1; }).slice(0, 30);
+      h += '<input class="fi mb2" id="mt-n-q" placeholder="Buscá el cliente: escribí 2 letras del nombre o el CUIT" value="' + pcEsc(N.q || '') + '" oninput="MT_.N.q=this.value;mtNBuscar()" autocomplete="off"><div class="mt-res" id="mt-n-res">' + mtNRes(res, q) + '</div>';
+    }
+  }
+  if (N.tipo !== 'SERVICIO_CLIENTE' || c) {
+    h += '<label class="fl">' + (N.tipo === 'SERVICIO_CLIENTE' ? '3' : '2') + '. Equipos que entran <span class="tdim">(cada uno con su check list; los km vienen del último registro)</span></label>' +
       (eqs.length ? eqs.map(function(e) { var ck = !!N.eqs[e.ID_EQUIPO];
-        return '<label class="mt-pick"><input type="checkbox"' + (ck ? ' checked' : '') + ' onchange="MT_.N.eqs[' + e.ID_EQUIPO + ']=this.checked;mtNueva()"><div style="flex:1"><b>' + pcEsc(e.DOMINIO || e.CODIGO) + '</b> · ' + pcEsc(tipoN[e.ID_TIPO] || '') + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + (e.KM_HS ? ' · ' + Number(e.KM_HS).toLocaleString('es-AR') + ' km' : '') + '</div>' +
-          (ck ? '<input class="fi" style="max-width:130px" inputmode="numeric" placeholder="Km / horas hoy" value="' + pcEsc(N.km[e.ID_EQUIPO] || '') + '" onclick="event.preventDefault()" oninput="MT_.N.km[' + e.ID_EQUIPO + ']=this.value">' : '') + '</label>'; }).join('') : '<div class="al mb2">Este cliente no tiene equipos cargados. Cargalo con «＋ Equipo nuevo».</div>') +
-      '<button class="btn btn-s btn-sm mb3" onclick="mtEqForm(null,true)">＋ Equipo nuevo</button>' : '') +
-    '<div class="pc-fila3" style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:10px"><div class="fg"><label class="fl">Quién la pide</label><input class="fi" id="mt-n-sol" value="' + pcEsc(N.sol || '') + '" oninput="MT_.N.sol=this.value" placeholder="Nombre del chofer, encargado o sucursal"></div><div class="fg"><label class="fl">Teléfono</label><input class="fi" id="mt-n-tel" inputmode="tel" value="' + pcEsc(N.tel || '') + '" oninput="MT_.N.tel=this.value"></div><div class="fg"><label class="fl">Qué pide / observaciones</label><input class="fi" id="mt-n-obs" value="' + pcEsc(N.obs || '') + '" oninput="MT_.N.obs=this.value" placeholder="Ej.: service completo, ruido en el diferencial"></div></div>' +
-    '<button class="btn btn-p mt2" style="min-height:48px;width:100%" id="mt-n-ok" onclick="mtNuevaOk()">Crear la orden y empezar el check list</button></div></div>';
+        return '<label class="mt-pick"><input type="checkbox"' + (ck ? ' checked' : '') + ' onchange="MT_.N.eqs[' + e.ID_EQUIPO + ']=this.checked;if(this.checked&&!MT_.N.km[' + e.ID_EQUIPO + '])MT_.N.km[' + e.ID_EQUIPO + ']=' + (e.KM_HS || 0) + ';mtNueva()"><div style="flex:1"><b>' + pcEsc(e.DOMINIO || e.INTERNO || e.CODIGO) + '</b> · ' + pcEsc(tipoN[e.ID_TIPO] || '') + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + '</div>' +
+          (ck ? '<input class="fi" style="width:120px;flex:0 0 120px" inputmode="numeric" title="Km / horas de hoy (precargado con el último)" value="' + pcEsc(N.km[e.ID_EQUIPO] || '') + '" onclick="event.preventDefault()" oninput="MT_.N.km[' + e.ID_EQUIPO + ']=this.value">' : (e.KM_HS ? '<span class="tdim" style="font-size:12px">' + Number(e.KM_HS).toLocaleString('es-AR') + ' km</span>' : '')) + '</label>'; }).join('') : '<div class="al mb2">No tiene equipos cargados. Cargalo con «＋ Equipo nuevo».</div>') +
+      '<button class="btn btn-s btn-sm mb3" onclick="mtEqForm(null,true)">＋ Equipo nuevo</button>';
+    var sols = []; if (c && c.CONTACTO) sols.push(c.CONTACTO); sols.push('Chofer'); sols.push('Encargado de flota'); if (N.sol && sols.indexOf(N.sol) === -1) sols.push(N.sol);
+    if (!N.sol && c && c.CONTACTO) { N.sol = c.CONTACTO; }
+    if (!N.tel && c && c.TEL) { N.tel = c.TEL; }
+    var nn = N.tipo === 'SERVICIO_CLIENTE' ? 4 : 3;
+    h += '<label class="fl">' + nn + '. Quién la pide</label>' + mtChips(sols.concat(['Otro…']), [N.sol], 'mtNSol') +
+      '<div class="tdim mb2" style="font-size:13px">Teléfono: <b>' + pcEsc(N.tel || '—') + '</b> <button class="btn btn-s btn-xs" onclick="mtNTel()">Cambiar</button></div>' +
+      '<label class="fl">' + (nn + 1) + '. Qué pide <span class="tdim">(tocá todos los que correspondan)</span></label>' + mtChips(MT_PIDE.concat(['Otro…']), N.pide, 'mtNPide') +
+      '<button class="btn btn-p mt2" style="min-height:52px;width:100%;font-size:16px" id="mt-n-ok" onclick="mtNuevaOk()">Crear la orden y empezar el check list</button>';
+  }
+  h += '</div></div>';
+  $id('mt-body').innerHTML = h;
+}
+function mtNRes(res, q) {
+  if (q.length < 2) return '<div class="tdim" style="font-size:13px">Escribí al menos 2 letras.</div>';
+  if (!res.length) return '<div class="al">No hay clientes con «' + pcEsc(q) + '». Si es nuevo, dalo de alta en Clientes.</div>';
+  return res.map(function(x) { return '<div class="mt-pick" onclick="MT_.N.cli=' + x.ID + ';MT_.N.q=\'\';MT_.N.eqs={};MT_.N.sol=\'\';MT_.N.tel=\'\';mtNueva()"><div style="flex:1"><b>' + pcEsc(x.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc([x.CUIT, x.LOCALIDAD].filter(Boolean).join(' · ')) + '</div></div><span>›</span></div>'; }).join('');
+}
+function mtNBuscar() { var q = String(MT_.N.q || '').toUpperCase().trim(); var res = q.length < 2 ? [] : MT_.d.CLIENTES.filter(function(x) { return (x.NOMBRE + ' ' + x.CUIT).toUpperCase().indexOf(q) !== -1; }).slice(0, 30); $id('mt-n-res').innerHTML = mtNRes(res, q); }
+function mtNTipo(i) { MT_.N.tipo = ['SERVICIO_CLIENTE', 'PREVENTIVO', 'CORRECTIVO', 'ROTURA'][i]; MT_.N.eqs = {}; if (i) { MT_.N.cli = ''; MT_.N.sol = ''; MT_.N.tel = ''; } mtNueva(); }
+async function mtNSol(i) {
+  var c = MT_.N.cli ? MT_.d.CLIENTES.filter(function(x) { return String(x.ID) === String(MT_.N.cli); })[0] : null;
+  var sols = []; if (c && c.CONTACTO) sols.push(c.CONTACTO); sols.push('Chofer'); sols.push('Encargado de flota'); if (MT_.N.sol && sols.indexOf(MT_.N.sol) === -1) sols.push(MT_.N.sol);
+  if (i >= sols.length) { var v = await uiPedir('Nombre de quien pide el trabajo', { obligatorio: true }); if (v === null) return; MT_.N.sol = v.trim(); } else MT_.N.sol = sols[i];
+  mtNueva();
+}
+async function mtNTel() { var v = await uiPedir('Teléfono de contacto', { obligatorio: true }); if (v === null) return; MT_.N.tel = v.trim(); mtNueva(); }
+async function mtNPide(i) {
+  var P = MT_.N.pide;
+  if (i >= MT_PIDE.length) { var v = await uiPedir('¿Qué pide? (otro trabajo)', { obligatorio: true }); if (v === null) return; MT_PIDE.push(v.trim()); P.push(v.trim()); }
+  else { var x = MT_PIDE[i], k = P.indexOf(x); if (k === -1) P.push(x); else P.splice(k, 1); }
+  mtNueva();
 }
 async function mtNuevaOk() {
   var N = MT_.N, eqs = Object.keys(N.eqs).filter(function(k) { return N.eqs[k]; }).map(Number);
   if (N.tipo === 'SERVICIO_CLIENTE' && !N.cli) { toast('Elegí el cliente', 'r2'); return; }
   if (!eqs.length) { toast('Tildá al menos un equipo', 'r2'); return; }
+  if (!N.pide.length) { toast('Elegí qué pide', 'r2'); return; }
   var b = $id('mt-n-ok'); b.disabled = true;
-  try { var r = await gsRun('gsMT_OrdenCrear', { TIPO: N.tipo, ID_CLIENTE: N.cli, EQUIPOS: eqs, KM: N.km, SOLICITANTE: N.sol || '', SOLICITANTE_TEL: N.tel || '', OBSERVACIONES: N.obs || '' });
+  try { var r = await gsRun('gsMT_OrdenCrear', { TIPO: N.tipo, ID_CLIENTE: N.cli, EQUIPOS: eqs, KM: N.km, SOLICITANTE: N.sol || '', SOLICITANTE_TEL: N.tel || '', OBSERVACIONES: N.pide.join(' · ') });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
     toast('Orden ' + r.NRO + ' creada ✓', 'g'); MT_.nueva = false; MT_.N = null; await mtRecargar(); await mtAbrir(r.ID_ORDEN);
   } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
 }
 // ── VER ORDEN: equipos con su check list + presupuesto ──
 async function mtAbrir(id) {
-  try { var r = await gsRun('gsMT_Orden', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } MT_.ord = r; MT_.lin = null; mtPintar(); window.scrollTo(0, 0); }
+  try { var r = await gsRun('gsMT_Orden', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } MT_.ord = r; MT_.lin = null; mtPintar(); mtTop(); }
   catch (e) { toast(e.message, 'r2'); }
 }
 function mtOrdenRes(id) { return MT_.d.ORDENES.filter(function(x) { return x.ID_ORDEN === id; })[0]; }
@@ -16417,7 +16462,7 @@ async function mtPresEstado(est) {
   } catch (e) { toast(e.message, 'r2'); }
 }
 // ── CHECK LIST (celular o tablet): mapa con tildes. Cada toque se guarda solo. ──
-function mtAbrirCheck(idOe) { MT_.oe = idOe; MT_.pend = {}; MT_.grAb = {}; mtPintar(); window.scrollTo(0, 0); }
+function mtAbrirCheck(idOe) { MT_.oe = idOe; MT_.pend = {}; MT_.grAb = {}; mtPintar(); mtTop(); }
 function mtOeAct() { return MT_.ord.EQUIPOS.filter(function(x) { return x.ID_OE === MT_.oe; })[0]; }
 function mtCheck() {
   var x = mtOeAct(), e = mtEq(x.ID_EQUIPO), pl = mtPl(x.ID_PLANTILLA), O = MT_.ord.ORDEN;
@@ -16428,7 +16473,7 @@ function mtCheck() {
     '<div style="text-align:right"><b>' + r + '/' + t + '</b>' + (no ? ' · <b style="color:#dc2626">' + no + ' a reparar</b>' : '') + '<div class="tdim" style="font-size:11px" id="mt-gs">' + (Object.keys(MT_.pend).length ? 'Guardando…' : 'Guardado') + '</div></div></div>' +
     '<div class="mt-prog"><div style="width:' + (t ? Math.round(r / t * 100) : 0) + '%"></div></div></div>' +
     (bloq ? '<div class="al mb2">La orden está ' + pcEsc(O.ESTADO.toLowerCase()) + ': el check list se ve pero no se cambia.</div>' : '') +
-    '<div class="fg"><label class="fl">Km / horas del equipo hoy</label><input class="fi" inputmode="numeric" style="max-width:200px" value="' + (x.KM_HS || '') + '"' + (bloq ? ' disabled' : '') + ' onchange="mtChkKm(this.value)"></div>';
+    '<div class="fg"><label class="fl">Km / horas del equipo hoy <span class="tdim">(precargado con el último registro)</span></label><input class="fi" inputmode="numeric" style="max-width:200px" value="' + (x.KM_HS || e.KM_HS || '') + '"' + (bloq ? ' disabled' : '') + ' onchange="mtChkKm(this.value)"></div>';
   pl.GRUPOS.forEach(function(g) {
     var gr = 0, gno = 0; g.ITEMS.forEach(function(i) { var v = x.RESP[i.ID]; if (v) { gr++; if (v.R === mtMalaResp(g)) gno++; } });
     var comp = gr === g.ITEMS.length, ab = MT_.grAb[g.ID_GRUPO] !== undefined ? MT_.grAb[g.ID_GRUPO] : !comp;
@@ -16439,15 +16484,20 @@ function mtCheck() {
       g.ITEMS.forEach(function(i) { var v = x.RESP[i.ID] || {}, mal = v.R === mtMalaResp(g);
         h += '<div class="mt-it' + (v.R ? ' r-' + (mal ? 'NO' : v.R) : '') + '"><div class="mt-n">' + pcEsc(i.NOMBRE) + '</div><div class="mt-rb">' + ops.map(function(o) {
           return '<button' + (bloq ? ' disabled' : '') + ' class="' + (v.R === o[0] ? 's-' + (o[0] === mtMalaResp(g) ? 'NO' : (o[0] === 'NA' ? 'NA' : 'OK')) : '') + '" onclick="mtChkSet(' + i.ID + ',\'' + o[0] + '\')">' + o[1] + '</button>'; }).join('') + '</div>' +
-          (mal ? '<div class="mt-obs"><input class="fi"' + (bloq ? ' disabled' : '') + ' placeholder="¿Qué tiene? (se pasa al presupuesto)" value="' + pcEsc(v.OBS || '') + '" onchange="mtChkObs(' + i.ID + ',this.value)"></div>' : '') + '</div>'; });
+          (mal ? '<div class="mt-obs"><div class="tdim" style="font-size:12px">¿Qué tiene? (se pasa al presupuesto)</div>' + (bloq ? '<b>' + pcEsc(v.OBS || '—') + '</b>' : mtChips(MT_FALLAS.concat(['Otro…']), String(v.OBS || '').split(', '), 'mtChkFalla.bind(null,' + i.ID + ')') + (v.OBS ? '<div style="font-size:13px">Anotado: <b>' + pcEsc(v.OBS) + '</b></div>' : '')) + '</div>' : '') + '</div>'; });
     }
     h += '</div>';
   });
   h += '<div class="fg mt2"><label class="fl">Observaciones del equipo</label><input class="fi" value="' + pcEsc(x.OBSERVACIONES || '') + '"' + (bloq ? ' disabled' : '') + ' onchange="mtChkObsEq(this.value)"></div>' +
     '<button class="btn btn-p mt2" style="width:100%;min-height:52px;font-size:16px" onclick="mtCheckSalir()">' + (r >= t ? '✅ Listo: volver a la orden y armar el presupuesto' : 'Guardar y volver a la orden (faltan ' + (t - r) + ')') + '</button>';
-  var y = window.scrollY; $id('mt-body').innerHTML = h; window.scrollTo(0, y);
+  var sc = document.querySelector('main') || document.scrollingElement, y = sc.scrollTop; $id('mt-body').innerHTML = h; sc.scrollTop = y; mtBarPegada();
 }
+function mtBarPegada() { var sc = document.querySelector('main'), b = document.querySelector('.mt-bar'); if (!sc || !b) return; var pad = parseFloat(getComputedStyle(sc).paddingTop) || 0; b.classList.toggle('pegada', b.getBoundingClientRect().top <= sc.getBoundingClientRect().top + pad + 1 && sc.scrollTop > 0); if (!sc._mtb) { sc._mtb = 1; sc.addEventListener('scroll', mtBarPegada, { passive: true }); } }
 function mtChkSet(id, v) { var x = mtOeAct(), a = x.RESP[id] || {}, g = mtGrupoDeItem(mtPl(x.ID_PLANTILLA), id); x.RESP[id] = { R: v, OBS: v === mtMalaResp(g) ? (a.OBS || '') : '' }; MT_.pend[id] = 1; mtCheck(); mtChkProg(); }
+async function mtChkFalla(id, k) { var x = mtOeAct(); if (!x.RESP[id]) return; var L = String(x.RESP[id].OBS || '').split(', ').filter(Boolean);
+  if (k >= MT_FALLAS.length) { var v = await uiPedir('¿Qué tiene? (otra falla)', { obligatorio: true }); if (v === null) return; L.push(v.trim()); }
+  else { var f = MT_FALLAS[k], j = L.indexOf(f); if (j === -1) L.push(f); else L.splice(j, 1); }
+  x.RESP[id].OBS = L.join(', '); MT_.pend[id] = 1; mtCheck(); mtChkProg(); }
 function mtChkObs(id, t) { var x = mtOeAct(); if (!x.RESP[id]) return; x.RESP[id].OBS = t; MT_.pend[id] = 1; mtChkProg(); }
 function mtChkTodo(idG) { var x = mtOeAct(), pl = mtPl(x.ID_PLANTILLA); pl.GRUPOS.forEach(function(g) { if (g.ID_GRUPO !== idG) return; g.ITEMS.forEach(function(i) { if (!x.RESP[i.ID]) { x.RESP[i.ID] = { R: 'OK', OBS: '' }; MT_.pend[i.ID] = 1; } }); }); MT_.grAb[idG] = false; mtCheck(); mtChkProg(); }
 function mtChkKm(v) { MT_.km = v; MT_.pend._km = 1; mtChkProg(); }
@@ -16525,6 +16575,10 @@ function mtEqVer(id) {
     '<h4 class="mt2">Órdenes</h4>' + (os.length ? os.map(function(o) { return '<div>' + pcEsc(o.NRO) + ' · ' + fmtD(o.FECHA) + ' · ' + mtBadge(o.ESTADO) + (o.PRESUP ? ' · ' + mtPlata(o.PRESUP.TOTAL) : '') + '</div>'; }).join('') : '<div class="tdim">Sin órdenes.</div>') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
 }
+function mtEqMarcas(v) { var L = MT_MARCAS.slice(); MT_.d.EQUIPOS.forEach(function(e) { if (e.MARCA && L.indexOf(e.MARCA) === -1) L.push(e.MARCA); }); if (v && L.indexOf(v) === -1) L.push(v);
+  return '<option value="">— elegí —</option>' + L.sort().map(function(x) { return '<option' + (x === v ? ' selected' : '') + '>' + pcEsc(x) + '</option>'; }).join('') + '<option value="__OTRA">Otra…</option>'; }
+function mtEqModelos() { var L = []; MT_.d.EQUIPOS.forEach(function(e) { if (e.MODELO && L.indexOf(e.MODELO) === -1) L.push(e.MODELO); }); return L.sort().map(function(x) { return '<option value="' + pcEsc(x) + '">'; }).join(''); }
+async function mtEqMarcaOtra(sel) { if (sel.value !== '__OTRA') return; var v = await uiPedir('Marca del equipo', { obligatorio: true }); if (v === null) { sel.value = ''; return; } v = v.trim().toUpperCase(); MT_MARCAS.push(v); var o = document.createElement('option'); o.textContent = v; o.selected = true; sel.insertBefore(o, sel.lastChild); }
 function mtEqForm(id, desdeOrden) {
   var e = id ? mtEq(id) : { ID_TIPO: 1, ID_CLIENTE: desdeOrden && MT_.N ? MT_.N.cli : '' }, d = MT_.d;
   var cli = d.CLIENTES.slice().sort(function(a, b) { return a.NOMBRE < b.NOMBRE ? -1 : 1; });
@@ -16534,9 +16588,9 @@ function mtEqForm(id, desdeOrden) {
     '<div class="fg"><label class="fl">Cliente (vacío = máquina propia)</label><select class="fs" id="mt-e-cli"><option value="">— propio —</option>' + cli.map(function(c) { return '<option value="' + c.ID + '"' + (String(c.ID) === String(e.ID_CLIENTE) ? ' selected' : '') + '>' + pcEsc(c.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
     '<div class="fg"><label class="fl">Dominio (patente)</label><input class="fi" id="mt-e-dom" style="text-transform:uppercase" value="' + pcEsc(e.DOMINIO || '') + '"></div>' +
     '<div class="fg"><label class="fl">N° interno</label><input class="fi" id="mt-e-int" value="' + pcEsc(e.INTERNO || '') + '"></div>' +
-    '<div class="fg"><label class="fl">Marca</label><input class="fi" id="mt-e-mar" value="' + pcEsc(e.MARCA || '') + '"></div>' +
-    '<div class="fg"><label class="fl">Modelo</label><input class="fi" id="mt-e-mod" value="' + pcEsc(e.MODELO || '') + '"></div>' +
-    '<div class="fg"><label class="fl">Año</label><input class="fi" id="mt-e-anio" inputmode="numeric" value="' + (e.ANIO || '') + '"></div>' +
+    '<div class="fg"><label class="fl">Marca</label><select class="fs" id="mt-e-mar" onchange="mtEqMarcaOtra(this)">' + mtEqMarcas(e.MARCA) + '</select></div>' +
+    '<div class="fg"><label class="fl">Modelo</label><input class="fi" id="mt-e-mod" list="mt-e-modl" placeholder="Elegí de la lista o escribí" value="' + pcEsc(e.MODELO || '') + '"><datalist id="mt-e-modl">' + mtEqModelos() + '</datalist></div>' +
+    '<div class="fg"><label class="fl">Año</label><select class="fs" id="mt-e-anio"><option value="">—</option>' + (function() { var o = '', y = new Date().getFullYear() + 1; for (; y >= 1980; y--) o += '<option' + (Number(e.ANIO) === y ? ' selected' : '') + '>' + y + '</option>'; return o; })() + '</select></div>' +
     '<div class="fg"><label class="fl">Km / horas</label><input class="fi" id="mt-e-km" inputmode="numeric" value="' + (e.KM_HS || '') + '"></div>' +
     '<div class="fg" style="grid-column:1/-1"><label class="fl">Chasis</label><input class="fi" id="mt-e-cha" value="' + pcEsc(e.CHASIS || '') + '"></div>' +
     '<div class="fg" style="grid-column:1/-1"><label class="fl">Observaciones</label><input class="fi" id="mt-e-obs" value="' + pcEsc(e.OBSERVACIONES || '') + '"></div></div>' +
