@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "742a0d641324"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "2d55ab2a9f5a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1511,7 +1511,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611061336';
+var EMA_BUILD = '202611061349';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3856,20 +3856,26 @@ function vbDetalleHtml() {
     '<span id="vb-l-info" class="tdim" style="font-size:12px"></span>' +
     '<button class="btn btn-p" id="vb-l-ok" style="margin-left:auto" onclick="vbGrabarLinea()"><i class="fas fa-check"></i> <span id="vb-l-oktxt">Grabar renglón</span></button>' +
     '<button class="btn btn-s" id="vb-l-cancel" style="display:none" onclick="vbLLimpiar()">Cancelar cambio</button></div>' +
-    '<div class="tw mt2"><table style="font-size:13px"><thead><tr><th>Código</th><th>Detalle</th><th class="tr">Cant.</th><th class="tr">Neto u.</th><th class="tr">Desc.</th><th class="tr">IVA</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody id="vb-lineas"></tbody></table></div>' +
+    '<div class="tw mt2" data-noimp="1"><table style="font-size:13px"><thead><tr><th>Código</th><th>Detalle</th><th class="tr" title="Stock actual (solo se ve en pantalla, no sale en lo impreso)">Stock</th><th class="tr">Cant.</th><th class="tr">Neto u.</th><th class="tr">Desc.</th><th class="tr">IVA</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody id="vb-lineas"></tbody></table></div>' +
     '</div>' + vbPieHtml() + '</div>';
 }
 function vbPieHtml() { return '<div class="card-hd" style="border-top:1px solid var(--border);gap:22px;justify-content:flex-end;flex-wrap:wrap"><span>Neto <b class="mono" id="vb-neto"></b></span><span>IVA <b class="mono" id="vb-iva"></b></span><span id="vb-perc-w" style="display:none">Percepciones <b class="mono" id="vb-perc"></b></span><span style="font-size:18px">TOTAL <b class="mono" style="color:var(--success)" id="vb-total"></b></span></div>'; }
+// Stock del artículo al lado del renglón (solo en pantalla; en rojo si se pide más de lo que hay)
+function vbStockTd(a, l) {
+  if (!a || l.TIPO === 'SERVICIO' || ['SERVICIO', 'RECAPADO'].indexOf(a.TIPO) !== -1) return '<td class="tr tdim">—</td>';
+  var s = Number(a.STOCK) || 0, falta = s < Number(l.CANT);
+  return '<td class="mono tr" style="font-weight:700;color:' + (falta ? 'var(--danger,#dc2626)' : (s > 0 ? 'var(--success,#16a34a)' : '#9ca3af')) + '" title="' + (falta ? 'Hay menos de lo que se carga' : 'Stock actual') + '">' + s + '</td>';
+}
 function vbPintarLineas() {
   var b = VB_.bor, tb = $id('vb-lineas');
   if ($id('vb-neto')) { $id('vb-neto').textContent = fmt(b.NETO); $id('vb-iva').textContent = fmt(b.IVA_TOTAL); $id('vb-total').textContent = fmt(b.TOTAL); }
   if ($id('vb-perc')) { $id('vb-perc').textContent = fmt(b.PERCEPCIONES || 0); $id('vb-perc-w').style.display = b.PERCEPCIONES ? '' : 'none'; }
   if (!tb) return;
   $id('vb-nl').textContent = b.LINEAS.length + (b.LINEAS.length === 1 ? ' renglón' : ' renglones');
-  tb.innerHTML = !b.LINEAS.length ? '<tr><td colspan="8" class="tc tdim" style="padding:14px">Todavía no hay renglones: cargá el primero arriba.</td></tr>' : b.LINEAS.map(function(l) {
+  tb.innerHTML = !b.LINEAS.length ? '<tr><td colspan="9" class="tc tdim" style="padding:14px">Todavía no hay renglones: cargá el primero arriba.</td></tr>' : b.LINEAS.map(function(l) {
     var a = l.ID_ARTICULO ? vtaArt(l.ID_ARTICULO) : null;
     return '<tr' + (String(VB_.editBd) === String(l.ID_BD) ? ' style="background:var(--warn-light)"' : '') + '><td class="mono" style="font-size:11px">' + vEsc(a ? (a.CODIGO || a.ID) : (l.TIPO === 'SERVICIO' ? 'Servicio' : '')) + '</td>' +
-      '<td>' + vEsc(l.NOMBRE) + (l.SIN_CARGO ? ' <span class="badge b-green">SIN CARGO · ' + vEsc(l.MOTIVO_SC) + '</span>' : '') + '</td><td class="mono tr">' + l.CANT + '</td><td class="mono tr">' + fmt(l.NETO) + '</td>' +
+      '<td>' + vEsc(l.NOMBRE) + (l.SIN_CARGO ? ' <span class="badge b-green">SIN CARGO · ' + vEsc(l.MOTIVO_SC) + '</span>' : '') + '</td>' + vbStockTd(a, l) + '<td class="mono tr">' + l.CANT + '</td><td class="mono tr">' + fmt(l.NETO) + '</td>' +
       '<td class="mono tr">' + (l.DTO ? l.DTO + '%' : '') + '</td><td class="tr">' + l.IVA + '%</td><td class="mono tr" style="font-weight:700">' + fmt(l.SUBTOTAL) + '</td>' +
       '<td style="white-space:nowrap"><button class="btn btn-xs btn-s" onclick="vbLEditar(' + l.ID_BD + ')" title="Modificar"><i class="fas fa-pen"></i></button> <button class="btn btn-xs btn-s" onclick="vbLQuitar(' + l.ID_BD + ')" title="Quitar"><i class="fas fa-times"></i></button></td></tr>';
   }).join('');
@@ -14421,6 +14427,8 @@ function pnResultados() {
   r.innerHTML = h;
   pnBarra();
 }
+// Stock del artículo: solo en pantalla (no sale en el PDF ni en el texto que se manda)
+function pnStockTag(p) { if (p.STOCK === undefined || p.STOCK === null || p.STOCK === '') return ''; var s = Number(p.STOCK) || 0; return '<span class="pn-tag" style="font-weight:800;' + (s > 0 ? 'background:#dcfce7;color:#166534' : 'background:#fee2e2;color:#991b1b') + '">Stock: ' + s + '</span>'; }
 function pnTarjeta(p) {
   var its = PN_.porPn[p.ID_PN] || [];
   var h = '<div class="pn-item"><div class="pn-l1">' + (p.FOTO ? '<img class="pn-foto" loading="lazy" src="' + pnEsc(pnFotoUrl(p)) + '" alt="" onclick="pnVerFoto(' + p.ID_PN + ')"/>' : '') + '<div style="flex:1;min-width:0"><div class="pn-med">' + pnEsc(p.MEDIDA) + '</div><div class="pn-mar"><b>' + pnEsc(p.MARCA) + '</b>' + (p.MARCA && p.DISENO ? ' · ' : ' ') + pnEsc(p.DISENO) + '</div>' + pnDibTag(p) + '</div>' +
@@ -14436,7 +14444,7 @@ function pnTarjeta(p) {
   if (plz.length > 1) h += '<div class="pn-plz">' + plz.map(function(z) { return '<div>' + pnEsc(z[0] === 'CONTADO' ? 'Contado' : z[0] + ' días') + '<b>' + pnPlata(z[1]) + '</b></div>'; }).join('') + '</div>';
   var Rt = pnMgR(p, pnUnit(p).precio);
   if (Rt !== null) h += '<div class="pn-tope">Descuento: ' + pnTopesTxt(Rt) + '</div>';
-  h += '<div class="pn-tags"><span class="pn-tag">' + pnEsc(p.RUBRO) + '</span>' + (p.DATOS && !(p.DIBUJO && pnNorm(p.DATOS).indexOf(pnNorm(p.DIBUJO)) !== -1) ? '<span class="pn-tag">' + pnEsc(p.DATOS) + '</span>' : '') + '<span class="pn-tag">Cód. ' + pnEsc(p.CODIGO) + '</span>' + '</div>' +
+  h += '<div class="pn-tags">' + pnStockTag(p) + '<span class="pn-tag">' + pnEsc(p.RUBRO) + '</span>' + (p.DATOS && !(p.DIBUJO && pnNorm(p.DATOS).indexOf(pnNorm(p.DIBUJO)) !== -1) ? '<span class="pn-tag">' + pnEsc(p.DATOS) + '</span>' : '') + '<span class="pn-tag">Cód. ' + pnEsc(p.CODIGO) + '</span>' + '</div>' +
     '<div class="pn-acc2"><button id="pn-sb-' + p.ID_PN + '" class="' + (PN_.sel[p.ID_PN] ? 'on' : '') + '" onclick="pnSelToggle(' + p.ID_PN + ')">' + (PN_.sel[p.ID_PN] ? '✓ En la cotización' : '➕ Agregar a cotización') + '</button><button onpointerdown="pnFotoPre(' + p.ID_PN + ')" onclick="pnCompartir(' + p.ID_PN + ')">📤 Mandar esta' + (p.FOTO ? ' (con foto)' : '') + '</button></div></div>';
   return h;
 }
@@ -14677,7 +14685,7 @@ function pnHojaAct() {
     var dot = '';
     if (x.R !== null && PN_.mgD) { var g = pnMgGan(x.R, x.d), c = pnMgCol(g); dot = '<div style="font-size:11.5px;margin-top:2px"><span style="color:' + c[0] + ';font-weight:800">● ' + (g < 0 ? 'Pierde ' + pnPct(-g) : 'Gana ' + pnPct(g)) + '</span> · ' + pnTopesTxt(x.R) + '</div>'; var sn = x.base / 1.21 * x.cant; sinD += sn * (1 - x.d); cosT += x.R * sn; }
     else todos = false;
-    var inf = $id('pn-inf-' + id); if (inf) inf.innerHTML = '<b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><span>' + pnEsc(x.p.DISENO) + (pnDibTxt(x.p) ? ' · ' + pnEsc(pnDibTxt(x.p)) : '') + ' · ' + (x.d > 0 ? '<s>' + pnPlata(x.base) + '</s> ' : '') + pnPlata(x.unit) + ' c/u' + (x.d ? ' (' + (x.d < 0 ? '+' + pnPct(-x.d) + ' sobre lista' : pnPct(x.d)) + (x.propio ? ' propio' : '') + ')' : '') + (x.lista ? ' · Lista ' + pnEsc(x.lista) : '') + (x.nota ? ' · ' + pnEsc(x.nota) : '') + '</span>' + dot;
+    var inf = $id('pn-inf-' + id); if (inf) inf.innerHTML = '<b>' + pnEsc(x.p.MEDIDA) + ' ' + pnEsc(x.p.MARCA) + '</b><span>' + pnEsc(x.p.DISENO) + (pnDibTxt(x.p) ? ' · ' + pnEsc(pnDibTxt(x.p)) : '') + ' · ' + (x.d > 0 ? '<s>' + pnPlata(x.base) + '</s> ' : '') + pnPlata(x.unit) + ' c/u' + (x.d ? ' (' + (x.d < 0 ? '+' + pnPct(-x.d) + ' sobre lista' : pnPct(x.d)) + (x.propio ? ' propio' : '') + ')' : '') + (x.lista ? ' · Lista ' + pnEsc(x.lista) : '') + (x.nota ? ' · ' + pnEsc(x.nota) : '') + '</span>' + dot + (x.p.STOCK !== undefined && x.p.STOCK !== '' ? '<div>' + pnStockTag(x.p) + (Number(x.p.STOCK) < Number(x.cant || 0) ? ' <span style="color:#991b1b;font-weight:700;font-size:12px">pide más de lo que hay</span>' : '') + '</div>' : '');
     var n = $id('pn-n-' + id); if (n) n.textContent = x.cant;
     var st = $id('pn-st-' + id); if (st) st.textContent = pnPlata(x.sub);
     var di = $id('pn-di-' + id); if (di && document.activeElement !== di) di.value = x.propio ? String(x.dp).replace('.', ',') : '';
@@ -16409,13 +16417,15 @@ function mtOrdenVer() {
   h += '</div></div>';
   $id('mt-body').innerHTML = h;
 }
+function mtStockDe(idArt) { if (!idArt) return null; var a = MT_.d.ARTS.filter(function(x) { return x.I === Number(idArt); })[0]; if (a) return a.S; var s = null; MT_.d.SERVICIOS.forEach(function(sv) { sv.RECETA.forEach(function(r) { if (r.ID_ARTICULO === Number(idArt)) s = r.STOCK; }); }); return s; }
+function mtStockTd(l) { if (l.CLASE !== 'REPUESTO' && l.CLASE !== 'INSUMO') return '<td class="tr tdim">—</td>'; var s = mtStockDe(l.ID_ARTICULO); if (s === null) return '<td class="tr tdim">?</td>'; var falta = s < l.CANTIDAD; return '<td class="tr" style="font-weight:700;color:' + (falta ? '#dc2626' : '#16a34a') + '" title="Stock actual (solo en pantalla)">' + s + '</td>'; }
 function mtPresTabla(det, soloVer) {
   var tot = 0, ve = MT_.d.VE_COSTO, cos = 0;
   var cls = { SERVICIO: 'mt-b-b', REPUESTO: 'mt-b-g', INSUMO: 'mt-b-v', TERCERO: 'mt-b-o', CLIENTE: 'mt-b-x' };
   var rows = det.map(function(l) { tot += l.SUBTOTAL; cos += (l.COSTO_UNIT || 0) * l.CANTIDAD;
-    return '<tr><td><span class="mt-bd ' + (cls[l.CLASE] || 'mt-b-x') + '">' + pcEsc(l.CLASE) + '</span></td><td class="pc-wr">' + pcEsc(l.DESCRIPCION) + '</td><td class="tr">' + l.CANTIDAD + '</td><td class="tr">' + mtPlata(l.PRECIO_LISTA) + '</td><td class="tr">' + (l.DESCUENTO_PCT ? l.DESCUENTO_PCT + '%' : '') + '</td><td class="tr"><b>' + mtPlata(l.SUBTOTAL) + '</b></td>' + (ve ? '<td class="tr tdim">' + mtPlata((l.COSTO_UNIT || 0) * l.CANTIDAD) + '</td>' : '') + '</tr>'; }).join('');
-  return '<div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Clase</th><th>Descripción</th><th class="tr">Cant.</th><th class="tr">Precio s/IVA</th><th class="tr">Desc.</th><th class="tr">Subtotal</th>' + (ve ? '<th class="tr">Costo</th>' : '') + '</tr></thead><tbody>' + rows +
-    '<tr><td colspan="5" class="tr"><b>Total sin IVA</b></td><td class="tr"><b>' + mtPlata(tot) + '</b></td>' + (ve ? '<td class="tr tdim">' + mtPlata(cos) + (tot ? ' · margen ' + Math.round((tot - cos) / tot * 100) + '%' : '') + '</td>' : '') + '</tr></tbody></table></div>';
+    return '<tr><td><span class="mt-bd ' + (cls[l.CLASE] || 'mt-b-x') + '">' + pcEsc(l.CLASE) + '</span></td><td class="pc-wr">' + pcEsc(l.DESCRIPCION) + '</td>' + mtStockTd(l) + '<td class="tr">' + l.CANTIDAD + '</td><td class="tr">' + mtPlata(l.PRECIO_LISTA) + '</td><td class="tr">' + (l.DESCUENTO_PCT ? l.DESCUENTO_PCT + '%' : '') + '</td><td class="tr"><b>' + mtPlata(l.SUBTOTAL) + '</b></td>' + (ve ? '<td class="tr tdim">' + mtPlata((l.COSTO_UNIT || 0) * l.CANTIDAD) + '</td>' : '') + '</tr>'; }).join('');
+  return '<div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Clase</th><th>Descripción</th><th class="tr">Stock</th><th class="tr">Cant.</th><th class="tr">Precio s/IVA</th><th class="tr">Desc.</th><th class="tr">Subtotal</th>' + (ve ? '<th class="tr">Costo</th>' : '') + '</tr></thead><tbody>' + rows +
+    '<tr><td colspan="6" class="tr"><b>Total sin IVA</b></td><td class="tr"><b>' + mtPlata(tot) + '</b></td>' + (ve ? '<td class="tr tdim">' + mtPlata(cos) + (tot ? ' · margen ' + Math.round((tot - cos) / tot * 100) + '%' : '') + '</td>' : '') + '</tr></tbody></table></div>';
 }
 async function mtPresArmar() {
   try { var r = await gsRun('gsMT_PresupSugerido', MT_.ord.ORDEN.ID_ORDEN); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
@@ -16427,14 +16437,14 @@ function mtPresCorregir() { MT_.lin = MT_.ord.PRESUP.DET.map(function(l) { var c
 function mtPresEditorHtml() {
   var L = MT_.lin, tot = 0, d = MT_.d;
   var rows = L.map(function(l, i) { var pu = Math.round(l.PRECIO_LISTA * (1 - (l.DESCUENTO_PCT || 0) / 100) * 100) / 100, sub = Math.round(pu * l.CANTIDAD * 100) / 100; tot += sub; var te = l.CLASE === 'TERCERO';
-    return '<tr><td>' + pcEsc(l.CLASE) + '</td><td class="pc-wr">' + (te ? '<input class="fi" value="' + pcEsc(l.DESCRIPCION) + '" onchange="MT_.lin[' + i + '].DESCRIPCION=this.value">' : pcEsc(l.DESCRIPCION)) + '</td>' +
+    return '<tr><td>' + pcEsc(l.CLASE) + '</td><td class="pc-wr">' + (te ? '<input class="fi" value="' + pcEsc(l.DESCRIPCION) + '" onchange="MT_.lin[' + i + '].DESCRIPCION=this.value">' : pcEsc(l.DESCRIPCION)) + '</td>' + mtStockTd(l) +
       '<td><input class="fi tr" style="width:70px" inputmode="decimal" value="' + l.CANTIDAD + '" onchange="MT_.lin[' + i + '].CANTIDAD=parseFloat(this.value.replace(\',\',\'.\'))||0;mtOrdenVer()"></td>' +
       '<td class="tr">' + (te ? '<input class="fi tr" style="width:110px" inputmode="decimal" placeholder="Precio" value="' + (l.PRECIO_LISTA || '') + '" onchange="MT_.lin[' + i + '].PRECIO_LISTA=parseFloat(this.value.replace(\',\',\'.\'))||0;mtOrdenVer()"><input class="fi tr mt2" style="width:110px" inputmode="decimal" placeholder="Costo del tercero" value="' + (l.COSTO_UNIT || '') + '" onchange="MT_.lin[' + i + '].COSTO_UNIT=parseFloat(this.value.replace(\',\',\'.\'))||0;MT_.lin[' + i + '].PRECIO_LISTA=Math.round(MT_.lin[' + i + '].COSTO_UNIT*(1+' + (d.MARGEN_TERC || 30) + '/100)*100)/100;mtOrdenVer()">' : mtPlata(l.PRECIO_LISTA)) + '</td>' +
       '<td><input class="fi tr" style="width:64px" inputmode="decimal" value="' + (l.DESCUENTO_PCT || 0) + '" onchange="MT_.lin[' + i + '].DESCUENTO_PCT=parseFloat(this.value.replace(\',\',\'.\'))||0;mtOrdenVer()"></td>' +
       '<td class="tr"><b>' + mtPlata(sub) + '</b></td><td><button class="btn btn-d btn-xs" title="Sacar el renglón" onclick="MT_.lin.splice(' + i + ',1);mtOrdenVer()">✖</button></td></tr>'; }).join('');
   return '<div class="tdim mb2" style="font-size:12.5px">Precios sin IVA de la lista vigente (' + pcEsc(d.LISTA) + '). Se cambia la cantidad o el descuento; el precio sale de la lista. Los trabajos de tercero llevan el costo y el precio se sugiere con +' + (d.MARGEN_TERC || 30) + '%.</div>' +
-    '<div class="tw pc-abm mt-lin" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Clase</th><th>Descripción</th><th>Cant.</th><th class="tr">Precio s/IVA</th><th>Desc. %</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody>' + (rows || '<tr><td colspan="7" class="tc tdim" style="padding:14px">Sin renglones: agregá un servicio o un repuesto.</td></tr>') +
-    '<tr><td colspan="5" class="tr"><b>Total sin IVA</b></td><td class="tr"><b>' + mtPlata(tot) + '</b></td><td></td></tr></tbody></table></div>' +
+    '<div class="tw pc-abm mt-lin" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Clase</th><th>Descripción</th><th class="tr">Stock</th><th>Cant.</th><th class="tr">Precio s/IVA</th><th>Desc. %</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody>' + (rows || '<tr><td colspan="8" class="tc tdim" style="padding:14px">Sin renglones: agregá un servicio o un repuesto.</td></tr>') +
+    '<tr><td colspan="6" class="tr"><b>Total sin IVA</b></td><td class="tr"><b>' + mtPlata(tot) + '</b></td><td></td></tr></tbody></table></div>' +
     '<div class="pc-fila3 mt2" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">' +
     '<div class="fg"><label class="fl">＋ Agregar servicio (con su receta)</label><select class="fs" onchange="mtPresAddServ(this.value);this.value=\'\'"><option value="">— elegí —</option>' + d.SERVICIOS.map(function(s) { return '<option value="' + s.ID_SERVICIO + '">' + pcEsc(s.SISTEMA + ' · ' + s.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
     '<div class="fg"><label class="fl">＋ Agregar repuesto, insumo o cubierta</label><input class="fi" list="mt-arts" placeholder="Escribí código o nombre" onchange="mtPresAddArt(this.value);this.value=\'\'"><datalist id="mt-arts">' + d.ARTS.filter(function(a) { return a.T !== 'SERVICIO'; }).map(function(a) { return '<option value="' + pcEsc(a.C + ' · ' + a.N) + '">' + pcEsc(mtPlata(a.P) + ' · stock ' + a.S) + '</option>'; }).join('') + '</datalist></div>' +
