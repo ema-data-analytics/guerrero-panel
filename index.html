@@ -1511,7 +1511,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611062213';
+var EMA_BUILD = '202611062217';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1698,16 +1698,21 @@ var GRID_T_ = null;
     var idx = [], on = -1, abierto = false;
     function pintar() { var o = sel.options[sel.selectedIndex]; inp.value = o && o.value !== '' ? txt(o) : ''; inp.placeholder = (o && o.value === '' ? txt(o) + ' · ' : '') + 'escribí para buscar'; inp.disabled = sel.disabled; }
     function cerrar() { abierto = false; if (lst.parentNode) lst.parentNode.removeChild(lst); }
-    function elegir(i) { sel.selectedIndex = i; cerrar(); pintar(); sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    // data-agregar: si lo escrito no está en la lista, se ofrece «＋ Agregar» y queda elegido ahí mismo
+    var nuevoTxt = '';
+    function agregar() { var v = nuevoTxt.toUpperCase(); if (!v) return; var o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); elegir(sel.options.length - 1); }
+    function elegir(i) { if (i === -1) { agregar(); return; } sel.selectedIndex = i; cerrar(); pintar(); sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); }
     function lista(q) {
-      var h = '', n = 0, grupo = null; idx = []; q = norm(q);
+      var h = '', n = 0, grupo = null, exacto = false; idx = []; nuevoTxt = String(q || '').replace(/\s+/g, ' ').trim(); q = norm(q);
       for (var i = 0; i < sel.options.length && n < 150; i++) {
         var o = sel.options[i]; if (o.disabled && o.value !== '') continue;
         if (q && norm(txt(o) + ' ' + o.value).indexOf(q) === -1) continue;
         var g = o.parentNode && o.parentNode.tagName === 'OPTGROUP' ? o.parentNode.label : null;
         if (g && g !== grupo) { h += '<div class="selb-g">' + esc(g) + '</div>'; grupo = g; }
+        if (q && norm(txt(o)) === q) exacto = true;
         h += '<div class="selb-i' + (i === sel.selectedIndex ? ' sel' : '') + '" data-i="' + i + '">' + esc(txt(o) || '—') + '</div>'; idx.push(i); n++;
       }
+      if (sel.hasAttribute('data-agregar') && q && !exacto) { h += '<div class="selb-i selb-add" data-i="-1">＋ Agregar «' + esc(nuevoTxt.toUpperCase()) + '»</div>'; idx.push(-1); }
       lst.innerHTML = h || '<div class="selb-g">No hay coincidencias</div>'; on = -1;
     }
     function abrir(q) {
@@ -1719,6 +1724,7 @@ var GRID_T_ = null;
     }
     function marcar(k) { var it = lst.querySelectorAll('.selb-i'); if (!it.length) return; on = Math.max(0, Math.min(it.length - 1, k)); it.forEach(function(x, j) { x.classList.toggle('on', j === on); }); it[on].scrollIntoView({ block: 'nearest' }); }
     inp.addEventListener('focus', function() { inp.select(); abrir(''); });
+    inp.addEventListener('click', function() { if (!abierto) { inp.select(); abrir(''); } });
     inp.addEventListener('input', function() { abrir(inp.value); });
     inp.addEventListener('keydown', function(e) {
       if (e.key === 'ArrowDown') { e.preventDefault(); if (!abierto) abrir(''); marcar(on + 1); }
@@ -1753,6 +1759,7 @@ var GRID_T_ = null;
 .selb-w{position:relative;vertical-align:middle;max-width:100%}.selb-w .selb-in{width:100%;cursor:text}
 .selb-l{position:fixed;z-index:100000;background:var(--card,#fff);color:var(--text,#111);border:1px solid var(--border,#d0d5dd);border-radius:8px;overflow:auto;box-shadow:0 10px 28px rgba(0,0,0,.18)}
 .selb-i{padding:8px 10px;cursor:pointer;font-size:13px;line-height:1.25}.selb-i:hover,.selb-i.on{background:var(--accent-light,#e0ecff)}.selb-i.sel{font-weight:700}
+.selb-add{color:var(--accent,#1d4ed8);font-weight:700;border-top:1px solid var(--border,#e5e7eb)}
 .selb-g{padding:6px 10px 2px;font-size:11px;font-weight:700;color:var(--text-dim,#888);text-transform:uppercase}
 </style>
 
@@ -16541,10 +16548,16 @@ async function mtOrdAnular(id) {
 // Listas para elegir (nada escrito a mano)
 var MT_PIDE = ['Service completo', 'Revisión antes de viaje', 'Frenos', 'Luces y sistema eléctrico', 'Neumáticos', 'Suspensión', 'Motor', 'Pérdida de aire', 'Pérdida de aceite o líquido', 'Ruido o vibración', 'Ejes y mazas'];
 var MT_FALLAS = ['Gastado', 'Roto', 'Pierde', 'No funciona', 'Falta', 'Flojo', 'Bajo nivel', 'Sucio'];
-// Marcas sugeridas (se puede escribir cualquier otra): camiones y acoplados, autos y camionetas, autoelevadores
-var MT_MARCAS = ['SCANIA', 'MERCEDES-BENZ', 'IVECO', 'VOLKSWAGEN', 'FORD', 'VOLVO', 'RENAULT', 'DAF', 'INTERNATIONAL', 'AGRALE', 'HELVETICA', 'RANDON', 'SALTO', 'BONANO', 'MONTENEGRO', 'GENERICO',
-  'TOYOTA', 'CHEVROLET', 'FIAT', 'PEUGEOT', 'CITROEN', 'NISSAN', 'HYUNDAI', 'JEEP', 'RAM', 'MITSUBISHI',
-  'HYSTER', 'YALE', 'CLARK', 'HELI', 'HANGCHA', 'KOMATSU', 'LINDE', 'JUNGHEINRICH', 'CATERPILLAR', 'DOOSAN', 'STILL'];
+// Marcas por tipo de equipo (1 tractor, 2 arrastre, 3 planta, 4 autoelevador, 5 camioneta, 6 auto). Se suman las ya cargadas en equipos de ese tipo.
+// Si no está, se escribe en el buscador y se toca «＋ Agregar».
+var MT_MARCAS_TIPO = {
+  1: ['SCANIA', 'MERCEDES-BENZ', 'IVECO', 'VOLKSWAGEN', 'FORD', 'VOLVO', 'RENAULT', 'DAF', 'INTERNATIONAL', 'AGRALE'],
+  2: ['HELVETICA', 'RANDON', 'SALTO', 'BONANO', 'MONTENEGRO', 'GENERICO'],
+  3: [],
+  4: ['HYSTER', 'YALE', 'CLARK', 'HELI', 'HANGCHA', 'KOMATSU', 'TOYOTA', 'NISSAN', 'MITSUBISHI', 'LINDE', 'JUNGHEINRICH', 'CATERPILLAR', 'DOOSAN', 'STILL'],
+  5: ['TOYOTA', 'FORD', 'CHEVROLET', 'VOLKSWAGEN', 'NISSAN', 'RAM', 'MITSUBISHI', 'RENAULT', 'FIAT', 'PEUGEOT'],
+  6: ['TOYOTA', 'FORD', 'CHEVROLET', 'VOLKSWAGEN', 'FIAT', 'PEUGEOT', 'CITROEN', 'RENAULT', 'NISSAN', 'HONDA', 'HYUNDAI', 'JEEP']
+};
 function mtChips(lista, sel, js) { return '<div class="mt-chips">' + lista.map(function(x, i) { var on = sel.indexOf(x) !== -1; return '<button type="button" class="mt-chip' + (on ? ' on' : '') + '" onclick="' + js + '(' + i + ')">' + (on ? '✔ ' : '') + pcEsc(x) + '</button>'; }).join('') + '</div>'; }
 (function() { var st = document.createElement('style'); st.textContent = '.mt-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}.mt-chip{min-height:42px;padding:6px 14px;border-radius:22px;border:2px solid #cbd5e1;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#334155}.mt-chip.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}.mt-cli{display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #16a34a;border-radius:12px;background:#f0fdf4;margin-bottom:10px}.mt-res{max-height:260px;overflow:auto;margin-bottom:10px}.mt-bar.pegada{box-shadow:0 -60px 0 0 var(--card,#fff)}'; document.head.appendChild(st); })();
 function mtTop() { var m = document.querySelector('main'); if (m) m.scrollTop = 0; window.scrollTo(0, 0); }
@@ -16826,20 +16839,21 @@ function mtEqVer(id) {
     '<h4 class="mt2">Órdenes</h4>' + (os.length ? os.map(function(o) { return '<div>' + pcEsc(o.NRO) + ' · ' + fmtD(o.FECHA) + ' · ' + mtBadge(o.ESTADO) + (o.PRESUP ? ' · ' + mtPlata(o.PRESUP.TOTAL) : '') + '</div>'; }).join('') : '<div class="tdim">Sin órdenes.</div>') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
 }
-function mtEqMarcas(v) { var L = MT_MARCAS.slice(); MT_.d.EQUIPOS.forEach(function(e) { if (e.MARCA && L.indexOf(e.MARCA) === -1) L.push(e.MARCA); }); if (v && L.indexOf(v) === -1) L.push(v);
-  return L.sort().map(function(x) { return '<option value="' + pcEsc(x) + '">'; }).join(''); }
+function mtEqMarcas(v, tipo) { tipo = Number(tipo) || 0; var L = (MT_MARCAS_TIPO[tipo] || []).slice(); MT_.d.EQUIPOS.forEach(function(e) { if (Number(e.ID_TIPO) === tipo && e.MARCA && L.indexOf(e.MARCA) === -1) L.push(e.MARCA); }); if (v && L.indexOf(v) === -1) L.push(v);
+  return '<option value="">— elegí o escribí —</option>' + L.sort().map(function(x) { return '<option value="' + pcEsc(x) + '"' + (x === v ? ' selected' : '') + '>' + pcEsc(x) + '</option>'; }).join(''); }
+// Al cambiar el tipo, la marca muestra solo las de ese tipo (si la elegida no corresponde, se limpia)
+function mtEqTipoCambio() { var s = $id('mt-e-mar'); if (!s) return; var v = s.value, t = $v('mt-e-tipo'), L = (MT_MARCAS_TIPO[Number(t)] || []); s.innerHTML = mtEqMarcas(L.indexOf(v) !== -1 || MT_.d.EQUIPOS.some(function(e) { return String(e.ID_TIPO) === String(t) && e.MARCA === v; }) ? v : '', t); }
 function mtEqModelos() { var L = []; MT_.d.EQUIPOS.forEach(function(e) { if (e.MODELO && L.indexOf(e.MODELO) === -1) L.push(e.MODELO); }); return L.sort().map(function(x) { return '<option value="' + pcEsc(x) + '">'; }).join(''); }
-async function mtEqMarcaOtra(sel) { if (sel.value !== '__OTRA') return; var v = await uiPedir('Marca del equipo', { obligatorio: true }); if (v === null) { sel.value = ''; return; } v = v.trim().toUpperCase(); MT_MARCAS.push(v); var o = document.createElement('option'); o.textContent = v; o.selected = true; sel.insertBefore(o, sel.lastChild); }
 function mtEqForm(id, desdeOrden) {
   var e = id ? mtEq(id) : { ID_TIPO: 1, ID_CLIENTE: desdeOrden && MT_.N ? MT_.N.cli : '' }, d = MT_.d;
   var cli = d.CLIENTES.slice().sort(function(a, b) { return a.NOMBRE < b.NOMBRE ? -1 : 1; });
   showModal('<div class="mh"><span class="mt">' + (id ? '✏ Modificar ' + pcEsc(e.CODIGO) : '＋ Nuevo equipo') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     '<div class="pc-fila3" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-    '<div class="fg"><label class="fl">Tipo *</label><select class="fs" id="mt-e-tipo">' + mtOpt(d.TIPOS.map(function(t) { return [t.ID_TIPO, t.NOMBRE]; }), e.ID_TIPO) + '</select></div>' +
+    '<div class="fg"><label class="fl">Tipo *</label><select class="fs" id="mt-e-tipo" onchange="mtEqTipoCambio()">' + mtOpt(d.TIPOS.map(function(t) { return [t.ID_TIPO, t.NOMBRE]; }), e.ID_TIPO) + '</select></div>' +
     '<div class="fg"><label class="fl">Cliente (vacío = máquina propia)</label><select class="fs" id="mt-e-cli"><option value="">— propio —</option>' + cli.map(function(c) { return '<option value="' + c.ID + '"' + (String(c.ID) === String(e.ID_CLIENTE) ? ' selected' : '') + '>' + pcEsc(c.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
     '<div class="fg"><label class="fl">Dominio (patente) <span class="tdim">· sin patente: N° interno o serie</span></label><input class="fi" id="mt-e-dom" style="text-transform:uppercase" value="' + pcEsc(e.DOMINIO || '') + '"></div>' +
     '<div class="fg"><label class="fl">N° interno</label><input class="fi" id="mt-e-int" value="' + pcEsc(e.INTERNO || '') + '"></div>' +
-    '<div class="fg"><label class="fl">Marca</label><input class="fi" id="mt-e-mar" list="mt-e-marl" style="text-transform:uppercase" placeholder="Elegí de la lista o escribí" value="' + pcEsc(e.MARCA || '') + '"><datalist id="mt-e-marl">' + mtEqMarcas(e.MARCA) + '</datalist></div>' +
+    '<div class="fg"><label class="fl">Marca <span class="tdim">· si no está, escribila y tocá ＋ Agregar</span></label><select class="fs" id="mt-e-mar" data-filtro data-agregar>' + mtEqMarcas(e.MARCA, e.ID_TIPO) + '</select></div>' +
     '<div class="fg"><label class="fl">Modelo</label><input class="fi" id="mt-e-mod" list="mt-e-modl" placeholder="Elegí de la lista o escribí" value="' + pcEsc(e.MODELO || '') + '"><datalist id="mt-e-modl">' + mtEqModelos() + '</datalist></div>' +
     '<div class="fg"><label class="fl">Año</label><select class="fs" id="mt-e-anio"><option value="">—</option>' + (function() { var o = '', y = new Date().getFullYear() + 1; for (; y >= 1980; y--) o += '<option' + (Number(e.ANIO) === y ? ' selected' : '') + '>' + y + '</option>'; return o; })() + '</select></div>' +
     '<div class="fg"><label class="fl">Km / horas</label><input class="fi" id="mt-e-km" inputmode="numeric" value="' + (e.KM_HS || '') + '"></div>' +
