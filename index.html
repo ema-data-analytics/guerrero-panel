@@ -1511,7 +1511,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611061749';
+var EMA_BUILD = '202611061753';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1679,6 +1679,70 @@ var GRID_T_ = null;
   var arrancar = function() { ob.observe(document.body, { childList: true, subtree: true }); gridPonerBotones_(); };
   if (document.body) arrancar(); else document.addEventListener('DOMContentLoaded', arrancar);
 })();
+
+// ── Desplegables largos con buscador (06/11/2026): todo <select> con 12 opciones o más se ve como un campo donde se escribe y aparecen solo las que coinciden.
+// El <select> original queda (oculto) con su id y su valor: el resto del sistema lo sigue leyendo igual. Para excluir uno: data-nofiltro.
+(function() {
+  var MIN = 12, ACT = [];
+  function norm(s) { return String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function txt(o) { return (o.textContent || '').trim(); }
+  function mejorar(sel) {
+    if (!sel || sel.__selb || sel.multiple || sel.hasAttribute('data-nofiltro') || sel.options.length < MIN || !sel.parentNode) return;
+    sel.__selb = true;
+    var cs = getComputedStyle(sel), w = document.createElement('div'), inp = document.createElement('input'), lst = document.createElement('div'), ancho = sel.style.width || (sel.offsetWidth ? sel.offsetWidth + 'px' : '');
+    w.className = 'selb-w'; w.style.display = cs.display === 'block' ? 'block' : 'inline-block'; if (ancho && cs.display !== 'block') w.style.width = ancho; else if (sel.style.width) w.style.width = sel.style.width;
+    inp.type = 'text'; inp.className = ((sel.className || '').replace(/\bfs\b/, 'fi') || 'fi') + ' selb-in'; inp.autocomplete = 'off'; inp.spellcheck = false; inp.setAttribute('aria-label', 'Buscar');
+    lst.className = 'selb-l';
+    sel.parentNode.insertBefore(w, sel); w.appendChild(inp); w.appendChild(sel); sel.style.display = 'none';
+    var idx = [], on = -1, abierto = false;
+    function pintar() { var o = sel.options[sel.selectedIndex]; inp.value = o && o.value !== '' ? txt(o) : ''; inp.placeholder = (o && o.value === '' ? txt(o) + ' · ' : '') + 'escribí para buscar'; inp.disabled = sel.disabled; }
+    function cerrar() { abierto = false; if (lst.parentNode) lst.parentNode.removeChild(lst); }
+    function elegir(i) { sel.selectedIndex = i; cerrar(); pintar(); sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    function lista(q) {
+      var h = '', n = 0, grupo = null; idx = []; q = norm(q);
+      for (var i = 0; i < sel.options.length && n < 150; i++) {
+        var o = sel.options[i]; if (o.disabled && o.value !== '') continue;
+        if (q && norm(txt(o) + ' ' + o.value).indexOf(q) === -1) continue;
+        var g = o.parentNode && o.parentNode.tagName === 'OPTGROUP' ? o.parentNode.label : null;
+        if (g && g !== grupo) { h += '<div class="selb-g">' + esc(g) + '</div>'; grupo = g; }
+        h += '<div class="selb-i' + (i === sel.selectedIndex ? ' sel' : '') + '" data-i="' + i + '">' + esc(txt(o) || '—') + '</div>'; idx.push(i); n++;
+      }
+      lst.innerHTML = h || '<div class="selb-g">No hay coincidencias</div>'; on = -1;
+    }
+    function abrir(q) {
+      lista(q); var r = inp.getBoundingClientRect(), abajo = window.innerHeight - r.bottom;
+      lst.style.left = r.left + 'px'; lst.style.width = Math.max(r.width, 220) + 'px';
+      if (abajo < 220 && r.top > abajo) { lst.style.top = ''; lst.style.bottom = (window.innerHeight - r.top + 2) + 'px'; } else { lst.style.bottom = ''; lst.style.top = (r.bottom + 2) + 'px'; }
+      lst.style.maxHeight = Math.max(160, Math.min(320, (abajo < 220 && r.top > abajo ? r.top : abajo) - 12)) + 'px';
+      if (!lst.parentNode) document.body.appendChild(lst); abierto = true;
+    }
+    function marcar(k) { var it = lst.querySelectorAll('.selb-i'); if (!it.length) return; on = Math.max(0, Math.min(it.length - 1, k)); it.forEach(function(x, j) { x.classList.toggle('on', j === on); }); it[on].scrollIntoView({ block: 'nearest' }); }
+    inp.addEventListener('focus', function() { inp.select(); abrir(''); });
+    inp.addEventListener('input', function() { abrir(inp.value); });
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); if (!abierto) abrir(''); marcar(on + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); marcar(on - 1); }
+      else if (e.key === 'Enter') { if (abierto && idx.length) { e.preventDefault(); elegir(idx[on >= 0 ? on : 0]); } }
+      else if (e.key === 'Escape') { cerrar(); pintar(); inp.blur(); }
+    });
+    inp.addEventListener('blur', function() { setTimeout(function() { cerrar(); pintar(); }, 180); });
+    lst.addEventListener('mousedown', function(e) { e.preventDefault(); var it = e.target.closest('.selb-i'); if (it) elegir(+it.dataset.i); });
+    sel.__selbPintar = pintar; ACT.push({ s: sel, i: inp });
+    pintar();
+  }
+  function revisar(raiz) { if (!raiz || !raiz.querySelectorAll) return; if (raiz.tagName === 'SELECT') mejorar(raiz); raiz.querySelectorAll('select').forEach(mejorar); }
+  function iniciar() {
+    revisar(document.body);
+    new MutationObserver(function(ms) { ms.forEach(function(m) { if (m.target && m.target.tagName === 'SELECT') { if (m.target.__selb) m.target.__selbPintar(); else mejorar(m.target); } m.addedNodes.forEach(function(n) { if (n.nodeType === 1) revisar(n); }); }); })
+      .observe(document.body, { childList: true, subtree: true });
+    // Si el sistema cambia el valor por código, el campo se actualiza solo
+    setInterval(function() { ACT = ACT.filter(function(a) { return a.s.isConnected; }); ACT.forEach(function(a) { if (document.activeElement !== a.i) a.s.__selbPintar(); }); }, 700);
+    window.addEventListener('scroll', function(e) { if (!(e.target && e.target.classList && e.target.classList.contains('selb-l'))) document.querySelectorAll('.selb-l').forEach(function(l) { l.remove(); }); }, true);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
+})();
+
 </script>
 <style>
 #ema-ver-nueva{position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.72);display:flex;align-items:center;justify-content:center;padding:20px}#ema-ver-nueva .evn-box{background:#fff;color:#111827;border-radius:16px;padding:24px 20px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:10px;font-size:15px}#ema-ver-nueva .evn-ic{font-size:40px}#ema-ver-nueva b{font-size:19px}#ema-ver-nueva p{margin:0;color:#4b5563}#ema-ver-nueva button{margin-top:6px;background:#2563eb;color:#fff;border:0;border-radius:12px;padding:15px;font-size:17px;font-weight:800;cursor:pointer;animation:emaLatido 1.6s ease-in-out infinite;touch-action:manipulation}
@@ -1686,6 +1750,10 @@ var GRID_T_ = null;
 .ema-ver{font-size:11px;opacity:.75;text-align:center;margin-top:6px}
 #sb-ver{text-align:left;margin-top:2px}
 @keyframes emaLatido{0%,100%{box-shadow:0 6px 20px rgba(37,99,235,.55)}50%{box-shadow:0 6px 28px rgba(37,99,235,.95)}}
+.selb-w{position:relative;vertical-align:middle;max-width:100%}.selb-w .selb-in{width:100%;cursor:text}
+.selb-l{position:fixed;z-index:100000;background:var(--card,#fff);color:var(--text,#111);border:1px solid var(--border,#d0d5dd);border-radius:8px;overflow:auto;box-shadow:0 10px 28px rgba(0,0,0,.18)}
+.selb-i{padding:8px 10px;cursor:pointer;font-size:13px;line-height:1.25}.selb-i:hover,.selb-i.on{background:var(--accent-light,#e0ecff)}.selb-i.sel{font-weight:700}
+.selb-g{padding:6px 10px 2px;font-size:11px;font-weight:700;color:var(--text-dim,#888);text-transform:uppercase}
 </style>
 
 <script>
