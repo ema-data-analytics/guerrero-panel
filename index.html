@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7f3401217029"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e0bd683802f4"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1511,7 +1511,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611061650';
+var EMA_BUILD = '202611061710';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12330,6 +12330,7 @@ async function puCargar() {
   if (PU_.mis.length && (puTodas() || !PU_.est || PU_.mis.indexOf(String(PU_.est)) === -1)) { PU_.est = PU_.mis[0]; return puCargar(); }
   if (PU_.est && !puTodas() && !PU_.d.estacion) PU_.est = '';
   PU_.eq = await pEq;
+  await puPedContar();
   if (PU_.est) await puPesajeCargar(); else PU_.pes = null;
   puPintar();
   // Viene del tablero de la línea: abre esa cubierta (su mapa de estaciones) para seguir desde ahí
@@ -12348,9 +12349,9 @@ function puPie(show) { var p = $id('pu-pie'); if (p) p.style.display = show ? ''
 function puPintar() {
   var el = puEl();
   var top = puTodas() ? '<div class="pu-top"><div class="est"><small>Operador de turno</small>🚶 Recorro todas las estaciones</div>' +
-    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="puOperario()"><i class="fas fa-user"></i> ' + puEsc(PU_.oper || 'Operario: tocá para poner tu nombre') + '</button><button onclick="puCambiarEst()">Cambiar estación</button><button onclick="pcAyuda(\'puesto\')">❓ Ayuda</button>' + (document.body.classList.contains('modo-puesto') ? '<button onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Salir</button>' : '') + '</div></div>' :
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">' + (PU_.pedPuede ? '<button onclick="puPedidosEnc()">📥 Pedidos de estaciones' + (PU_.pedN ? ' (' + PU_.pedN + ')' : '') + '</button>' : '') + '<button onclick="puOperario()"><i class="fas fa-user"></i> ' + puEsc(PU_.oper || 'Operario: tocá para poner tu nombre') + '</button><button onclick="puCambiarEst()">Cambiar estación</button><button onclick="pcAyuda(\'puesto\')">❓ Ayuda</button>' + (document.body.classList.contains('modo-puesto') ? '<button onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Salir</button>' : '') + '</div></div>' :
     PU_.est ? '<div class="pu-top"><div class="est"><small>Estación de esta tablet</small>' + puEsc(puNomEst(PU_.est)) + '</div>' +
-    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="puVerHerr()"><i class="fas fa-tools"></i> ' + (PU_.eq && !PU_.eq.controlDiario ? 'Se rompió / Me falta' : 'Herramientas') + '</button><button onclick="puVerRetiro()"><i class="fas fa-hand-paper"></i> Retirar consumibles</button><button onclick="puOperario()"><i class="fas fa-user"></i> ' + puEsc(PU_.oper || 'Operario: tocá para poner tu nombre') + '</button>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="puVerHerr()"><i class="fas fa-tools"></i> ' + (PU_.eq && !PU_.eq.controlDiario ? 'Se rompió / Me falta' : 'Herramientas') + '</button><button onclick="puPedir()">📦 Pedir insumo' + (PU_.pedMios ? ' (' + PU_.pedMios + ' pendiente' + (PU_.pedMios === 1 ? '' : 's') + ')' : '') + '</button>' + (PU_.pedPuede ? '<button onclick="puPedidosEnc()">📥 Pedidos de estaciones' + (PU_.pedN ? ' (' + PU_.pedN + ')' : '') + '</button>' : '') + '<button onclick="puVerRetiro()"><i class="fas fa-hand-paper"></i> Retirar consumibles</button><button onclick="puOperario()"><i class="fas fa-user"></i> ' + puEsc(PU_.oper || 'Operario: tocá para poner tu nombre') + '</button>' +
     ((PU_.mis || []).length === 1 ? '' : '<button onclick="puCambiarEst()">Cambiar estación</button>') + '<button onclick="pcAyuda(\'puesto\')">❓ Ayuda</button>' + (document.body.classList.contains('modo-puesto') ? '<button onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Salir</button>' : '') + '</div></div>' : '';
   el.innerHTML = '<div class="pu-wrap">' + top + '<div id="pu-body"></div></div>' +
     '<div class="pu-pie" id="pu-pie" style="display:none"><div class="in"><div class="pu-falta" id="pu-falta"></div><button class="pu-btn pu-ok" id="pu-ok" onclick="puConfirmar()">✓ Confirmar paso</button></div></div>';
@@ -13429,6 +13430,81 @@ function puPesFin(k) {
       if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
       toast(r.PASA_A ? 'Día cerrado ✓ · lo que quedó en la estación ya es el inicio del ' + puFechaTxt(r.PASA_A) + ': no hay que volver a pesarlo' : 'Día cerrado ✓', 'g'); puPesaje(); } catch (e) { toast(e.message, 'r2'); }
   });
+}
+// ── Pedido de insumos desde la estación: la estación pide; el encargado o el depósito (usuario sin estación asignada) entrega o rechaza ──
+async function puPedContar() {
+  try { var r = await gsRun('gsPC_PedidosEst', PU_.est && !puTodas() ? PU_.est : ''); PU_.pedPuede = !!r.PUEDE_ENTREGAR; PU_.pedMios = PU_.est && !puTodas() ? r.PENDIENTES : 0;
+    if (r.PUEDE_ENTREGAR) { var t = PU_.est && !puTodas() ? await gsRun('gsPC_PedidosEst', '') : r; PU_.pedN = t.PENDIENTES; } else PU_.pedN = 0;
+  } catch (e) { PU_.pedPuede = false; PU_.pedMios = 0; PU_.pedN = 0; }
+}
+function puPedEstado(p) {
+  if (p.ESTADO === 'PENDIENTE') return '<span class="pu-tag aca">⏳ Pendiente</span>';
+  if (p.ESTADO === 'ENTREGADO') return '<span class="pu-tag ok">✓ Entregado ' + puF(p.CANT_ENTREGADA) + ' ' + puEsc(p.UNIDAD) + '</span>';
+  return '<span class="pu-tag" style="background:var(--danger-light,#fde8e8);color:var(--danger)">✕ No se entrega' + (p.OBS_ENT ? ': ' + puEsc(p.OBS_ENT) : '') + '</span>';
+}
+function puPedHora(ms) { if (!ms) return ''; var d = new Date(ms); return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes(); }
+async function puPedir() {
+  var r; try { r = await gsRun('gsPC_PedidosEst', PU_.est); } catch (e) { return toast(e.message, 'r2'); }
+  if (!r || !r.ok) return toast((r && r.error) || 'No se pudo', 'r2');
+  PU_.ped = { r: r, ins: '', mot: '', cant: '' };
+  puPedirPintar();
+}
+function puPedirPintar() {
+  var P = PU_.ped, r = P.r, sel = r.INSUMOS.filter(function(i) { return i.ID_INSUMO === P.ins; })[0];
+  var h = '<div class="mh"><span class="mt">📦 Pedir insumo · ' + puEsc(puNomEst(r.EST)) + '</span><button class="mc" onclick="closeModal();puCargar()">×</button></div><div class="mb2 pu-vent">' +
+    '<div style="font-weight:700;font-size:16px">¿Qué necesitás?</div>' +
+    (r.INSUMOS.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px">' + r.INSUMOS.map(function(i) { return '<button class="pu-chip' + (P.ins === i.ID_INSUMO ? ' sel' : '') + '" data-i="' + puEsc(i.ID_INSUMO) + '" onclick="PU_.ped.ins=this.dataset.i;puPedirPintar()">' + puEsc(i.NOMBRE) + (i.PESA ? ' ⚖' : '') + '</button>'; }).join('') + '</div>' : '<div class="tdim">Esta estación no tiene insumos en las recetas.</div>') +
+    (sel ? '<div style="font-weight:700;font-size:16px;margin-top:6px">¿Cuánto?</div><div class="pu-qty"><input inputmode="decimal" id="pu-ped-cant" placeholder="Cantidad" value="' + puEsc(P.cant || '') + '" oninput="PU_.ped.cant=this.value"><span>' + puEsc(sel.UNIDAD) + '</span></div>' +
+      (sel.PESA ? '<div class="tdim" style="font-size:13px">⚖ Se pesa o se mide: lo que te entreguen se suma a tu pesaje de hoy.</div>' : '') : '') +
+    '<div style="font-weight:700;font-size:16px;margin-top:6px">¿Por qué?</div><div style="display:flex;flex-wrap:wrap;gap:6px">' + r.MOTIVOS.map(function(m) { return '<button class="pu-chip' + (P.mot === m ? ' sel' : '') + '" data-m="' + puEsc(m) + '" onclick="PU_.ped.mot=this.dataset.m;puPedirPintar()">' + puEsc(m) + '</button>'; }).join('') + '</div>' +
+    '<button class="pu-btn pu-ok" style="width:100%;margin-top:8px" onclick="puPedirOk()">📦 Pedir</button>' +
+    (r.PEDIDOS.length ? '<div style="font-weight:700;font-size:16px;margin-top:12px">Mis pedidos de hoy</div>' + r.PEDIDOS.map(function(p) { return '<div class="pu-reg" style="gap:4px"><div style="font-size:16px"><b>' + puEsc(p.NOMBRE) + '</b> · ' + puF(p.CANTIDAD) + ' ' + puEsc(p.UNIDAD) + ' · ' + puPedHora(p.HORA) + '</div><div>' + puPedEstado(p) + '</div></div>'; }).join('') : '') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal();puCargar()">Cerrar</button></div>';
+  closeModal(); showModal(h, 'md-lg');
+}
+async function puPedirOk() {
+  var P = PU_.ped, c = $id('pu-ped-cant') ? $id('pu-ped-cant').value : '';
+  if (!P.ins) return toast('Elegí qué necesitás', 'r2');
+  if (!(puN(c) > 0)) return toast('Poné cuánto necesitás', 'r2');
+  if (!P.mot) return toast('Decí por qué lo pedís', 'r2');
+  var mot = P.mot;
+  if (mot === 'Otro') { mot = await uiPedir('¿Por qué lo pedís?', { obligatorio: true }); if (mot === null) return; }
+  try {
+    var r = await gsRun('gsPC_PedidoEstCrear', { ID_ESTACION: P.r.EST, ID_INSUMO: P.ins, CANTIDAD: puN(c), MOTIVO: mot, OPERARIO: PU_.operF || PU_.oper || '' });
+    if (!r || !r.ok) return toast((r && r.error) || 'No se pudo', 'r2');
+    toast('Pedido enviado ✓', 'g'); P.cant = ''; P.ins = ''; P.mot = '';
+    P.r = await gsRun('gsPC_PedidosEst', P.r.EST); puPedirPintar();
+  } catch (e) { toast(e.message, 'r2'); }
+}
+async function puPedidosEnc() {
+  var r; try { r = await gsRun('gsPC_PedidosEst', ''); } catch (e) { return toast(e.message, 'r2'); }
+  if (!r || !r.ok) return toast((r && r.error) || 'No se pudo', 'r2');
+  var h = '<div class="mh"><span class="mt">📥 Pedidos de las estaciones</span><button class="mc" onclick="closeModal();puCargar()">×</button></div><div class="mb2 pu-vent">' +
+    (r.PEDIDOS.length ? r.PEDIDOS.map(function(p) {
+      return '<div class="pu-reg" style="border-color:' + (p.ESTADO === 'PENDIENTE' ? 'var(--warn)' : 'var(--border)') + '"><div style="font-size:17px"><b>' + puEsc(p.ESTACION) + '</b> pide <b>' + puF(p.CANTIDAD) + ' ' + puEsc(p.UNIDAD) + ' de ' + puEsc(p.NOMBRE) + '</b>' + (p.PESA ? ' ⚖' : '') + '</div>' +
+        '<div class="tdim" style="font-size:14px">' + puEsc(p.MOTIVO) + (p.OPERARIO ? ' · ' + puEsc(p.OPERARIO) : '') + ' · ' + puPedHora(p.HORA) + '</div>' +
+        (p.ESTADO === 'PENDIENTE' && r.PUEDE_ENTREGAR ? '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><div class="pu-qty"><input inputmode="decimal" id="pu-ent-' + p.ID_PED + '" value="' + puF(p.CANTIDAD) + '"><span>' + puEsc(p.UNIDAD) + '</span></div>' +
+          '<button class="pu-btn pu-ok" style="width:max-content" onclick="puPedEntregar(' + p.ID_PED + ')">✓ Entregar</button><button class="pu-btn pu-min" style="width:max-content" onclick="puPedRechazar(' + p.ID_PED + ')">✕ No se entrega</button></div>' +
+          (p.PESA ? '<div class="tdim" style="font-size:13px">⚖ Pesá o medí lo que entregás: se suma al pesaje de hoy de esa estación.</div>' : '') : '<div>' + puPedEstado(p) + (p.USUARIO_ENT ? ' <span class="tdim" style="font-size:13px">' + puEsc(p.USUARIO_ENT) + ' · ' + puPedHora(p.HORA_ENT) + '</span>' : '') + '</div>') +
+        '</div>';
+    }).join('') : '<div class="tdim">No hay pedidos de las estaciones hoy.</div>') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal();puCargar()">Cerrar</button></div>';
+  closeModal(); showModal(h, 'md-lg');
+}
+async function puPedEntregar(id) {
+  var c = $v('pu-ent-' + id);
+  if (!(puN(c) > 0)) return toast('Poné cuánto entregás', 'r2');
+  try { var r = await gsRun('gsPC_PedidoEstEntregar', id, puN(c), '');
+    if (!r || !r.ok) return toast((r && r.error) || 'No se pudo', 'r2');
+    toast('Entregado ✓' + (r.PESAJE ? ' · sumado al pesaje del día' : ''), 'g'); puPedidosEnc();
+  } catch (e) { toast(e.message, 'r2'); }
+}
+async function puPedRechazar(id) {
+  var m = await uiPedir('¿Por qué no se entrega?', { obligatorio: true }); if (m === null) return;
+  try { var r = await gsRun('gsPC_PedidoEstRechazar', id, m);
+    if (!r || !r.ok) return toast((r && r.error) || 'No se pudo', 'r2');
+    toast('Avisado a la estación', 'g'); puPedidosEnc();
+  } catch (e) { toast(e.message, 'r2'); }
 }
 function puElegir(tit, ops, fn) {
   showModal('<div class="mh"><span class="mt">' + puEsc(tit) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="display:flex;flex-wrap:wrap;gap:8px">' +
