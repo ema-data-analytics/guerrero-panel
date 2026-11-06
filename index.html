@@ -1524,7 +1524,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611062222';
+var EMA_BUILD = '202611062230';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1700,6 +1700,10 @@ var GRID_T_ = null;
   function norm(s) { return String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
   function txt(o) { return (o.textContent || '').trim(); }
+  // Clave para comparar: sin acentos, espacios ni signos («295/80 R 22.5» = «295/80R22.5», «14.9-26» = «14-9-26»)
+  function clave(s) { return norm(s).replace(/[^A-Z0-9]/g, ''); }
+  function dist(a, b) { if (Math.abs(a.length - b.length) > 2) return 9; var p = [], i, j; for (j = 0; j <= b.length; j++) p[j] = j; for (i = 1; i <= a.length; i++) { var c = [i]; for (j = 1; j <= b.length; j++) c[j] = Math.min(p[j] + 1, c[j - 1] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); p = c; } return p[b.length]; }
+  window.selbClave = clave; window.selbDist = dist;
   function mejorar(sel) {
     if (!sel || sel.__selb || sel.multiple || sel.hasAttribute('data-nofiltro') || (sel.options.length < MIN && !sel.hasAttribute('data-filtro')) || !sel.parentNode) return;
     sel.__selb = true;
@@ -1717,6 +1721,15 @@ var GRID_T_ = null;
     async function agregar() {
       var v = nuevoTxt.toUpperCase(); if (!v) return; var fn = sel.getAttribute('data-agregar-fn'), r = { value: v, text: v };
       cerrar();
+      // No puede haber dos iguales: si ya existe (aunque esté escrito distinto), se elige la que existe
+      var k = clave(v), parecidas = [];
+      for (var i = 0; i < sel.options.length; i++) { var o = sel.options[i]; if (o.value === '') continue; var ko = clave(txt(o));
+        if (ko === k) { elegir(i); if (typeof toast === 'function') toast('Ya existe «' + txt(o) + '»: se eligió esa', 'b'); return; }
+        if (k.length >= 4 && dist(ko, k) <= (k.length >= 8 ? 2 : 1)) parecidas.push(i); }
+      if (parecidas.length && typeof uiElegir === 'function') {
+        var op = parecidas.slice(0, 5).map(function(i) { return [String(i), 'Es «' + txt(sel.options[i]) + '» (ya existe)']; }); op.push(['__NUEVA', 'No, es nueva: «' + v + '»']);
+        var e = await uiElegir('¿«' + v + '» es alguna de estas?', op); if (e === null) { pintar(); return; }
+        if (e !== '__NUEVA') { elegir(Number(e)); return; } }
       if (fn && typeof window[fn] === 'function') { try { r = await window[fn](v, sel); } catch (e) { r = null; if (typeof toast === 'function') toast(e.message || 'No se pudo agregar', 'r2'); } if (!r) { pintar(); return; } }
       var o = document.createElement('option'); o.value = String(r.value); o.textContent = r.text || v; sel.appendChild(o); elegir(sel.options.length - 1);
       if (typeof toast === 'function') toast('Agregado: ' + (r.text || v) + ' ✓', 'g');
@@ -1726,10 +1739,10 @@ var GRID_T_ = null;
       var h = '', n = 0, grupo = null, exacto = false; idx = []; nuevoTxt = String(q || '').replace(/\s+/g, ' ').trim(); q = norm(q);
       for (var i = 0; i < sel.options.length && n < 150; i++) {
         var o = sel.options[i]; if (o.disabled && o.value !== '') continue;
-        if (q && norm(txt(o) + ' ' + o.value).indexOf(q) === -1) continue;
+        if (q && o.value !== '' && clave(txt(o)) === clave(q)) exacto = true;
+        if (q && norm(txt(o) + ' ' + o.value).indexOf(q) === -1 && (!clave(q) || clave(txt(o)).indexOf(clave(q)) === -1)) continue;
         var g = o.parentNode && o.parentNode.tagName === 'OPTGROUP' ? o.parentNode.label : null;
         if (g && g !== grupo) { h += '<div class="selb-g">' + esc(g) + '</div>'; grupo = g; }
-        if (q && norm(txt(o)) === q) exacto = true;
         h += '<div class="selb-i' + (i === sel.selectedIndex ? ' sel' : '') + '" data-i="' + i + '">' + esc(txt(o) || '—') + '</div>'; idx.push(i); n++;
       }
       if (sel.hasAttribute('data-agregar') && q && !exacto) { h += '<div class="selb-i selb-add" data-i="-1">＋ Agregar «' + esc(nuevoTxt.toUpperCase()) + '»</div>'; idx.push(-1); }
@@ -7763,8 +7776,8 @@ function abmInlineClear(page) {
 }
 
 // Alta rápida desde el desplegable: se escribe la marca o la medida que falta y se toca «＋ Agregar»
-async function abmMarcaRapida(t) { var id = await nextId('marcas', 'ID_MARCA'); await ADB.put('marcas', { ID_MARCA: id, MARCA: t, ACTIVO: 1 }); return { value: id, text: t }; }
-async function abmMedidaRapida(t) { var id = await nextId('medidas', 'ID_MEDIDA'); await ADB.put('medidas', { ID_MEDIDA: id, NOMBRE_MEDIDA: t, ACTIVO: 1 }); return { value: id, text: t }; }
+async function abmMarcaRapida(t) { var ex = (await ADB.getAll('marcas')).filter(function(m) { return selbClave(m.MARCA) === selbClave(t); })[0]; if (ex) return { value: ex.ID_MARCA, text: ex.MARCA }; var id = await nextId('marcas', 'ID_MARCA'); await ADB.put('marcas', { ID_MARCA: id, MARCA: t, ACTIVO: 1 }); return { value: id, text: t }; }
+async function abmMedidaRapida(t) { var ex = (await ADB.getAll('medidas')).filter(function(m) { return selbClave(m.NOMBRE_MEDIDA) === selbClave(t); })[0]; if (ex) return { value: ex.ID_MEDIDA, text: ex.NOMBRE_MEDIDA }; var id = await nextId('medidas', 'ID_MEDIDA'); await ADB.put('medidas', { ID_MEDIDA: id, NOMBRE_MEDIDA: t, ACTIVO: 1 }); return { value: id, text: t }; }
 async function _abmCargarSelectsMarcaMedida(d) {
   const [marcas, medidas] = await Promise.all([ADB.getAll('marcas'), ADB.getAll('medidas')]);
   const marcaSel = $id('abm-marca-sel');
@@ -8165,12 +8178,16 @@ async function saveABM() {
     }
     else if (page === 'abm-marcas') {
       if (!$v('abm-nom').trim()) { toast('Ingresar nombre de marca','r2'); return; }
+      var _dupM = (await ADB.getAll('marcas')).filter(function(m) { return (!d || String(m.ID_MARCA) !== String(d.ID_MARCA)) && selbClave(m.MARCA) === selbClave($v('abm-nom')); })[0];
+      if (_dupM) { toast('Ya existe la marca «' + _dupM.MARCA + '»', 'r2'); return; }
       var idMarca = d ? d.ID_MARCA : (await nextId('marcas','ID_MARCA'));
       rec = {ID_MARCA:idMarca, MARCA:$v('abm-nom').trim().toUpperCase(), ACTIVO:1};
       await ADB.put('marcas', rec);
     }
     else if (page === 'abm-medidas') {
       if (!$v('abm-nom').trim()) { toast('Ingresar medida','r2'); return; }
+      var _dupMe = (await ADB.getAll('medidas')).filter(function(m) { return (!d || String(m.ID_MEDIDA) !== String(d.ID_MEDIDA)) && selbClave(m.NOMBRE_MEDIDA) === selbClave($v('abm-nom')); })[0];
+      if (_dupMe) { toast('Ya existe la medida «' + _dupMe.NOMBRE_MEDIDA + '»', 'r2'); return; }
       var idMed = d ? d.ID_MEDIDA : (await nextId('medidas','ID_MEDIDA'));
       rec = {ID_MEDIDA:idMed, NOMBRE_MEDIDA:$v('abm-nom').trim().toUpperCase(), ACTIVO:1};
       await ADB.put('medidas', rec);
