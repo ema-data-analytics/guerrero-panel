@@ -1511,7 +1511,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611061753';
+var EMA_BUILD = '202611061808';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1688,7 +1688,7 @@ var GRID_T_ = null;
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
   function txt(o) { return (o.textContent || '').trim(); }
   function mejorar(sel) {
-    if (!sel || sel.__selb || sel.multiple || sel.hasAttribute('data-nofiltro') || sel.options.length < MIN || !sel.parentNode) return;
+    if (!sel || sel.__selb || sel.multiple || sel.hasAttribute('data-nofiltro') || (sel.options.length < MIN && !sel.hasAttribute('data-filtro')) || !sel.parentNode) return;
     sel.__selb = true;
     var cs = getComputedStyle(sel), w = document.createElement('div'), inp = document.createElement('input'), lst = document.createElement('div'), ancho = sel.style.width || (sel.offsetWidth ? sel.offsetWidth + 'px' : '');
     w.className = 'selb-w'; w.style.display = cs.display === 'block' ? 'block' : 'inline-block'; if (ancho && cs.display !== 'block') w.style.width = ancho; else if (sel.style.width) w.style.width = sel.style.width;
@@ -11365,36 +11365,19 @@ function pcInspHtml(i, est) {
   return '<div class="card mt3" style="padding:10px;background:var(--bg2,#f8fafc)"><div class="fr">' +
     '<div class="fg"><label class="fl">Inspección *</label><select class="fs" id="pc-insp"><option value="">— elegí —</option><option value="APTA">✅ APTA</option><option value="NO_APTA">⛔ NO APTA</option></select></div>' +
     '<div class="fg" id="pc-insp-mot-g" style="display:none"><label class="fl">¿Por qué no es apta? *</label><select class="fs" id="pc-insp-mot"><option value="">— elegí —</option>' + mot.map(function(m) { return '<option value="' + pcEsc(m.ID_MOT) + '">' + pcEsc(m.DESCRIPCION) + '</option>'; }).join('') + '</select></div></div>' +
-    '<div id="pc-insp-banda-g" style="display:none"><label class="fl">Banda (solo las que hay en stock)</label><input type="hidden" id="pc-insp-banda">' +
-    '<div id="pc-insp-bsel" style="font-size:13px;margin:2px 0 6px"></div>' +
-    '<input class="fi" id="pc-insp-bq" placeholder="Escribí para buscar: FTELT, GZR, 232…" autocomplete="off" oninput="pcInspBandas()">' +
-    '<div id="pc-insp-bl" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;max-height:180px;overflow:auto"><span class="tdim" style="font-size:12px">Cargando bandas…</span></div></div>' +
+    '<div id="pc-insp-banda-g" style="display:none;margin-top:6px"><label class="fl">Banda (solo las que hay en stock · escribí para buscar)</label>' +
+    '<select class="fs" id="pc-insp-banda" data-filtro><option value="">Cargando bandas…</option></select></div>' +
     '<div class="tdim" style="font-size:11px;margin-top:6px">Si es NO APTA no se cargan insumos. Parches y trabajos extra se cargan desde la tablet de la estación.</div></div>';
 }
 // Bandas con stock (lo mismo que ve la tablet en la inspección): se piden al abrir la ventana
 async function pcInspCargar(idCub, est) {
-  PC_.inspB = null;
-  try { var f = await gsRun('gsPC_PuestoFicha', PC_.ot.ot.ID_OT, idCub, est); var X = f && (f.inspeccion || (f.r && f.r.inspeccion)); PC_.inspB = X ? { bandas: X.bandas || [], receta: X.bandaReceta || '' } : { bandas: [], receta: '' }; }
-  catch (e) { PC_.inspB = { bandas: [], receta: '', error: e.message }; }
-  var r = PC_.inspB.receta, br = PC_.inspB.bandas.filter(function(b) { return b.ID_INSUMO === r && b.STOCK > 0; })[0];
-  if (br && $id('pc-insp-banda')) pcInspElegir(br.ID_INSUMO);
-  pcInspBandas();
-}
-function pcInspBandas() {
-  var el = $id('pc-insp-bl'); if (!el || !PC_.inspB) return;
-  if (PC_.inspB.error) { el.innerHTML = '<span style="color:var(--danger);font-size:12px">' + pcEsc(PC_.inspB.error) + '</span>'; return; }
-  var q = String(($id('pc-insp-bq') || {}).value || '').toUpperCase().replace(/\s+/g, '');
-  var bl = PC_.inspB.bandas.filter(function(b) { return b.STOCK > 0 && (!q || (String(b.ID_INSUMO) + String(b.NOMBRE)).toUpperCase().replace(/\s+/g, '').indexOf(q) !== -1); })
-    .sort(function(a, b) { return a.NOMBRE < b.NOMBRE ? -1 : 1; });
-  var sel = $v('pc-insp-banda');
-  el.innerHTML = bl.length ? bl.slice(0, 60).map(function(b) { return '<button type="button" class="btn btn-xs ' + (b.ID_INSUMO === sel ? 'btn-p' : 'btn-s') + '" data-b="' + pcEsc(b.ID_INSUMO) + '" onclick="pcInspElegir(this.dataset.b)">' + pcEsc(b.NOMBRE) + (b.REUT ? ' ♻' : '') + ' <span class="tdim">(' + fmtN(b.STOCK) + ')</span></button>'; }).join('') + (bl.length > 60 ? '<span class="tdim" style="font-size:12px">… y ' + (bl.length - 60) + ' más: escribí para achicar</span>' : '')
-    : '<span class="tdim" style="font-size:12px">' + (q ? 'No hay en stock bandas con «' + pcEsc(q) + '»' : 'No hay bandas en stock') + '</span>';
-}
-function pcInspElegir(id) {
-  $id('pc-insp-banda').value = id || '';
-  var b = (PC_.inspB && PC_.inspB.bandas || []).filter(function(x) { return x.ID_INSUMO === id; })[0];
-  $id('pc-insp-bsel').innerHTML = b ? 'Elegida: <b>' + pcEsc(b.NOMBRE) + '</b> · stock ' + fmtN(b.STOCK) + (b.ID_INSUMO === PC_.inspB.receta ? ' · la de la receta' : '') + ' <a href="#" onclick="pcInspElegir(\'\');return false">quitar</a>' : '<span class="tdim">Sin banda elegida</span>';
-  pcInspBandas();
+  var bl = [], rec = '', err = '';
+  try { var f = await gsRun('gsPC_PuestoFicha', PC_.ot.ot.ID_OT, idCub, est); var X = f && f.inspeccion; if (X) { bl = X.bandas || []; rec = X.bandaReceta || ''; } }
+  catch (e) { err = e.message; }
+  var sel = $id('pc-insp-banda'); if (!sel) return;
+  bl = bl.filter(function(b) { return b.STOCK > 0; }).sort(function(a, b) { return a.NOMBRE < b.NOMBRE ? -1 : 1; });
+  sel.innerHTML = '<option value="">' + (err ? 'No se pudieron leer las bandas' : (bl.length ? '— sin banda —' : 'No hay bandas en stock')) + '</option>' +
+    bl.map(function(b) { return '<option value="' + pcEsc(b.ID_INSUMO) + '"' + (b.ID_INSUMO === rec ? ' selected' : '') + '>' + pcEsc(b.NOMBRE) + (b.REUT ? ' ♻' : '') + ' · stock ' + fmtN(b.STOCK) + (b.ID_INSUMO === rec ? ' · receta' : '') + '</option>'; }).join('');
 }
 function pcInspCambio() {
   var v = $v('pc-insp');
