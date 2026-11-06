@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "066f0807be59"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7f3401217029"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1511,7 +1511,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611061630';
+var EMA_BUILD = '202611061650';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12325,6 +12325,9 @@ async function puCargar() {
   var pEq = fija ? gsRun('gsPC_PuestoEquipos', PU_.est).catch(function() { return null; }) : Promise.resolve(null);
   try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e) { puEl().innerHTML = '<div class="al al-r">' + puEsc(e.message) + '</div>'; return; }
   PU_.dt = PU_.d.ahora ? PU_.d.ahora - Date.now() : 0;
+  // Usuario con estaciones asignadas (Seguridad > Usuarios > 🛠 Estaciones): entra directo a la suya y no ve las otras
+  PU_.mis = (PU_.d.MIS_EST || []).map(String);
+  if (PU_.mis.length && (puTodas() || !PU_.est || PU_.mis.indexOf(String(PU_.est)) === -1)) { PU_.est = PU_.mis[0]; return puCargar(); }
   if (PU_.est && !puTodas() && !PU_.d.estacion) PU_.est = '';
   PU_.eq = await pEq;
   if (PU_.est) await puPesajeCargar(); else PU_.pes = null;
@@ -12348,7 +12351,7 @@ function puPintar() {
     '<div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="puOperario()"><i class="fas fa-user"></i> ' + puEsc(PU_.oper || 'Operario: tocá para poner tu nombre') + '</button><button onclick="puCambiarEst()">Cambiar estación</button><button onclick="pcAyuda(\'puesto\')">❓ Ayuda</button>' + (document.body.classList.contains('modo-puesto') ? '<button onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Salir</button>' : '') + '</div></div>' :
     PU_.est ? '<div class="pu-top"><div class="est"><small>Estación de esta tablet</small>' + puEsc(puNomEst(PU_.est)) + '</div>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="puVerHerr()"><i class="fas fa-tools"></i> ' + (PU_.eq && !PU_.eq.controlDiario ? 'Se rompió / Me falta' : 'Herramientas') + '</button><button onclick="puVerRetiro()"><i class="fas fa-hand-paper"></i> Retirar consumibles</button><button onclick="puOperario()"><i class="fas fa-user"></i> ' + puEsc(PU_.oper || 'Operario: tocá para poner tu nombre') + '</button>' +
-    '<button onclick="puCambiarEst()">Cambiar estación</button><button onclick="pcAyuda(\'puesto\')">❓ Ayuda</button>' + (document.body.classList.contains('modo-puesto') ? '<button onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Salir</button>' : '') + '</div></div>' : '';
+    ((PU_.mis || []).length === 1 ? '' : '<button onclick="puCambiarEst()">Cambiar estación</button>') + '<button onclick="pcAyuda(\'puesto\')">❓ Ayuda</button>' + (document.body.classList.contains('modo-puesto') ? '<button onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Salir</button>' : '') + '</div></div>' : '';
   el.innerHTML = '<div class="pu-wrap">' + top + '<div id="pu-body"></div></div>' +
     '<div class="pu-pie" id="pu-pie" style="display:none"><div class="in"><div class="pu-falta" id="pu-falta"></div><button class="pu-btn pu-ok" id="pu-ok" onclick="puConfirmar()">✓ Confirmar paso</button></div></div>';
   if (!PU_.est) return puElegirEst();
@@ -12362,6 +12365,10 @@ function puPintar() {
 }
 function puElegirEst() {
   puPie(false);
+  if ((PU_.mis || []).length) {
+    $id('pu-body').innerHTML = '<div class="pu-h">Tus estaciones</div><div class="pu-ests">' + PU_.d.estaciones.filter(function(e) { return PU_.mis.indexOf(String(e.ID_ESTACION)) !== -1; }).map(function(e) { return '<button onclick="puFijarEst(\'' + puEsc(e.ID_ESTACION) + '\')"><small>ESTACIÓN ' + (e.NRO || e.ORDEN) + '</small>' + puEsc(e.NOMBRE) + '</button>'; }).join('') + '</div>';
+    return;
+  }
   $id('pu-body').innerHTML = '<div class="pu-h">¿Cómo se usa esta tablet?</div>' +
     '<button class="pu-btn" style="background:var(--accent);color:#fff;font-size:19px;width:100%;max-width:640px;min-height:64px" onclick="puFijarEst(\'TODAS\')">🚶 Recorro todas las estaciones (operador de turno)</button>' +
     '<div class="tdim" style="font-size:15px">O la tablet queda fija en una estación (se elige una sola vez y la recuerda):</div>' +
@@ -19204,6 +19211,7 @@ function segRenderUsuarios(lista) {
       '<div style="display:flex;gap:6px">' +
         '<button class="btn btn-xs btn-w" onclick="segEditarUsuario(\''+u.ID_USUARIO+'\')" title="Editar"><i class="fas fa-pencil-alt"></i></button>' +
         '<button class="btn btn-xs btn-s" onclick="segVerPermisos(\''+u.ID_USUARIO+'\')" title="Permisos"><i class="fas fa-shield-alt"></i></button>' +
+        '<button class="btn btn-xs btn-s" onclick="segEstUsr(\''+String(u.USUARIO).replace(/'/g,'')+'\')" title="Estaciones de la línea">🛠</button>' +
         (activo ?
           '<button class="btn btn-xs btn-d" onclick="segDesactivar(\''+u.ID_USUARIO+'\')" title="Desactivar"><i class="fas fa-ban"></i></button>' :
           '<button class="btn btn-xs btn-p" onclick="segActivar(\''+u.ID_USUARIO+'\')" title="Activar"><i class="fas fa-check"></i></button>'
@@ -19211,6 +19219,29 @@ function segRenderUsuarios(lista) {
       '</div>' +
     '</div>';
   }).join('');
+}
+
+// Estaciones de la línea por usuario: con estaciones asignadas, en la tablet entra directo a la suya y no puede registrar en otra.
+// Sin ninguna (encargado general, administración) ve y hace todo, incluido el control final.
+async function segEstUsr(usuario) {
+  var r; try { r = await gsRun('gsPU_EstUsrDatos'); } catch (e) { toast(e.message, 'r2'); return; }
+  if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  var mias = (r.MAPA[String(usuario).toLowerCase()] || []).map(String), grupos = {}, orden = [];
+  r.ESTACIONES.forEach(function(e) { var L = e.LINEA || ''; if (!grupos[L]) { grupos[L] = []; orden.push(L); } grupos[L].push(e); });
+  var esc = function(x) { return String(x === undefined || x === null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  showModal('<div class="mh"><span class="mt">🛠 Estaciones de @' + esc(usuario) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="tdim mb3" style="font-size:12px">Tildá las estaciones donde trabaja. En la tablet o el celular entra directo a la suya y no puede registrar en otra. <b>Sin ninguna tildada</b> ve todas (encargado general: control final, rechazo o volver a una estación).</div>' +
+    orden.map(function(L) { return '<div style="font-weight:700;margin:8px 0 4px">Línea ' + esc(L === 'AGRICOLA' ? 'agrícola' : (L === 'CAMIONES' ? 'camiones' : L)) + '</div>' +
+      grupos[L].map(function(e) { return '<label style="display:block;margin:3px 0"><input type="checkbox" class="seg-est" value="' + esc(e.ID_ESTACION) + '"' + (mias.indexOf(String(e.ID_ESTACION)) !== -1 ? ' checked' : '') + '> ' + esc(e.NRO) + ' · ' + esc(e.NOMBRE) + '</label>'; }).join(''); }).join('') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="seg-est-ok">Guardar</button></div>', 'md-lg');
+  $id('seg-est-ok').onclick = async function() {
+    var ids = [].slice.call(document.querySelectorAll('.seg-est:checked')).map(function(x) { return x.value; });
+    try {
+      var g = await gsRun('gsPU_EstUsrGuardar', usuario, ids);
+      if (!g || !g.ok) { toast((g && g.error) || 'No se pudo guardar', 'r2'); return; }
+      closeModal(); toast(ids.length ? 'Estaciones guardadas ✓' : 'Sin estaciones: ve todas ✓', 'g');
+    } catch (e) { toast(e.message, 'r2'); }
+  };
 }
 
 function segFiltrarUsuarios(q) {
