@@ -1511,7 +1511,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611061618';
+var EMA_BUILD = '202611061630';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -11243,6 +11243,7 @@ function pcRegistro(idCub, est) {
     }).join('') + '</tbody></table>' + (lineas.length ? '' : '<div class="tdim">Esta estación no tiene insumos en la receta.</div>') +
     '<datalist id="pc-ins-list">' + (insumos || []).map(function(x) { return '<option value="' + pcEsc(x.ID_INSUMO) + '">' + pcEsc(x.NOMBRE_INSUMO) + '</option>'; }).join('') + '</datalist>' +
     '<div id="pc-reg-aviso" class="mt3" style="font-size:12px"></div>' +
+    pcInspHtml(i, est) +
     '<div class="fr mt3"><div class="fg"><label class="fl">Resultado</label><select class="fs" id="pc-res"><option value="OK">OK</option><option value="FALLA">Falla</option></select></div>' +
     '<div class="fg"><label class="fl">Operario</label><select class="fs" id="pc-oper" onchange="PC_.oper=this.value"><option value="">— elegí —</option>' + (PC_.d.empleados || []).map(function(e) { return '<option' + (PC_.oper === e ? ' selected' : '') + '>' + pcEsc(e) + '</option>'; }).join('') + '</select></div><div class="fg"><label class="fl">Observación</label><input class="fi" id="pc-robs"/></div></div>' +
     '<div id="pc-aut" class="card" style="display:none;padding:10px;background:var(--warn-light)"><div class="fl mb3">Reemplazo: autoriza el encargado de línea</div><div class="fr"><div class="fg"><label class="fl">Usuario encargado</label><input class="fi" id="pc-aut-u" autocomplete="off"/></div><div class="fg"><label class="fl">Clave</label><input class="fi" type="password" id="pc-aut-c" autocomplete="new-password"/></div></div></div>' +
@@ -11260,6 +11261,7 @@ function pcRegistro(idCub, est) {
     $id('pc-reg-aviso').innerHTML = avisos.map(function(a) { return '<div style="color:var(--warn)">⚠ ' + pcEsc(a) + '</div>'; }).join('');
   };
   document.querySelectorAll('#pc-reg-tbl input, .pc-pieza').forEach(function(e) { e.addEventListener('input', revisar); e.addEventListener('change', revisar); });
+  if ($id('pc-insp')) $id('pc-insp').addEventListener('change', pcInspCambio);
   $id('pc-reg-ok').addEventListener('click', async function() {
     var b = this;
     var cons = [], piezas = [];
@@ -11268,7 +11270,14 @@ function pcRegistro(idCub, est) {
     var aut = $id('pc-aut').style.display === 'none' ? null : { USUARIO: $v('pc-aut-u'), CLAVE: $v('pc-aut-c') };
     b.disabled = true;
     try {
-      var r = await gsRun('gsPC_Registrar', { ID_OT: PC_.ot.ot.ID_OT, ID_CUB: idCub, ID_ESTACION: est, RESULTADO: $v('pc-res'), OPERARIO: $v('pc-oper'), OBSERVACION: $v('pc-robs'), CONSUMOS: cons, PIEZAS: piezas, AUTORIZA: aut });
+      var insp = null;
+      if ($id('pc-insp')) {
+        var iv = $v('pc-insp');
+        if (!iv) { toast('Decí si la cubierta es APTA o NO APTA', 'r2'); return; }
+        if (iv === 'NO_APTA') { if (!$v('pc-insp-mot')) { toast('Elegí por qué no es apta', 'r2'); return; } insp = { APTA: false, ID_MOTIVO: $v('pc-insp-mot'), REEMPLAZO: '' }; cons = []; piezas = []; aut = null; }
+        else insp = { APTA: true, ID_BANDA: $v('pc-insp-banda'), PARCHES: [], EXTRAS: [] };
+      }
+      var r = await gsRun('gsPC_Registrar', { ID_OT: PC_.ot.ot.ID_OT, ID_CUB: idCub, ID_ESTACION: est, RESULTADO: $v('pc-res'), OPERARIO: $v('pc-oper'), OBSERVACION: $v('pc-robs'), CONSUMOS: cons, PIEZAS: piezas, AUTORIZA: aut, INSPECCION: insp });
       if ($id('pc-aut-c')) $id('pc-aut-c').value = '';
       if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
       toast('Registrado ✓' + (r.REEMPLAZOS.length ? ' · reemplazo autorizado' : '') + (r.SIN_STOCK.length ? ' · ojo: sin stock de ' + r.SIN_STOCK.join(', ') : ''), r.SIN_STOCK.length ? 'b' : 'g');
@@ -11276,6 +11285,30 @@ function pcRegistro(idCub, est) {
     } catch (e) { if ($id('pc-aut-c')) $id('pc-aut-c').value = ''; toast('Error: ' + e.message, 'r2'); }
     finally { b.disabled = false; }
   });
+}
+// Estación 1 (inspección inicial): APTA (con la banda) o NO APTA (con el motivo), igual que en la tablet. Parches y trabajos extra se cargan en la tablet.
+function pcEsPrimeraEst(est) {
+  var es = PC_.d.estaciones || [], e = es.filter(function(x) { return String(x.ID_ESTACION) === String(est); })[0];
+  return !!e && !es.some(function(x) { return x.LINEA === e.LINEA && x.ORDEN < e.ORDEN; });
+}
+function pcInspHtml(i, est) {
+  if (!pcEsPrimeraEst(est) || (i.PASADA || 1) > 1) return '';
+  var ban = (PC_.d.insumos || []).filter(function(x) { return /^BANDA/i.test(String(x.NOMBRE_INSUMO || '')); });
+  var recB = (i.LINEAS || []).filter(function(l) { return /^BANDA/i.test(String(l.DESCRIPCION || '')) || ban.some(function(b) { return b.ID_INSUMO === l.ID_INSUMO; }); })[0];
+  var bSel = recB ? recB.ID_INSUMO : '';
+  var mot = (PC_.d.motivosRechazo || []).filter(function(m) { return +m.ACTIVO !== 0; });
+  return '<div class="card mt3" style="padding:10px;background:var(--bg2,#f8fafc)"><div class="fr">' +
+    '<div class="fg"><label class="fl">Inspección *</label><select class="fs" id="pc-insp"><option value="">— elegí —</option><option value="APTA">✅ APTA</option><option value="NO_APTA">⛔ NO APTA</option></select></div>' +
+    '<div class="fg" id="pc-insp-banda-g" style="display:none"><label class="fl">Banda</label><select class="fs" id="pc-insp-banda"><option value="">— sin banda —</option>' + ban.map(function(b) { return '<option value="' + pcEsc(b.ID_INSUMO) + '"' + (b.ID_INSUMO === bSel ? ' selected' : '') + '>' + pcEsc(b.NOMBRE_INSUMO) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg" id="pc-insp-mot-g" style="display:none"><label class="fl">¿Por qué no es apta? *</label><select class="fs" id="pc-insp-mot"><option value="">— elegí —</option>' + mot.map(function(m) { return '<option value="' + pcEsc(m.ID_MOT) + '">' + pcEsc(m.DESCRIPCION) + '</option>'; }).join('') + '</select></div>' +
+    '</div><div class="tdim" style="font-size:11px">Si es NO APTA no se cargan insumos. Parches y trabajos extra se cargan desde la tablet de la estación.</div></div>';
+}
+function pcInspCambio() {
+  var v = $v('pc-insp');
+  $id('pc-insp-banda-g').style.display = v === 'APTA' ? '' : 'none';
+  $id('pc-insp-mot-g').style.display = v === 'NO_APTA' ? '' : 'none';
+  if ($id('pc-reg-tbl')) $id('pc-reg-tbl').style.opacity = v === 'NO_APTA' ? '0.35' : '';
+  if (v === 'NO_APTA' && $id('pc-res')) $id('pc-res').value = 'FALLA';
 }
 async function pcAnularRegistro(idReg) {
   var motivo = await uiPedir('Motivo de la anulación:', { obligatorio: true }); if (motivo === null) return;
