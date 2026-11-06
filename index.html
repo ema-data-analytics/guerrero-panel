@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e0bd683802f4"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "bff321811cbb"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1511,7 +1511,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611061808';
+var EMA_BUILD = '202611061910';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12759,7 +12759,8 @@ function puFicha() {
     h += '<div class="pu-reg"><div style="font-size:20px;font-weight:700;color:var(--success)">✓ Esta estación ya está registrada</div>' +
       '<div class="tdim">' + fmtD(rg.FECHA) + ' · ' + puEsc(rg.OPERARIO || rg.USUARIO) + (rg.MINUTOS !== null ? ' · ' + puDur(rg.MINUTOS * 60) : '') + ' · ' + puEsc(rg.RESULTADO) + '</div>' +
       '<table><tbody>' + rg.CONSUMOS.map(function(k) { return '<tr><td>' + puEsc(k.NOMBRE) + (k.REEMPLAZO ? ' <span class="badge b-orange">reemplazo</span>' : '') + '</td><td class="tr">' + (k.NO_USO ? 'No se usó' : puExacto(k.REAL) + ' ' + puEsc(k.UNIDAD)) + '</td><td class="tdim">' + puEsc(k.MOTIVO) + '</td></tr>'; }).join('') + '</tbody></table>' +
-      '<div class="tdim" style="font-size:14px">Si hay que corregir algo, el encargado anula el registro y se vuelve a cargar.</div>' +
+      (puPuedoDeshacer(rg) ? '<button class="pu-btn pu-rep" style="background:var(--warn);color:#fff" onclick="puDeshacerReg(' + rg.ID_REG + ')">↩ Me equivoqué: deshacer y cargar de nuevo</button><div class="tdim" style="font-size:14px">Lo podés deshacer vos hasta 30 minutos después de cargarlo, si la cubierta no pasó a otra estación.</div>' :
+        '<div class="tdim" style="font-size:14px">Si hay que corregir algo, el encargado anula el registro y se vuelve a cargar.</div>') +
       (typeof tienePermiso !== 'function' || tienePermiso('PRODUCCION', 'ANULAR') ? '<button class="pu-btn pu-rep" onclick="puAnularReg(' + rg.ID_REG + ')">Anular este registro</button>' : '') + '</div>';
     $id('pu-body').innerHTML = h; puPie(false); return;
   }
@@ -13617,6 +13618,16 @@ function puReemplazo(filaPre) {
     r.reemp = true; r.idReal = x.ID_INSUMO; r.real = puExacto(r.l.CANTIDAD); r.ok = true; r.motivo = '';
     closeModal(); puFicha();
   };
+}
+function puPuedoDeshacer(rg) {
+  var yo = (typeof SES !== 'undefined' && SES && SES.usuario) ? String(SES.usuario).toLowerCase() : '';
+  return !!yo && String(rg.USUARIO || '').toLowerCase() === yo && (Date.now() + (PU_.dt || 0) - Number(rg.FECHA)) <= 30 * 60000;
+}
+async function puDeshacerReg(id) {
+  puElegir('¿Qué pasó?', ['Me olvidé de cargar algo', 'Cantidades mal', 'Cubierta equivocada', 'Otro'], async function(m) {
+    try { var r = await gsRun('gsPC_DeshacerRegistro', id, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo deshacer', 'r2'); return; } toast('Deshecho: volvió el stock. Cargalo de nuevo', 'g'); puAbrir(PU_.f.ot.ID_OT, PU_.f.cub.ID_CUB); }
+    catch (e) { toast(e.message, 'r2'); }
+  });
 }
 async function puAnularReg(id) {
   puElegir('¿Por qué se anula el registro?', ['Error de carga', 'Cubierta equivocada', 'Cantidades mal', 'Otro'], async function(m) {
