@@ -1524,7 +1524,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611062230';
+var EMA_BUILD = '202611062240';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -7793,7 +7793,7 @@ async function _abmCargarSelectsMarcaMedida(d) {
   }
   if (medidaSel) {
     medidaSel.innerHTML = '<option value="">— Sin medida —</option>';
-    medidas.forEach(function(m) {
+    medidas.filter(function(m) { return String(m.ACTIVO) !== '0' || (d && d.ID_MEDIDA === m.ID_MEDIDA); }).forEach(function(m) {
       const o = document.createElement('option');
       o.value = m.ID_MEDIDA; o.textContent = m.NOMBRE_MEDIDA;
       if (d && d.ID_MEDIDA === m.ID_MEDIDA) o.selected = true;
@@ -8503,7 +8503,7 @@ async function renderABMArticulos() {
   var v = function(f, def) { return d ? (d[f] !== undefined ? d[f] : (def !== undefined ? def : '')) : (def !== undefined ? def : ''); };
 
   var marcaOpts = '<option value="">— Sin marca —</option>' + marcas.map(function(m){ return '<option value="'+m.ID_MARCA+'"'+(v('ID_MARCA')===m.ID_MARCA?' selected':'')+'>'+m.MARCA+'</option>'; }).join('');
-  var medidaOpts = '<option value="">— Sin medida —</option>' + medidas.map(function(me){ return '<option value="'+me.ID_MEDIDA+'"'+(v('ID_MEDIDA')===me.ID_MEDIDA?' selected':'')+'>'+me.NOMBRE_MEDIDA+'</option>'; }).join('');
+  var medidaOpts = '<option value="">— Sin medida —</option>' + medidas.filter(function(me){ return String(me.ACTIVO)!=='0' || v('ID_MEDIDA')===me.ID_MEDIDA; }).map(function(me){ return '<option value="'+me.ID_MEDIDA+'"'+(v('ID_MEDIDA')===me.ID_MEDIDA?' selected':'')+'>'+me.NOMBRE_MEDIDA+'</option>'; }).join('');
   var tipoOpts = ['PRODUCTO','RECAPADO','SERVICIO'].map(function(t){ return '<option value="'+t+'"'+(v('TIPO_ARTICULO')===t?' selected':'')+'>'+t+'</option>'; }).join('');
 
   el.innerHTML =
