@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7c636c4c70f2"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "dc83946528ef"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1511,7 +1511,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611062147';
+var EMA_BUILD = '202611062202';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16509,7 +16509,7 @@ function mtOrdGrilla() {
     (l.length ? l.slice(desde, desde + por).map(function(o) {
       var an = o.ESTADO === 'ANULADA', r = 0, t = 0, no = 0; o.EQUIPOS.forEach(function(e) { r += e.RESP; t += e.TOTAL; no += e.NO; });
       return '<tr' + (an ? ' style="opacity:.6"' : '') + '><td class="mono"><b>' + pcEsc(o.NRO) + '</b></td><td>' + fmtD(o.FECHA) + '</td><td>' + pcEsc(o.SUCURSAL) + '</td><td class="pc-wr">' + pcEsc(o.CLIENTE || 'Interno') + (o.SOLICITANTE ? '<div class="pc-nota tdim">Pidió: ' + pcEsc(o.SOLICITANTE) + '</div>' : '') + '</td>' +
-        '<td class="pc-wr">' + o.EQUIPOS.map(function(e) { return '<b>' + pcEsc(e.DOMINIO || '—') + '</b> ' + pcEsc(e.EQUIPO); }).join('<br>') + '</td>' +
+        '<td class="pc-wr">' + o.EQUIPOS.map(function(e) { return '<b>' + pcEsc(e.IDENT || e.DOMINIO || '—') + '</b> ' + pcEsc(e.EQUIPO); }).join('<br>') + '</td>' +
         '<td>' + r + '/' + t + (no ? ' · <b style="color:#dc2626">' + no + ' NO</b>' : '') + '</td>' +
         '<td>' + (o.PRESUP ? pcEsc(o.PRESUP.NRO) + '<br>' + mtBadge(o.PRESUP.ESTADO) + ' ' + mtPlata(o.PRESUP.TOTAL) : '<span class="tdim">—</span>') + '</td>' +
         '<td>' + mtBadge(o.ESTADO) + (an && o.MOTIVO_ANULACION ? '<div class="pc-nota">' + pcEsc(o.MOTIVO_ANULACION.slice(0, 80)) + '</div>' : '') + '</td>' +
@@ -16564,7 +16564,7 @@ function mtNueva() {
   if (N.tipo !== 'SERVICIO_CLIENTE' || c) {
     h += '<label class="fl">' + (N.tipo === 'SERVICIO_CLIENTE' ? '3' : '2') + '. Equipos que entran <span class="tdim">(cada uno con su check list; los km vienen del último registro)</span></label>' +
       (eqs.length ? eqs.map(function(e) { var ck = !!N.eqs[e.ID_EQUIPO];
-        return '<label class="mt-pick"><input type="checkbox"' + (ck ? ' checked' : '') + ' onchange="MT_.N.eqs[' + e.ID_EQUIPO + ']=this.checked;if(this.checked&&!MT_.N.km[' + e.ID_EQUIPO + '])MT_.N.km[' + e.ID_EQUIPO + ']=' + (e.KM_HS || 0) + ';mtNueva()"><div style="flex:1"><b>' + pcEsc(e.DOMINIO || e.INTERNO || e.CODIGO) + '</b> · ' + pcEsc(tipoN[e.ID_TIPO] || '') + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + '</div>' +
+        return '<label class="mt-pick"><input type="checkbox"' + (ck ? ' checked' : '') + ' onchange="MT_.N.eqs[' + e.ID_EQUIPO + ']=this.checked;if(this.checked&&!MT_.N.km[' + e.ID_EQUIPO + '])MT_.N.km[' + e.ID_EQUIPO + ']=' + (e.KM_HS || 0) + ';mtNueva()"><div style="flex:1"><b>' + pcEsc(mtEqIdent(e)) + '</b> · ' + pcEsc(tipoN[e.ID_TIPO] || '') + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + '</div>' +
           (ck ? '<input class="fi" style="width:120px;flex:0 0 120px" inputmode="numeric" title="Km / horas de hoy (precargado con el último)" value="' + pcEsc(N.km[e.ID_EQUIPO] || '') + '" onclick="event.preventDefault()" oninput="MT_.N.km[' + e.ID_EQUIPO + ']=this.value">' : (e.KM_HS ? '<span class="tdim" style="font-size:12px">' + Number(e.KM_HS).toLocaleString('es-AR') + ' km</span>' : '')) + '</label>'; }).join('') : '<div class="al mb2">No tiene equipos cargados. Cargalo con «＋ Equipo nuevo».</div>') +
       '<button class="btn btn-s btn-sm mb3" onclick="mtEqForm(null,true)">＋ Equipo nuevo</button>';
     var sols = []; if (c && c.CONTACTO) sols.push(c.CONTACTO); sols.push('Chofer'); sols.push('Encargado de flota'); if (N.sol && sols.indexOf(N.sol) === -1) sols.push(N.sol);
@@ -16626,7 +16626,7 @@ function mtOrdenVer() {
     '<div class="tdim mb2" style="font-size:13px">' + fmtD(o.FECHA) + ' · Sucursal <b>' + pcEsc(o.SUCURSAL) + '</b>' + (o.SOLICITANTE ? ' · Pidió: <b>' + pcEsc(o.SOLICITANTE) + '</b>' + (o.SOLICITANTE_TEL ? ' (' + pcEsc(o.SOLICITANTE_TEL) + ')' : '') : '') + (o.OBSERVACIONES ? '<br>' + pcEsc(o.OBSERVACIONES) : '') + '</div>' +
     '<label class="fl">Check list de cada equipo</label><div class="mt-eqs mb2">' + O.EQUIPOS.map(function(x) { var e = mtEq(x.ID_EQUIPO), pl = mtPl(x.ID_PLANTILLA), t = 0, r = Object.keys(x.RESP).length, no = 0;
       if (pl) pl.GRUPOS.forEach(function(g) { t += g.ITEMS.length; }); Object.keys(x.RESP).forEach(function(k) { if (pl && x.RESP[k].R === mtMalaResp(mtGrupoDeItem(pl, k))) no++; });
-      return '<button class="btn ' + (r >= t && t ? 'btn-s' : 'btn-p') + '" onclick="mtAbrirCheck(' + x.ID_OE + ')">✔ ' + pcEsc(e.DOMINIO || e.CODIGO) + ' · ' + r + '/' + t + (no ? ' · ' + no + ' a reparar' : '') + '</button>'; }).join('') + '</div></div></div>';
+      return '<button class="btn ' + (r >= t && t ? 'btn-s' : 'btn-p') + '" onclick="mtAbrirCheck(' + x.ID_OE + ')">✔ ' + pcEsc(mtEqIdent(e)) + ' · ' + r + '/' + t + (no ? ' · ' + no + ' a reparar' : '') + '</button>'; }).join('') + '</div></div></div>';
   // Presupuesto
   h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Presupuesto' + (P ? ' ' + pcEsc(P.NRO) : '') + '</span>' + (P ? mtBadge(P.ESTADO) : '') + '</div><div class="card-body" id="mt-pres">';
   if (MT_.lin) h += mtPresEditorHtml();
@@ -16710,7 +16710,7 @@ function mtCheck() {
   var bloq = ['ANULADA', 'FACTURADA', 'TERMINADA'].indexOf(O.ESTADO) !== -1;
   if (!pl) { $id('mt-body').innerHTML = '<div class="al">Este equipo no tiene check list para su tipo.</div><button class="btn btn-s mt2" onclick="MT_.oe=null;mtPintar()">← Volver</button>'; return; }
   var t = 0, r = 0, no = 0; pl.GRUPOS.forEach(function(g) { g.ITEMS.forEach(function(i) { t++; var v = x.RESP[i.ID]; if (v) { r++; if (v.R === mtMalaResp(g)) no++; } }); });
-  var h = '<div class="mt-bar"><div class="flex gap2" style="align-items:center;flex-wrap:wrap"><button class="btn btn-s" onclick="mtCheckSalir()">← Volver a la orden</button><div style="flex:1;min-width:150px"><b style="font-size:16px">' + pcEsc(e.DOMINIO || e.CODIGO) + '</b> · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + '<div class="tdim" style="font-size:12px">' + pcEsc(O.NRO) + ' · ' + pcEsc(pl.CODIGO) + ' ' + pcEsc(pl.NOMBRE) + '</div>' + mtCubTxt(e, 'div') + '</div>' +
+  var h = '<div class="mt-bar"><div class="flex gap2" style="align-items:center;flex-wrap:wrap"><button class="btn btn-s" onclick="mtCheckSalir()">← Volver a la orden</button><div style="flex:1;min-width:150px"><b style="font-size:16px">' + pcEsc(mtEqIdent(e)) + '</b> · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + '<div class="tdim" style="font-size:12px">' + pcEsc(O.NRO) + ' · ' + pcEsc(pl.CODIGO) + ' ' + pcEsc(pl.NOMBRE) + '</div>' + mtCubTxt(e, 'div') + '</div>' +
     '<div style="text-align:right"><b>' + r + '/' + t + '</b>' + (no ? ' · <b style="color:#dc2626">' + no + ' a reparar</b>' : '') + '<div class="tdim" style="font-size:11px" id="mt-gs">' + (Object.keys(MT_.pend).length ? 'Guardando…' : 'Guardado') + '</div></div></div>' +
     '<div class="mt-prog"><div style="width:' + (t ? Math.round(r / t * 100) : 0) + '%"></div></div></div>' +
     (bloq ? '<div class="al mb2">La orden está ' + pcEsc(O.ESTADO.toLowerCase()) + ': el check list se ve pero no se cambia.</div>' : '') +
@@ -16767,7 +16767,7 @@ async function mtImpOrden(id) {
   c += pcEncImp('Orden del taller · Check list', r.ORDEN.NRO, o.SUCURSAL ? 'Sucursal ' + o.SUCURSAL : '') +
     '<div class="dat"><div><b>Cliente</b>' + pcEsc(o.CLIENTE || 'Interno') + '</div><div><b>Fecha</b>' + fmtD(o.FECHA) + '</div><div><b>Pidió</b>' + pcEsc(o.SOLICITANTE || '—') + '</div><div><b>Estado</b>' + pcEsc((MT_EST[r.ORDEN.ESTADO] || [0, r.ORDEN.ESTADO])[1]) + '</div></div>' + (o.OBSERVACIONES ? '<div class="nota">' + pcEsc(o.OBSERVACIONES) + '</div>' : '');
   r.EQUIPOS.forEach(function(x) { var e = mtEq(x.ID_EQUIPO), pl = mtPl(x.ID_PLANTILLA); if (!pl) return;
-    c += '<h2>' + pcEsc(pl.CODIGO + ' · ' + pl.NOMBRE) + ' — ' + pcEsc(e.DOMINIO || e.CODIGO) + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + (x.KM_HS ? ' · ' + Number(x.KM_HS).toLocaleString('es-AR') + ' km/h' : '') + '</h2>' + mtCubTxt(e, 'p') + '<table class="det"><thead><tr><th style="width:55%">Ítem</th><th class="ck">OK/SÍ</th><th class="ck">NO</th><th class="ck">N/A</th><th>Observación</th></tr></thead><tbody>';
+    c += '<h2>' + pcEsc(pl.CODIGO + ' · ' + pl.NOMBRE) + ' — ' + pcEsc(mtEqIdent(e)) + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + (x.KM_HS ? ' · ' + Number(x.KM_HS).toLocaleString('es-AR') + ' km/h' : '') + '</h2>' + mtCubTxt(e, 'p') + '<table class="det"><thead><tr><th style="width:55%">Ítem</th><th class="ck">OK/SÍ</th><th class="ck">NO</th><th class="ck">N/A</th><th>Observación</th></tr></thead><tbody>';
     pl.GRUPOS.forEach(function(g) { c += '<tr><td colspan="5" style="background:#f3f4f6;font-weight:700">' + pcEsc(g.NOMBRE) + '</td></tr>';
       g.ITEMS.forEach(function(i) { var v = (x.RESP[i.ID] || {}).R || ''; c += '<tr><td>' + pcEsc(i.NOMBRE) + '</td><td class="ck">' + (v === 'OK' || v === 'SI' ? '✔' : '') + '</td><td class="ck">' + (v === 'NO' ? '✖' : '') + '</td><td class="ck">' + (v === 'NA' ? '—' : '') + '</td><td>' + pcEsc((x.RESP[i.ID] || {}).OBS || '') + '</td></tr>'; }); });
     c += '</tbody></table>' + (x.OBSERVACIONES ? '<div class="nota">Observaciones: ' + pcEsc(x.OBSERVACIONES) + '</div>' : ''); });
@@ -16810,6 +16810,7 @@ function mtEqGrilla() {
       : '<tr><td colspan="9" class="tc tdim" style="padding:16px">No hay equipos con esos filtros.</td></tr>') + '</tbody></table></div>';
 }
 // Cubiertas del equipo: tipo y medidas (se ven en la ficha, en el check list y en el PDF)
+function mtEqIdent(e) { return (e && (e.IDENT || e.DOMINIO || e.CODIGO)) || ''; }
 function mtCubTxt(e, tag) {
   if (!e || (!e.CUB_TIPO && !e.CUB_MED_DEL && !e.CUB_MED_TRAS)) return '';
   var t = 'Cubiertas: ' + (e.CUB_TIPO ? '<b>' + (e.CUB_TIPO === 'MACIZA' ? 'macizas' : 'inflables') + '</b>' : '') + (e.CUB_MED_DEL ? ' · delantera <b>' + pcEsc(e.CUB_MED_DEL) + '</b>' : '') + (e.CUB_MED_TRAS ? ' · trasera <b>' + pcEsc(e.CUB_MED_TRAS) + '</b>' : '');
@@ -16817,7 +16818,7 @@ function mtCubTxt(e, tag) {
 }
 function mtEqVer(id) {
   var e = mtEq(id), d = MT_.d, os = d.ORDENES.filter(function(o) { return o.EQUIPOS.some(function(x) { return x.ID_EQUIPO === id; }); });
-  showModal('<div class="mh"><span class="mt">' + pcEsc((e.DOMINIO || e.CODIGO) + ' · ' + e.MARCA + ' ' + e.MODELO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="font-size:13.5px">' +
+  showModal('<div class="mh"><span class="mt">' + pcEsc((mtEqIdent(e)) + ' · ' + e.MARCA + ' ' + e.MODELO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="font-size:13.5px">' +
     '<div>Código <b>' + pcEsc(e.CODIGO) + '</b> · Chasis ' + pcEsc(e.CHASIS || '—') + ' · Año ' + (e.ANIO || '—') + ' · ' + (e.KM_HS ? Number(e.KM_HS).toLocaleString('es-AR') + ' km/h' : '') + '</div><div>Cliente: <b>' + pcEsc(e.CLIENTE || 'Propio') + '</b></div>' + mtCubTxt(e, 'div') + (e.OBSERVACIONES ? '<div class="tdim">' + pcEsc(e.OBSERVACIONES) + '</div>' : '') +
     '<h4 class="mt2">Órdenes</h4>' + (os.length ? os.map(function(o) { return '<div>' + pcEsc(o.NRO) + ' · ' + fmtD(o.FECHA) + ' · ' + mtBadge(o.ESTADO) + (o.PRESUP ? ' · ' + mtPlata(o.PRESUP.TOTAL) : '') + '</div>'; }).join('') : '<div class="tdim">Sin órdenes.</div>') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
@@ -16833,7 +16834,7 @@ function mtEqForm(id, desdeOrden) {
     '<div class="pc-fila3" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
     '<div class="fg"><label class="fl">Tipo *</label><select class="fs" id="mt-e-tipo">' + mtOpt(d.TIPOS.map(function(t) { return [t.ID_TIPO, t.NOMBRE]; }), e.ID_TIPO) + '</select></div>' +
     '<div class="fg"><label class="fl">Cliente (vacío = máquina propia)</label><select class="fs" id="mt-e-cli"><option value="">— propio —</option>' + cli.map(function(c) { return '<option value="' + c.ID + '"' + (String(c.ID) === String(e.ID_CLIENTE) ? ' selected' : '') + '>' + pcEsc(c.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
-    '<div class="fg"><label class="fl">Dominio (patente)</label><input class="fi" id="mt-e-dom" style="text-transform:uppercase" value="' + pcEsc(e.DOMINIO || '') + '"></div>' +
+    '<div class="fg"><label class="fl">Dominio (patente) <span class="tdim">· sin patente: N° interno o serie</span></label><input class="fi" id="mt-e-dom" style="text-transform:uppercase" value="' + pcEsc(e.DOMINIO || '') + '"></div>' +
     '<div class="fg"><label class="fl">N° interno</label><input class="fi" id="mt-e-int" value="' + pcEsc(e.INTERNO || '') + '"></div>' +
     '<div class="fg"><label class="fl">Marca</label><select class="fs" id="mt-e-mar" onchange="mtEqMarcaOtra(this)">' + mtEqMarcas(e.MARCA) + '</select></div>' +
     '<div class="fg"><label class="fl">Modelo</label><input class="fi" id="mt-e-mod" list="mt-e-modl" placeholder="Elegí de la lista o escribí" value="' + pcEsc(e.MODELO || '') + '"><datalist id="mt-e-modl">' + mtEqModelos() + '</datalist></div>' +
@@ -16842,7 +16843,7 @@ function mtEqForm(id, desdeOrden) {
     '<div class="fg"><label class="fl">Tipo de cubierta</label><select class="fs" id="mt-e-cubt">' + mtOpt([['', '—'], ['INFLABLE', 'Inflable (con aire)'], ['MACIZA', 'Maciza']], e.CUB_TIPO || '') + '</select></div>' +
     '<div class="fg"><label class="fl">Medida cubierta delantera</label><input class="fi" id="mt-e-cubd" style="text-transform:uppercase" placeholder="Ej.: 28X9-15" value="' + pcEsc(e.CUB_MED_DEL || '') + '"></div>' +
     '<div class="fg"><label class="fl">Medida cubierta trasera <span class="tdim">(si es distinta)</span></label><input class="fi" id="mt-e-cubr" style="text-transform:uppercase" value="' + pcEsc(e.CUB_MED_TRAS || '') + '"></div>' +
-    '<div class="fg" style="grid-column:1/-1"><label class="fl">Chasis</label><input class="fi" id="mt-e-cha" value="' + pcEsc(e.CHASIS || '') + '"></div>' +
+    '<div class="fg" style="grid-column:1/-1"><label class="fl">Chasis / N° de serie</label><input class="fi" id="mt-e-cha" value="' + pcEsc(e.CHASIS || '') + '"></div>' +
     '<div class="fg" style="grid-column:1/-1"><label class="fl">Observaciones</label><input class="fi" id="mt-e-obs" value="' + pcEsc(e.OBSERVACIONES || '') + '"></div></div>' +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="mt-e-ok" onclick="mtEqGuardar(' + (id || 0) + ',' + (desdeOrden ? 1 : 0) + ')">Guardar</button></div>');
 }
