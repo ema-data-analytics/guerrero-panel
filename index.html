@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "dc83946528ef"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "050841273c55"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1524,7 +1524,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611062240';
+var EMA_BUILD = '202611071404';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16891,7 +16891,7 @@ function mtEqVer(id) {
 function mtEqMarcas(v, tipo) { tipo = Number(tipo) || 0; var L = (MT_MARCAS_TIPO[tipo] || []).slice(); MT_.d.EQUIPOS.forEach(function(e) { if (Number(e.ID_TIPO) === tipo && e.MARCA && L.indexOf(e.MARCA) === -1) L.push(e.MARCA); }); if (v && L.indexOf(v) === -1) L.push(v);
   return '<option value="">— elegí o escribí —</option>' + L.sort().map(function(x) { return '<option value="' + pcEsc(x) + '"' + (x === v ? ' selected' : '') + '>' + pcEsc(x) + '</option>'; }).join(''); }
 // Al cambiar el tipo, la marca muestra solo las de ese tipo (si la elegida no corresponde, se limpia)
-function mtEqTipoCambio() { var s = $id('mt-e-mar'); if (!s) return; var v = s.value, t = $v('mt-e-tipo'), L = (MT_MARCAS_TIPO[Number(t)] || []); s.innerHTML = mtEqMarcas(L.indexOf(v) !== -1 || MT_.d.EQUIPOS.some(function(e) { return String(e.ID_TIPO) === String(t) && e.MARCA === v; }) ? v : '', t); }
+function mtEqTipoCambio() { var w = $id('mt-e-dom-w'), sinPat = [3, 4].indexOf(Number($v('mt-e-tipo'))) !== -1; if (w) w.style.display = sinPat ? 'none' : ''; if (sinPat && $id('mt-e-dom')) $id('mt-e-dom').value = ''; var s = $id('mt-e-mar'); if (!s) return; var v = s.value, t = $v('mt-e-tipo'), L = (MT_MARCAS_TIPO[Number(t)] || []); s.innerHTML = mtEqMarcas(L.indexOf(v) !== -1 || MT_.d.EQUIPOS.some(function(e) { return String(e.ID_TIPO) === String(t) && e.MARCA === v; }) ? v : '', t); }
 function mtEqModelos() { var L = []; MT_.d.EQUIPOS.forEach(function(e) { if (e.MODELO && L.indexOf(e.MODELO) === -1) L.push(e.MODELO); }); return L.sort().map(function(x) { return '<option value="' + pcEsc(x) + '">'; }).join(''); }
 function mtEqForm(id, desdeOrden) {
   var e = id ? mtEq(id) : { ID_TIPO: 1, ID_CLIENTE: desdeOrden && MT_.N ? MT_.N.cli : '' }, d = MT_.d;
@@ -16900,7 +16900,7 @@ function mtEqForm(id, desdeOrden) {
     '<div class="pc-fila3" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
     '<div class="fg"><label class="fl">Tipo *</label><select class="fs" id="mt-e-tipo" onchange="mtEqTipoCambio()">' + mtOpt(d.TIPOS.map(function(t) { return [t.ID_TIPO, t.NOMBRE]; }), e.ID_TIPO) + '</select></div>' +
     '<div class="fg"><label class="fl">Cliente (vacío = máquina propia)</label><select class="fs" id="mt-e-cli"><option value="">— propio —</option>' + cli.map(function(c) { return '<option value="' + c.ID + '"' + (String(c.ID) === String(e.ID_CLIENTE) ? ' selected' : '') + '>' + pcEsc(c.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
-    '<div class="fg"><label class="fl">Dominio (patente) <span class="tdim">· sin patente: N° interno o serie</span></label><input class="fi" id="mt-e-dom" style="text-transform:uppercase" value="' + pcEsc(e.DOMINIO || '') + '"></div>' +
+    '<div class="fg" id="mt-e-dom-w"' + ([3, 4].indexOf(Number(e.ID_TIPO)) !== -1 ? ' style="display:none"' : '') + '><label class="fl">Dominio (patente) <span class="tdim">· sin patente: dejalo vacío y cargá N° interno o serie</span></label><input class="fi" id="mt-e-dom" style="text-transform:uppercase" value="' + pcEsc(e.DOMINIO || '') + '"></div>' +
     '<div class="fg"><label class="fl">N° interno</label><input class="fi" id="mt-e-int" value="' + pcEsc(e.INTERNO || '') + '"></div>' +
     '<div class="fg"><label class="fl">Marca <span class="tdim">· si no está, escribila y tocá ＋ Agregar</span></label><select class="fs" id="mt-e-mar" data-filtro data-agregar>' + mtEqMarcas(e.MARCA, e.ID_TIPO) + '</select></div>' +
     '<div class="fg"><label class="fl">Modelo</label><input class="fi" id="mt-e-mod" list="mt-e-modl" placeholder="Elegí de la lista o escribí" value="' + pcEsc(e.MODELO || '') + '"><datalist id="mt-e-modl">' + mtEqModelos() + '</datalist></div>' +
