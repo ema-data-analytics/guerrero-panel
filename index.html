@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "11b0d47ed6fb"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7efd58fbbf93"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -318,6 +318,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
       </div></div>
       <div class="sb-grp" data-g="tll"><div class="sb-gh" onclick="menuGrupo('tll')"><span class="sb-gi-ic">🔧</span><span class="sb-gt">Taller y servicios a empresas</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="taller" data-acc="mt-ord"><span class="nav-icon"><i class="fas fa-wrench"></i></span> Órdenes del taller (check list)</div>
+        <div class="nav-item" data-page="taller" data-acc="mt-mp"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Mantenimiento de planta</div>
         <div class="nav-item" data-page="taller" data-acc="mt-eq"><span class="nav-icon"><i class="fas fa-truck-moving"></i></span> Equipos (camiones y máquinas)</div>
         <div class="nav-item" data-page="taller" data-acc="mt-cat"><span class="nav-icon"><i class="fas fa-list-ul"></i></span> Servicios y recetas</div>
       </div></div>
@@ -1524,7 +1525,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611101615';
+var EMA_BUILD = '202611101807';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16524,7 +16525,7 @@ function mtBadge(e) { var x = MT_EST[e] || ['mt-b-x', e || '—']; return '<span
 function mtPlata(n) { return '$ ' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function mtBtn(cls, txt, js, tit) { return typeof pcBtnAbm === 'function' ? pcBtnAbm(cls, txt, js, tit) : '<button class="btn ' + cls + ' btn-xs" onclick="' + js + '">' + txt + '</button>'; }
 function mtPuede(acc) { return typeof tienePermiso === 'function' ? tienePermiso('VENTAS', acc) : true; }
-function mtTit() { return { ord: 'Órdenes del taller', eq: 'Equipos (camiones y máquinas)', cat: 'Servicios y recetas del taller' }[MT_.vista] || 'Taller'; }
+function mtTit() { return { ord: 'Órdenes del taller', eq: 'Equipos (camiones y máquinas)', cat: 'Servicios y recetas del taller', mp: 'Mantenimiento de máquinas de planta' }[MT_.vista] || 'Taller'; }
 async function renderTaller() {
   var el = $id('page-taller'); if (!el) return;
   if (window._menuAcc && String(window._menuAcc).indexOf('mt-') === 0) { MT_.vista = String(window._menuAcc).substring(3); MT_.nueva = false; MT_.ord = null; MT_.oe = null; MT_.eqNuevo = false; window._menuAcc = ''; }
@@ -16540,6 +16541,7 @@ function mtPintar() {
   var pt = $id('mt-tit'); if (pt) pt.textContent = '🔧 ' + mtTit();
   if (MT_.vista === 'eq') return mtEquipos();
   if (MT_.vista === 'cat') return mtCatalogo();
+  if (MT_.vista === 'mp') return mpPintar();
   if (MT_.oe) return mtCheck();
   if (MT_.ord) return mtOrdenVer();
   if (MT_.nueva) return mtNueva();
@@ -16961,6 +16963,172 @@ function mtCatGrilla() {
   el.innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> servicios</div><div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Código</th><th>Sistema</th><th>Servicio</th><th class="tr">Horas</th><th class="tr">Mano de obra</th><th>Repuestos de la receta</th><th class="tr">Total sugerido</th></tr></thead><tbody>' +
     l.map(function(s) { var rt = 0; s.RECETA.forEach(function(r) { rt += r.PRECIO * r.CANT; });
       return '<tr><td class="mono">' + pcEsc(s.CODIGO) + '</td><td>' + pcEsc(s.SISTEMA) + '</td><td class="pc-wr"><b>' + pcEsc(s.NOMBRE) + '</b></td><td class="tr">' + s.HORAS + '</td><td class="tr">' + mtPlata(s.PRECIO) + '</td><td class="pc-wr">' + (s.RECETA.length ? s.RECETA.map(function(r) { return r.CANT + ' × ' + pcEsc(r.NOMBRE) + ' <span class="tdim">' + mtPlata(r.PRECIO) + (r.STOCK > 0 ? '' : ' · sin stock') + '</span>'; }).join('<br>') : '<span class="tdim">—</span>') + '</td><td class="tr"><b>' + mtPlata(s.PRECIO + rt) + '</b></td></tr>'; }).join('') + '</tbody></table></div>';
+}
+// ════════════════════════════════════════════════════════════════
+// MANTENIMIENTO DE MÁQUINAS DE PLANTA (10/11/2026): cada máquina con su plan (qué, cómo, cuándo),
+// lo que toca hoy y lo vencido, registro con un toque (quién y cuándo), historial y cumplimiento.
+// ════════════════════════════════════════════════════════════════
+var MP_FR = { DIARIO: 'Diario', SEMANAL: 'Semanal', QUINCENAL: 'Cada 15 días', MENSUAL: 'Mensual', TRIMESTRAL: 'Cada 3 meses', SEMESTRAL: 'Cada 6 meses', ANUAL: 'Anual' };
+var MP_PER = { DIARIO: 1, SEMANAL: 7, QUINCENAL: 15, MENSUAL: 30, TRIMESTRAL: 90, SEMESTRAL: 180, ANUAL: 365 };
+(function() { var st = document.createElement('style');
+  st.textContent = '.mp-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.mp-tabs button{min-height:44px}.mp-kp{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.mp-kp>div{flex:1 1 120px;border:1.5px solid var(--border,#e2e8f0);border-radius:12px;padding:10px 12px;background:var(--card,#fff)}.mp-kp b{display:block;font-size:24px}' +
+    '.mp-kp .r b{color:#dc2626}.mp-kp .o b{color:#d97706}.mp-kp .g b{color:#16a34a}.mp-como{flex:1 1 100%;font-size:13px;color:var(--text2,#475569);background:#f8fafc;border-radius:8px;padding:6px 8px;margin-top:2px}' +
+    '.mp-meta{flex:1 1 100%;font-size:12px;color:var(--text2,#64748b)}.mp-ven{color:#dc2626;font-weight:700}.mp-hoy{color:#d97706;font-weight:700}.mp-chip{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;margin-right:6px;background:#e0e7ff;color:#3730a3}';
+  document.head.appendChild(st); })();
+function mpUsr() { return (typeof SES !== 'undefined' && SES) ? (SES.usuario || '') : ''; }
+function mpF(ms) { return ms ? new Date(Number(ms)).toLocaleDateString('es-AR') : '—'; }
+async function mpCargar() {
+  try { var r = await gsRun('gsMT_MP_Datos'); if (!r || !r.ok) { $id('mt-body').innerHTML = '<div class="al">' + pcEsc((r && r.error) || 'No se pudo cargar') + '</div>'; return false; } MT_.mp.d = r; mpIndice(); return true; }
+  catch (e) { $id('mt-body').innerHTML = '<div class="al">' + pcEsc(e.message) + '</div>'; return false; }
+}
+function mpIndice() {
+  var M = MT_.mp, ix = {};
+  M.d.EQUIPOS.forEach(function(e) { ix[e.ID_EQUIPO] = { e: e, c: [], ven: 0, hoy: 0, falla: 0, rev: 0 }; });
+  M.d.CTRLS.forEach(function(c) { var x = ix[c.ID_EQUIPO]; if (!x) return; x.c.push(c); if (c.EST === 'VENCIDO') x.ven++; else if (c.EST === 'HOY') x.hoy++; if (c.FALLA) x.falla++; if (c.REVISAR) x.rev++; });
+  Object.keys(ix).forEach(function(k) { ix[k].c.sort(function(a, b) { return a.ORDEN - b.ORDEN; }); });
+  M.ix = ix;
+}
+async function mpPintar() {
+  var M = MT_.mp = MT_.mp || { tab: 'hoy', eq: null, todo: false, mias: false, planEq: 0, hist: null };
+  if (!M.d) { $id('mt-body').innerHTML = '<div class="tdim">Cargando las máquinas…</div>'; if (!(await mpCargar())) return; }
+  var tabs = '<div class="mp-tabs">' + [['hoy', '🗓 Controles de hoy'], ['plan', '📋 Plan de cada máquina'], ['cum', '📊 Cumplimiento']].map(function(t) {
+    return '<button class="btn ' + (M.tab === t[0] ? 'btn-p' : 'btn-s') + '" onclick="MT_.mp.tab=\'' + t[0] + '\';MT_.mp.eq=null;mpPintar()">' + t[1] + '</button>'; }).join('') +
+    '<button class="btn btn-s" title="Volver a leer" onclick="MT_.mp.d=null;mpPintar()">↻</button></div>';
+  if (M.tab === 'plan') return mpPlan(tabs);
+  if (M.tab === 'cum') return mpCum(tabs);
+  if (M.eq) return mpMaquina();
+  mpHoy(tabs);
+}
+// ── HOY: máquinas con controles vencidos o que tocan hoy ──
+function mpHoy(tabs) {
+  var M = MT_.mp, ven = 0, hoy = 0, fal = [], usr = mpUsr(), hayResp = false;
+  var lista = Object.keys(M.ix).map(function(k) { return M.ix[k]; }).filter(function(x) { if (x.e.RESP) hayResp = true; ven += x.ven; hoy += x.hoy; x.c.forEach(function(c) { if (c.FALLA) fal.push({ x: x, c: c }); }); return true; });
+  var ver = lista.filter(function(x) { return (x.ven + x.hoy) > 0 && (!M.mias || x.e.RESP === usr); }).sort(function(a, b) { return (b.ven - a.ven) || (b.hoy - a.hoy) || String(a.e.TIPO).localeCompare(b.e.TIPO); });
+  var h = tabs + '<div class="mp-kp"><div class="r"><b>' + ven + '</b>controles vencidos</div><div class="o"><b>' + hoy + '</b>para hacer hoy</div><div class="r"><b>' + fal.length + '</b>con falla</div></div>' +
+    (hayResp ? '<label class="mb2" style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox"' + (M.mias ? ' checked' : '') + ' onchange="MT_.mp.mias=this.checked;mpPintar()" style="width:20px;height:20px"> Solo las máquinas a mi cargo</label>' : '');
+  if (fal.length) h += '<div class="card mb3"><div class="card-hd"><span class="card-title" style="color:#dc2626">⚠ Controles que dieron mal</span></div><div class="card-body">' + fal.map(function(f) {
+    return '<div class="mt-it r-NO"><div class="mt-n"><b>' + pcEsc(f.x.e.IDENT) + '</b> · ' + pcEsc(f.x.e.TIPO) + '<br>' + pcEsc(f.c.NOMBRE) + ': <b>' + pcEsc(f.c.ULT_OBS || '') + '</b><div class="mp-meta">' + mpF(f.c.ULT) + ' · ' + pcEsc(f.c.ULT_POR || '') + '</div></div>' +
+      (mtPuede('AGREGAR') ? '<button class="btn btn-s btn-sm" onclick="mpOrden(' + f.c.ID_CTRL + ')">🔧 Abrir orden de taller</button>' : '') + '</div>'; }).join('') + '</div></div>';
+  h += '<div class="card"><div class="card-hd"><span class="card-title">Máquinas con controles para hacer</span></div><div class="card-body">' +
+    (ver.length ? ver.map(function(x) {
+      return '<div class="mt-pick" onclick="MT_.mp.eq=' + x.e.ID_EQUIPO + ';MT_.mp.todo=false;mpPintar()"><div style="flex:1"><b>' + pcEsc(x.e.IDENT) + '</b> · ' + pcEsc(x.e.TIPO) + '<div class="tdim" style="font-size:12px">' + pcEsc([x.e.MARCA, x.e.MODELO].filter(Boolean).join(' ')) + (x.e.RESP ? ' · a cargo de ' + pcEsc(x.e.RESP) : '') + '</div></div>' +
+        (x.ven ? '<span class="mt-bd mt-b-r">' + x.ven + ' vencidos</span> ' : '') + (x.hoy ? '<span class="mt-bd mt-b-o">' + x.hoy + ' hoy</span>' : '') + '<span>›</span></div>'; }).join('')
+      : '<div class="al" style="background:#f0fdf4;border-color:#bbf7d0;color:#166534">✅ Todo al día' + (M.mias ? ' en tus máquinas' : '') + '.</div>') + '</div></div>';
+  $id('mt-body').innerHTML = h;
+}
+// ── UNA MÁQUINA: sus controles para hacer, con el cómo a la vista ──
+function mpMaquina() {
+  var M = MT_.mp, x = M.ix[M.eq]; if (!x) { M.eq = null; return mpPintar(); }
+  var pend = x.c.filter(function(c) { return c.EST !== 'AL_DIA'; }).sort(function(a, b) { return ((b.EST === 'VENCIDO') - (a.EST === 'VENCIDO')) || (b.ESENCIAL - a.ESENCIAL) || (a.ORDEN - b.ORDEN); });
+  var aldia = x.c.filter(function(c) { return c.EST === 'AL_DIA'; });
+  var comunes = pend.filter(function(c) { return !c.ESENCIAL; }).length;
+  var h = '<div class="mt-bar"><div class="flex gap2" style="align-items:center;flex-wrap:wrap"><button class="btn btn-s" onclick="MT_.mp.eq=null;mpPintar()">← Volver</button><div style="flex:1;min-width:160px"><b style="font-size:16px">' + pcEsc(x.e.IDENT) + '</b> · ' + pcEsc(x.e.TIPO) +
+    '<div class="tdim" style="font-size:12px">' + pcEsc([x.e.CODIGO, x.e.MARCA, x.e.MODELO].filter(Boolean).join(' · ')) + (x.e.RESP ? ' · a cargo de ' + pcEsc(x.e.RESP) : '') + '</div></div>' +
+    '<div style="text-align:right"><b>' + pend.length + '</b> para hacer' + (x.ven ? '<div class="mp-ven" style="font-size:12px">' + x.ven + ' vencidos</div>' : '') + '</div></div></div>';
+  if (x.falla && mtPuede('AGREGAR')) h += '<div class="al mb2">Esta máquina tiene ' + x.falla + ' control(es) que dieron mal. <button class="btn btn-s btn-sm" onclick="mpOrden(' + x.c.filter(function(c) { return c.FALLA; })[0].ID_CTRL + ')">🔧 Abrir orden de taller</button></div>';
+  if (!pend.length) h += '<div class="al mb2" style="background:#f0fdf4;border-color:#bbf7d0;color:#166534">✅ No tiene controles pendientes hoy.</div>';
+  else {
+    h += '<div class="tdim mb2" style="font-size:13px">Tocá <b>OK</b>, <b>NO</b> (si da mal: escribís qué tiene) o <b>N/A</b>. Cada toque queda guardado con tu usuario y la hora. Los <span class="mt-es">ESENCIAL</span> se contestan uno por uno.</div>';
+    if (comunes && mtPuede('AGREGAR')) h += '<div class="mt-it" style="justify-content:flex-end"><button class="btn btn-s btn-sm" onclick="mpTodoOk()">✔ Lo demás está todo OK (' + comunes + ', sin los esenciales)</button></div>';
+    h += '<div class="mt-gr">' + pend.map(mpItem).join('') + '</div>';
+  }
+  if (aldia.length) h += '<button class="btn btn-s mt2 mb2" onclick="MT_.mp.todo=!MT_.mp.todo;mpPintar()">' + (M.todo ? '▾ Ocultar' : '▸ Ver') + ' los que están al día (' + aldia.length + ')</button>' + (M.todo ? '<div class="mt-gr">' + aldia.map(mpItem).join('') + '</div>' : '');
+  var sc = document.querySelector('main') || document.scrollingElement, y = sc.scrollTop; $id('mt-body').innerHTML = h; sc.scrollTop = y;
+}
+function mpItem(c) {
+  var est = c.EST === 'VENCIDO' ? '<span class="mp-ven">Vencido hace ' + c.ATRASO + ' día' + (c.ATRASO === 1 ? '' : 's') + '</span>' : (c.EST === 'HOY' ? '<span class="mp-hoy">Toca hoy</span>' : 'Próximo: ' + mpF(c.PROX));
+  var ult = c.ULT ? 'Último: ' + mpF(c.ULT) + ' · ' + pcEsc(c.ULT_POR || '') + ' · ' + pcEsc(c.ULT_RES === 'NA' ? 'N/A' : c.ULT_RES) + (c.ULT_OBS ? ' (' + pcEsc(c.ULT_OBS) + ')' : '') : 'Nunca se hizo';
+  var puede = mtPuede('AGREGAR');
+  return '<div class="mt-it' + (c.ESENCIAL ? ' es' : '') + (c.FALLA ? ' r-NO' : '') + '"><div class="mt-n">' + (c.ESENCIAL ? '<span class="mt-es">ESENCIAL</span>' : '') + '<b>' + pcEsc(c.NOMBRE) + '</b></div>' +
+    (puede ? '<div class="mt-rb"><button onclick="mpReg(' + c.ID_CTRL + ',\'OK\')">OK</button><button onclick="mpReg(' + c.ID_CTRL + ',\'NO\')">NO</button><button onclick="mpReg(' + c.ID_CTRL + ',\'NA\')">N/A</button></div>' : '') +
+    (c.COMO ? '<div class="mp-como"><b>Cómo:</b> ' + pcEsc(c.COMO) + '</div>' : '') +
+    '<div class="mp-meta"><span class="mp-chip">' + pcEsc(MP_FR[c.FRECUENCIA] || c.FRECUENCIA) + '</span>' + est + ' · ' + ult + '</div></div>';
+}
+function mpMarcar(c, r, obs) { c.ULT = Date.now(); c.ULT_RES = r; c.ULT_POR = mpUsr(); c.ULT_OBS = obs || ''; c.FALLA = r === 'NO' ? 1 : 0; c.EST = 'AL_DIA'; c.ATRASO = 0; c.PROX = MT_.mp.d.HOY + (MP_PER[c.FRECUENCIA] || 7) * 86400000; }
+async function mpReg(id, r) {
+  var c = MT_.mp.d.CTRLS.filter(function(x) { return x.ID_CTRL === id; })[0]; if (!c) return;
+  var obs = '';
+  if (r === 'NO') { obs = await uiPedir('¿Qué tiene? «' + c.NOMBRE + '» (queda en el historial de la máquina)', { obligatorio: true, ayuda: 'Ej.: pierde aire en la unión de abajo' }); if (obs === null) return; }
+  try { var res = await gsRun('gsMT_MP_Registrar', { REGS: [{ ID_CTRL: id, R: r, OBS: obs }] }); if (!res || !res.ok) { toast((res && res.error) || 'No se pudo guardar', 'r2'); return; } }
+  catch (e) { toast(e.message, 'r2'); return; }
+  mpMarcar(c, r, obs); mpIndice(); toast(r === 'NO' ? 'Anotado: da mal ✓' : 'Guardado ✓', r === 'NO' ? 'r2' : 'g'); mpPintar();
+}
+async function mpTodoOk() {
+  var x = MT_.mp.ix[MT_.mp.eq], l = x.c.filter(function(c) { return c.EST !== 'AL_DIA' && !c.ESENCIAL; }); if (!l.length) return;
+  try { var res = await gsRun('gsMT_MP_Registrar', { REGS: l.map(function(c) { return { ID_CTRL: c.ID_CTRL, R: 'OK', OBS: '' }; }) }); if (!res || !res.ok) { toast((res && res.error) || 'No se pudo guardar', 'r2'); return; } }
+  catch (e) { toast(e.message, 'r2'); return; }
+  l.forEach(function(c) { mpMarcar(c, 'OK', ''); }); mpIndice(); toast(l.length + ' controles en OK ✓', 'g'); mpPintar();
+}
+// Un control que dio mal abre una orden de taller (correctivo) para esa máquina
+function mpOrden(idCtrl) {
+  var c = MT_.mp.d.CTRLS.filter(function(x) { return x.ID_CTRL === idCtrl; })[0]; if (!c) return;
+  MT_.vista = 'ord'; MT_.ord = null; MT_.oe = null; MT_.nueva = true;
+  MT_.N = { tipo: 'CORRECTIVO', cli: '', eqs: {}, km: {}, q: '', pide: ['Falla en control: ' + c.NOMBRE + (c.ULT_OBS ? ' (' + c.ULT_OBS + ')' : '')], sol: mpUsr(), tel: '' };
+  MT_.N.eqs[c.ID_EQUIPO] = true; MT_.N.km[c.ID_EQUIPO] = 0; mtPintar(); mtTop();
+}
+// ── PLAN DE CADA MÁQUINA: qué, cómo y cuándo; se cambia para esa máquina sola ──
+function mpPlan(tabs) {
+  var M = MT_.mp, eqs = Object.keys(M.ix).map(function(k) { return M.ix[k].e; }).sort(function(a, b) { return String(a.TIPO).localeCompare(b.TIPO) || String(a.IDENT).localeCompare(b.IDENT); });
+  if (!M.planEq && eqs.length) M.planEq = eqs[0].ID_EQUIPO;
+  var x = M.ix[M.planEq], ed = mtPuede('EDITAR');
+  var h = tabs + '<div class="fg"><label class="fl">Máquina</label><select class="fs" data-filtro onchange="MT_.mp.planEq=Number(this.value);MT_.mp.hist=null;mpPintar()">' +
+    eqs.map(function(e) { return '<option value="' + e.ID_EQUIPO + '"' + (e.ID_EQUIPO === M.planEq ? ' selected' : '') + '>' + pcEsc(e.TIPO + ' · ' + e.IDENT + ' · ' + [e.MARCA, e.MODELO].filter(Boolean).join(' ')) + '</option>'; }).join('') + '</select></div>';
+  if (!x) { $id('mt-body').innerHTML = h + '<div class="al">No hay máquinas de planta cargadas.</div>'; return; }
+  h += '<div class="card mb3"><div class="card-hd"><span class="card-title">' + pcEsc(x.e.IDENT) + ' · ' + pcEsc(x.e.TIPO) + '</span><span class="tdim" style="font-size:13px">' + x.c.length + ' controles</span></div><div class="card-body">' +
+    '<div class="mb2" style="font-size:14px">A cargo de: <b>' + pcEsc(x.e.RESP || 'sin asignar') + '</b> ' + (ed ? '<button class="btn btn-s btn-xs" onclick="mpResp()">Cambiar</button>' : '') + '</div>' +
+    (x.rev ? '<div class="al mb2">' + x.rev + ' controles son una <b>propuesta inicial</b> (qué, cómo y cada cuánto). Revisalos con planta, corregí lo que no corresponda y marcá el plan como revisado. ' + (ed ? '<button class="btn btn-s btn-sm" onclick="mpRevisado()">✔ Plan revisado</button>' : '') + '</div>' : '') +
+    (ed ? '<button class="btn btn-p btn-sm mb2" onclick="mpCtrlForm(0)">＋ Agregar control a esta máquina</button>' : '') +
+    '<div class="tw"><table><thead><tr><th>Qué se controla</th><th>Cómo se hace</th><th>Cada cuánto</th><th>Último</th><th>Próximo</th>' + (ed ? '<th></th>' : '') + '</tr></thead><tbody>' +
+    x.c.map(function(c) { return '<tr><td>' + (c.ESENCIAL ? '<span class="mt-es">ESENCIAL</span>' : '') + pcEsc(c.NOMBRE) + (c.REVISAR ? ' <span class="tdim" style="font-size:11px">(a revisar)</span>' : '') + '<div class="tdim" style="font-size:11px">' + pcEsc(c.GRUPO) + '</div></td><td style="min-width:220px;font-size:13px">' + pcEsc(c.COMO || '—') + '</td><td>' + pcEsc(MP_FR[c.FRECUENCIA] || c.FRECUENCIA) + '</td>' +
+      '<td style="font-size:12px">' + (c.ULT ? mpF(c.ULT) + '<br>' + pcEsc(c.ULT_POR) + ' · ' + pcEsc(c.ULT_RES === 'NA' ? 'N/A' : c.ULT_RES) : '—') + '</td><td style="font-size:12px">' + (c.EST === 'VENCIDO' ? '<span class="mp-ven">Vencido (' + c.ATRASO + ' d)</span>' : c.EST === 'HOY' ? '<span class="mp-hoy">Hoy</span>' : mpF(c.PROX)) + '</td>' +
+      (ed ? '<td><div class="mt-acc">' + mtBtn('btn-s', '✏️', 'mpCtrlForm(' + c.ID_CTRL + ')', 'Cambiar') + mtBtn('btn-s', '🚫', 'mpCtrlBaja(' + c.ID_CTRL + ')', 'Sacar del plan') + '</div></td>' : '') + '</tr>'; }).join('') + '</tbody></table></div></div></div>' +
+    '<div class="card"><div class="card-hd"><span class="card-title">Historial de la máquina</span>' + (M.hist ? '' : '<button class="btn btn-s btn-sm" onclick="mpHist()">Ver historial</button>') + '</div><div class="card-body" id="mp-hist">' + (M.hist ? mpHistHtml(M.hist) : '<div class="tdim" style="font-size:13px">Qué se le hizo, cuándo y quién.</div>') + '</div></div>';
+  $id('mt-body').innerHTML = h;
+}
+function mpHistHtml(l) {
+  if (!l.length) return '<div class="tdim">Todavía no tiene controles registrados.</div>';
+  return '<div class="tw"><table><thead><tr><th>Fecha</th><th>Control</th><th>Resultado</th><th>Quién</th></tr></thead><tbody>' + l.map(function(r) {
+    return '<tr' + (r.RES === 'NO' ? ' style="background:#fef2f2"' : '') + '><td>' + new Date(r.FECHA).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) + '</td><td>' + pcEsc(r.CONTROL) + '</td><td><b>' + pcEsc(r.RES === 'NA' ? 'N/A' : r.RES) + '</b>' + (r.OBS ? ' · ' + pcEsc(r.OBS) : '') + '</td><td>' + pcEsc(r.POR) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+}
+async function mpHist() { try { var r = await gsRun('gsMT_MP_Historial', MT_.mp.planEq); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } MT_.mp.hist = r.REGS; mpPintar(); } catch (e) { toast(e.message, 'r2'); } }
+async function mpCtrlForm(id) {
+  var M = MT_.mp, c = id ? M.d.CTRLS.filter(function(x) { return x.ID_CTRL === id; })[0] : null;
+  var nom = await uiPedir(id ? 'Qué se controla' : 'Nuevo control: ¿qué se controla?', { obligatorio: true, valor: c ? c.NOMBRE : '' }); if (nom === null) return;
+  var como = await uiPedir('Cómo se hace (para que cualquiera lo pueda hacer)', { valor: c ? c.COMO : '', ayuda: 'Ej.: abrir la purga de abajo hasta que salga solo aire' }); if (como === null) return;
+  var fr = await uiElegir('¿Cada cuánto se hace?', Object.keys(MP_FR).map(function(k) { return [k, MP_FR[k] + (c && c.FRECUENCIA === k ? ' (actual)' : '')]; })); if (fr === null) return;
+  var es = await uiElegir('¿Es esencial (seguridad: se contesta uno por uno)?', [['1', 'Sí, esencial' + (c && c.ESENCIAL ? ' (actual)' : '')], ['0', 'No' + (c && !c.ESENCIAL ? ' (actual)' : '')]]); if (es === null) return;
+  try { var r = await gsRun('gsMT_MP_CtrlGuardar', { ID_CTRL: id || '', ID_EQUIPO: M.planEq, NOMBRE: nom, COMO: como, FRECUENCIA: fr, ESENCIAL: Number(es) });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Control guardado ✓', 'g'); M.d = null; mpPintar(); } catch (e) { toast(e.message, 'r2'); }
+}
+async function mpCtrlBaja(id) {
+  var c = MT_.mp.d.CTRLS.filter(function(x) { return x.ID_CTRL === id; })[0]; if (!c) return;
+  if (!(await uiConfirmar('¿Sacar «' + c.NOMBRE + '» del plan de esta máquina? Su historial queda guardado.', 'Sacar del plan'))) return;
+  try { var r = await gsRun('gsMT_MP_CtrlBaja', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Sacado del plan ✓', 'g'); MT_.mp.d = null; mpPintar(); } catch (e) { toast(e.message, 'r2'); }
+}
+async function mpRevisado() {
+  if (!(await uiConfirmar('¿Marcar el plan de esta máquina como revisado con planta?', 'Sí, revisado'))) return;
+  try { var r = await gsRun('gsMT_MP_Revisado', MT_.mp.planEq); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Plan revisado ✓', 'g'); MT_.mp.d = null; mpPintar(); } catch (e) { toast(e.message, 'r2'); }
+}
+async function mpResp() {
+  var M = MT_.mp, us = M.d.USUARIOS || [], v;
+  if (us.length) { v = await uiElegir('¿Quién está a cargo de esta máquina?', us.map(function(u) { return [u.USUARIO, u.NOMBRE + ' (' + u.USUARIO + ')']; }).concat([['', 'Nadie (sin asignar)']])); if (v === null) return; }
+  else { v = await uiPedir('Usuario a cargo de esta máquina (vacío = sin asignar)', { valor: M.ix[M.planEq].e.RESP }); if (v === null) return; }
+  try { var r = await gsRun('gsMT_MP_Resp', { ID_EQUIPO: M.planEq, RESP: v }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Responsable guardado ✓', 'g'); M.d = null; mpPintar(); } catch (e) { toast(e.message, 'r2'); }
+}
+// ── CUMPLIMIENTO: se ve en un minuto si se está usando ──
+function mpCum(tabs) {
+  var M = MT_.mp, tot = 0, ok = 0, ven = 0;
+  var filas = Object.keys(M.ix).map(function(k) { var x = M.ix[k], n = x.c.length, al = n - x.ven; tot += n; ok += al; ven += x.ven;
+    var ult = 0; x.c.forEach(function(c) { if (c.ULT && c.ULT > ult) ult = c.ULT; }); return { x: x, n: n, pct: n ? Math.round(al / n * 100) : 100, ult: ult }; }).sort(function(a, b) { return a.pct - b.pct || b.x.ven - a.x.ven; });
+  var pct = tot ? Math.round(ok / tot * 100) : 100, col = pct >= 90 ? 'g' : pct >= 70 ? 'o' : 'r';
+  var h = tabs + '<div class="mp-kp"><div class="' + col + '"><b>' + pct + '%</b>de los controles al día</div><div class="r"><b>' + ven + '</b>controles vencidos</div><div><b>' + (M.d.PERSONAS || []).reduce(function(a, p) { return a + p.CONTROLES; }, 0) + '</b>controles hechos en 30 días</div></div>' +
+    '<div class="card mb3"><div class="card-hd"><span class="card-title">Por máquina</span><span class="tdim" style="font-size:12px">las peores arriba</span></div><div class="card-body"><div class="tw"><table><thead><tr><th>Máquina</th><th>Tipo</th><th>A cargo de</th><th>Al día</th><th>Vencidos</th><th>Con falla</th><th>Último control</th></tr></thead><tbody>' +
+    filas.map(function(f) { var c = f.pct >= 90 ? '#16a34a' : f.pct >= 70 ? '#d97706' : '#dc2626';
+      return '<tr style="cursor:pointer" onclick="MT_.mp.tab=\'hoy\';MT_.mp.eq=' + f.x.e.ID_EQUIPO + ';mpPintar()"><td><b>' + pcEsc(f.x.e.IDENT) + '</b><div class="tdim" style="font-size:11px">' + pcEsc([f.x.e.MARCA, f.x.e.MODELO].filter(Boolean).join(' ')) + '</div></td><td>' + pcEsc(f.x.e.TIPO) + '</td><td>' + pcEsc(f.x.e.RESP || '—') + '</td><td><b style="color:' + c + '">' + f.pct + '%</b></td><td>' + (f.x.ven || '') + '</td><td>' + (f.x.falla ? '<b style="color:#dc2626">' + f.x.falla + '</b>' : '') + '</td><td>' + (f.ult ? mpF(f.ult) : '<span class="mp-ven">nunca</span>') + '</td></tr>'; }).join('') + '</tbody></table></div></div></div>' +
+    '<div class="card"><div class="card-hd"><span class="card-title">Por persona (últimos 30 días)</span></div><div class="card-body">' +
+    ((M.d.PERSONAS || []).length ? '<div class="tw"><table><thead><tr><th>Usuario</th><th>Controles hechos</th><th>Días que controló</th></tr></thead><tbody>' + M.d.PERSONAS.map(function(p) { return '<tr><td>' + pcEsc(p.USUARIO) + '</td><td>' + p.CONTROLES + '</td><td>' + p.DIAS + '</td></tr>'; }).join('') + '</tbody></table></div>'
+      : '<div class="al">Nadie registró controles en los últimos 30 días.</div>') + '</div></div>';
+  $id('mt-body').innerHTML = h;
 }
 </script>
 
