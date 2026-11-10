@@ -786,6 +786,8 @@ function menuClick(el) {
   if (acc === 'fact-rem' && typeof VB_ !== 'undefined') VB_.accion = 'FACTURAR';
   if (acc === 'rem-int') window._stAccion = 'rem-int';
   if (acc.indexOf('pc-') === 0 && typeof PC_ !== 'undefined') { PC_.tab = acc.substring(3); PC_.otNueva = false; PC_.osNueva = false; }
+  // Taller: órdenes, equipos, servicios o mantenimiento de planta (navTo borra _menuAcc antes de abrir la pantalla, por eso se pasa acá)
+  if (acc.indexOf('mt-') === 0 && typeof MT_ !== 'undefined') { MT_.vista = acc.substring(3); MT_.nueva = false; MT_.ord = null; MT_.oe = null; MT_.eqNuevo = false; }
   window._menuAcc = acc;
   navTo(pg);
 }
@@ -1525,7 +1527,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611101807';
+var EMA_BUILD = '202611101817';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16983,7 +16985,7 @@ async function mpCargar() {
 }
 function mpIndice() {
   var M = MT_.mp, ix = {};
-  M.d.EQUIPOS.forEach(function(e) { ix[e.ID_EQUIPO] = { e: e, c: [], ven: 0, hoy: 0, falla: 0, rev: 0 }; });
+  M.d.EQUIPOS.forEach(function(e) { if (e.TIPO) e.TIPO = e.TIPO.charAt(0).toUpperCase() + e.TIPO.slice(1); ix[e.ID_EQUIPO] = { e: e, c: [], ven: 0, hoy: 0, falla: 0, rev: 0 }; });
   M.d.CTRLS.forEach(function(c) { var x = ix[c.ID_EQUIPO]; if (!x) return; x.c.push(c); if (c.EST === 'VENCIDO') x.ven++; else if (c.EST === 'HOY') x.hoy++; if (c.FALLA) x.falla++; if (c.REVISAR) x.rev++; });
   Object.keys(ix).forEach(function(k) { ix[k].c.sort(function(a, b) { return a.ORDEN - b.ORDEN; }); });
   M.ix = ix;
@@ -17118,10 +17120,10 @@ async function mpResp() {
 // ── CUMPLIMIENTO: se ve en un minuto si se está usando ──
 function mpCum(tabs) {
   var M = MT_.mp, tot = 0, ok = 0, ven = 0;
-  var filas = Object.keys(M.ix).map(function(k) { var x = M.ix[k], n = x.c.length, al = n - x.ven; tot += n; ok += al; ven += x.ven;
+  var filas = Object.keys(M.ix).map(function(k) { var x = M.ix[k], n = x.c.length, al = n - x.ven - x.hoy; tot += n; ok += al; ven += x.ven;
     var ult = 0; x.c.forEach(function(c) { if (c.ULT && c.ULT > ult) ult = c.ULT; }); return { x: x, n: n, pct: n ? Math.round(al / n * 100) : 100, ult: ult }; }).sort(function(a, b) { return a.pct - b.pct || b.x.ven - a.x.ven; });
   var pct = tot ? Math.round(ok / tot * 100) : 100, col = pct >= 90 ? 'g' : pct >= 70 ? 'o' : 'r';
-  var h = tabs + '<div class="mp-kp"><div class="' + col + '"><b>' + pct + '%</b>de los controles al día</div><div class="r"><b>' + ven + '</b>controles vencidos</div><div><b>' + (M.d.PERSONAS || []).reduce(function(a, p) { return a + p.CONTROLES; }, 0) + '</b>controles hechos en 30 días</div></div>' +
+  var h = tabs + '<div class="tdim mb2" style="font-size:13px">«Al día» es lo que se hizo dentro de su plazo. Lo que toca hoy y todavía no se hizo, y lo vencido, no cuentan.</div><div class="mp-kp"><div class="' + col + '"><b>' + pct + '%</b>de los controles al día</div><div class="r"><b>' + ven + '</b>controles vencidos</div><div><b>' + (M.d.PERSONAS || []).reduce(function(a, p) { return a + p.CONTROLES; }, 0) + '</b>controles hechos en 30 días</div></div>' +
     '<div class="card mb3"><div class="card-hd"><span class="card-title">Por máquina</span><span class="tdim" style="font-size:12px">las peores arriba</span></div><div class="card-body"><div class="tw"><table><thead><tr><th>Máquina</th><th>Tipo</th><th>A cargo de</th><th>Al día</th><th>Vencidos</th><th>Con falla</th><th>Último control</th></tr></thead><tbody>' +
     filas.map(function(f) { var c = f.pct >= 90 ? '#16a34a' : f.pct >= 70 ? '#d97706' : '#dc2626';
       return '<tr style="cursor:pointer" onclick="MT_.mp.tab=\'hoy\';MT_.mp.eq=' + f.x.e.ID_EQUIPO + ';mpPintar()"><td><b>' + pcEsc(f.x.e.IDENT) + '</b><div class="tdim" style="font-size:11px">' + pcEsc([f.x.e.MARCA, f.x.e.MODELO].filter(Boolean).join(' ')) + '</div></td><td>' + pcEsc(f.x.e.TIPO) + '</td><td>' + pcEsc(f.x.e.RESP || '—') + '</td><td><b style="color:' + c + '">' + f.pct + '%</b></td><td>' + (f.x.ven || '') + '</td><td>' + (f.x.falla ? '<b style="color:#dc2626">' + f.x.falla + '</b>' : '') + '</td><td>' + (f.ult ? mpF(f.ult) : '<span class="mp-ven">nunca</span>') + '</td></tr>'; }).join('') + '</tbody></table></div></div></div>' +
