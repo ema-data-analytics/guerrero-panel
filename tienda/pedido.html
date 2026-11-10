@@ -94,9 +94,11 @@ function accion(){
   if(P.estado==='ESPERANDO_PAGO'){
     var h='<b>Elegí cómo pagar '+pesos(P.total)+'</b>';
     if(P.mp){
-      h+='<p style="margin:14px 0 4px"><b>Mercado Pago (tarjetas)</b></p><button class="btn o" onclick="pagarMp(1,this)">Pagar de contado en 1 pago · '+pesos(P.total)+'</button>';
       var pl=planesCuotas(P.cuotas,P.total);
-      if(pl.length)h+=cuotasHtml(P.total,pl,function(p){return '<button class="btn l" onclick="pagarMp('+p.n+',this)">Pagar en '+p.n+' cuotas</button>';});
+      // Sin planes sin interés cargados: un solo botón; en Mercado Pago el cliente elige 1 pago o cuotas con el interés de su tarjeta (lo ve antes de confirmar)
+      h+='<p style="margin:14px 0 4px"><b>Mercado Pago (tarjetas)</b></p><button class="btn o" onclick="pagarMp(1,this)">'+(pl.length?'Pagar de contado en 1 pago · ':'Pagar con Mercado Pago · ')+pesos(P.total)+'</button>';
+      if(!pl.length)h+='<p class="mu" style="margin-top:6px">Podés pagar en 1 pago o en cuotas con tu tarjeta. Si elegís cuotas, Mercado Pago te muestra el valor de cada cuota y el interés antes de confirmar.</p>';
+      if(pl.length)h+=cuotasHtml(P.total,pl,function(p){return '<button class="btn l" onclick="pagarMp('+p.n+',this)">Pagar en '+p.n+' cuotas sin interés</button>';});
       h+='<div class="err" id="eMp"></div>';
     }
     h+='<p style="margin:14px 0 4px"><b>Transferencia bancaria</b></p>';
