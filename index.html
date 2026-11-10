@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "464bd619f2cb"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "11b0d47ed6fb"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1524,7 +1524,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611101407';
+var EMA_BUILD = '202611101615';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16506,7 +16506,7 @@ var MT_ = { d: null, vista: 'ord', nueva: false, F: null, FE: null, ord: null, o
     '.mt-b-g{background:#dcfce7;color:#166534}.mt-b-o{background:#ffedd5;color:#9a3412}.mt-b-b{background:#dbeafe;color:#1e40af}.mt-b-r{background:#fee2e2;color:#991b1b}.mt-b-x{background:#e5e7eb;color:#374151}.mt-b-v{background:#ede9fe;color:#5b21b6}' +
     '.mt-gr{border:1.5px solid var(--border,#e2e8f0);border-radius:12px;margin:0 0 10px;overflow:hidden;background:var(--card,#fff)}' +
     '.mt-gh{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;font-weight:700;font-size:15px}.mt-gh .mt-pg{margin-left:auto;font-size:13px;font-weight:600}.mt-gh.ok{background:#f0fdf4}.mt-gh.no{background:#fff7ed}' +
-    '.mt-it{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--border,#eef2f7);flex-wrap:wrap}.mt-it .mt-n{flex:1 1 160px;font-size:14px;min-width:0}' +
+    '.mt-it{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--border,#eef2f7);flex-wrap:wrap}.mt-it .mt-n{flex:1 1 160px;font-size:14px;min-width:0}.mt-es{display:inline-block;background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:800;border-radius:6px;padding:1px 6px;margin-right:6px;vertical-align:middle}.mt-it.es{border-left:4px solid #dc2626}.mt-esnota{font-size:12px;color:#b91c1c;flex:1 1 200px}' +
     '.mt-rb{display:flex;gap:6px}.mt-rb button{min-width:54px;min-height:44px;border-radius:10px;border:2px solid #cbd5e1;background:#fff;font-weight:800;font-size:14px;cursor:pointer;color:#334155}' +
     '.mt-rb button.s-OK,.mt-rb button.s-SI.mt-si-ok{background:#16a34a;border-color:#16a34a;color:#fff}.mt-rb button.s-NO,.mt-rb button.s-SI{background:#dc2626;border-color:#dc2626;color:#fff}.mt-rb button.s-NA{background:#64748b;border-color:#64748b;color:#fff}' +
     '.mt-it.r-NO,.mt-it.r-SI{background:#fef2f2}.mt-it.r-OK{background:#f7fef9}.mt-obs{flex:1 1 100%;margin-top:4px}.mt-obs input{width:100%;min-height:40px;font-size:15px}' +
@@ -16693,6 +16693,8 @@ async function mtAbrir(id) {
   try { var r = await gsRun('gsMT_Orden', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } MT_.ord = r; MT_.lin = null; mtPintar(); mtTop(); }
   catch (e) { toast(e.message, 'r2'); }
 }
+// Qué falta del check list en la orden abierta (el presupuesto se arma con todo revisado)
+function mtChkFaltaTxt() { var out = []; (MT_.ord.EQUIPOS || []).forEach(function(x) { var pl = mtPl(x.ID_PLANTILLA); if (!pl) return; var f = 0, fe = 0; pl.GRUPOS.forEach(function(g) { g.ITEMS.forEach(function(i) { if (!x.RESP[i.ID]) { f++; if (i.ESENCIAL) fe++; } }); }); if (f) out.push(mtEqIdent(mtEq(x.ID_EQUIPO)) + ': faltan ' + f + (fe ? ' (' + fe + ' esenciales)' : '')); }); return out.length ? 'Falta completar el check list. ' + out.join(' · ') : ''; }
 function mtOrdenRes(id) { return MT_.d.ORDENES.filter(function(x) { return x.ID_ORDEN === id; })[0]; }
 function mtEq(id) { return MT_.d.EQUIPOS.filter(function(e) { return e.ID_EQUIPO === id; })[0] || {}; }
 function mtPl(id) { return MT_.d.PLANTILLAS.filter(function(p) { return p.ID_PLANTILLA === id; })[0]; }
@@ -16708,7 +16710,7 @@ function mtOrdenVer() {
   // Presupuesto
   h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Presupuesto' + (P ? ' ' + pcEsc(P.NRO) : '') + '</span>' + (P ? mtBadge(P.ESTADO) : '') + '</div><div class="card-body" id="mt-pres">';
   if (MT_.lin) h += mtPresEditorHtml();
-  else if (!P) h += '<div class="tdim mb2">Todavía no hay presupuesto. Se arma solo con lo que dio <b>NO</b> en el check list: el servicio que corresponde, sus repuestos y los precios de la lista vigente (' + pcEsc(MT_.d.LISTA) + '). Después se puede corregir.</div>' + (an || cerr ? '' : '<button class="btn btn-p" style="min-height:48px" onclick="mtPresArmar()">⚙ Armar el presupuesto desde el check list</button>');
+  else if (!P) h += '<div class="tdim mb2">Todavía no hay presupuesto. Se arma solo con lo que dio <b>NO</b> en el check list: el servicio que corresponde, sus repuestos y los precios de la lista vigente (' + pcEsc(MT_.d.LISTA) + '). Después se puede corregir.</div>' + (an || cerr ? '' : (mtChkFaltaTxt() ? '<div class="al mb2">' + pcEsc(mtChkFaltaTxt()) + '</div>' : '') + '<button class="btn btn-p" style="min-height:48px" onclick="mtPresArmar()">⚙ Armar el presupuesto desde el check list</button>');
   else {
     h += mtPresTabla(P.DET, true) + '<div class="tdim mt2" style="font-size:12px">Fecha ' + fmtD(P.FECHA) + ' · válido ' + P.VALIDEZ + ' días · versión ' + P.VERSION + (P.APROBADO_POR ? ' · aprobó <b>' + pcEsc(P.APROBADO_POR) + '</b> (' + pcEsc(P.MEDIO) + ') el ' + fmtD(P.FECHA_APROB) : '') + (P.MOTIVO ? ' · ' + pcEsc(P.MOTIVO) : '') + '</div>';
     if (!an && !cerr) h += '<div class="flex gap2 mt2" style="flex-wrap:wrap">' +
@@ -16787,28 +16789,29 @@ function mtCheck() {
   var x = mtOeAct(), e = mtEq(x.ID_EQUIPO), pl = mtPl(x.ID_PLANTILLA), O = MT_.ord.ORDEN;
   var bloq = ['ANULADA', 'FACTURADA', 'TERMINADA'].indexOf(O.ESTADO) !== -1;
   if (!pl) { $id('mt-body').innerHTML = '<div class="al">Este equipo no tiene check list para su tipo.</div><button class="btn btn-s mt2" onclick="MT_.oe=null;mtPintar()">← Volver</button>'; return; }
-  var t = 0, r = 0, no = 0; pl.GRUPOS.forEach(function(g) { g.ITEMS.forEach(function(i) { t++; var v = x.RESP[i.ID]; if (v) { r++; if (v.R === mtMalaResp(g)) no++; } }); });
+  var t = 0, r = 0, no = 0, te = 0, re = 0; pl.GRUPOS.forEach(function(g) { g.ITEMS.forEach(function(i) { t++; if (i.ESENCIAL) te++; var v = x.RESP[i.ID]; if (v) { r++; if (i.ESENCIAL) re++; if (v.R === mtMalaResp(g)) no++; } }); });
   var h = '<div class="mt-bar"><div class="flex gap2" style="align-items:center;flex-wrap:wrap"><button class="btn btn-s" onclick="mtCheckSalir()">← Volver a la orden</button><div style="flex:1;min-width:150px"><b style="font-size:16px">' + pcEsc(mtEqIdent(e)) + '</b> · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + '<div class="tdim" style="font-size:12px">' + pcEsc(O.NRO) + ' · ' + pcEsc(pl.CODIGO) + ' ' + pcEsc(pl.NOMBRE) + '</div>' + mtCubTxt(e, 'div') + '</div>' +
-    '<div style="text-align:right"><b>' + r + '/' + t + '</b>' + (no ? ' · <b style="color:#dc2626">' + no + ' a reparar</b>' : '') + '<div class="tdim" style="font-size:11px" id="mt-gs">' + (Object.keys(MT_.pend).length ? 'Guardando…' : 'Guardado') + '</div></div></div>' +
+    '<div style="text-align:right"><b>' + r + '/' + t + '</b>' + (te ? '<div style="font-size:12px;color:' + (re < te ? '#b91c1c' : '#15803d') + '">Esenciales ' + re + '/' + te + '</div>' : '') + (no ? ' · <b style="color:#dc2626">' + no + ' a reparar</b>' : '') + '<div class="tdim" style="font-size:11px" id="mt-gs">' + (Object.keys(MT_.pend).length ? 'Guardando…' : 'Guardado') + '</div></div></div>' +
     '<div class="mt-prog"><div style="width:' + (t ? Math.round(r / t * 100) : 0) + '%"></div></div></div>' +
     (bloq ? '<div class="al mb2">La orden está ' + pcEsc(O.ESTADO.toLowerCase()) + ': el check list se ve pero no se cambia.</div>' : '') +
+    (te && !bloq ? '<div class="tdim mb2" style="font-size:13px">Se revisa <b>todo</b>. Los ítems <span class="mt-es">ESENCIAL</span> (seguridad) se contestan uno por uno; en el resto, si está todo bien, podés marcar el grupo entero con un toque.</div>' : '') +
     '<div class="fg"><label class="fl">Km / horas del equipo hoy <span class="tdim">(precargado con el último registro)</span></label><input class="fi" inputmode="numeric" style="max-width:200px" value="' + (x.KM_HS || e.KM_HS || '') + '"' + (bloq ? ' disabled' : '') + ' onchange="mtChkKm(this.value)"></div>';
   pl.GRUPOS.forEach(function(g) {
-    var gr = 0, gno = 0; g.ITEMS.forEach(function(i) { var v = x.RESP[i.ID]; if (v) { gr++; if (v.R === mtMalaResp(g)) gno++; } });
+    var gr = 0, gno = 0, pe = 0, pn = 0; g.ITEMS.forEach(function(i) { var v = x.RESP[i.ID]; if (v) { gr++; if (v.R === mtMalaResp(g)) gno++; } else if (i.ESENCIAL) pe++; else pn++; });
     var comp = gr === g.ITEMS.length, ab = MT_.grAb[g.ID_GRUPO] !== undefined ? MT_.grAb[g.ID_GRUPO] : !comp;
     var ops = g.RESP === 'SI_NO_NA' ? [['SI', 'SÍ'], ['NO', 'NO'], ['NA', 'N/A']] : [['OK', 'OK'], ['NO', 'NO'], ['NA', 'N/A']];
-    h += '<div class="mt-gr"><div class="mt-gh' + (comp ? (gno ? ' no' : ' ok') : '') + '" onclick="MT_.grAb[' + g.ID_GRUPO + ']=' + (ab ? 'false' : 'true') + ';mtCheck()"><span>' + (comp ? (gno ? '⚠' : '✅') : '◻') + '</span><span>' + pcEsc(g.NOMBRE) + '</span><span class="mt-pg">' + gr + '/' + g.ITEMS.length + (gno ? ' · ' + gno + ' ✖' : '') + ' ' + (ab ? '▾' : '▸') + '</span></div>';
+    h += '<div class="mt-gr"><div class="mt-gh' + (comp ? (gno ? ' no' : ' ok') : '') + '" onclick="MT_.grAb[' + g.ID_GRUPO + ']=' + (ab ? 'false' : 'true') + ';mtCheck()"><span>' + (comp ? (gno ? '⚠' : '✅') : '◻') + '</span><span>' + pcEsc(g.NOMBRE) + '</span><span class="mt-pg">' + gr + '/' + g.ITEMS.length + (gno ? ' · ' + gno + ' ✖' : '') + (pe ? ' · <span style="color:#b91c1c">' + pe + ' esenc.</span>' : '') + ' ' + (ab ? '▾' : '▸') + '</span></div>';
     if (ab) {
-      if (!bloq && g.RESP !== 'SI_NO_NA') h += '<div class="mt-it" style="justify-content:flex-end"><button class="btn btn-s btn-sm" onclick="mtChkTodo(' + g.ID_GRUPO + ')">✔ Lo que falta de este grupo: todo OK</button></div>';
-      g.ITEMS.forEach(function(i) { var v = x.RESP[i.ID] || {}, mal = v.R === mtMalaResp(g);
-        h += '<div class="mt-it' + (v.R ? ' r-' + (mal ? 'NO' : v.R) : '') + '"><div class="mt-n">' + pcEsc(i.NOMBRE) + '</div><div class="mt-rb">' + ops.map(function(o) {
+      if (!bloq && g.RESP !== 'SI_NO_NA' && (pn || pe)) h += '<div class="mt-it" style="justify-content:flex-end">' + (pe ? '<span class="mt-esnota">' + pe + ' esencial' + (pe > 1 ? 'es' : '') + ': contestalo' + (pe > 1 ? 's' : '') + ' uno por uno</span>' : '') + (pn ? '<button class="btn btn-s btn-sm" onclick="mtChkTodo(' + g.ID_GRUPO + ')">✔ ' + (pe ? 'El resto' : 'Lo que falta') + ' de este grupo: todo OK (' + pn + ')</button>' : '') + '</div>';
+      g.ITEMS.filter(function(i) { return i.ESENCIAL; }).concat(g.ITEMS.filter(function(i) { return !i.ESENCIAL; })).forEach(function(i) { var v = x.RESP[i.ID] || {}, mal = v.R === mtMalaResp(g);
+        h += '<div class="mt-it' + (i.ESENCIAL ? ' es' : '') + (v.R ? ' r-' + (mal ? 'NO' : v.R) : '') + '"><div class="mt-n">' + (i.ESENCIAL ? '<span class="mt-es">ESENCIAL</span>' : '') + pcEsc(i.NOMBRE) + '</div><div class="mt-rb">' + ops.map(function(o) {
           return '<button' + (bloq ? ' disabled' : '') + ' class="' + (v.R === o[0] ? 's-' + (o[0] === mtMalaResp(g) ? 'NO' : (o[0] === 'NA' ? 'NA' : 'OK')) : '') + '" onclick="mtChkSet(' + i.ID + ',\'' + o[0] + '\')">' + o[1] + '</button>'; }).join('') + '</div>' +
           (mal ? '<div class="mt-obs"><div class="tdim" style="font-size:12px">¿Qué tiene? (se pasa al presupuesto)</div>' + (bloq ? '<b>' + pcEsc(v.OBS || '—') + '</b>' : mtChips(MT_FALLAS.concat(['Otro…']), String(v.OBS || '').split(', '), 'mtChkFalla.bind(null,' + i.ID + ')') + (v.OBS ? '<div style="font-size:13px">Anotado: <b>' + pcEsc(v.OBS) + '</b></div>' : '')) + '</div>' : '') + '</div>'; });
     }
     h += '</div>';
   });
   h += '<div class="fg mt2"><label class="fl">Observaciones del equipo</label><input class="fi" value="' + pcEsc(x.OBSERVACIONES || '') + '"' + (bloq ? ' disabled' : '') + ' onchange="mtChkObsEq(this.value)"></div>' +
-    '<button class="btn btn-p mt2" style="width:100%;min-height:52px;font-size:16px" onclick="mtCheckSalir()">' + (r >= t ? '✅ Listo: volver a la orden y armar el presupuesto' : 'Guardar y volver a la orden (faltan ' + (t - r) + ')') + '</button>';
+    '<button class="btn btn-p mt2" style="width:100%;min-height:52px;font-size:16px" onclick="mtCheckSalir()">' + (r >= t ? '✅ Listo: volver a la orden y armar el presupuesto' : 'Guardar y volver a la orden (faltan ' + (t - r) + (te - re ? ', ' + (te - re) + ' esenciales' : '') + ')') + '</button>';
   var sc = document.querySelector('main') || document.scrollingElement, y = sc.scrollTop; $id('mt-body').innerHTML = h; sc.scrollTop = y; mtBarPegada();
 }
 function mtBarPegada() { var sc = document.querySelector('main'), b = document.querySelector('.mt-bar'); if (!sc || !b) return; var pad = parseFloat(getComputedStyle(sc).paddingTop) || 0; b.classList.toggle('pegada', b.getBoundingClientRect().top <= sc.getBoundingClientRect().top + pad + 1 && sc.scrollTop > 0); if (!sc._mtb) { sc._mtb = 1; sc.addEventListener('scroll', mtBarPegada, { passive: true }); } }
@@ -16818,7 +16821,7 @@ async function mtChkFalla(id, k) { var x = mtOeAct(); if (!x.RESP[id]) return; v
   else { var f = MT_FALLAS[k], j = L.indexOf(f); if (j === -1) L.push(f); else L.splice(j, 1); }
   x.RESP[id].OBS = L.join(', '); MT_.pend[id] = 1; mtCheck(); mtChkProg(); }
 function mtChkObs(id, t) { var x = mtOeAct(); if (!x.RESP[id]) return; x.RESP[id].OBS = t; MT_.pend[id] = 1; mtChkProg(); }
-function mtChkTodo(idG) { var x = mtOeAct(), pl = mtPl(x.ID_PLANTILLA); pl.GRUPOS.forEach(function(g) { if (g.ID_GRUPO !== idG) return; g.ITEMS.forEach(function(i) { if (!x.RESP[i.ID]) { x.RESP[i.ID] = { R: 'OK', OBS: '' }; MT_.pend[i.ID] = 1; } }); }); MT_.grAb[idG] = false; mtCheck(); mtChkProg(); }
+function mtChkTodo(idG) { var x = mtOeAct(), pl = mtPl(x.ID_PLANTILLA); pl.GRUPOS.forEach(function(g) { if (g.ID_GRUPO !== idG) return; g.ITEMS.forEach(function(i) { if (!x.RESP[i.ID] && !i.ESENCIAL) { x.RESP[i.ID] = { R: 'OK', OBS: '' }; MT_.pend[i.ID] = 1; } }); }); var gq = pl.GRUPOS.filter(function(g) { return g.ID_GRUPO === idG; })[0]; MT_.grAb[idG] = gq.ITEMS.some(function(i) { return !x.RESP[i.ID]; }); mtCheck(); mtChkProg(); }
 function mtChkKm(v) { MT_.km = v; MT_.pend._km = 1; mtChkProg(); }
 function mtChkObsEq(v) { MT_.obsEq = v; MT_.pend._obs = 1; mtChkProg(); }
 function mtChkProg() { if (MT_.tmr) clearTimeout(MT_.tmr); var g = $id('mt-gs'); if (g) g.textContent = 'Guardando…'; MT_.tmr = setTimeout(mtChkGuardar, 1200); }
