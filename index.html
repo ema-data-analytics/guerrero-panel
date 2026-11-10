@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "050841273c55"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "464bd619f2cb"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1524,7 +1524,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611071404';
+var EMA_BUILD = '202611101407';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -7660,8 +7660,8 @@ var ABM_CONFIGS = {
   },
   'abm-medidas': {
     title: 'Medidas', icon: '📏', store: 'medidas', key: 'ID_MEDIDA',
-    cols: ['ID_MEDIDA', 'NOMBRE_MEDIDA'],
-    labels: ['ID', 'Medida']
+    cols: ['ID_MEDIDA', 'NOMBRE_MEDIDA', 'LINEA'],
+    labels: ['ID', 'Medida', 'Línea']
   },
   'abm-tipos-gasto': {
     title: 'Tipos de Gasto', icon: '🗃', store: 'm_tipo_gastos', key: 'ID_TIPO_GASTO',
@@ -7777,7 +7777,12 @@ function abmInlineClear(page) {
 
 // Alta rápida desde el desplegable: se escribe la marca o la medida que falta y se toca «＋ Agregar»
 async function abmMarcaRapida(t) { var ex = (await ADB.getAll('marcas')).filter(function(m) { return selbClave(m.MARCA) === selbClave(t); })[0]; if (ex) return { value: ex.ID_MARCA, text: ex.MARCA }; var id = await nextId('marcas', 'ID_MARCA'); await ADB.put('marcas', { ID_MARCA: id, MARCA: t, ACTIVO: 1 }); return { value: id, text: t }; }
-async function abmMedidaRapida(t) { var ex = (await ADB.getAll('medidas')).filter(function(m) { return selbClave(m.NOMBRE_MEDIDA) === selbClave(t); })[0]; if (ex) return { value: ex.ID_MEDIDA, text: ex.NOMBRE_MEDIDA }; var id = await nextId('medidas', 'ID_MEDIDA'); await ADB.put('medidas', { ID_MEDIDA: id, NOMBRE_MEDIDA: t, ACTIVO: 1 }); return { value: id, text: t }; }
+async function abmMedidaRapida(t) {
+  var lin = await uiElegir('¿De qué línea es la medida ' + t + '?', [['CAMIONES', 'Camiones'], ['AGRICOLA', 'Agrícola'], ['VIAL', 'Vial']]); if (!lin) return null;
+  var ex = (await ADB.getAll('medidas')).filter(function(m) { return String(m.ACTIVO) !== '0' && String(m.LINEA || '') === lin && selbClave(m.NOMBRE_MEDIDA) === selbClave(t); })[0];
+  if (ex) return { value: ex.ID_MEDIDA, text: ex.NOMBRE_MEDIDA };
+  var id = await nextId('medidas', 'ID_MEDIDA'); await ADB.put('medidas', { ID_MEDIDA: id, NOMBRE_MEDIDA: t, LINEA: lin, ACTIVO: 1 }); return { value: id, text: t };
+}
 async function _abmCargarSelectsMarcaMedida(d) {
   const [marcas, medidas] = await Promise.all([ADB.getAll('marcas'), ADB.getAll('medidas')]);
   const marcaSel = $id('abm-marca-sel');
@@ -8052,8 +8057,10 @@ function buildABMForm(page, d) {
       '<input id="abm-nom" class="fi" value="' + v('MARCA') + '" placeholder="Ej: BRIDGESTONE" style="text-transform:uppercase"/></div>';
   }
   if (page === 'abm-medidas') {
+    var _lin = v('LINEA');
     return '<div class="fg"><label class="fl">Medida *</label>' +
-      '<input id="abm-nom" class="fi" value="' + v('NOMBRE_MEDIDA') + '" placeholder="Ej: 275/80 R22.5" style="text-transform:uppercase"/></div>';
+      '<input id="abm-nom" class="fi" value="' + v('NOMBRE_MEDIDA') + '" placeholder="Ej: 275/80 R22.5" style="text-transform:uppercase"/></div>' +
+      '<div class="fg"><label class="fl">Línea *</label><select id="abm-linea" class="fs">' + [['', '— elegí —'], ['CAMIONES', 'Camiones'], ['AGRICOLA', 'Agrícola'], ['VIAL', 'Vial']].map(function(o) { return '<option value="' + o[0] + '"' + (o[0] === _lin ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
   }
   if (page === 'abm-tipos-gasto') {
     return '<div class="fg"><label class="fl">Categoría / Nombre *</label>' +
@@ -8181,15 +8188,21 @@ async function saveABM() {
       var _dupM = (await ADB.getAll('marcas')).filter(function(m) { return (!d || String(m.ID_MARCA) !== String(d.ID_MARCA)) && selbClave(m.MARCA) === selbClave($v('abm-nom')); })[0];
       if (_dupM) { toast('Ya existe la marca «' + _dupM.MARCA + '»', 'r2'); return; }
       var idMarca = d ? d.ID_MARCA : (await nextId('marcas','ID_MARCA'));
-      rec = {ID_MARCA:idMarca, MARCA:$v('abm-nom').trim().toUpperCase(), ACTIVO:1};
+      rec = Object.assign({}, d || {}, {ID_MARCA:idMarca, MARCA:$v('abm-nom').trim().toUpperCase(), ACTIVO: d && d.ACTIVO !== undefined ? d.ACTIVO : 1});
       await ADB.put('marcas', rec);
     }
     else if (page === 'abm-medidas') {
       if (!$v('abm-nom').trim()) { toast('Ingresar medida','r2'); return; }
-      var _dupMe = (await ADB.getAll('medidas')).filter(function(m) { return (!d || String(m.ID_MEDIDA) !== String(d.ID_MEDIDA)) && selbClave(m.NOMBRE_MEDIDA) === selbClave($v('abm-nom')); })[0];
-      if (_dupMe) { toast('Ya existe la medida «' + _dupMe.NOMBRE_MEDIDA + '»', 'r2'); return; }
+      // Cada línea (camiones, agrícola, vial) tiene sus medidas: no puede haber dos iguales en la misma línea
+      var _linM = $v('abm-linea'); if (!_linM && !(d && String(d.NOMBRE_MEDIDA).toUpperCase() === 'TODAS')) { toast('Elegí la línea de la medida','r2'); return; }
+      var _dupMe = (await ADB.getAll('medidas')).filter(function(m) { return (!d || String(m.ID_MEDIDA) !== String(d.ID_MEDIDA)) && String(m.ACTIVO) !== '0' && String(m.LINEA || '') === _linM && selbClave(m.NOMBRE_MEDIDA) === selbClave($v('abm-nom')); })[0];
+      if (_dupMe) { toast('Ya existe la medida «' + _dupMe.NOMBRE_MEDIDA + '» en esa línea', 'r2'); return; }
+      // El nombre de la medida es único en todo el sistema: la misma medida en otra línea se escribe distinto (ej.: camiones 6.50-16, agrícola 650-16)
+      var _igual = (await ADB.getAll('medidas')).filter(function(m) { return (!d || String(m.ID_MEDIDA) !== String(d.ID_MEDIDA)) && String(m.NOMBRE_MEDIDA).toUpperCase() === $v('abm-nom').trim().toUpperCase(); })[0];
+      if (_igual) { toast('«' + _igual.NOMBRE_MEDIDA + '» ya existe en la línea ' + (_igual.LINEA || 'sin línea') + '. Para otra línea escribila distinto (ej.: sin punto)', 'r2'); return; }
       var idMed = d ? d.ID_MEDIDA : (await nextId('medidas','ID_MEDIDA'));
-      rec = {ID_MEDIDA:idMed, NOMBRE_MEDIDA:$v('abm-nom').trim().toUpperCase(), ACTIVO:1};
+      // Se conservan los demás datos de la medida (al guardar se escribe la fila entera)
+      rec = Object.assign({}, d || {}, {ID_MEDIDA:idMed, NOMBRE_MEDIDA:$v('abm-nom').trim().toUpperCase(), LINEA:_linM, ACTIVO: d && d.ACTIVO !== undefined ? d.ACTIVO : 1});
       await ADB.put('medidas', rec);
     }
     else if (page === 'abm-tipos-gasto') {
@@ -16891,7 +16904,11 @@ function mtEqVer(id) {
 function mtEqMarcas(v, tipo) { tipo = Number(tipo) || 0; var L = (MT_MARCAS_TIPO[tipo] || []).slice(); MT_.d.EQUIPOS.forEach(function(e) { if (Number(e.ID_TIPO) === tipo && e.MARCA && L.indexOf(e.MARCA) === -1) L.push(e.MARCA); }); if (v && L.indexOf(v) === -1) L.push(v);
   return '<option value="">— elegí o escribí —</option>' + L.sort().map(function(x) { return '<option value="' + pcEsc(x) + '"' + (x === v ? ' selected' : '') + '>' + pcEsc(x) + '</option>'; }).join(''); }
 // Al cambiar el tipo, la marca muestra solo las de ese tipo (si la elegida no corresponde, se limpia)
-function mtEqTipoCambio() { var w = $id('mt-e-dom-w'), sinPat = [3, 4].indexOf(Number($v('mt-e-tipo'))) !== -1; if (w) w.style.display = sinPat ? 'none' : ''; if (sinPat && $id('mt-e-dom')) $id('mt-e-dom').value = ''; var s = $id('mt-e-mar'); if (!s) return; var v = s.value, t = $v('mt-e-tipo'), L = (MT_MARCAS_TIPO[Number(t)] || []); s.innerHTML = mtEqMarcas(L.indexOf(v) !== -1 || MT_.d.EQUIPOS.some(function(e) { return String(e.ID_TIPO) === String(t) && e.MARCA === v; }) ? v : '', t); }
+// Check lists del tipo: si hay más de uno (máquinas de planta) se elige el de la máquina; si hay uno solo, va ese
+function mtEqPlOpts(tipo, sel) { var L = MT_.d.PLANTILLAS.filter(function(p) { return Number(p.ID_TIPO) === Number(tipo); }).sort(function(a, b) { return (/-GE$/.test(b.CODIGO) ? 1 : 0) - (/-GE$/.test(a.CODIGO) ? 1 : 0); });
+  if (L.length <= 1) return '<option value="">' + (L.length ? pcEsc(L[0].NOMBRE) : 'Este tipo no tiene check list') + '</option>';
+  return L.map(function(p) { return '<option value="' + p.ID_PLANTILLA + '"' + (String(p.ID_PLANTILLA) === String(sel || '') ? ' selected' : '') + '>' + pcEsc(p.NOMBRE) + '</option>'; }).join(''); }
+function mtEqTipoCambio() { var pls = $id('mt-e-pl'); if (pls) pls.innerHTML = mtEqPlOpts($v('mt-e-tipo'), ''); var w = $id('mt-e-dom-w'), sinPat = [3, 4].indexOf(Number($v('mt-e-tipo'))) !== -1; if (w) w.style.display = sinPat ? 'none' : ''; if (sinPat && $id('mt-e-dom')) $id('mt-e-dom').value = ''; var s = $id('mt-e-mar'); if (!s) return; var v = s.value, t = $v('mt-e-tipo'), L = (MT_MARCAS_TIPO[Number(t)] || []); s.innerHTML = mtEqMarcas(L.indexOf(v) !== -1 || MT_.d.EQUIPOS.some(function(e) { return String(e.ID_TIPO) === String(t) && e.MARCA === v; }) ? v : '', t); }
 function mtEqModelos() { var L = []; MT_.d.EQUIPOS.forEach(function(e) { if (e.MODELO && L.indexOf(e.MODELO) === -1) L.push(e.MODELO); }); return L.sort().map(function(x) { return '<option value="' + pcEsc(x) + '">'; }).join(''); }
 function mtEqForm(id, desdeOrden) {
   var e = id ? mtEq(id) : { ID_TIPO: 1, ID_CLIENTE: desdeOrden && MT_.N ? MT_.N.cli : '' }, d = MT_.d;
@@ -16906,6 +16923,7 @@ function mtEqForm(id, desdeOrden) {
     '<div class="fg"><label class="fl">Modelo</label><input class="fi" id="mt-e-mod" list="mt-e-modl" placeholder="Elegí de la lista o escribí" value="' + pcEsc(e.MODELO || '') + '"><datalist id="mt-e-modl">' + mtEqModelos() + '</datalist></div>' +
     '<div class="fg"><label class="fl">Año</label><select class="fs" id="mt-e-anio"><option value="">—</option>' + (function() { var o = '', y = new Date().getFullYear() + 1; for (; y >= 1980; y--) o += '<option' + (Number(e.ANIO) === y ? ' selected' : '') + '>' + y + '</option>'; return o; })() + '</select></div>' +
     '<div class="fg"><label class="fl">Km / horas</label><input class="fi" id="mt-e-km" inputmode="numeric" value="' + (e.KM_HS || '') + '"></div>' +
+    '<div class="fg" id="mt-e-pl-w" style="grid-column:1/-1"><label class="fl">Check list</label><select class="fs" id="mt-e-pl">' + mtEqPlOpts(e.ID_TIPO, e.ID_PLANTILLA) + '</select></div>' +
     '<div class="fg"><label class="fl">Tipo de cubierta</label><select class="fs" id="mt-e-cubt">' + mtOpt([['', '—'], ['INFLABLE', 'Inflable (con aire)'], ['MACIZA', 'Maciza']], e.CUB_TIPO || '') + '</select></div>' +
     '<div class="fg"><label class="fl">Medida cubierta delantera</label><input class="fi" id="mt-e-cubd" style="text-transform:uppercase" placeholder="Ej.: 28X9-15" value="' + pcEsc(e.CUB_MED_DEL || '') + '"></div>' +
     '<div class="fg"><label class="fl">Medida cubierta trasera <span class="tdim">(si es distinta)</span></label><input class="fi" id="mt-e-cubr" style="text-transform:uppercase" value="' + pcEsc(e.CUB_MED_TRAS || '') + '"></div>' +
@@ -16915,7 +16933,7 @@ function mtEqForm(id, desdeOrden) {
 }
 async function mtEqGuardar(id, desdeOrden) {
   var b = $id('mt-e-ok'); b.disabled = true;
-  try { var r = await gsRun('gsMT_EquipoGuardar', { ID_EQUIPO: id || '', ID_TIPO: $v('mt-e-tipo'), ID_CLIENTE: $v('mt-e-cli'), DOMINIO: $v('mt-e-dom'), INTERNO: $v('mt-e-int'), MARCA: $v('mt-e-mar'), MODELO: $v('mt-e-mod'), ANIO: $v('mt-e-anio'), KM_HS: $v('mt-e-km'), CHASIS: $v('mt-e-cha'), OBSERVACIONES: $v('mt-e-obs'), CUB_TIPO: $v('mt-e-cubt'), CUB_MED_DEL: $v('mt-e-cubd'), CUB_MED_TRAS: $v('mt-e-cubr') });
+  try { var r = await gsRun('gsMT_EquipoGuardar', { ID_EQUIPO: id || '', ID_TIPO: $v('mt-e-tipo'), ID_CLIENTE: $v('mt-e-cli'), DOMINIO: $v('mt-e-dom'), INTERNO: $v('mt-e-int'), MARCA: $v('mt-e-mar'), MODELO: $v('mt-e-mod'), ANIO: $v('mt-e-anio'), KM_HS: $v('mt-e-km'), CHASIS: $v('mt-e-cha'), OBSERVACIONES: $v('mt-e-obs'), CUB_TIPO: $v('mt-e-cubt'), CUB_MED_DEL: $v('mt-e-cubd'), CUB_MED_TRAS: $v('mt-e-cubr'), ID_PLANTILLA: $v('mt-e-pl') });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
     closeModal(); toast('Equipo guardado ✓', 'g');
     if (desdeOrden && MT_.N) { MT_.N.eqs[r.ID_EQUIPO] = true; if (!MT_.N.cli && MT_.N.tipo === 'SERVICIO_CLIENTE') MT_.N.cli = $v('mt-e-cli'); }
