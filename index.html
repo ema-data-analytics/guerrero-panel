@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "938250b4f7f7"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "67d2329829f6"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1530,7 +1530,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611111258';
+var EMA_BUILD = '202611111324';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -4157,7 +4157,7 @@ async function vtaVerDetalle(id) {
       '<div><span class="tdim" style="font-size:11px">CARGÓ</span><div>' + vEsc(v.USUARIO || '—') + '</div></div></div>' +
       (v.ORIGEN ? '<div class="mb2">Sobre <b>' + vEsc(v.ORIGEN) + '</b></div>' : '') +
       '<div class="tw"><table style="font-size:12px"><thead><tr><th>Detalle</th><th class="tr">Cant.</th><th class="tr">Neto</th><th class="tr">IVA</th><th class="tr">Subtotal</th></tr></thead><tbody>' +
-      r.ITEMS.map(function(i) { return '<tr><td>' + vEsc(i.NOMBRE) + '</td><td class="mono tr">' + i.CANT + '</td><td class="mono tr">' + fmt(i.NETO) + '</td><td class="mono tr">' + fmt(i.IVA) + ' (' + i.IVA_AL + '%)</td><td class="mono tr" style="font-weight:700">' + fmt(i.SUB) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+      r.ITEMS.map(function(i) { return '<tr><td>' + vEsc(i.NOMBRE) + vMarcaVenta(i.DIBUJO, i.SIN_CARGO) + '</td><td class="mono tr">' + i.CANT + '</td><td class="mono tr">' + fmt(i.NETO) + '</td><td class="mono tr">' + fmt(i.IVA) + ' (' + i.IVA_AL + '%)</td><td class="mono tr" style="font-weight:700">' + fmt(i.SUB) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
       '<div class="flex jb mt2"><span class="tdim">Neto</span><span class="mono">' + fmt(v.NETO) + '</span></div><div class="flex jb"><span class="tdim">IVA</span><span class="mono">' + fmt(v.IVA) + '</span></div>' +
       '<div class="flex jb" style="font-weight:700;font-size:15px"><span>TOTAL</span><span class="mono">' + fmt(v.TOTAL) + '</span></div>' +
       (v.TIPO_COMP.indexOf('NC') !== 0 ? '<div class="flex jb"><span>Debe</span><span class="mono" style="font-weight:700">' + fmt(v.SALDO) + '</span></div>' : '') +
@@ -4217,7 +4217,7 @@ async function vrPend() {
       var sinP = x.SIN_PRECIO.length, nada = !x.LINEAS.length;
       return '<tr><td><input type="checkbox" class="vr-chk" data-i="' + i + '"' + (sinP || nada ? ' disabled' : '') + ' onchange="vrMarcar()" style="width:20px;height:20px"/></td>' +
         '<td><b>' + vEsc(x.NRO) + '</b><div class="tdim" style="font-size:12px">' + (x.ORIGEN === 'PC_REMITO' ? 'Producción' : 'Venta') + '</div></td><td>' + vrFecha(x.FECHA) + '</td><td>' +
-        (nada ? '<span class="tdim">Solo cubiertas devueltas sin trabajo: no hay nada para cobrar</span>' : x.LINEAS.map(function(l) { return '<div>' + vEsc(l.CANT) + ' × ' + vEsc(l.NOMBRE) + (l.NETO ? ' · ' + vrPlata(l.NETO) : ' · <b style="color:var(--danger)">sin precio en la lista</b>') + (l.MARCAS ? '<div class="tdim" style="font-size:12px">' + vEsc(l.MARCAS.join(', ')) + '</div>' : '') + '</div>'; }).join('')) +
+        (nada ? '<span class="tdim">Solo cubiertas devueltas sin trabajo: no hay nada para cobrar</span>' : x.LINEAS.map(function(l) { return '<div>' + vEsc(l.CANT) + ' × ' + vEsc(l.NOMBRE) + vMarcaVenta(l.DIBUJO, l.SIN_CARGO) + (l.NETO ? ' · ' + vrPlata(l.NETO) : ' · <b style="color:var(--danger)">sin precio en la lista</b>') + (l.MARCAS ? '<div class="tdim" style="font-size:12px">' + vEsc(l.MARCAS.join(', ')) + '</div>' : '') + '</div>'; }).join('')) +
         (x.DEVUELTAS ? '<div class="tdim" style="font-size:12px">' + x.DEVUELTAS + ' devuelta' + (x.DEVUELTAS === 1 ? '' : 's') + ' sin cargo</div>' : '') +
         (sinP ? '<div style="color:var(--danger);font-size:12px">Falta el precio en la lista vigente: no se puede facturar todavía</div>' : '') + '</td>' +
         '<td class="tr mono">' + (nada ? '' : vrPlata(neto)) + '</td></tr>';
@@ -4285,7 +4285,7 @@ async function vrImprimir(id) {
   if ((x.CUBS || []).length) {
     filas = x.CUBS.map(function(t) { return remFilaCub(t, '', ''); }).join('');
   } else {
-    filas = x.ITEMS.map(function(i) { return '<tr><td class="rk">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + '</td><td class="rn">' + f3(i.CANT) + ' c/u</td></tr>'; }).join('');
+    filas = x.ITEMS.map(function(i) { var mv = vMarcaTxt(i.DIBUJO, i.SIN_CARGO); return '<tr><td class="rk">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + (mv ? ' · <b>' + vEsc(mv) + '</b>' : '') + '</td><td class="rn">' + f3(i.CANT) + ' c/u</td></tr>'; }).join('');
   }
   {
     try { if (x.TOKEN_FIRMA) { await feLibQR(); x._QR = feQRsvg(location.origin + location.pathname.replace(/[^\/]*$/, '') + 'firma/?t=' + encodeURIComponent(x.TOKEN_FIRMA), 90); } } catch (eq) {}
@@ -4293,12 +4293,17 @@ async function vrImprimir(id) {
   x.REF_TIT = 'Factura:'; x.REF = String(x.FACTURA || 'Pendiente').replace(/^facturado en /, ''); x.OBSERVACIONES = x.OBS;
   remVulcanImp(x, filas, 1);
 }
+// Marca de venta del renglón (11/11/2026): normal, dibujo (se cobra o no) o sin cargo
+var V_VENTA_OPC = [['NORMAL', 'Normal (se cobra)'], ['DIB_COBRA', 'Dibujo · se cobra'], ['DIB_NO', 'Dibujo · no se cobra ($0)'], ['SC', 'Sin cargo ($0)']];
+function vMarcaTxt(dib, sc) { dib = Number(dib) === 1; sc = Number(sc) === 1; return dib ? (sc ? 'DIBUJO · no se cobra' : 'DIBUJO · se cobra') : (sc ? 'SIN CARGO' : ''); }
+function vMarcaVenta(dib, sc) { var t = vMarcaTxt(dib, sc); return t ? ' <span class="badge" style="background:' + (Number(dib) === 1 ? '#7c3aed' : '#16a34a') + ';color:#fff">' + vEsc(t) + '</span>' : ''; }
 function vrNuevo() {
   VR_.rem = { ID_CLIENTE: VR_.cli || '', ITEMS: [], OBS: '' }; closeModal();
   showModal('<div class="mh"><span class="mt"><i class="fas fa-truck" style="color:var(--accent)"></i> Nuevo remito de venta</span><button class="mc" onclick="closeModal()">×</button></div>' +
     '<div class="mb2"><div class="fg"><label class="fl">Cliente</label><select class="fs" id="vr-rcli" style="font-size:16px">' + vrCliOpts(VR_.rem.ID_CLIENTE) + '</select></div>' +
     '<div class="fr" style="align-items:flex-end;gap:8px;flex-wrap:wrap"><div class="fg" style="flex:3;min-width:200px"><label class="fl">Código o nombre del producto</label><input class="fi" id="vr-art" list="vr-arts" placeholder="Ej.: NK.0001 o 295/80R22.5" style="font-size:16px"/></div>' +
     '<div class="fg" style="width:90px"><label class="fl">Cantidad</label><input class="fi" id="vr-cant" type="number" min="1" step="1" value="1" style="font-size:16px"/></div>' +
+    '<div class="fg" style="width:190px"><label class="fl">Venta</label><select class="fs" id="vr-venta">' + V_VENTA_OPC.map(function(o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('') + '</select></div>' +
     '<button class="btn btn-s" onclick="vrAgregar()"><i class="fas fa-plus"></i> Agregar</button></div>' +
     '<datalist id="vr-arts">' + (_VTA.ARTICULOS || []).filter(function(a) { return Number(a.STOCK) > 0; }).slice(0, 2000).map(function(a) { return '<option value="' + vEsc(a.CODIGO || a.ID) + ' — ' + vEsc(a.NOMBRE) + '"></option>'; }).join('') + '</datalist>' +
     '<div id="vr-items" style="margin-top:10px"></div>' +
@@ -4312,13 +4317,14 @@ function vrAgregar() {
   if (!a) { toast(vtaArtCuantos(t) > 1 ? 'Hay varios productos con ese nombre: elegí uno de la lista' : 'No encontré ese código ni ese nombre', 'r2'); return; }
   if (!(cant > 0)) { toast('Cantidad no válida', 'r2'); return; }
   if (Number(a.STOCK) < cant) { toast(a.NOMBRE + ': hay ' + Number(a.STOCK) + ' en stock', 'r2'); return; }
-  VR_.rem.ITEMS.push({ ID_ARTICULO: a.ID, NOMBRE: a.NOMBRE, CODIGO: a.CODIGO, CANT: cant });
-  $id('vr-art').value = ''; $id('vr-cant').value = 1; vrPintarItems(); $id('vr-art').focus();
+  var vv = $v('vr-venta') || 'NORMAL';
+  VR_.rem.ITEMS.push({ ID_ARTICULO: a.ID, NOMBRE: a.NOMBRE, CODIGO: a.CODIGO, CANT: cant, DIBUJO: vv === 'DIB_COBRA' || vv === 'DIB_NO' ? 1 : 0, SIN_CARGO: vv === 'DIB_NO' || vv === 'SC' ? 1 : 0 });
+  $id('vr-art').value = ''; $id('vr-cant').value = 1; $id('vr-venta').value = 'NORMAL'; vrPintarItems(); $id('vr-art').focus();
 }
 function vrPintarItems() {
   var el = $id('vr-items'); if (!el) return;
   el.innerHTML = VR_.rem.ITEMS.length ? '<div class="tw tw-cards"><table><thead><tr><th>Código</th><th>Producto</th><th class="tr">Cant.</th><th></th></tr></thead><tbody>' + VR_.rem.ITEMS.map(function(i, k) {
-    return '<tr><td class="mono">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + '</td><td class="tr">' + i.CANT + '</td><td><button class="btn btn-s btn-sm" onclick="VR_.rem.ITEMS.splice(' + k + ',1);vrPintarItems()">Quitar</button></td></tr>'; }).join('') + '</tbody></table></div>'
+    return '<tr><td class="mono">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + vMarcaVenta(i.DIBUJO, i.SIN_CARGO) + '</td><td class="tr">' + i.CANT + '</td><td><button class="btn btn-s btn-sm" onclick="VR_.rem.ITEMS.splice(' + k + ',1);vrPintarItems()">Quitar</button></td></tr>'; }).join('') + '</tbody></table></div>'
     : '<div class="tdim" style="font-size:13px">Todavía no agregaste productos.</div>';
 }
 async function vrGrabar() {
@@ -4326,7 +4332,7 @@ async function vrGrabar() {
   if (!VR_.rem.ITEMS.length) { toast('Agregá al menos un producto', 'r2'); return; }
   var b = $id('vr-rok'); b.disabled = true;
   try {
-    var r = await gsRun('gsFP_RemitoVenta', { ID_CLIENTE: cli, OBS: $v('vr-obs'), ITEMS: VR_.rem.ITEMS.map(function(i) { return { ID_ARTICULO: i.ID_ARTICULO, CANT: i.CANT }; }) });
+    var r = await gsRun('gsFP_RemitoVenta', { ID_CLIENTE: cli, OBS: $v('vr-obs'), ITEMS: VR_.rem.ITEMS.map(function(i) { return { ID_ARTICULO: i.ID_ARTICULO, CANT: i.CANT, DIBUJO: i.DIBUJO || 0, SIN_CARGO: i.SIN_CARGO || 0 }; }) });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); b.disabled = false; return; }
     VR_.cli = cli; closeModal(); toast('Remito ' + r.NRO_REMITO + ' grabado: salió del stock', 'g');
     if (typeof vbBorrarCache === 'function') vbBorrarCache();
@@ -10102,7 +10108,7 @@ async function pcImpOTrab(id) {
     '<tr>' + cel('Teléfono', pcEsc(cli.TELEFONO || '—')) + cel('Cubiertas', cs.length) + cel('Parche', pcEsc(pcParcheTxt(o))) + '</tr>' +
     (o.OBSERVACIONES ? '<tr><td class="l">Observaciones</td><td class="v" colspan="5" style="font-weight:400">' + pcEsc(o.OBSERVACIONES) + '</td></tr>' : '') + '</table>' +
     '<table class="otd"><thead><tr><th></th><th>Marca grabada</th><th>Identificación</th><th>N° DOT</th><th>Medida</th><th>Marca</th><th>Trabajo</th><th>Observaciones</th></tr></thead><tbody>' +
-    cs.map(function(c, i) { return '<tr' + (c.RECEP === 'FALTA' ? ' style="color:#b91c1c"' : '') + '><td class="n">' + (i + 1) + '</td><td><b>' + pcEsc(c.MARCA || '') + '</b>' + (c.RECEP === 'FALTA' ? '<div style="font-size:8.5px;font-weight:700">NO LLEGÓ A PLANTA</div>' : '') + '</td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcDotTxt(c.DOT) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + (c.DIBUJO ? ' · <b>' + pcEsc(c.DIBUJO) + '</b>' : '') + pcCambioTrab(c.ID_CUB) + (String(c.PARCHE_INCLUIDO || '') ? '<div style="font-size:8.5px;color:#444">' + pcEsc(pcParcheTxt(c)) + ' (solo esta)</div>' : '') + '</td><td style="width:18%"></td></tr>'; }).join('') +
+    cs.map(function(c, i) { return '<tr' + (c.RECEP === 'FALTA' ? ' style="color:#b91c1c"' : '') + '><td class="n">' + (i + 1) + '</td><td><b>' + pcEsc(c.MARCA || '') + '</b>' + (c.RECEP === 'FALTA' ? '<div style="font-size:8.5px;font-weight:700">NO LLEGÓ A PLANTA</div>' : '') + '</td><td>' + pcEsc(c.ID_CASCO || '') + '</td><td>' + pcDotTxt(c.DOT) + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + (c.DIBUJO ? ' · <b>' + pcEsc(c.DIBUJO) + '</b>' : '') + pcCambioTrab(c.ID_CUB) + (String(c.PARCHE_INCLUIDO || '') ? '<div style="font-size:8.5px;color:#444">' + pcEsc(pcParcheTxt(c)) + ' (solo esta)</div>' : '') + (pcVentaTxt(c) ? '<div style="font-size:8.5px;font-weight:700">' + pcEsc(pcVentaTxt(c)) + '</div>' : '') + '</td><td style="width:18%"></td></tr>'; }).join('') +
     '</tbody></table><div class="nota" style="font-size:9px">Cada cubierta se sigue por su marca grabada. DOT: el que trae la cubierta (sin DOT si no tiene o no se lee). Identificación: N° interno del casco.</div>' +
     (o.RECEP_OBS ? '<div style="font-size:10px;margin-top:6px"><b>Observaciones de la recepción:</b> ' + pcEsc(o.RECEP_OBS) + '</div>' : '') +
     '<div class="firmas" style="margin-top:22px">' +
@@ -10558,7 +10564,8 @@ function pcOTrabEditar(id) {
       return '<div class="pc-rec-it" style="flex-wrap:wrap;cursor:default"><div style="flex:1 1 100%"><b class="mono">' + pcEsc(c.MARCA || '') + '</b> · ' + pcEsc(c.TIPO + ' ' + c.MEDIDA) + ' · ' + pcEsc(c.TRABAJO) + (ed ? '' : ' · <span class="tdim">' + pcEsc(PC_EST_TXT[c.ESTADO] || c.ESTADO) + ': no se cambia</span>') + '</div>' +
         '<div class="fg" style="flex:1 1 110px"><label class="fl">DOT</label><input class="fi pc-ote-c" data-id="' + c.ID_CUB + '" data-k="DOT" value="' + pcEsc(c.DOT || '') + '" placeholder="Sin DOT" style="text-transform:uppercase"' + dis + '></div>' +
         '<div class="fg" style="flex:1 1 110px"><label class="fl">Dibujo</label><select class="fs pc-ote-c" data-id="' + c.ID_CUB + '" data-k="DIBUJO"' + dis + '>' + pcDibOpts(c.TIPO, c.DIBUJO || '') + '</select></div>' +
-        '<div class="fg" style="flex:1 1 130px"><label class="fl">Marca de fábrica</label><input class="fi pc-ote-c" data-id="' + c.ID_CUB + '" data-k="MARCA_FAB" list="pc-fabricantes" value="' + pcEsc(c.FABRICANTE || '') + '" style="text-transform:uppercase"' + dis + '></div></div>'; }).join('') +
+        '<div class="fg" style="flex:1 1 130px"><label class="fl">Marca de fábrica</label><input class="fi pc-ote-c" data-id="' + c.ID_CUB + '" data-k="MARCA_FAB" list="pc-fabricantes" value="' + pcEsc(c.FABRICANTE || '') + '" style="text-transform:uppercase"' + dis + '></div>' +
+        '<div class="fg" style="flex:1 1 170px"><label class="fl">Venta</label><select class="fs pc-ote-c" data-id="' + c.ID_CUB + '" data-k="VENTA">' + PC_VENTA_OPC.map(function(o2) { return '<option value="' + o2[0] + '"' + (pcVentaVal(c) === o2[0] ? ' selected' : '') + '>' + o2[1] + '</option>'; }).join('') + '</select></div></div>'; }).join('') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pc-ote-ok" onclick="pcOTrabEditarOk(' + id + ')">Guardar cambios</button></div>', 'md-lg');
 }
 async function pcOTrabEditarOk(id) {
@@ -10680,6 +10687,11 @@ function pcParcheCub(c, o) { var v = String(c && c.PARCHE_INCLUIDO || '').toUppe
 function pcParcheTxt(o) { return String(o && o.PARCHE_INCLUIDO || '').toUpperCase() === 'SI' ? 'Parche incluido en el recapado' : 'Parche: se cobra'; }
 function pcParcheBadge(o) { var si = String(o && o.PARCHE_INCLUIDO || '').toUpperCase() === 'SI'; return '<span class="badge ' + (si ? 'b-green' : 'b-gray') + '">' + (si ? 'Incluido' : 'Se cobra') + '</span>'; }
 // En el remito (sin precios): si la cubierta llevó parche, dice si va incluido en el recapado o se cobra
+// Marca de venta de la cubierta (11/11/2026): normal, dibujo (se cobra o no) o sin cargo. Viaja al remito y a la factura.
+var PC_VENTA_OPC = [['NORMAL', 'Normal (se cobra)'], ['DIB_COBRA', 'Dibujo · se cobra'], ['DIB_NO', 'Dibujo · no se cobra ($0)'], ['SC', 'Sin cargo ($0)']];
+function pcVentaVal(c) { var d = Number(c && c.VENTA_DIBUJO) === 1, s = Number(c && c.VENTA_SIN_CARGO) === 1; return d ? (s ? 'DIB_NO' : 'DIB_COBRA') : (s ? 'SC' : 'NORMAL'); }
+function pcVentaTxt(c) { var v = pcVentaVal(c); return v === 'NORMAL' ? '' : 'Venta: ' + { DIB_COBRA: 'DIBUJO · se cobra', DIB_NO: 'DIBUJO · no se cobra', SC: 'SIN CARGO' }[v]; }
+function pcVentaRem(t) { return pcVentaTxt({ VENTA_DIBUJO: t.VENTA_DIBUJO, VENTA_SIN_CARGO: t.VENTA_SIN_CARGO }); }
 function pcParcheRemito(idCub) {
   var c = (PC_.d.cubiertas || []).filter(function(x) { return String(x.ID_CUB) === String(idCub); })[0]; if (!c) return '';
   var p = []; try { p = JSON.parse(c.PARCHES || '[]'); } catch (e) { p = []; }
@@ -10790,7 +10802,7 @@ function pcOTrabVer(id) {
   showModal('<div class="mh"><span class="mt">' + pcEsc(o.NRO) + ' · ' + pcEsc(o.CLIENTE) + (o.NRO_MANUAL ? ' · boleta ' + pcEsc(o.NRO_MANUAL) : '') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     '<div class="tdim mb2" style="font-size:12px">' + fmtD(+o.FECHA) + ' · ' + pcEsc(o.ESTADO) + ' · parche ' + (o.PARCHE_INCLUIDO === 'SI' ? 'incluido' : 'se cobra') + (o.OBSERVACIONES ? ' · ' + pcEsc(o.OBSERVACIONES) : '') + '. Tocá una cubierta para ver toda su vida.</div>' +
     '<div class="tw"><table style="font-size:12px"><thead><tr><th>N° int.</th><th>DOT</th><th>Medida</th><th>Marca</th><th>Trabajo</th><th>Marca grabada</th><th>Etapa</th><th></th></tr></thead><tbody>' +
-    (cs.length ? cs.map(function(c) { var e = et[c.ESTADO] || ['b-gray', c.ESTADO]; return '<tr style="cursor:pointer" onclick="closeModal();pcHistorial(\'CUB:' + c.ID_CUB + '\')"><td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcDotTxt(c.DOT) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + '</td><td class="mono">' + pcEsc(c.MARCA || '—') + '</td><td><span class="badge ' + e[0] + '">' + e[1] + '</span></td><td><button class="btn btn-s btn-xs">Ver</button></td></tr>'; }).join('') : '<tr><td colspan="8" class="tc tdim">Sin cubiertas.</td></tr>') +
+    (cs.length ? cs.map(function(c) { var e = et[c.ESTADO] || ['b-gray', c.ESTADO]; return '<tr style="cursor:pointer" onclick="closeModal();pcHistorial(\'CUB:' + c.ID_CUB + '\')"><td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcDotTxt(c.DOT) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FABRICANTE || '') + '</td><td>' + pcEsc(c.TRABAJO) + (pcVentaTxt(c) ? ' <span class="badge" style="background:#7c3aed;color:#fff">' + pcEsc(pcVentaTxt(c).replace('Venta: ', '')) + '</span>' : '') + '</td><td class="mono">' + pcEsc(c.MARCA || '—') + '</td><td><span class="badge ' + e[0] + '">' + e[1] + '</span></td><td><button class="btn btn-s btn-xs">Ver</button></td></tr>'; }).join('') : '<tr><td colspan="8" class="tc tdim">Sin cubiertas.</td></tr>') +
     '</tbody></table></div></div><div class="mf"><button class="btn btn-p" onclick="closeModal();pcImpOTrab(' + o.ID_OTRAB + ')"><i class="fas fa-print"></i> Ver todo / imprimir la orden</button><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>', 'md-lg');
 }
 // ── Certificado de trazabilidad para el cliente: todo lo que se le hizo a la cubierta (sin costos ni precios) ──
@@ -11631,7 +11643,7 @@ async function pcImpRemito(i) {
 function remFilaCub(t, nInt, parche) {
   var ok = t.RESULTADO === 'TERMINADA';
   return '<tr><td class="rk">' + (ok ? 'Casco' : 'Rechaz.') + '</td><td><b>' + pcEsc(t.MEDIDA) + ' ' + pcEsc(t.FABRICANTE) + '</b> · ' + pcEsc(ok ? t.TRABAJO : 'Sin trabajo') + (t.REPROCESO ? ' (con corrección)' : '') + (ok && t.BANDA ? ' · ' + pcEsc(t.BANDA) : '') +
-    '<div class="rs">Marca grabada: <b>' + pcEsc(t.MARCA) + '</b> · DOT: ' + pcDotTxt(t.DOT) + (nInt ? ' · N° int. ' + pcEsc(nInt) : '') + (t.BOLETA ? ' · Boleta ' + pcEsc(t.BOLETA) : '') + (t.OTRAB ? ' · ' + pcEsc(t.OTRAB) : '') + (ok ? '' : ' · Motivo: ' + pcEsc(t.MOTIVO || '')) + (parche ? ' · ' + parche : '') + '</div></td><td class="rn">1 c/u</td></tr>';
+    '<div class="rs">Marca grabada: <b>' + pcEsc(t.MARCA) + '</b> · DOT: ' + pcDotTxt(t.DOT) + (nInt ? ' · N° int. ' + pcEsc(nInt) : '') + (t.BOLETA ? ' · Boleta ' + pcEsc(t.BOLETA) : '') + (t.OTRAB ? ' · ' + pcEsc(t.OTRAB) : '') + (ok ? '' : ' · Motivo: ' + pcEsc(t.MOTIVO || '')) + (parche ? ' · ' + parche : '') + (ok && pcVentaRem(t) ? ' · <b>' + pcEsc(pcVentaRem(t)) + '</b>' : '') + '</div></td><td class="rn">1 c/u</td></tr>';
 }
 // Renglones por hoja (medidos en A4 impreso con la letra nueva): cubiertas ocupan 2 líneas, artículos 1
 // Alto libre del detalle: el menor entre la hoja impresa y el PDF del botón Guardar/Compartir (medido con la letra del 03/11 noche); cada línea ~14 px
