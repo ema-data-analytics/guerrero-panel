@@ -94,6 +94,7 @@ body.modo-cascos #page-produccion-cubiertas .tabs,body.modo-cascos #page-producc
 .sb-logout:hover{color:var(--danger);}
 .sb-nav{flex:1;padding:8px 0;}
 .sb-group{padding:12px 16px 4px;font-family:var(--mono);font-size:9px;color:#475569;letter-spacing:2px;text-transform:uppercase;}
+.nav-ext{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;color:#94a3b8;font-size:13px;font-weight:500;border-left:3px solid transparent;margin:1px 0;text-decoration:none}.nav-ext:hover{color:#fff;background:rgba(255,255,255,.04)}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;color:#94a3b8;font-size:13px;font-weight:500;transition:all .12s;border-left:3px solid transparent;margin:1px 0;}
 .nav-item:hover{color:#f1f5f9;background:rgba(255,255,255,.06);}
 .nav-item.active{color:#fff;background:rgba(37,99,235,.25);border-left-color:#2563eb;}
@@ -1530,7 +1531,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611111630';
+var EMA_BUILD = '202611111657';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -4095,7 +4096,7 @@ async function vtaImprimir(id) {
       '<div class="dat"><div><b>Cliente</b>' + vEsc(v.CLIENTE) + '</div><div><b>CUIT / DNI</b>' + vEsc(v.CUIT || '—') + '</div><div><b>Fecha</b>' + fmtD(v.FECHA) + '</div><div><b>Entrega</b>' + vEsc(v.TIPO_ENTREGA || '—') + '</div></div>' +
       (v.ORIGEN ? '<div class="nota">Sobre el comprobante ' + vEsc(v.ORIGEN) + '</div>' : '') +
       '<table><thead><tr><th>Detalle</th><th class="n">Cant.</th><th class="n">P. unit. neto</th><th class="n">Desc.</th><th class="n">Neto</th><th class="n">IVA</th><th class="n">Subtotal</th></tr></thead><tbody>' +
-      r.ITEMS.map(function(i) { return '<tr><td>' + vEsc(i.NOMBRE) + '</td><td class="n">' + i.CANT + '</td><td class="n">' + fmt(i.PRECIO_U !== undefined ? i.PRECIO_U : (i.CANT ? i.NETO / i.CANT : 0)) + '</td><td class="n">' + (i.DTO ? i.DTO + '%' : '') + '</td><td class="n">' + fmt(i.NETO) + '</td><td class="n">' + fmt(i.IVA) + ' (' + i.IVA_AL + '%)</td><td class="n">' + fmt(i.SUB) + '</td></tr>'; }).join('') +
+      r.ITEMS.map(function(i) { return '<tr><td>' + vEsc(i.NOMBRE) + vMarcaImp(i) + '</td><td class="n">' + i.CANT + '</td><td class="n">' + fmt(i.PRECIO_U !== undefined ? i.PRECIO_U : (i.CANT ? i.NETO / i.CANT : 0)) + '</td><td class="n">' + (i.DTO ? i.DTO + '%' : '') + '</td><td class="n">' + fmt(i.NETO) + '</td><td class="n">' + fmt(i.IVA) + ' (' + i.IVA_AL + '%)</td><td class="n">' + fmt(i.SUB) + '</td></tr>'; }).join('') +
       '<tr class="tot"><td colspan="6">Neto</td><td class="n">' + fmt(v.NETO) + '</td></tr><tr class="tot"><td colspan="6">IVA</td><td class="n">' + fmt(v.IVA) + '</td></tr>' +
       '<tr class="tot"><td colspan="6"><b>TOTAL</b></td><td class="n"><b>' + fmt(v.TOTAL) + '</b></td></tr></tbody></table>' +
       (v.OBS ? '<div class="nota">Observaciones: ' + vEsc(v.OBS) + '</div>' : '') +
@@ -4296,6 +4297,8 @@ async function vrImprimir(id) {
 // Marca de venta del renglón (11/11/2026): normal, dibujo (se cobra o no) o sin cargo
 var V_VENTA_OPC = [['NORMAL', 'Normal (se cobra)'], ['DIB_COBRA', 'Dibujo · se cobra'], ['DIB_NO', 'Dibujo · no se cobra ($0)'], ['SC', 'Sin cargo ($0)']];
 function vMarcaTxt(dib, sc) { dib = Number(dib) === 1; sc = Number(sc) === 1; return dib ? (sc ? 'DIBUJO · no se cobra' : 'DIBUJO · se cobra') : (sc ? 'SIN CARGO' : ''); }
+// En la impresión de la factura: la marca Dibujo con si se cobra o no (lo sin cargo ya lo dice el nombre del renglón)
+function vMarcaImp(i) { return Number(i && i.DIBUJO) === 1 ? ' · <b>DIBUJO · ' + (Number(i.SIN_CARGO) === 1 ? 'no se cobra' : 'se cobra') + '</b>' : ''; }
 function vMarcaVenta(dib, sc) { var t = vMarcaTxt(dib, sc); return t ? ' <span class="badge" style="background:' + (Number(dib) === 1 ? '#7c3aed' : '#16a34a') + ';color:#fff">' + vEsc(t) + '</span>' : ''; }
 function vrNuevo() {
   VR_.rem = { ID_CLIENTE: VR_.cli || '', ITEMS: [], OBS: '' }; closeModal();
@@ -4398,7 +4401,7 @@ async function feImprimir(r) {
   var filas = r.ITEMS.map(function(i) {
     var pu = i.PRECIO_U !== undefined ? i.PRECIO_U : (i.CANT ? i.NETO / i.CANT : 0), imp = i.NETO;
     if (!esA) { pu = vR2(pu * (1 + i.IVA_AL / 100)); imp = i.SUB; }
-    return '<tr><td>' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + (i.DTO ? ' (desc. ' + i.DTO + '%)' : '') + '</td><td class="n">' + f3(i.CANT) + ' c/u</td><td class="n">' + f2(pu) + '</td><td class="n">' + f2(imp) + '</td></tr>';
+    return '<tr><td>' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + (i.DTO ? ' (desc. ' + i.DTO + '%)' : '') + vMarcaImp(i) + '</td><td class="n">' + f3(i.CANT) + ' c/u</td><td class="n">' + f2(pu) + '</td><td class="n">' + f2(imp) + '</td></tr>';
   }).join('');
   var css = '<style>.vh{position:relative;font-family:Arial,Helvetica,sans-serif;color:#111;page-break-after:always;break-after:page}.vh:last-child{page-break-after:auto;break-after:auto}' +
     '.vb{border:1.5px solid #111;border-radius:14px;padding:8px 10px;margin-bottom:8px}.vc{display:grid;grid-template-columns:1fr 110px 1fr;gap:6px}.vm{font-family:"Courier New",monospace;font-size:9.5px;font-weight:700}' +
