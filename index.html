@@ -292,6 +292,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     </div>
     <nav class="sb-nav">
         <div class="nav-item active" data-page="dashboard"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Cómo va la empresa</div>
+        <a class="nav-ext" href="manual/" target="_blank" rel="noopener"><span class="nav-icon"><i class="fas fa-book"></i></span> Manual del sistema</a>
       <div class="sb-grp" data-g="prod"><div class="sb-gh" onclick="menuGrupo('prod')"><span class="sb-gi-ic">🏭</span><span class="sb-gt">Producción</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-otrab"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Órdenes de trabajo</div>
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-os"><span class="nav-icon"><i class="fas fa-fire"></i></span> Órdenes de servicio</div>
@@ -1531,7 +1532,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611111657';
+var EMA_BUILD = '202611112038';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
