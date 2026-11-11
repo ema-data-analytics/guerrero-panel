@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7efd58fbbf93"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "938250b4f7f7"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -360,6 +360,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="inteligencia"><span class="nav-icon"><i class="fas fa-brain"></i></span> Panel Gerencial</div>
         <div class="nav-item" data-page="objetivo"><span class="nav-icon"><i class="fas fa-bullseye"></i></span> Objetivo Mensual</div>
         <div class="nav-item" data-page="rpt-ventas"><span class="nav-icon"><i class="fas fa-chart-line"></i></span> Ventas por Tipo</div>
+        <div class="nav-item" data-page="rpt-dibujos"><span class="nav-icon"><i class="fas fa-pen-nib"></i></span> Ventas con dibujo</div>
         <div class="nav-item" data-page="rpt-produccion"><span class="nav-icon"><i class="fas fa-industry"></i></span> Producción / Insumos</div>
         <div class="nav-item" data-page="rpt-gastos"><span class="nav-icon"><i class="fas fa-chart-pie"></i></span> Resumen de Gastos</div>
         <div class="nav-item" data-page="rpt-costo-cubiertas"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Costo por Cubierta</div>
@@ -431,6 +432,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-iva-control" class="hidden"></div>
     <div id="page-rpt-produccion" class="hidden"></div>
     <div id="page-rpt-gastos" class="hidden"></div>
+    <div id="page-rpt-dibujos" class="hidden"></div>
     <div id="page-estado-resultados" class="hidden"></div>
     <div id="page-abm-servicios" class="hidden"></div>
     <div id="page-abm-insumos" class="hidden"></div>
@@ -736,7 +738,7 @@ var PAGINA_MODULO = {
   'cheques':'COBRANZAS', 'cobranzas':'COBRANZAS', 'caja':'COBRANZAS', 'cta-cte-clientes':'COBRANZAS',
   'ordenes-pago':'PAGOS', 'cta-cte-proveedores':'PAGOS',
   'estado-resultados':'REPORTES', 'rpt-ventas':'REPORTES', 'rpt-produccion':'REPORTES', 'rpt-gastos':'REPORTES',
-  'rpt-costo-cubiertas':'REPORTES', 'rpt-diferencias-precios':'REPORTES', 'inteligencia':'REPORTES',
+  'rpt-costo-cubiertas':'REPORTES', 'rpt-diferencias-precios':'REPORTES', 'rpt-dibujos':'REPORTES', 'inteligencia':'REPORTES',
   'objetivo':'REPORTES', 'clientes-analisis':'REPORTES', 'rentabilidad':'REPORTES', 'iva-control':'REPORTES',
   'stock':'STOCK', 'recapados':'PRODUCCION', 'seguridad':'SEGURIDAD', 'agenda':'SEGURIDAD', 'bitacora':'SEGURIDAD',
   'configuracion':'CONFIGURACION', 'gsheets':'CONFIGURACION', 'backup-page':'CONFIGURACION'
@@ -1233,6 +1235,7 @@ function getPage(name) {
     'rentabilidad': typeof renderRentabilidad !== 'undefined' ? renderRentabilidad : null,
     'iva-control': typeof renderControlIVA !== 'undefined' ? renderControlIVA : null,
     'rpt-ventas':    function(){ if(typeof renderRptVentas!=='undefined') renderRptVentas(); },
+    'rpt-dibujos':   function(){ if(typeof renderRptDibujos!=='undefined') renderRptDibujos(); },
     'rpt-produccion': typeof renderRptProduccion !== 'undefined' ? renderRptProduccion : null,
     'rpt-gastos': typeof renderRptGastos !== 'undefined' ? renderRptGastos : null,
     'estado-resultados': typeof renderEstadoResultados !== 'undefined' ? renderEstadoResultados : null,
@@ -1527,7 +1530,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611101817';
+var EMA_BUILD = '202611111258';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3962,7 +3965,8 @@ function vbDetalleHtml() {
     '<div class="fg" style="max-width:90px"><label class="fl">Desc. %</label><input id="vb-l-dto" type="number" step="0.01" min="0" class="fi" value="0"/></div>' +
     '<div class="fg" style="max-width:90px"><label class="fl">IVA %</label><select id="vb-l-iva" class="fs">' + ['21', '10.5', '27', '0'].map(function(x) { return '<option>' + x + '</option>'; }).join('') + '</select></div>' +
     '</div><div class="fr" style="align-items:center;flex-wrap:wrap">' +
-    '<label style="display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer"><input type="checkbox" id="vb-l-sc" onchange="vbLSc()"/> <span><b>Sin cargo</b> (se entrega y no se cobra)</span></label>' +
+    '<label style="display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer" title="Marca interna: el renglón es un movimiento normal (stock y cuenta corriente). Se cobra con su importe o, si también tildás Sin cargo, va en $0."><input type="checkbox" id="vb-l-dib"/> <span><b>Dibujo</b></span></label>' +
+    '<label style="display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer"><input type="checkbox" id="vb-l-sc" onchange="vbLSc()"/> <span><b>Sin cargo</b> (no se cobra: sale en $0)</span></label>' +
     '<input id="vb-l-scm" class="fi" style="display:none;max-width:320px" value="parche incluido en el recapado" placeholder="Motivo"/>' +
     '<span id="vb-l-info" class="tdim" style="font-size:12px"></span>' +
     '<button class="btn btn-p" id="vb-l-ok" style="margin-left:auto" onclick="vbGrabarLinea()"><i class="fas fa-check"></i> <span id="vb-l-oktxt">Grabar renglón</span></button>' +
@@ -3986,7 +3990,7 @@ function vbPintarLineas() {
   tb.innerHTML = !b.LINEAS.length ? '<tr><td colspan="9" class="tc tdim" style="padding:14px">Todavía no hay renglones: cargá el primero arriba.</td></tr>' : b.LINEAS.map(function(l) {
     var a = l.ID_ARTICULO ? vtaArt(l.ID_ARTICULO) : null;
     return '<tr' + (String(VB_.editBd) === String(l.ID_BD) ? ' style="background:var(--warn-light)"' : '') + '><td class="mono" style="font-size:11px">' + vEsc(a ? (a.CODIGO || a.ID) : (l.TIPO === 'SERVICIO' ? 'Servicio' : '')) + '</td>' +
-      '<td>' + vEsc(l.NOMBRE) + (l.SIN_CARGO ? ' <span class="badge b-green">SIN CARGO · ' + vEsc(l.MOTIVO_SC) + '</span>' : '') + '</td>' + vbStockTd(a, l) + '<td class="mono tr">' + l.CANT + '</td><td class="mono tr">' + fmt(l.NETO) + '</td>' +
+      '<td>' + vEsc(l.NOMBRE) + (l.DIBUJO ? ' <span class="badge" style="background:#7c3aed;color:#fff">DIBUJO' + (l.SIN_CARGO ? ' · no se cobra' : ' · se cobra') + '</span>' : '') + (l.SIN_CARGO ? ' <span class="badge b-green">SIN CARGO · ' + vEsc(l.MOTIVO_SC) + '</span>' : '') + '</td>' + vbStockTd(a, l) + '<td class="mono tr">' + l.CANT + '</td><td class="mono tr">' + fmt(l.NETO) + '</td>' +
       '<td class="mono tr">' + (l.DTO ? l.DTO + '%' : '') + '</td><td class="tr">' + l.IVA + '%</td><td class="mono tr" style="font-weight:700">' + fmt(l.SUBTOTAL) + '</td>' +
       '<td style="white-space:nowrap"><button class="btn btn-xs btn-s" onclick="vbLEditar(' + l.ID_BD + ')" title="Modificar"><i class="fas fa-pen"></i></button> <button class="btn btn-xs btn-s" onclick="vbLQuitar(' + l.ID_BD + ')" title="Quitar"><i class="fas fa-times"></i></button></td></tr>';
   }).join('');
@@ -4005,18 +4009,18 @@ function vbLArt() {
 }
 function vbLLimpiar() {
   VB_.editBd = ''; ['vb-l-art', 'vb-l-serv', 'vb-l-neto'].forEach(function(k) { if ($id(k)) $id(k).value = ''; }); $id('vb-l-cant').value = '1'; $id('vb-l-dto').value = '0';
-  $id('vb-l-sc').checked = false; vbLSc(); $id('vb-l-info').textContent = ''; $id('vb-l-oktxt').textContent = 'Grabar renglón'; $id('vb-l-cancel').style.display = 'none'; vbPintarLineas(); vbFoco();
+  $id('vb-l-dib').checked = false; $id('vb-l-sc').checked = false; vbLSc(); $id('vb-l-info').textContent = ''; $id('vb-l-oktxt').textContent = 'Grabar renglón'; $id('vb-l-cancel').style.display = 'none'; vbPintarLineas(); vbFoco();
 }
 function vbLEditar(idBd) {
   var l = VB_.bor.LINEAS.filter(function(x) { return String(x.ID_BD) === String(idBd); })[0]; if (!l) return;
   VB_.editBd = l.ID_BD; $id('vb-l-tipo').value = l.TIPO; vbLTipo();
   if (l.TIPO === 'ARTICULO') { var a = vtaArt(l.ID_ARTICULO); $id('vb-l-art').value = a ? (a.CODIGO || a.ID) + ' — ' + a.NOMBRE : l.ID_ARTICULO; } else $id('vb-l-serv').value = l.NOMBRE;
   $id('vb-l-cant').value = l.CANT; $id('vb-l-neto').value = l.NETO || ''; $id('vb-l-dto').value = l.DTO; $id('vb-l-iva').value = String(l.IVA);
-  $id('vb-l-sc').checked = !!l.SIN_CARGO; vbLSc(); if (l.SIN_CARGO) $id('vb-l-scm').value = l.MOTIVO_SC;
+  $id('vb-l-dib').checked = !!l.DIBUJO; $id('vb-l-sc').checked = !!l.SIN_CARGO; vbLSc(); if (l.SIN_CARGO) $id('vb-l-scm').value = l.MOTIVO_SC;
   $id('vb-l-oktxt').textContent = 'Guardar cambio del renglón'; $id('vb-l-cancel').style.display = ''; vbPintarLineas();
 }
 async function vbGrabarLinea() {
-  var tipo = $v('vb-l-tipo'), l = { ID_BD: VB_.editBd || '', TIPO: tipo, CANT: $v('vb-l-cant'), NETO: $v('vb-l-neto'), DTO: $v('vb-l-dto'), IVA: $v('vb-l-iva'), SIN_CARGO: $id('vb-l-sc').checked ? 1 : 0, MOTIVO_SC: $v('vb-l-scm') };
+  var tipo = $v('vb-l-tipo'), l = { ID_BD: VB_.editBd || '', TIPO: tipo, CANT: $v('vb-l-cant'), NETO: $v('vb-l-neto'), DTO: $v('vb-l-dto'), IVA: $v('vb-l-iva'), SIN_CARGO: $id('vb-l-sc').checked ? 1 : 0, MOTIVO_SC: $v('vb-l-scm'), DIBUJO: $id('vb-l-dib').checked ? 1 : 0 };
   if (tipo === 'ARTICULO') { var a = vtaArtCod($v('vb-l-art')); if (!a) { toast('Escribí o elegí el código del producto', 'r2'); return; } l.ID_ARTICULO = a.ID; }
   else l.NOMBRE = $v('vb-l-serv');
   var bt = $id('vb-l-ok'); bt.disabled = true;
@@ -19465,6 +19469,45 @@ async function calcRptDif() {
     }
   }
 }
+
+// ═════════ VENTAS CON DIBUJO (11/11/2026): todo lo facturado con la marca dibujo, cobrado o sin cargo ═════════
+// El renglón es un movimiento normal (stock y cuenta corriente); la marca es interna. "Valor de lista" = precio de lista del momento × cantidad.
+function rdibHoy(off) { var d = new Date(Date.now() - 3 * 3600000 + (off || 0) * 86400000); return d.toISOString().slice(0, 10); }
+async function renderRptDibujos() {
+  var el = $id('page-rpt-dibujos'); if (!el) return;
+  var d0 = rdibHoy(0).slice(0, 8) + '01';
+  el.innerHTML = '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-pen-nib" style="color:#7c3aed"></i> Ventas con dibujo</div>' +
+    '<div class="page-sub">RENGLONES FACTURADOS CON LA MARCA DIBUJO · SE COBRA O NO SE COBRA</div></div></div><div class="content">' +
+    '<div class="card mb4"><div class="card-body"><div class="g3">' +
+    '<div class="fg"><label class="fl">Desde</label><input id="rdib-d" class="fi" type="date" value="' + d0 + '" onchange="calcRptDibujos()"/></div>' +
+    '<div class="fg"><label class="fl">Hasta</label><input id="rdib-h" class="fi" type="date" value="' + rdibHoy(0) + '" onchange="calcRptDibujos()"/></div>' +
+    '<div class="fg"><label class="fl">Se cobra</label><select id="rdib-c" class="fs" onchange="calcRptDibujos(true)"><option value="">Todos</option><option value="SI">Se cobra</option><option value="NO">No se cobra</option></select></div>' +
+    '</div></div></div><div id="rdib-res"><div class="tdim">Cargando…</div></div></div>';
+  calcRptDibujos();
+}
+var RDIB_ = { d: null };
+async function calcRptDibujos(soloFiltro) {
+  var box = $id('rdib-res'); if (!box) return;
+  if (!soloFiltro || !RDIB_.d) {
+    box.innerHTML = '<div class="tdim">Cargando…</div>';
+    try { var r = await gsRun('gsVTA_Dibujos', $v('rdib-d'), $v('rdib-h')); if (!r || !r.ok) { box.innerHTML = '<div class="al">' + vEscR((r && r.error) || 'No se pudo') + '</div>'; return; } RDIB_.d = r; }
+    catch (e) { box.innerHTML = '<div class="al">' + vEscR(e.message) + '</div>'; return; }
+  }
+  var c = $v('rdib-c'), fs = RDIB_.d.FILAS.filter(function(f) { return !c || f.SE_COBRA === c; });
+  var t = { n: fs.length, cant: 0, lista: 0, cob: 0, no: 0 };
+  fs.forEach(function(f) { t.cant += f.CANT; t.lista += f.VALOR_LISTA; t.cob += f.COBRADO_NETO; if (f.SE_COBRA === 'NO') t.no += f.VALOR_LISTA; });
+  var kp = function(tit, v, col) { return '<div class="card" style="flex:1 1 160px"><div class="card-body"><div class="tdim" style="font-size:12px">' + tit + '</div><div style="font-size:22px;font-weight:800;color:' + (col || 'inherit') + '">' + v + '</div></div></div>'; };
+  var h = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">' + kp('Renglones con dibujo', t.n) + kp('Unidades', Math.round(t.cant * 100) / 100) +
+    kp('Valor de lista (sin IVA)', fmt(t.lista)) + kp('Cobrado (sin IVA)', fmt(t.cob), '#15803d') + kp('No cobrado (valor de lista)', fmt(t.no), '#b91c1c') + '</div>';
+  if (!fs.length) { box.innerHTML = h + '<div class="al">No hay renglones con dibujo en ese período.</div>'; return; }
+  h += '<div class="card"><div class="card-body"><div class="tw"><table><thead><tr><th>Fecha</th><th>Comprobante</th><th>Cliente</th><th>Código</th><th>Producto / servicio</th><th class="tr">Cant.</th><th>Se cobra</th><th class="tr">Valor de lista</th><th class="tr">Cobrado</th><th>Cargó</th></tr></thead><tbody>' +
+    fs.map(function(f) { return '<tr><td>' + fmtD(f.FECHA) + '</td><td class="mono">' + vEscR(f.NRO_COMP) + '</td><td>' + vEscR(f.CLIENTE) + '</td><td class="mono">' + vEscR(f.CODIGO) + '</td><td>' + vEscR(f.NOMBRE) + '</td><td class="mono tr">' + f.CANT + '</td>' +
+      '<td>' + (f.SE_COBRA === 'SI' ? '<span class="badge b-green">Se cobra</span>' : '<span class="badge b-red">No se cobra</span>' + (f.MOTIVO ? ' <span class="tdim" style="font-size:11px">' + vEscR(f.MOTIVO) + '</span>' : '')) + '</td>' +
+      '<td class="mono tr">' + fmt(f.VALOR_LISTA) + '</td><td class="mono tr">' + fmt(f.COBRADO_NETO) + '</td><td>' + vEscR(f.USUARIO) + '</td></tr>'; }).join('') +
+    '</tbody><tfoot><tr style="font-weight:700"><td colspan="5">Total</td><td class="mono tr">' + Math.round(t.cant * 100) / 100 + '</td><td></td><td class="mono tr">' + fmt(t.lista) + '</td><td class="mono tr">' + fmt(t.cob) + '</td><td></td></tr></tfoot></table></div></div></div>';
+  box.innerHTML = h;
+}
+function vEscR(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 </script>
 
 <script>
