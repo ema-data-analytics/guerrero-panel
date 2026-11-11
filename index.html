@@ -1530,7 +1530,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611111619';
+var EMA_BUILD = '202611111630';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -4213,11 +4213,11 @@ async function vrPend() {
     VR_.pend = r.REMITOS;
     if (!r.REMITOS.length) { el.innerHTML = '<div class="al al-b">Este cliente no tiene remitos pendientes de facturar.</div>'; return; }
     el.innerHTML = '<div class="tw tw-cards"><table><thead><tr><th></th><th>Remito</th><th>Fecha</th><th>Qué se factura</th><th class="tr">Neto</th></tr></thead><tbody>' + r.REMITOS.map(function(x, i) {
-      var neto = 0; x.LINEAS.forEach(function(l) { neto += Number(l.NETO || 0) * Number(l.CANT || 0); });
+      var neto = 0; x.LINEAS.forEach(function(l) { if (!Number(l.SIN_CARGO)) neto += Number(l.NETO || 0) * Number(l.CANT || 0); });
       var sinP = x.SIN_PRECIO.length, nada = !x.LINEAS.length;
       return '<tr><td><input type="checkbox" class="vr-chk" data-i="' + i + '"' + (sinP || nada ? ' disabled' : '') + ' onchange="vrMarcar()" style="width:20px;height:20px"/></td>' +
         '<td><b>' + vEsc(x.NRO) + '</b><div class="tdim" style="font-size:12px">' + (x.ORIGEN === 'PC_REMITO' ? 'Producción' : 'Venta') + '</div></td><td>' + vrFecha(x.FECHA) + '</td><td>' +
-        (nada ? '<span class="tdim">Solo cubiertas devueltas sin trabajo: no hay nada para cobrar</span>' : x.LINEAS.map(function(l) { return '<div>' + vEsc(l.CANT) + ' × ' + vEsc(l.NOMBRE) + vMarcaVenta(l.DIBUJO, l.SIN_CARGO) + (l.NETO ? ' · ' + vrPlata(l.NETO) : ' · <b style="color:var(--danger)">sin precio en la lista</b>') + (l.MARCAS ? '<div class="tdim" style="font-size:12px">' + vEsc(l.MARCAS.join(', ')) + '</div>' : '') + '</div>'; }).join('')) +
+        (nada ? '<span class="tdim">Solo cubiertas devueltas sin trabajo: no hay nada para cobrar</span>' : x.LINEAS.map(function(l) { return '<div>' + vEsc(l.CANT) + ' × ' + vEsc(l.NOMBRE) + vMarcaVenta(l.DIBUJO, l.SIN_CARGO) + (Number(l.SIN_CARGO) ? ' · <b>$ 0</b>' + (l.NETO ? ' <span class="tdim">(lista ' + vrPlata(l.NETO) + ')</span>' : '') + (l.MOTIVO_SC ? ' <span class="tdim">· ' + vEsc(l.MOTIVO_SC) + '</span>' : '') : (l.NETO ? ' · ' + vrPlata(l.NETO) : ' · <b style="color:var(--danger)">sin precio en la lista</b>')) + (l.MARCAS ? '<div class="tdim" style="font-size:12px">' + vEsc(l.MARCAS.join(', ')) + '</div>' : '') + '</div>'; }).join('')) +
         (x.DEVUELTAS ? '<div class="tdim" style="font-size:12px">' + x.DEVUELTAS + ' devuelta' + (x.DEVUELTAS === 1 ? '' : 's') + ' sin cargo</div>' : '') +
         (sinP ? '<div style="color:var(--danger);font-size:12px">Falta el precio en la lista vigente: no se puede facturar todavía</div>' : '') + '</td>' +
         '<td class="tr mono">' + (nada ? '' : vrPlata(neto)) + '</td></tr>';
@@ -4226,7 +4226,7 @@ async function vrPend() {
 }
 function vrMarcar() {
   var sel = [], neto = 0;
-  document.querySelectorAll('.vr-chk:checked').forEach(function(c) { var x = VR_.pend[+c.dataset.i]; sel.push(x); x.LINEAS.forEach(function(l) { neto += Number(l.NETO || 0) * Number(l.CANT || 0); }); });
+  document.querySelectorAll('.vr-chk:checked').forEach(function(c) { var x = VR_.pend[+c.dataset.i]; sel.push(x); x.LINEAS.forEach(function(l) { if (!Number(l.SIN_CARGO)) neto += Number(l.NETO || 0) * Number(l.CANT || 0); }); });
   $id('vr-ok').disabled = !sel.length;
   $id('vr-tot').innerHTML = sel.length ? sel.length + ' remito' + (sel.length === 1 ? '' : 's') + ' · neto ' + vrPlata(neto) + ' + IVA' : '';
 }
