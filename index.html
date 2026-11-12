@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "cc98ea2f4ee6"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a66c68007e5a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1532,7 +1532,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611112038';
+var EMA_BUILD = '202611121057';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -3991,8 +3991,9 @@ function vbPintarLineas() {
   $id('vb-nl').textContent = b.LINEAS.length + (b.LINEAS.length === 1 ? ' renglón' : ' renglones');
   tb.innerHTML = !b.LINEAS.length ? '<tr><td colspan="9" class="tc tdim" style="padding:14px">Todavía no hay renglones: cargá el primero arriba.</td></tr>' : b.LINEAS.map(function(l) {
     var a = l.ID_ARTICULO ? vtaArt(l.ID_ARTICULO) : null;
-    return '<tr' + (String(VB_.editBd) === String(l.ID_BD) ? ' style="background:var(--warn-light)"' : '') + '><td class="mono" style="font-size:11px">' + vEsc(a ? (a.CODIGO || a.ID) : (l.TIPO === 'SERVICIO' ? 'Servicio' : '')) + '</td>' +
-      '<td>' + vEsc(l.NOMBRE) + (l.DIBUJO ? ' <span class="badge" style="background:#7c3aed;color:#fff">DIBUJO' + (l.SIN_CARGO ? ' · no se cobra' : ' · se cobra') + '</span>' : '') + (l.SIN_CARGO ? ' <span class="badge b-green">SIN CARGO · ' + vEsc(l.MOTIVO_SC) + '</span>' : '') + '</td>' + vbStockTd(a, l) + '<td class="mono tr">' + l.CANT + '</td><td class="mono tr">' + fmt(l.NETO) + '</td>' +
+    var falta = !Number(l.SIN_CARGO) && !(Number(l.NETO) > 0);
+    return '<tr' + (String(VB_.editBd) === String(l.ID_BD) || falta ? ' style="background:var(--warn-light)"' : '') + '><td class="mono" style="font-size:11px">' + vEsc(a ? (a.CODIGO || a.ID) : (l.TIPO === 'SERVICIO' ? 'Servicio' : '')) + '</td>' +
+      '<td>' + vEsc(l.NOMBRE) + (l.DIBUJO ? ' <span class="badge" style="background:#7c3aed;color:#fff">DIBUJO' + (l.SIN_CARGO ? ' · no se cobra' : ' · se cobra') + '</span>' : '') + (l.SIN_CARGO ? ' <span class="badge b-green">SIN CARGO · ' + vEsc(l.MOTIVO_SC) + '</span>' : '') + (falta ? ' <span class="badge" style="background:#b45309;color:#fff">FALTA PRECIO · tocá ✏ y escribilo</span>' : '') + '</td>' + vbStockTd(a, l) + '<td class="mono tr">' + l.CANT + '</td><td class="mono tr">' + fmt(l.NETO) + '</td>' +
       '<td class="mono tr">' + (l.DTO ? l.DTO + '%' : '') + '</td><td class="tr">' + l.IVA + '%</td><td class="mono tr" style="font-weight:700">' + fmt(l.SUBTOTAL) + '</td>' +
       '<td style="white-space:nowrap"><button class="btn btn-xs btn-s" onclick="vbLEditar(' + l.ID_BD + ')" title="Modificar"><i class="fas fa-pen"></i></button> <button class="btn btn-xs btn-s" onclick="vbLQuitar(' + l.ID_BD + ')" title="Quitar"><i class="fas fa-times"></i></button></td></tr>';
   }).join('');
@@ -4217,11 +4218,11 @@ async function vrPend() {
     el.innerHTML = '<div class="tw tw-cards"><table><thead><tr><th></th><th>Remito</th><th>Fecha</th><th>Qué se factura</th><th class="tr">Neto</th></tr></thead><tbody>' + r.REMITOS.map(function(x, i) {
       var neto = 0; x.LINEAS.forEach(function(l) { if (!Number(l.SIN_CARGO)) neto += Number(l.NETO || 0) * Number(l.CANT || 0); });
       var sinP = x.SIN_PRECIO.length, nada = !x.LINEAS.length;
-      return '<tr><td><input type="checkbox" class="vr-chk" data-i="' + i + '"' + (sinP || nada ? ' disabled' : '') + ' onchange="vrMarcar()" style="width:20px;height:20px"/></td>' +
+      return '<tr><td><input type="checkbox" class="vr-chk" data-i="' + i + '"' + (nada ? ' disabled' : '') + ' onchange="vrMarcar()" style="width:20px;height:20px"/></td>' +
         '<td><b>' + vEsc(x.NRO) + '</b><div class="tdim" style="font-size:12px">' + (x.ORIGEN === 'PC_REMITO' ? 'Producción' : 'Venta') + '</div></td><td>' + vrFecha(x.FECHA) + '</td><td>' +
-        (nada ? '<span class="tdim">Solo cubiertas devueltas sin trabajo: no hay nada para cobrar</span>' : x.LINEAS.map(function(l) { return '<div>' + vEsc(l.CANT) + ' × ' + vEsc(l.NOMBRE) + vMarcaVenta(l.DIBUJO, l.SIN_CARGO) + (Number(l.SIN_CARGO) ? ' · <b>$ 0</b>' + (l.NETO ? ' <span class="tdim">(lista ' + vrPlata(l.NETO) + ')</span>' : '') + (l.MOTIVO_SC ? ' <span class="tdim">· ' + vEsc(l.MOTIVO_SC) + '</span>' : '') : (l.NETO ? ' · ' + vrPlata(l.NETO) : ' · <b style="color:var(--danger)">sin precio en la lista</b>')) + (l.MARCAS ? '<div class="tdim" style="font-size:12px">' + vEsc(l.MARCAS.join(', ')) + '</div>' : '') + '</div>'; }).join('')) +
+        (nada ? '<span class="tdim">Solo cubiertas devueltas sin trabajo: no hay nada para cobrar</span>' : x.LINEAS.map(function(l) { return '<div>' + vEsc(l.CANT) + ' × ' + vEsc(l.NOMBRE) + vMarcaVenta(l.DIBUJO, l.SIN_CARGO) + (Number(l.SIN_CARGO) ? ' · <b>$ 0</b>' + (l.NETO ? ' <span class="tdim">(lista ' + vrPlata(l.NETO) + ')</span>' : '') + (l.MOTIVO_SC ? ' <span class="tdim">· ' + vEsc(l.MOTIVO_SC) + '</span>' : '') : (l.NETO ? ' · ' + vrPlata(l.NETO) : ' · <b style="color:#b45309">falta precio: se escribe al facturar</b>')) + (l.MARCAS ? '<div class="tdim" style="font-size:12px">' + vEsc(l.MARCAS.join(', ')) + '</div>' : '') + '</div>'; }).join('')) +
         (x.DEVUELTAS ? '<div class="tdim" style="font-size:12px">' + x.DEVUELTAS + ' devuelta' + (x.DEVUELTAS === 1 ? '' : 's') + ' sin cargo</div>' : '') +
-        (sinP ? '<div style="color:var(--danger);font-size:12px">Falta el precio en la lista vigente: no se puede facturar todavía</div>' : '') + '</td>' +
+        (sinP ? '<div style="color:#b45309;font-size:12px">Sin precio en la lista: ' + vEsc(x.SIN_PRECIO.join(', ')) + '. Se factura igual: el renglón entra marcado y quien factura escribe el precio antes de confirmar.</div>' : '') + '</td>' +
         '<td class="tr mono">' + (nada ? '' : vrPlata(neto)) + '</td></tr>';
     }).join('') + '</tbody></table></div><div class="tr mono" style="margin-top:8px;font-size:15px" id="vr-tot"></div>';
   } catch (e) { el.innerHTML = '<div class="al al-r">' + vEsc(e.message || e) + '</div>'; }
@@ -4239,7 +4240,7 @@ async function vrArmar() {
   try {
     var r = await gsRun('gsFP_Facturar', { ID_CLIENTE: VR_.cli, TIPO_COMP: $v('vr-tipo'), REMITOS: sel });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); b.disabled = false; return; }
-    closeModal(); toast('Factura armada con ' + r.REMITOS.join(', ') + ': revisala y confirmala', 'g');
+    closeModal(); toast('Factura armada con ' + r.REMITOS.join(', ') + (r.FALTA_PRECIO && r.FALTA_PRECIO.length ? '. Falta escribir el precio de: ' + r.FALTA_PRECIO.join(', ') : ': revisala y confirmala'), r.FALTA_PRECIO && r.FALTA_PRECIO.length ? 'w' : 'g');
     if (typeof vbBorrarCache === 'function') vbBorrarCache();
     vbAbrir(r.ID_BOR);
   } catch (e) { toast(e.message || e, 'r2'); b.disabled = false; }
