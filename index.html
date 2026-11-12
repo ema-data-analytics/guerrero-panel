@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "39e696a5d92b"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f689889f795d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -758,11 +758,44 @@ function tienePermiso(modulo, accion) {
   return !!(m && m[accion || 'VER'] == 1);
 }
 
+// Usuario de la línea (12/11/2026, Anibal): solo mira la línea y las recetas. No carga nada, no ve precios, costos ni configuración.
+var LINEA_PAGINAS = ['tablero-linea', 'recetas', 'produccion-cubiertas', 'inicio-movil'];
+var LINEA_SECCIONES = ['os', 'rech', 'herramental', 'equipos', 'alarmas', 'hist', 'pesaje', 'plan'];
+function rolLinea() { return String((SES && SES.rol) || '').toUpperCase() === 'LINEA_SOLO_VER'; }
+// Saca de la pantalla las columnas y renglones de precios y costos (el servidor ya no los manda)
+var LINEA_RX_COL = /^(\$|precio|costo|importe|neto|subtotal|total \$|rent|rentabilidad|margen|valor)/i;
+function lineaSinPrecios(root) {
+  if (!root || !root.querySelectorAll) return;
+  root.querySelectorAll('table').forEach(function(t) {
+    var hr = t.tHead && t.tHead.rows[0]; if (!hr) return;
+    var idx = []; [].forEach.call(hr.cells, function(c, i) { if (LINEA_RX_COL.test(String(c.textContent || '').trim())) idx.push(i); });
+    if (!idx.length) return;
+    [].forEach.call(t.rows, function(r) {
+      var tieneSpan = [].some.call(r.cells, function(c) { return c.colSpan > 1; });
+      if (tieneSpan && r.parentNode !== t.tHead) { if (/costo|precio|total/i.test(r.textContent)) r.style.display = 'none'; return; }
+      for (var k = idx.length - 1; k >= 0; k--) if (r.cells[idx[k]]) r.cells[idx[k]].style.display = 'none';
+    });
+  });
+  ['rece-total', 'rece-precio'].forEach(function(id) { var e = document.getElementById(id); if (e && e.parentNode) e.parentNode.style.display = 'none'; });
+  var rr = document.getElementById('rece-rent'); if (rr && rr.parentNode) rr.parentNode.style.display = 'none';
+}
+var _lineaObs = null;
+function lineaActivar() {
+  if (!rolLinea()) return;
+  document.body.classList.add('rol-linea');
+  if (_lineaObs || typeof MutationObserver === 'undefined') return;
+  var pend = false;
+  _lineaObs = new MutationObserver(function() { if (pend) return; pend = true; setTimeout(function() { pend = false; lineaSinPrecios(document.body); }, 30); });
+  _lineaObs.observe(document.body, { childList: true, subtree: true });
+}
+function lineaHtmlSinPrecios(h) { if (!rolLinea()) return h; var d = document.createElement('div'); d.innerHTML = h; lineaSinPrecios(d); d.querySelectorAll('[style*="display: none"]').forEach(function(x) { x.parentNode.removeChild(x); }); return d.innerHTML; }
+
 function puedeVerPagina(page) {
   if (page === 'inicio-movil') return !!SES;
+  if (rolLinea()) return LINEA_PAGINAS.indexOf(page) !== -1 && !(SES && SES.planta === false);
   if (page === 'avance') { var rA = String((SES && SES.rol) || '').toUpperCase(); return rA === 'SUPER' || rA.indexOf('ADMIN') !== -1; }
   // Recetas: solo administradores (el resto carga a ciegas lo que pesa o mide)
-  if (page === 'recetas') { var rR = String((SES && SES.rol) || '').toUpperCase(); return rR === 'SUPER' || rR.indexOf('ADMIN') !== -1; }
+  if (page === 'recetas') { if (rolLinea()) return true; var rR = String((SES && SES.rol) || '').toUpperCase(); return rR === 'SUPER' || rR.indexOf('ADMIN') !== -1; }
   // Las pantallas de la planta de recapado no se muestran a los usuarios de una sucursal sin planta (el servidor también lo frena)
   if (SES && SES.planta === false && moduloDePagina(page) === 'PRODUCCION') return false;
   return tienePermiso(moduloDePagina(page), 'VER');
@@ -798,8 +831,10 @@ function menuClick(el) {
 function aplicarPermisosMenu() {
   document.querySelectorAll('.nav-item').forEach(function(el) {
     var ve = el.dataset.acc === 'ped-prov' ? tienePermiso('COMPRAS', 'VER') : puedeVerPagina(el.dataset.page) && ((el.dataset.page !== 'agenda' && el.dataset.page !== 'bitacora') || String((SES && SES.rol) || '').toUpperCase() === 'SUPER');
+    if (ve && rolLinea() && el.dataset.page === 'produccion-cubiertas') ve = LINEA_SECCIONES.indexOf(String(el.dataset.acc || '').replace(/^pc-/, '')) !== -1;
     el.style.display = ve ? '' : 'none';
   });
+  lineaActivar();
   // Entradas del menú: se ocultan las que no tienen ninguna opción visible para este usuario
   document.querySelectorAll('.sb-grp').forEach(function(g) {
     var hay = Array.prototype.some.call(g.querySelectorAll('.nav-item'), function(el) { return el.style.display !== 'none'; });
@@ -817,6 +852,7 @@ function aplicarPermisosMenu() {
 }
 
 function primeraPaginaPermitida() {
+  if (rolLinea()) return 'tablero-linea';
   if (puedeVerPagina('dashboard')) return 'dashboard';
   var items = document.querySelectorAll('.nav-item');
   for (var i = 0; i < items.length; i++) {
@@ -1532,7 +1568,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611121149';
+var EMA_BUILD = '202611121503';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -9906,6 +9942,7 @@ function pcMenuMarcar() {
 }
 function pcPintar() {
   var el = $id('page-produccion-cubiertas'), d = PC_.d;
+  if (typeof rolLinea === 'function' && rolLinea() && LINEA_SECCIONES.indexOf(PC_.tab) === -1) PC_.tab = 'os';
   var n = function(e) { return d.cubiertas.filter(function(c) { return c.ESTADO === e; }).length; };
   var abiertas = d.ots.filter(function(o) { return o.ESTADO === 'ARMADA' || o.ESTADO === 'EN_PROCESO'; }).length;
   var nNuevos = (d.cascos || []).filter(function(k) { return k.ESTADO === 'NUEVO'; }).length;
@@ -9973,6 +10010,7 @@ function pcMedidasList() {
 // Desde la vista previa: Imprimir, Guardar PDF (en "Destino" se elige "Guardar como PDF") o Cerrar (vuelve a la misma pantalla).
 // margen: mm de margen de la hoja (por defecto 8; el remito usa 3 para aprovechar la hoja)
 function pcImprimir(titulo, cuerpo, apaisado, margen) {
+  if (typeof lineaHtmlSinPrecios === 'function') cuerpo = lineaHtmlSinPrecios(cuerpo);
   var mg = margen > 0 ? margen : 8;
   var css = 'body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:18px;font-size:12px;background:#fff}h1{font-size:18px;margin:0}h2{font-size:14px;margin:14px 0 6px}' +
     '.enc{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}.emp{font-size:11px;color:#444}' +
@@ -19759,7 +19797,7 @@ function segEditarUsuario(id) {
 
 function segModalUsuario(u) {
   var titulo = u ? 'Editar usuario' : 'Nuevo usuario';
-  var roles = ['SUPER','ADMINISTRADOR','ENCARGADO_PLANTA','RECEPCION','OPERADOR','ENCARGADO_SUCURSAL','VENDEDOR','FACTURACION','COMPRAS'];
+  var roles = ['SUPER','ADMINISTRADOR','ENCARGADO_PLANTA','RECEPCION','OPERADOR','ENCARGADO_SUCURSAL','VENDEDOR','FACTURACION','COMPRAS','LINEA_SOLO_VER'];
   var sucs = (window._segSucs || []).map(function(x) { return x.CODIGO; });
   var sucAct = u ? (u.SUCURSAL || 'PLANTA') : 'PLANTA';
   var sucOpts = ['TODAS'].concat(sucs).map(function(c) { var x = (window._segSucs || []).filter(function(y) { return y.CODIGO === c; })[0]; return '<option value="' + c + '"' + (c === sucAct ? ' selected' : '') + '>' + (x ? x.NOMBRE : 'TODAS (solo SUPER y ADMINISTRADOR)') + '</option>'; }).join('');
@@ -20403,15 +20441,16 @@ var MV_OPC = [
   ['cascos', '📥', 'Nueva OT (carga de cascos)', 'Todas las OT: ver, reimprimir, PDF y ＋ nueva', 'produccion-cubiertas', 'otrab', 'RECEPCION ENCARGADO_PLANTA VENDEDOR'],
   ['documentos', '📄', 'Documentos', 'Orden, remito o certificado en PDF', 'documentos', '', 'RECEPCION ENCARGADO_PLANTA VENDEDOR FACTURACION'],
   ['cubierta', '🔎', 'Buscar cubierta', 'Dónde está y toda su vida', 'documentos', 'CUB', 'RECEPCION ENCARGADO_PLANTA VENDEDOR FACTURACION'],
-  ['tablero', '📺', 'Tablero de la línea', 'Cómo va cada estación ahora', 'tablero-linea', '', 'ENCARGADO_PLANTA'],
+  ['tablero', '📺', 'Tablero de la línea', 'Cómo va cada estación ahora', 'tablero-linea', '', 'ENCARGADO_PLANTA LINEA_SOLO_VER'],
   ['marcar', '✋', 'Marcar en la línea', 'Empezar y terminar cada cubierta en cada estación', 'tablero-linea', 'marcar', 'ENCARGADO_PLANTA'],
-  ['cargas', '🏭', 'Cargas en la línea', 'Cada orden de servicio y sus cubiertas', 'produccion-cubiertas', 'os', 'ENCARGADO_PLANTA'],
+  ['cargas', '🏭', 'Cargas en la línea', 'Cada orden de servicio y sus cubiertas', 'produccion-cubiertas', 'os', 'ENCARGADO_PLANTA LINEA_SOLO_VER'],
   ['puesto-estacion', '🛠', 'Estaciones', 'Trabajo en la línea', 'puesto-estacion', '', 'ENCARGADO_PLANTA OPERADOR'],
-  ['plan', '📅', 'Plan de mañana', 'Dejar todo listo el día anterior', 'produccion-cubiertas', 'plan', 'ENCARGADO_PLANTA'],
-  ['pesaje', '⚖', 'Pesaje y medición', 'Lo que se retira para la carga', 'produccion-cubiertas', 'pesaje', 'ENCARGADO_PLANTA'],
+  ['plan', '📅', 'Plan de mañana', 'Dejar todo listo el día anterior', 'produccion-cubiertas', 'plan', 'ENCARGADO_PLANTA LINEA_SOLO_VER'],
+  ['pesaje', '⚖', 'Pesaje y medición', 'Lo que se retira para la carga', 'produccion-cubiertas', 'pesaje', 'ENCARGADO_PLANTA LINEA_SOLO_VER'],
   ['entregas', '🚚', 'Entregas y remitos', 'Remitos y foto firmada', 'produccion-cubiertas', 'entregas', 'RECEPCION ENCARGADO_PLANTA'],
-  ['rech', '↩', 'Rechazadas', 'Cubiertas para devolver', 'produccion-cubiertas', 'rech', 'RECEPCION ENCARGADO_PLANTA'],
-  ['alarmas', '⚠', 'Alarmas', 'Stock bajo y cosas atrasadas', 'produccion-cubiertas', 'alarmas', 'ENCARGADO_PLANTA'],
+  ['rech', '↩', 'Rechazadas', 'Cubiertas para devolver', 'produccion-cubiertas', 'rech', 'RECEPCION ENCARGADO_PLANTA LINEA_SOLO_VER'],
+  ['alarmas', '⚠', 'Alarmas', 'Stock bajo y cosas atrasadas', 'produccion-cubiertas', 'alarmas', 'ENCARGADO_PLANTA LINEA_SOLO_VER'],
+  ['recetas', '🧪', 'Recetas', 'Qué lleva cada cubierta en cada estación', 'recetas', '', 'LINEA_SOLO_VER'],
   ['stock', '📦', 'Stock de insumos', 'Cuánto hay de cada insumo', 'stock-insumos', '', 'ENCARGADO_PLANTA COMPRAS'],
   ['catalogo', '🛍', 'Catálogo', 'La tienda: cubiertas e insumos con foto', 'precios-nuevos', '', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
   ['precios-nuevos', '🏷', 'Lista de precios', 'Nuevas, recapadas, servicios, gomería e insumos', 'precios-nuevos', 'CUB', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
