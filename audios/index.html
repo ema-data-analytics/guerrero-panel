@@ -241,6 +241,7 @@ function audPintarItem(it) {
       '<span style="font-size:12px;font-weight:700;color:' + col + '">' + audEsc(it.estado) + (it.listo || it.err ? '' : ' <span id="aud-seg-' + it.n + '">' + (it.t0 ? Math.round((Date.now() - it.t0) / 1000) + ' s' : '') + '</span>') + '</span>' +
       (it.listo && !it.err ? '<button class="btn btn-s" data-cop="' + it.n + '"><i class="fas fa-copy"></i> Copiar</button>' : '') +
     '</div>' +
+    (!it.listo && !it.err && it.t0 && it.modo === 'google' ? '<div style="height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin-top:8px"><div id="aud-pb-' + it.n + '" style="height:100%;width:' + audPct(it) + '%;background:#22c55e;transition:width .9s linear"></div></div><div style="font-size:11px;color:#64748b;margin-top:2px">Avance estimado según lo que dura el audio · llega al 100 % cuando vuelve el texto</div>' : '') +
     (it.intentos && it.intentos.length ? '<div style="font-size:11.5px;color:#64748b;margin-top:4px">' + it.intentos.map(audEsc).join('<br>') + '</div>' : '') +
     (it.texto ? '<textarea class="form-control" data-txt="' + it.n + '" style="margin-top:8px;min-height:' + (it.listo ? 90 : 60) + 'px;font-size:14px;line-height:1.45">' + audEsc(it.texto) + '</textarea>' : '');
   var b = c.querySelector('[data-cop]'); if (b) b.onclick = function() { var ta = c.querySelector('[data-txt]'); audCopiar(ta ? ta.value : it.texto); };
@@ -266,7 +267,8 @@ function audBajar() {
 
 // ── Modo Google (Gemini): rápido, no carga la computadora. La clave queda solo en el navegador de quien la pone. ──
 (function() { try { var st = document.createElement('style'); st.textContent = '.aud-led{display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;animation:audled 1s infinite;margin-right:2px}@keyframes audled{0%,100%{opacity:1}50%{opacity:.2}}'; document.head.appendChild(st); } catch (x) {} })();
-setInterval(function() { AUD_.items.forEach(function(it) { if (it.listo || it.err || !it.t0) return; var e = document.getElementById('aud-seg-' + it.n); if (e) e.textContent = Math.round((Date.now() - it.t0) / 1000) + ' s'; }); }, 1000);
+function audPct(it) { var est = Math.max(8, (it.dur || 60) * 0.35); return Math.min(95, Math.round((Date.now() - it.t0) / 1000 / est * 100)); }
+setInterval(function() { AUD_.items.forEach(function(it) { if (it.listo || it.err || !it.t0) return; var e = document.getElementById('aud-seg-' + it.n); if (e) e.textContent = Math.round((Date.now() - it.t0) / 1000) + ' s'; var b = document.getElementById('aud-pb-' + it.n); if (b) b.style.width = audPct(it) + '%'; }); }, 1000);
 var AUD_G_ = { activos: 0, max: 3, modelos: null, clave: '', corteMs: 45000 };
 function audClave() { var v = ''; try { v = localStorage.getItem('ema_aud_clave_google') || ''; } catch (x) {} return v || AUD_G_.clave || ''; }
 function audClaveSet(v) { AUD_G_.clave = v || ''; try { if (v) localStorage.setItem('ema_aud_clave_google', v); else localStorage.removeItem('ema_aud_clave_google'); localStorage.removeItem('ema_aud_modelo_google'); } catch (x) {} AUD_G_.modelos = null; }
@@ -301,12 +303,12 @@ function audGoogleModelos(k) {
   }).then(function(j) {
     var c = (j.models || []).filter(function(m) { var n = String(m.name || ''); return /gemini-[\d.]+-flash/.test(n) && !/image|tts|live|audio|thinking|exp|\d{3}$/.test(n) && (m.supportedGenerationMethods || []).indexOf('generateContent') !== -1; })
       .map(function(m) { var n = m.name.replace(/^models\//, ''), v = parseFloat(/gemini-([\d.]+)-flash/.exec(n)[1]); return { n: n, v: v, pen: (/preview/.test(n) ? 2 : 0) + (/lite/.test(n) ? 1 : 0) }; })
-      .sort(function(a, b) { return a.pen - b.pen || b.v - a.v || a.n.length - b.n.length; })
+      .sort(function(a, b) { var la = /lite/.test(a.n) ? 0 : 1, lb = /lite/.test(b.n) ? 0 : 1, pa = /preview/.test(a.n) ? 1 : 0, pb = /preview/.test(b.n) ? 1 : 0; return pa - pb || la - lb || b.v - a.v || a.n.length - b.n.length; })
       .map(function(x) { return x.n; });
     var primero = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash-lite'];
     c = primero.filter(function(n) { return c.indexOf(n) !== -1 || !(j.models || []).length; }).concat(c.filter(function(n) { return primero.indexOf(n) === -1; }));
     if (!c.length) c = primero.slice();
-    var pref = ''; try { pref = localStorage.getItem('ema_aud_modelo_google') || ''; } catch (x) {}
+    var pref = ''; try { pref = localStorage.getItem('ema_aud_modelo_rapido') || ''; } catch (x) {}
     if (pref && c.indexOf(pref) !== -1) { c.splice(c.indexOf(pref), 1); c.unshift(pref); }
     AUD_G_.modelos = c;
     return c;
@@ -327,7 +329,7 @@ function audGoogleCola() {
 }
 function audGoogleUno(it, k, intento) {
   AUD_G_.activos++;
-  it.t0 = Date.now(); it.intentos = [];
+  it.t0 = Date.now(); it.intentos = []; it.modo = 'google';
   it.estado = 'Enviando a Google…'; it.err = false; it.listo = false; audPintarItem(it);
   var t0 = it.t0;
   Promise.all([audBase64(it.archivo), audDuracion(it.archivo), audGoogleModelos(k)]).then(function(r) {
@@ -337,12 +339,12 @@ function audGoogleUno(it, k, intento) {
       { inline_data: { mime_type: audMime(it.archivo), data: r[0] } }
     ] }], generationConfig: { temperature: 0 } });
     it.cuerpo25 = cuerpo.replace('"generationConfig":{"temperature":0}', '"generationConfig":{"temperature":0,"thinkingConfig":{"thinkingBudget":0}}');
-    return audGoogleProbar(it, k, r[2], 0, cuerpo, 0);
+    return audGoogleCarrera(it, k, r[2], 0, cuerpo, 0);
   }).then(function(j) {
     var c = j.candidates && j.candidates[0], partes = (c && c.content && c.content.parts) || [];
     var t = partes.map(function(p) { return p.text || ''; }).join('').trim();
     if (!t) { var e0 = new Error('vacío'); e0.txt = c && c.finishReason === 'SAFETY' ? 'Google no quiso pasar este audio a texto.' : '(no se escuchó nada que se pueda pasar a texto)'; throw e0; }
-    it.texto = t; it.listo = true; it.estado = 'Listo en ' + Math.max(1, Math.round((Date.now() - t0) / 1000)) + ' s';
+    it.texto = t; it.listo = true; it.estado = 'Listo en ' + Math.max(1, Math.round((Date.now() - t0) / 1000)) + ' s' + (it.modeloUsado ? ' (' + it.modeloUsado + ')' : '');
   }).catch(function(e) {
     it.err = true; it.listo = true; it.estado = (e && e.txt) || ('No se pudo: ' + ((e && e.message) || e));
     if (/Failed to fetch|NetworkError/i.test(String(e && e.message))) it.estado = 'No hay conexión con Google. Revisá internet y volvé a elegir el audio.';
@@ -351,6 +353,44 @@ function audGoogleUno(it, k, intento) {
   });
 }
 // Prueba los modelos en orden: si uno está saturado o no existe, pasa al siguiente; si todos están saturados, espera y vuelve a probar (hasta 4 vueltas).
+// Manda el audio a 2 modelos a la vez y se queda con el primero que contesta (corta el otro). Si los dos fallan por saturación, prueba los 2 siguientes.
+function audGoogleCarrera(it, k, lista, i, cuerpo, vuelta) {
+  var par = lista.slice(i, i + 2), ctls = [], hecho = false, fallas = [];
+  it.estado = 'Pasando a texto con ' + par.join(' y ') + '…'; audPintarItem(it);
+  return new Promise(function(ok, mal) {
+    par.forEach(function(mod) {
+      var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null; ctls.push(ctl);
+      var t1 = Date.now(), corte = ctl ? setTimeout(function() { ctl.abort(); }, AUD_G_.corteMs) : null;
+      var cuerpoM = (/^gemini-2\.5-flash/.test(mod) && it.cuerpo25) ? it.cuerpo25 : cuerpo;
+      fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(mod) + ':generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': k }, body: cuerpoM, signal: ctl ? ctl.signal : undefined })
+        .then(function(rr) { return rr.json().then(function(j) { if (!rr.ok) throw audErrGoogle(rr.status, j); return j; }); })
+        .then(function(j) {
+          clearTimeout(corte); if (hecho) return; hecho = true;
+          ctls.forEach(function(c) { if (c && c !== ctl) try { c.abort(); } catch (x) {} });
+          var seg = (Date.now() - t1) / 1000; try { if (seg < 40) localStorage.setItem('ema_aud_modelo_rapido', mod); else localStorage.removeItem('ema_aud_modelo_rapido'); } catch (x) {}
+          it.modeloUsado = mod; ok(j);
+        })
+        .catch(function(e) {
+          clearTimeout(corte); if (hecho) return;
+          var seg = Math.round((Date.now() - t1) / 1000), abortado = e && e.name === 'AbortError';
+          if (e && (e.st === 403 || /free tier is not available|billing/i.test(e.message))) e.txt = 'Google no deja usar esta clave gratis: es de una cuenta de empresa o sin plan gratis. Tocá Borrar y poné la clave sacada con tu Gmail personal (aistudio.google.com/apikey).';
+          if (e && e.st === 400 && /thinking/i.test(e.message) && it.cuerpo25) it.cuerpo25 = null;
+          e.pasajero = abortado || (e && (e.st === 503 || e.st === 500 || e.st === 429 || e.st === 404 || (e.st === 400 && /thinking/i.test(e.message)) || /high demand|overloaded|unavailable|not found|not supported|quota/i.test(e.message))) && !(e.st === 403);
+          var motivo = abortado ? 'no respondió en ' + Math.round(AUD_G_.corteMs / 1000) + ' s' : e.st === 503 || /high demand|overloaded/i.test(e.message) ? 'saturado' : e.st === 429 || /quota/i.test(e.message) ? 'límite gratis por minuto' : e.st === 404 || /not found|not supported/i.test(e.message) ? 'no disponible para tu clave' : ('error: ' + String(e.message || e).slice(0, 120));
+          it.intentos = (it.intentos || []).concat(['✗ ' + mod + ': ' + motivo + ' (' + seg + ' s)']); audPintarItem(it);
+          fallas.push(e);
+          if (fallas.length < par.length) return;
+          var dura = fallas.filter(function(x) { return !x.pasajero; })[0];
+          if (dura) { mal(dura); return; }
+          if (i + 2 < lista.length) { ok(audGoogleCarrera(it, k, lista, i + 2, cuerpo, vuelta)); return; }
+          if (vuelta >= 2) { var e2 = new Error('saturado'); e2.txt = 'Google no respondió con ningún modelo. Volvé a elegir el audio en un rato.'; mal(e2); return; }
+          var esp = 15 * (vuelta + 1);
+          it.estado = 'Todos los modelos de Google ocupados: se vuelve a probar solo en ' + esp + ' s…'; audPintarItem(it);
+          setTimeout(function() { ok(audGoogleCarrera(it, k, lista, 0, cuerpo, vuelta + 1)); }, esp * 1000);
+        });
+    });
+  });
+}
 function audGoogleProbar(it, k, lista, i, cuerpo, vuelta) {
   var mod = lista[i], ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null, corte = null, t1 = Date.now();
   it.estado = 'Pasando a texto con ' + mod + '…'; audPintarItem(it);
