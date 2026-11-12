@@ -263,9 +263,9 @@ function audBajar() {
 }
 
 // ── Modo Google (Gemini): rápido, no carga la computadora. La clave queda solo en el navegador de quien la pone. ──
-var AUD_G_ = { activos: 0, max: 3, modelo: '', clave: '' };
+var AUD_G_ = { activos: 0, max: 3, modelos: null, clave: '' };
 function audClave() { var v = ''; try { v = localStorage.getItem('ema_aud_clave_google') || ''; } catch (x) {} return v || AUD_G_.clave || ''; }
-function audClaveSet(v) { AUD_G_.clave = v || ''; try { if (v) localStorage.setItem('ema_aud_clave_google', v); else localStorage.removeItem('ema_aud_clave_google'); localStorage.removeItem('ema_aud_modelo_google'); } catch (x) {} AUD_G_.modelo = ''; }
+function audClaveSet(v) { AUD_G_.clave = v || ''; try { if (v) localStorage.setItem('ema_aud_clave_google', v); else localStorage.removeItem('ema_aud_clave_google'); localStorage.removeItem('ema_aud_modelo_google'); } catch (x) {} AUD_G_.modelos = null; }
 function audClaveEstado() {
   var w = document.getElementById('aud-clave-w'), e = document.getElementById('aud-clave-est'), sel = document.getElementById('aud-modelo');
   if (!w) return;
@@ -289,18 +289,21 @@ function audBase64(f) {
 function audDuracion(f) {
   return new Promise(function(ok) { try { var a = document.createElement('audio'), u = URL.createObjectURL(f), listo = false; var fin = function(v) { if (listo) return; listo = true; URL.revokeObjectURL(u); ok(v); }; a.preload = 'metadata'; a.onloadedmetadata = function() { fin(isFinite(a.duration) ? a.duration : 0); }; a.onerror = function() { fin(0); }; setTimeout(function() { fin(0); }, 4000); a.src = u; } catch (x) { ok(0); } });
 }
-function audGoogleModelo(k) {
-  if (AUD_G_.modelo) return Promise.resolve(AUD_G_.modelo);
-  try { var g = localStorage.getItem('ema_aud_modelo_google'); if (g) { AUD_G_.modelo = g; return Promise.resolve(g); } } catch (x) {}
+// Lista de modelos "flash" de Google que acepta la clave, del más nuevo al más viejo; el que anduvo la última vez va primero.
+function audGoogleModelos(k) {
+  if (AUD_G_.modelos && AUD_G_.modelos.length) return Promise.resolve(AUD_G_.modelos);
   return fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': k } }).then(function(r) {
     return r.json().then(function(j) { if (!r.ok) throw audErrGoogle(r.status, j); return j; });
   }).then(function(j) {
-    var c = (j.models || []).filter(function(m) { var n = String(m.name || ''); return /gemini-[\d.]+-flash/.test(n) && !/lite|image|tts|live|audio|thinking|exp|preview|\d{3}$/.test(n) && (m.supportedGenerationMethods || []).indexOf('generateContent') !== -1; })
-      .map(function(m) { var v = /gemini-([\d.]+)-flash/.exec(m.name)[1]; return { n: m.name.replace(/^models\//, ''), v: parseFloat(v) }; })
-      .sort(function(a, b) { return b.v - a.v || a.n.length - b.n.length; });
-    var elegido = c.length ? c[0].n : 'gemini-2.5-flash';
-    AUD_G_.modelo = elegido; try { localStorage.setItem('ema_aud_modelo_google', elegido); } catch (x) {}
-    return elegido;
+    var c = (j.models || []).filter(function(m) { var n = String(m.name || ''); return /gemini-[\d.]+-flash/.test(n) && !/image|tts|live|audio|thinking|exp|\d{3}$/.test(n) && (m.supportedGenerationMethods || []).indexOf('generateContent') !== -1; })
+      .map(function(m) { var n = m.name.replace(/^models\//, ''), v = parseFloat(/gemini-([\d.]+)-flash/.exec(n)[1]); return { n: n, v: v, pen: (/preview/.test(n) ? 2 : 0) + (/lite/.test(n) ? 1 : 0) }; })
+      .sort(function(a, b) { return a.pen - b.pen || b.v - a.v || a.n.length - b.n.length; })
+      .map(function(x) { return x.n; });
+    ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'].forEach(function(n) { if (c.indexOf(n) === -1) c.push(n); });
+    var pref = ''; try { pref = localStorage.getItem('ema_aud_modelo_google') || ''; } catch (x) {}
+    if (pref && c.indexOf(pref) !== -1) { c.splice(c.indexOf(pref), 1); c.unshift(pref); }
+    AUD_G_.modelos = c;
+    return c;
   });
 }
 function audErrGoogle(st, j) {
@@ -320,28 +323,41 @@ function audGoogleUno(it, k, intento) {
   AUD_G_.activos++;
   it.estado = 'Enviando a Google…'; it.err = false; it.listo = false; audPintarItem(it);
   var t0 = Date.now();
-  Promise.all([audBase64(it.archivo), audDuracion(it.archivo), audGoogleModelo(k)]).then(function(r) {
-    it.dur = r[1] || it.dur; it.estado = 'Pasando a texto…'; audPintarItem(it);
-    var cuerpo = { contents: [{ role: 'user', parts: [
+  Promise.all([audBase64(it.archivo), audDuracion(it.archivo), audGoogleModelos(k)]).then(function(r) {
+    it.dur = r[1] || it.dur;
+    var cuerpo = JSON.stringify({ contents: [{ role: 'user', parts: [
       { text: 'Transcribí este audio en español, palabra por palabra, tal como se dice. Poné puntuación y separá en párrafos cuando cambia el tema. No resumas, no corrijas lo que dice, no agregues comentarios ni títulos. Si una palabra no se entiende, poné [no se entiende]. Devolvé solo el texto.' },
       { inline_data: { mime_type: audMime(it.archivo), data: r[0] } }
-    ] }], generationConfig: { temperature: 0 } };
-    return fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(r[2]) + ':generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': k }, body: JSON.stringify(cuerpo) })
-      .then(function(rr) { return rr.json().then(function(j) { if (!rr.ok) throw audErrGoogle(rr.status, j); return j; }); });
+    ] }], generationConfig: { temperature: 0 } });
+    return audGoogleProbar(it, k, r[2], 0, cuerpo, 0);
   }).then(function(j) {
     var c = j.candidates && j.candidates[0], partes = (c && c.content && c.content.parts) || [];
     var t = partes.map(function(p) { return p.text || ''; }).join('').trim();
-    if (!t) throw Object.assign(new Error('vacío'), { txt: c && c.finishReason === 'SAFETY' ? 'Google no quiso pasar este audio a texto.' : '(no se escuchó nada que se pueda pasar a texto)' });
+    if (!t) { var e0 = new Error('vacío'); e0.txt = c && c.finishReason === 'SAFETY' ? 'Google no quiso pasar este audio a texto.' : '(no se escuchó nada que se pueda pasar a texto)'; throw e0; }
     it.texto = t; it.listo = true; it.estado = 'Listo en ' + Math.max(1, Math.round((Date.now() - t0) / 1000)) + ' s';
   }).catch(function(e) {
-    if (e && e.st === 404) { audClaveSet(k); }
-    if (e && e.st === 429 && intento < 4) { it.estado = (e.txt || 'Límite por minuto') ; audPintarItem(it); AUD_G_.activos--; setTimeout(function() { audGoogleUno(it, k, intento + 1); }, 30000); return 'reintento'; }
     it.err = true; it.listo = true; it.estado = (e && e.txt) || ('No se pudo: ' + ((e && e.message) || e));
     if (/Failed to fetch|NetworkError/i.test(String(e && e.message))) it.estado = 'No hay conexión con Google. Revisá internet y volvé a elegir el audio.';
-  }).then(function(x) {
-    if (x === 'reintento') return;
+  }).then(function() {
     audPintarItem(it); AUD_G_.activos--; audGoogleCola();
   });
+}
+// Prueba los modelos en orden: si uno está saturado o no existe, pasa al siguiente; si todos están saturados, espera y vuelve a probar (hasta 4 vueltas).
+function audGoogleProbar(it, k, lista, i, cuerpo, vuelta) {
+  var mod = lista[i];
+  it.estado = 'Pasando a texto…' + (i || vuelta ? ' (probando otro modelo de Google)' : ''); audPintarItem(it);
+  return fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(mod) + ':generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': k }, body: cuerpo })
+    .then(function(rr) { return rr.json().then(function(j) { if (!rr.ok) throw audErrGoogle(rr.status, j); return j; }); })
+    .then(function(j) { try { localStorage.setItem('ema_aud_modelo_google', mod); } catch (x) {} return j; })
+    .catch(function(e) {
+      var pasajero = e && (e.st === 503 || e.st === 500 || e.st === 429 || e.st === 404 || /high demand|overloaded|unavailable|not found|not supported|quota/i.test(e.message));
+      if (!pasajero) throw e;
+      if (i + 1 < lista.length) return audGoogleProbar(it, k, lista, i + 1, cuerpo, vuelta);
+      if (vuelta >= 3) { e.txt = 'Google está saturado en este momento. Volvé a elegir el audio en un rato.'; throw e; }
+      var seg = 15 * (vuelta + 1);
+      it.estado = 'Google está saturado: se vuelve a probar solo en ' + seg + ' s…'; audPintarItem(it);
+      return new Promise(function(ok) { setTimeout(ok, seg * 1000); }).then(function() { return audGoogleProbar(it, k, lista, 0, cuerpo, vuelta + 1); });
+    });
 }
 </script>
 
