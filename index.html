@@ -1572,7 +1572,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611121812';
+var EMA_BUILD = '202611121825';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -22345,7 +22345,8 @@ function renderAudios() {
 }
 
 function audHtml() {
-  var ops = Object.keys(AUD_MODELOS).map(function(k) { var m = AUD_MODELOS[k]; return '<option value="' + k + '"' + (k === 'bueno' ? ' selected' : '') + '>' + m.nombre + ' — ' + audEsc(m.nota) + '</option>'; }).join('');
+  var ops = '<option value="google" selected>Google (rápido: 1 minuto de audio en segundos) — necesita internet y tu clave de Google</option>' +
+    Object.keys(AUD_MODELOS).map(function(k) { var m = AUD_MODELOS[k]; return '<option value="' + k + '">En esta computadora, ' + m.nombre + ' (lento) — ' + audEsc(m.nota) + '</option>'; }).join('');
   return '<div class="page-header"><div><div class="page-title">🎙 Audios a texto</div><div class="page-sub">Pasá los audios de WhatsApp a texto. El audio no sale de esta computadora: se convierte acá mismo.</div></div></div>' +
     '<div class="card" style="padding:16px;margin-bottom:14px">' +
       '<div id="aud-zona" style="border:2px dashed #93c5fd;border-radius:12px;padding:26px 14px;text-align:center;cursor:pointer;background:#f8fbff">' +
@@ -22355,8 +22356,15 @@ function audHtml() {
         '<input id="aud-arch" type="file" multiple accept="audio/*,video/*,.opus,.ogg,.oga,.m4a,.mp3,.wav,.aac,.mp4,.webm" style="display:none">' +
       '</div>' +
       '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px">' +
-        '<label style="font-size:12.5px;font-weight:700;color:#334155">Calidad</label>' +
+        '<label style="font-size:12.5px;font-weight:700;color:#334155">Cómo</label>' +
         '<select id="aud-modelo" class="form-control" style="max-width:520px;flex:1;min-width:220px">' + ops + '</select>' +
+      '</div>' +
+      '<div id="aud-clave-w" style="margin-top:12px;padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc">' +
+        '<div style="font-size:13px;font-weight:700">🔑 Clave de Google (se pone una sola vez)</div>' +
+        '<div id="aud-clave-est" style="font-size:12.5px;color:#475569;margin:4px 0 8px"></div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="aud-clave" type="password" autocomplete="off" class="form-control" style="flex:1;min-width:220px" placeholder="Pegá acá tu clave (empieza con AIza…)">' +
+        '<button class="btn btn-s" id="aud-clave-ok"><i class="fas fa-save"></i> Guardar clave</button><button class="btn btn-s" id="aud-clave-borrar"><i class="fas fa-trash"></i> Borrar</button></div>' +
+        '<div style="font-size:12px;color:#64748b;margin-top:8px">Cómo sacarla: entrá a <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google → <b>Crear clave de API</b> → copiala y pegala acá. Queda guardada solo en este navegador. El audio se manda a Google para pasarlo a texto.</div>' +
       '</div>' +
       '<div id="aud-aviso" style="display:none;margin-top:12px;padding:9px 12px;border:1px solid;border-radius:8px;font-size:13px"></div>' +
       '<div id="aud-barra-w" style="display:none;margin-top:10px"><div style="font-size:12px;color:#475569" id="aud-barra-t"></div><div style="height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin-top:4px"><div id="aud-barra" style="height:100%;width:0;background:#2563eb;transition:width .2s"></div></div></div>' +
@@ -22367,7 +22375,7 @@ function audHtml() {
       '<button class="btn btn-s" id="aud-limpiar"><i class="fas fa-broom"></i> Limpiar lista</button>' +
     '</div>' +
     '<div id="aud-lista"></div>' +
-    '<div style="color:#94a3b8;font-size:11.5px;margin-top:14px">Cómo funciona: usa el modelo de reconocimiento de voz Whisper dentro del navegador. La primera vez tarda en bajarlo; después queda guardado. Un audio de 1 minuto tarda entre 10 segundos y 1 minuto según la computadora. Revisá nombres propios, números y medidas: el texto puede tener errores.</div>';
+    '<div style="color:#94a3b8;font-size:11.5px;margin-top:14px">Con Google: el audio se manda a Google y vuelve el texto en segundos; se pueden pasar varios a la vez. En esta computadora: no usa internet, pero en una PC sin placa de video 1 minuto de audio puede tardar 10 minutos o más y deja la máquina lenta mientras tanto. Revisá nombres propios, números y medidas: el texto puede tener errores.</div>';
 }
 
 function audEnganchar(el) {
@@ -22381,6 +22389,10 @@ function audEnganchar(el) {
   el.querySelector('#aud-bajar').onclick = audBajar;
   el.querySelector('#aud-limpiar').onclick = function() { if (AUD_.ocupado) { audAviso('Esperá que termine el audio que se está pasando.'); return; } AUD_.items = []; AUD_.cola = []; audPintarLista(); audAviso(''); };
   var sel = el.querySelector('#aud-modelo');
+  el.querySelector('#aud-clave-ok').onclick = function() { var v = String(el.querySelector('#aud-clave').value || '').trim(); if (!/^AIza[\w-]{20,}$/.test(v)) { audAviso('Esa clave no tiene la forma de una clave de Google (empieza con AIza). Copiala de nuevo desde aistudio.google.com/apikey.', true); return; } audClaveSet(v); el.querySelector('#aud-clave').value = ''; audClaveEstado(); audAviso('Clave guardada. Ya podés arrastrar los audios.'); };
+  el.querySelector('#aud-clave-borrar').onclick = function() { audClaveSet(''); audClaveEstado(); };
+  audClaveEstado();
+  sel.addEventListener('change', audClaveEstado);
   sel.onchange = function() { if (sel.value === 'mejor' && AUD_.gpu === false) { audAviso('Esta computadora no tiene placa de video disponible para el modo "Muy bueno": se usa "Bueno".'); sel.value = 'bueno'; } };
   audWorker().postMessage({ tipo: 'gpu' });
   var pc = !/Android|iPhone|iPad/i.test(navigator.userAgent); if (!pc) sel.value = 'rapido';
@@ -22395,6 +22407,8 @@ function audAgregar(lista) {
 }
 
 function audSiguiente() {
+  var selM = document.getElementById('aud-modelo');
+  if (selM && selM.value === 'google') { audGoogleCola(); return; }
   if (AUD_.ocupado || !AUD_.cola.length) return;
   var it = AUD_.cola.shift();
   AUD_.ocupado = true;
@@ -22512,6 +22526,88 @@ function audBajar() {
   var d = new Date(), f = d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '_' + ('0' + d.getHours()).slice(-2) + ('0' + d.getMinutes()).slice(-2);
   var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/plain;charset=utf-8' })); a.download = 'audios_a_texto_' + f + '.txt';
   document.body.appendChild(a); a.click(); setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+// ── Modo Google (Gemini): rápido, no carga la computadora. La clave queda solo en el navegador de quien la pone. ──
+var AUD_G_ = { activos: 0, max: 3, modelo: '' };
+function audClave() { try { return localStorage.getItem('ema_aud_clave_google') || ''; } catch (x) { return ''; } }
+function audClaveSet(v) { try { if (v) localStorage.setItem('ema_aud_clave_google', v); else localStorage.removeItem('ema_aud_clave_google'); localStorage.removeItem('ema_aud_modelo_google'); } catch (x) {} AUD_G_.modelo = ''; }
+function audClaveEstado() {
+  var w = document.getElementById('aud-clave-w'), e = document.getElementById('aud-clave-est'), sel = document.getElementById('aud-modelo');
+  if (!w) return;
+  w.style.display = sel && sel.value === 'google' ? '' : 'none';
+  var k = audClave();
+  e.innerHTML = k ? '✅ Clave guardada (termina en …' + audEsc(k.slice(-4)) + '). Si querés cambiarla, pegá la nueva y guardá.' : '⚠ Todavía no hay clave en este navegador.';
+}
+function audMime(f) {
+  var n = String(f.name || '').toLowerCase(), t = String(f.type || '');
+  if (/\.(opus|ogg|oga)$/.test(n)) return 'audio/ogg';
+  if (/\.mp3$/.test(n)) return 'audio/mp3';
+  if (/\.(m4a|aac)$/.test(n)) return 'audio/aac';
+  if (/\.wav$/.test(n)) return 'audio/wav';
+  if (/\.mp4$/.test(n)) return 'video/mp4';
+  if (/\.webm$/.test(n)) return 'video/webm';
+  return t || 'audio/ogg';
+}
+function audBase64(f) {
+  return new Promise(function(ok, mal) { var r = new FileReader(); r.onerror = function() { mal(new Error('no se pudo abrir el archivo')); }; r.onload = function() { var s = String(r.result || ''); ok(s.slice(s.indexOf(',') + 1)); }; r.readAsDataURL(f); });
+}
+function audDuracion(f) {
+  return new Promise(function(ok) { try { var a = document.createElement('audio'), u = URL.createObjectURL(f), listo = false; var fin = function(v) { if (listo) return; listo = true; URL.revokeObjectURL(u); ok(v); }; a.preload = 'metadata'; a.onloadedmetadata = function() { fin(isFinite(a.duration) ? a.duration : 0); }; a.onerror = function() { fin(0); }; setTimeout(function() { fin(0); }, 4000); a.src = u; } catch (x) { ok(0); } });
+}
+function audGoogleModelo(k) {
+  if (AUD_G_.modelo) return Promise.resolve(AUD_G_.modelo);
+  try { var g = localStorage.getItem('ema_aud_modelo_google'); if (g) { AUD_G_.modelo = g; return Promise.resolve(g); } } catch (x) {}
+  return fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': k } }).then(function(r) {
+    return r.json().then(function(j) { if (!r.ok) throw audErrGoogle(r.status, j); return j; });
+  }).then(function(j) {
+    var c = (j.models || []).filter(function(m) { var n = String(m.name || ''); return /gemini-[\d.]+-flash/.test(n) && !/lite|image|tts|live|audio|thinking|exp|preview|\d{3}$/.test(n) && (m.supportedGenerationMethods || []).indexOf('generateContent') !== -1; })
+      .map(function(m) { var v = /gemini-([\d.]+)-flash/.exec(m.name)[1]; return { n: m.name.replace(/^models\//, ''), v: parseFloat(v) }; })
+      .sort(function(a, b) { return b.v - a.v || a.n.length - b.n.length; });
+    var elegido = c.length ? c[0].n : 'gemini-2.5-flash';
+    AUD_G_.modelo = elegido; try { localStorage.setItem('ema_aud_modelo_google', elegido); } catch (x) {}
+    return elegido;
+  });
+}
+function audErrGoogle(st, j) {
+  var m = (j && j.error && j.error.message) || ('error ' + st), e = new Error(m); e.st = st;
+  if (st === 400 && /API key/i.test(m)) e.txt = 'La clave de Google no es válida. Copiala de nuevo desde aistudio.google.com/apikey y guardala.';
+  else if (st === 403) e.txt = 'Google no deja usar esa clave (' + m + '). Revisá en aistudio.google.com/apikey que la clave esté activa.';
+  else if (st === 429) e.txt = 'Se llegó al límite gratis de Google por minuto. Se vuelve a probar solo en 30 segundos.';
+  else e.txt = 'Google respondió con un error: ' + m;
+  return e;
+}
+function audGoogleCola() {
+  var k = audClave();
+  if (!k) { AUD_.cola.forEach(function(it) { it.estado = 'Falta la clave de Google (arriba): pegala, guardala y volvé a elegir el audio.'; it.err = true; it.listo = true; audPintarItem(it); }); AUD_.cola = []; audAviso('Falta la clave de Google. Pegala en el recuadro de arriba y tocá Guardar clave.', true); return; }
+  while (AUD_G_.activos < AUD_G_.max && AUD_.cola.length) audGoogleUno(AUD_.cola.shift(), k, 0);
+}
+function audGoogleUno(it, k, intento) {
+  AUD_G_.activos++;
+  it.estado = 'Enviando a Google…'; it.err = false; it.listo = false; audPintarItem(it);
+  var t0 = Date.now();
+  Promise.all([audBase64(it.archivo), audDuracion(it.archivo), audGoogleModelo(k)]).then(function(r) {
+    it.dur = r[1] || it.dur; it.estado = 'Pasando a texto…'; audPintarItem(it);
+    var cuerpo = { contents: [{ role: 'user', parts: [
+      { text: 'Transcribí este audio en español, palabra por palabra, tal como se dice. Poné puntuación y separá en párrafos cuando cambia el tema. No resumas, no corrijas lo que dice, no agregues comentarios ni títulos. Si una palabra no se entiende, poné [no se entiende]. Devolvé solo el texto.' },
+      { inline_data: { mime_type: audMime(it.archivo), data: r[0] } }
+    ] }], generationConfig: { temperature: 0 } };
+    return fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(r[2]) + ':generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': k }, body: JSON.stringify(cuerpo) })
+      .then(function(rr) { return rr.json().then(function(j) { if (!rr.ok) throw audErrGoogle(rr.status, j); return j; }); });
+  }).then(function(j) {
+    var c = j.candidates && j.candidates[0], partes = (c && c.content && c.content.parts) || [];
+    var t = partes.map(function(p) { return p.text || ''; }).join('').trim();
+    if (!t) throw Object.assign(new Error('vacío'), { txt: c && c.finishReason === 'SAFETY' ? 'Google no quiso pasar este audio a texto.' : '(no se escuchó nada que se pueda pasar a texto)' });
+    it.texto = t; it.listo = true; it.estado = 'Listo en ' + Math.max(1, Math.round((Date.now() - t0) / 1000)) + ' s';
+  }).catch(function(e) {
+    if (e && e.st === 404) { audClaveSet(k); }
+    if (e && e.st === 429 && intento < 4) { it.estado = (e.txt || 'Límite por minuto') ; audPintarItem(it); AUD_G_.activos--; setTimeout(function() { audGoogleUno(it, k, intento + 1); }, 30000); return 'reintento'; }
+    it.err = true; it.listo = true; it.estado = (e && e.txt) || ('No se pudo: ' + ((e && e.message) || e));
+    if (/Failed to fetch|NetworkError/i.test(String(e && e.message))) it.estado = 'No hay conexión con Google. Revisá internet y volvé a elegir el audio.';
+  }).then(function(x) {
+    if (x === 'reintento') return;
+    audPintarItem(it); AUD_G_.activos--; audGoogleCola();
+  });
 }
 </script>
 
