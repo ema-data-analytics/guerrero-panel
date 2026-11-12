@@ -358,6 +358,8 @@ function audGoogleProbar(it, k, lista, i, cuerpo, vuelta) {
     .catch(function(e) {
       clearTimeout(corte);
       var seg = Math.round((Date.now() - t1) / 1000), abortado = e && e.name === 'AbortError';
+      if (e && (e.st === 403 || /free tier is not available|billing/i.test(e.message))) { e.txt = 'Google no deja usar esta clave gratis: es de una cuenta de empresa o sin plan gratis. Tocá Borrar y poné la clave sacada con tu Gmail personal (aistudio.google.com/apikey).'; throw e; }
+      if (e && e.st === 400 && /API key/i.test(e.message)) throw e;
       var pasajero = abortado || (e && (e.st === 503 || e.st === 500 || e.st === 429 || e.st === 404 || /high demand|overloaded|unavailable|not found|not supported|quota/i.test(e.message)));
       var motivo = abortado ? 'no respondió en 90 s' : e.st === 503 || /high demand|overloaded/i.test(e.message) ? 'saturado' : e.st === 429 || /quota/i.test(e.message) ? 'límite gratis por minuto' : e.st === 404 || /not found|not supported/i.test(e.message) ? 'no disponible para tu clave' : ('error: ' + String(e.message || e).slice(0, 120));
       it.intentos = (it.intentos || []).concat(['✗ ' + mod + ': ' + motivo + ' (' + seg + ' s)']);
