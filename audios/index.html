@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Audios a texto</title>
+<script>window.coi = { coepCredentialless: function() { return true; }, quiet: true };</script>
+<script src="coi-serviceworker.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f1f5f9;color:#0f172a}
+.wrap{max-width:900px;margin:0 auto;padding:18px 16px 40px}
+.page-header{margin-bottom:14px}.page-title{font-size:22px;font-weight:800}.page-sub{color:#475569;font-size:13.5px;margin-top:4px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.btn{border:1px solid #cbd5e1;background:#fff;color:#0f172a;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;gap:6px;align-items:center}.btn:hover{background:#f8fafc}
+.form-control{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;font-size:13.5px;font-family:inherit;background:#fff;color:#0f172a}
+.pie{color:#94a3b8;font-size:11.5px;text-align:center;margin-top:18px}</style></head>
+<body><div class="wrap"><div id="page-audios"></div><div class="pie">EMA Data Analytics · Audios a texto · funciona en Chrome o Edge (computadora o celular Android)</div></div>
+<script>
+// ── Audios a texto (12/11/2026, Anibal): pasa a texto los audios de WhatsApp (.opus, .ogg, .mp3, .m4a, .wav, videos).
+// Todo corre en la computadora de quien lo usa (modelo Whisper en el navegador): el audio NO sale de la máquina.
+// La primera vez baja el modelo (queda guardado en el navegador para las siguientes).
+var AUD_URL_LIB = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6/dist/transformers.min.js';
+var AUD_MODELOS = {
+  rapido: { nombre: 'Rápido', ids: ['onnx-community/whisper-base', 'Xenova/whisper-base'], nota: 'Baja ~80 MB. Bueno para el celular.' },
+  bueno: { nombre: 'Bueno', ids: ['onnx-community/whisper-small', 'Xenova/whisper-small'], nota: 'Baja ~250 MB. El recomendado en la computadora.' },
+  mejor: { nombre: 'Muy bueno', ids: ['onnx-community/whisper-large-v3-turbo'], nota: 'Baja ~600 MB. Solo en computadoras con placa de video (Chrome).', gpu: true }
+};
+var AUD_ = { w: null, cola: [], items: [], sig: 1, ocupado: false, modelo: '', gpu: null };
+
+function audCodigoWorker() {
+  return [
+    "var T = null, P = null, cargado = '';",
+    "function lib(url) { if (T) return Promise.resolve(T); return import(url).then(function(x) { T = x; T.env.allowLocalModels = false; try { if (self.crossOriginIsolated) T.env.backends.onnx.wasm.numThreads = Math.max(1, (self.navigator && navigator.hardwareConcurrency) || 4); } catch (z) {} return T; }); }",
+    "function intentar(ids, i, disp) {",
+    "  var id = ids[i], dt = disp === 'webgpu' ? { encoder_model: 'fp32', decoder_model_merged: 'q4' } : 'q8';",
+    "  return T.pipeline('automatic-speech-recognition', id, { device: disp, dtype: dt, progress_callback: function(p) { self.postMessage({ tipo: 'descarga', p: { status: p.status, file: p.file, loaded: p.loaded, total: p.total, progress: p.progress } }); } })",
+    "    .then(function(p) { return { p: p, id: id }; })",
+    "    .catch(function(e) { if (i + 1 < ids.length) return intentar(ids, i + 1, disp); if (disp === 'webgpu') return intentar(ids, 0, 'wasm'); throw e; });",
+    "}",
+    "function cargar(m) {",
+    "  var clave = m.clave + '|' + m.disp;",
+    "  if (P && cargado === clave) return Promise.resolve(P);",
+    "  return lib(m.url).then(function() { return intentar(m.ids, 0, m.disp); }).then(function(r) { P = r.p; cargado = clave; self.postMessage({ tipo: 'modelo', id: r.id }); return P; });",
+    "}",
+    "self.onmessage = function(e) {",
+    "  var m = e.data;",
+    "  if (m.tipo === 'gpu') { var ok = !!(self.navigator && navigator.gpu); if (!ok) { self.postMessage({ tipo: 'gpu', ok: false }); return; } navigator.gpu.requestAdapter().then(function(a) { self.postMessage({ tipo: 'gpu', ok: !!a }); }).catch(function() { self.postMessage({ tipo: 'gpu', ok: false }); }); return; }",
+    "  if (m.tipo !== 'transcribir') return;",
+    "  cargar(m).then(function(p) {",
+    "    self.postMessage({ tipo: 'estado', n: m.n, txt: 'Pasando a texto…' });",
+    "    var op = { language: 'spanish', task: 'transcribe', chunk_length_s: 30, stride_length_s: 5 };",
+    "    try { if (T.WhisperTextStreamer) { var acu = ''; op.streamer = new T.WhisperTextStreamer(p.tokenizer, { skip_prompt: true, skip_special_tokens: true, callback_function: function(t) { acu += t; self.postMessage({ tipo: 'parcial', n: m.n, txt: acu }); } }); } } catch (x) {}",
+    "    return p(m.audio, op);",
+    "  }).then(function(r) {",
+    "    var t = Array.isArray(r) ? r.map(function(x) { return x.text; }).join(' ') : (r && r.text) || '';",
+    "    self.postMessage({ tipo: 'listo', n: m.n, txt: String(t).replace(/\\s+/g, ' ').trim() });",
+    "  }).catch(function(err) { self.postMessage({ tipo: 'error', n: m.n, txt: String((err && err.message) || err) }); });",
+    "};"
+  ].join('\n');
+}
+
+function audWorker() {
+  if (AUD_.w) return AUD_.w;
+  var u = URL.createObjectURL(new Blob([audCodigoWorker()], { type: 'text/javascript' }));
+  AUD_.w = new Worker(u);
+  AUD_.w.onmessage = audMensaje;
+  AUD_.w.onerror = function(e) { audAviso('No se pudo arrancar el conversor: ' + (e.message || 'error del navegador') + '. Probá con Chrome actualizado.', true); AUD_.ocupado = false; };
+  return AUD_.w;
+}
+
+function audEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function audDur(seg) { seg = Math.round(seg || 0); var m = Math.floor(seg / 60), s = seg % 60; return m + ':' + (s < 10 ? '0' : '') + s; }
+function audAviso(t, malo) { var e = document.getElementById('aud-aviso'); if (!e) return; e.textContent = t || ''; e.style.display = t ? '' : 'none'; e.style.background = malo ? '#fef2f2' : '#eff6ff'; e.style.color = malo ? '#991b1b' : '#1e40af'; e.style.borderColor = malo ? '#fecaca' : '#bfdbfe'; }
+
+function renderAudios() {
+  var el = document.getElementById('page-audios'); if (!el) return;
+  if (el.dataset.armado === '1') { audPintarLista(); return; }
+  el.dataset.armado = '1';
+  el.innerHTML = audHtml();
+  audEnganchar(el);
+  audPintarLista();
+}
+
+function audHtml() {
+  var ops = Object.keys(AUD_MODELOS).map(function(k) { var m = AUD_MODELOS[k]; return '<option value="' + k + '"' + (k === 'bueno' ? ' selected' : '') + '>' + m.nombre + ' — ' + audEsc(m.nota) + '</option>'; }).join('');
+  return '<div class="page-header"><div><div class="page-title">🎙 Audios a texto</div><div class="page-sub">Pasá los audios de WhatsApp a texto. El audio no sale de esta computadora: se convierte acá mismo.</div></div></div>' +
+    (window.crossOriginIsolated || !document.getElementById('login-wrap') ? '' : '<div style="margin:-4px 0 12px;padding:10px 12px;border:1px solid #fde68a;background:#fffbeb;border-radius:8px;font-size:13px">⚡ Para audios largos o muchos audios usá la <a href="https://sistema.vulcantreadsrl.com.ar/audios/" target="_blank" rel="noopener" style="font-weight:700">versión rápida (se abre aparte)</a>: usa todos los núcleos de la computadora y pasa los audios unas 3 veces más rápido.</div>') +
+    '<div class="card" style="padding:16px;margin-bottom:14px">' +
+      '<div id="aud-zona" style="border:2px dashed #93c5fd;border-radius:12px;padding:26px 14px;text-align:center;cursor:pointer;background:#f8fbff">' +
+        '<div style="font-size:34px">🎧</div>' +
+        '<div style="font-weight:700;font-size:15px;margin-top:4px">Arrastrá acá los audios o tocá para elegirlos</div>' +
+        '<div style="color:#64748b;font-size:12.5px;margin-top:4px">Sirven .opus y .ogg (WhatsApp), .mp3, .m4a, .wav, .aac y videos .mp4. Podés elegir varios juntos.</div>' +
+        '<input id="aud-arch" type="file" multiple accept="audio/*,video/*,.opus,.ogg,.oga,.m4a,.mp3,.wav,.aac,.mp4,.webm" style="display:none">' +
+      '</div>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px">' +
+        '<label style="font-size:12.5px;font-weight:700;color:#334155">Calidad</label>' +
+        '<select id="aud-modelo" class="form-control" style="max-width:520px;flex:1;min-width:220px">' + ops + '</select>' +
+      '</div>' +
+      '<div id="aud-aviso" style="display:none;margin-top:12px;padding:9px 12px;border:1px solid;border-radius:8px;font-size:13px"></div>' +
+      '<div id="aud-barra-w" style="display:none;margin-top:10px"><div style="font-size:12px;color:#475569" id="aud-barra-t"></div><div style="height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin-top:4px"><div id="aud-barra" style="height:100%;width:0;background:#2563eb;transition:width .2s"></div></div></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' +
+      '<button class="btn btn-s" id="aud-copiar-todo"><i class="fas fa-copy"></i> Copiar todos los textos</button>' +
+      '<button class="btn btn-s" id="aud-bajar"><i class="fas fa-file-alt"></i> Guardar todo en un .txt</button>' +
+      '<button class="btn btn-s" id="aud-limpiar"><i class="fas fa-broom"></i> Limpiar lista</button>' +
+    '</div>' +
+    '<div id="aud-lista"></div>' +
+    '<div style="color:#94a3b8;font-size:11.5px;margin-top:14px">Cómo funciona: usa el modelo de reconocimiento de voz Whisper dentro del navegador. La primera vez tarda en bajarlo; después queda guardado. Un audio de 1 minuto tarda entre 10 segundos y 1 minuto según la computadora. Revisá nombres propios, números y medidas: el texto puede tener errores.</div>';
+}
+
+function audEnganchar(el) {
+  var z = el.querySelector('#aud-zona'), inp = el.querySelector('#aud-arch');
+  z.onclick = function() { inp.click(); };
+  inp.onchange = function() { audAgregar(inp.files); inp.value = ''; };
+  ['dragenter', 'dragover'].forEach(function(ev) { z.addEventListener(ev, function(e) { e.preventDefault(); z.style.background = '#dbeafe'; }); });
+  ['dragleave', 'drop'].forEach(function(ev) { z.addEventListener(ev, function(e) { e.preventDefault(); z.style.background = '#f8fbff'; }); });
+  z.addEventListener('drop', function(e) { if (e.dataTransfer && e.dataTransfer.files) audAgregar(e.dataTransfer.files); });
+  el.querySelector('#aud-copiar-todo').onclick = function() { audCopiar(audTodo()); };
+  el.querySelector('#aud-bajar').onclick = audBajar;
+  el.querySelector('#aud-limpiar').onclick = function() { if (AUD_.ocupado) { audAviso('Esperá que termine el audio que se está pasando.'); return; } AUD_.items = []; AUD_.cola = []; audPintarLista(); audAviso(''); };
+  var sel = el.querySelector('#aud-modelo');
+  sel.onchange = function() { if (sel.value === 'mejor' && AUD_.gpu === false) { audAviso('Esta computadora no tiene placa de video disponible para el modo "Muy bueno": se usa "Bueno".'); sel.value = 'bueno'; } };
+  audWorker().postMessage({ tipo: 'gpu' });
+}
+
+function audAgregar(lista) {
+  var arr = [].slice.call(lista || []);
+  if (!arr.length) return;
+  arr.forEach(function(f) { var it = { n: AUD_.sig++, nombre: f.name, tam: f.size, archivo: f, estado: 'En espera', texto: '', dur: 0, err: false, listo: false }; AUD_.items.push(it); AUD_.cola.push(it); });
+  audPintarLista();
+  audSiguiente();
+}
+
+function audSiguiente() {
+  if (AUD_.ocupado || !AUD_.cola.length) return;
+  var it = AUD_.cola.shift();
+  AUD_.ocupado = true;
+  it.estado = 'Leyendo el audio…'; audPintarItem(it);
+  audDecodificar(it.archivo).then(function(r) {
+    it.dur = r.dur; it.estado = 'Preparando el conversor…'; audPintarItem(it);
+    var sel = document.getElementById('aud-modelo'), k = (sel && sel.value) || 'bueno', m = AUD_MODELOS[k];
+    var disp = AUD_.gpu ? 'webgpu' : 'wasm';
+    if (m.gpu && !AUD_.gpu) { m = AUD_MODELOS.bueno; k = 'bueno'; }
+    AUD_.cargando = (AUD_.clave !== k + '|' + disp); AUD_.clave = k + '|' + disp;
+    audWorker().postMessage({ tipo: 'transcribir', n: it.n, url: AUD_URL_LIB, clave: k, ids: m.ids, disp: disp, audio: r.datos }, [r.datos.buffer]);
+  }).catch(function(e) {
+    it.err = true; it.listo = true; it.estado = 'No se pudo leer este archivo (' + ((e && e.message) || 'formato no reconocido') + '). Probá abrirlo con otro programa y guardarlo como .mp3.';
+    audPintarItem(it); AUD_.ocupado = false; audSiguiente();
+  });
+}
+
+function audDecodificar(f) {
+  return new Promise(function(ok, mal) {
+    var lec = new FileReader();
+    lec.onerror = function() { mal(new Error('no se pudo abrir')); };
+    lec.onload = function() {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) { mal(new Error('el navegador no lee audio')); return; }
+      var ctx;
+      try { ctx = new Ctx({ sampleRate: 16000 }); } catch (x) { ctx = new Ctx(); }
+      var fin = function(buf) {
+        var datos;
+        if (buf.sampleRate === 16000) datos = audMono(buf);
+        else datos = audRemuestrear(audMono(buf), buf.sampleRate, 16000);
+        try { ctx.close(); } catch (x) {}
+        ok({ datos: datos, dur: buf.duration });
+      };
+      try { var pr = ctx.decodeAudioData(lec.result.slice(0), fin, function(e) { mal(e || new Error('formato no reconocido')); }); if (pr && pr.catch) pr.catch(function(e) { mal(e); }); }
+      catch (e) { mal(e); }
+    };
+    lec.readAsArrayBuffer(f);
+  });
+}
+function audMono(buf) {
+  var n = buf.numberOfChannels, a = buf.getChannelData(0);
+  if (n < 2) return new Float32Array(a);
+  var b = buf.getChannelData(1), r = new Float32Array(a.length);
+  for (var i = 0; i < a.length; i++) r[i] = (a[i] + b[i]) / 2;
+  return r;
+}
+function audRemuestrear(d, de, a) {
+  var k = de / a, n = Math.floor(d.length / k), r = new Float32Array(n);
+  for (var i = 0; i < n; i++) { var p = i * k, j = Math.floor(p), f = p - j; r[i] = d[j] * (1 - f) + (d[j + 1] || 0) * f; }
+  return r;
+}
+
+function audMensaje(e) {
+  var m = e.data, it = null;
+  if (m.n) AUD_.items.forEach(function(x) { if (x.n === m.n) it = x; });
+  if (m.tipo === 'gpu') { AUD_.gpu = !!m.ok; return; }
+  if (m.tipo === 'descarga') { if (m.p && m.p.status === 'ready') return; if (!AUD_.cargando) return; audProgreso(m.p); return; }
+  if (m.tipo === 'modelo') { AUD_.modelo = m.id; AUD_.cargando = false; audProgreso(null); return; }
+  if (!it) return;
+  if (m.tipo === 'estado') { it.estado = m.txt; audPintarItem(it); }
+  else if (m.tipo === 'parcial') { it.texto = m.txt; it.estado = 'Pasando a texto…'; audPintarItem(it); }
+  else if (m.tipo === 'listo') { it.texto = m.txt || '(no se escuchó nada que se pueda pasar a texto)'; it.listo = true; it.estado = 'Listo'; audPintarItem(it); AUD_.ocupado = false; audSiguiente(); }
+  else if (m.tipo === 'error') {
+    it.err = true; it.listo = true;
+    it.estado = /fetch|network|Failed to load|import/i.test(m.txt) ? 'No se pudo bajar el conversor (revisá la conexión a internet y volvé a probar).' : 'No se pudo pasar a texto: ' + m.txt;
+    audPintarItem(it); audProgreso(null); AUD_.ocupado = false; audSiguiente();
+  }
+}
+
+var _audArch = {};
+function audProgreso(p) {
+  var w = document.getElementById('aud-barra-w'); if (!w) return;
+  if (!p) { w.style.display = 'none'; _audArch = {}; return; }
+  if (p.status === 'progress' && p.file && p.total) _audArch[p.file] = { l: p.loaded || 0, t: p.total };
+  if (p.status === 'done' && p.file && _audArch[p.file]) _audArch[p.file].l = _audArch[p.file].t;
+  var l = 0, t = 0; Object.keys(_audArch).forEach(function(k) { l += _audArch[k].l; t += _audArch[k].t; });
+  if (!t) return;
+  w.style.display = '';
+  document.getElementById('aud-barra').style.width = Math.min(100, Math.round(l * 100 / t)) + '%';
+  document.getElementById('aud-barra-t').textContent = 'Bajando el conversor (solo la primera vez): ' + Math.round(l / 1048576) + ' de ' + Math.round(t / 1048576) + ' MB';
+}
+
+function audPintarLista() {
+  var c = document.getElementById('aud-lista'); if (!c) return;
+  if (!AUD_.items.length) { c.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:18px;font-size:13px">Todavía no elegiste audios.</div>'; return; }
+  c.innerHTML = AUD_.items.map(function(it) { return '<div class="card" id="aud-it-' + it.n + '" style="padding:12px 14px;margin-bottom:10px"></div>'; }).join('');
+  AUD_.items.forEach(audPintarItem);
+}
+function audPintarItem(it) {
+  var c = document.getElementById('aud-it-' + it.n); if (!c) return;
+  var col = it.err ? '#b91c1c' : it.listo ? '#15803d' : '#1d4ed8';
+  c.innerHTML = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+      '<div style="font-weight:700;flex:1;min-width:180px;word-break:break-all">' + audEsc(it.nombre) + (it.dur ? ' <span style="color:#64748b;font-weight:400">· ' + audDur(it.dur) + '</span>' : '') + '</div>' +
+      '<span style="font-size:12px;font-weight:700;color:' + col + '">' + (it.listo || it.err ? '' : '⏳ ') + audEsc(it.estado) + '</span>' +
+      (it.listo && !it.err ? '<button class="btn btn-s" data-cop="' + it.n + '"><i class="fas fa-copy"></i> Copiar</button>' : '') +
+    '</div>' +
+    (it.texto ? '<textarea class="form-control" data-txt="' + it.n + '" style="margin-top:8px;min-height:' + (it.listo ? 90 : 60) + 'px;font-size:14px;line-height:1.45">' + audEsc(it.texto) + '</textarea>' : '');
+  var b = c.querySelector('[data-cop]'); if (b) b.onclick = function() { var ta = c.querySelector('[data-txt]'); audCopiar(ta ? ta.value : it.texto); };
+  var ta = c.querySelector('[data-txt]'); if (ta) ta.oninput = function() { it.texto = ta.value; };
+}
+
+function audTodo() {
+  return AUD_.items.filter(function(it) { return it.listo && !it.err; }).map(function(it) { return '— ' + it.nombre + (it.dur ? ' (' + audDur(it.dur) + ')' : '') + '\n' + it.texto; }).join('\n\n');
+}
+function audCopiar(t) {
+  if (!t) { audAviso('Todavía no hay texto para copiar.'); return; }
+  var hecho = function() { audAviso('Copiado. Pegalo donde quieras.'); setTimeout(function() { audAviso(''); }, 2500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(hecho, function() { audCopiarViejo(t); hecho(); });
+  else { audCopiarViejo(t); hecho(); }
+}
+function audCopiarViejo(t) { var ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (x) {} document.body.removeChild(ta); }
+function audBajar() {
+  var t = audTodo(); if (!t) { audAviso('Todavía no hay texto para guardar.'); return; }
+  var d = new Date(), f = d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '_' + ('0' + d.getHours()).slice(-2) + ('0' + d.getMinutes()).slice(-2);
+  var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/plain;charset=utf-8' })); a.download = 'audios_a_texto_' + f + '.txt';
+  document.body.appendChild(a); a.click(); setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+</script>
+
+<script>renderAudios();</script>
+</body></html>
