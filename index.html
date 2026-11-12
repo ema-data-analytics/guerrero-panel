@@ -1532,7 +1532,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611121109';
+var EMA_BUILD = '202611121149';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -4067,6 +4067,8 @@ async function vbConfirmar() {
   var b = VB_.bor, formas = [];
   if (b.TIPO_COMP !== 'NC') { vtaLeerFormas(); formas = cobFormasEnviar(_vtaFormas); }
   if (!(b.TIPO_COMP === 'NC' && b.NC_TIPO === 'IMPORTE') && !b.LINEAS.length) { toast('Agregá al menos un renglón', 'r2'); return; }
+  var sinP = (b.LINEAS || []).filter(function(l) { return !Number(l.SIN_CARGO) && !(Number(l.NETO) > 0); }).map(function(l) { return l.NOMBRE; });
+  if (sinP.length) { toast('Falta el precio de: ' + sinP.join(', ') + '. Tocá ✏ en el renglón, escribí el precio neto (o marcalo sin cargo) y grabalo.', 'r2'); return; }
   var cob = 0; formas.forEach(function(f) { cob += Number(f.IMPORTE) || 0; });
   var txt = '¿Confirmar ' + (b.COMPROBANTE || b.TIPO_COMP) + ' a ' + (b.CLIENTE || '') + ' por ' + fmt(b.TOTAL) + '?' + (b.TIPO_COMP === 'NC' ? ' Descuenta de la cuenta corriente.' : ' Se cobra ahora ' + fmt(cob) + ' y queda en cuenta corriente ' + fmt(vR2(b.TOTAL - cob)) + '.') + (b.TIPO_COMP === 'NC' ? ' Después no se modifica: si hace falta, se anula.' : ' Después no se modifica: se anula o se hace nota de crédito.');
   if (!(await uiConfirmar(txt, 'Sí, confirmar'))) return;
