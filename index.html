@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f689889f795d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "90d9491e28b6"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1572,7 +1572,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611121907';
+var EMA_BUILD = '202611121921';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -4358,6 +4358,16 @@ function vrNuevo() {
     '<div class="tdim" style="font-size:13px">El stock sale al grabar el remito. Después se factura desde «Facturar remitos».</div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="vr-rok" onclick="vrGrabar()"><i class="fas fa-check"></i> Grabar remito</button></div>', 'md-lg');
   vrPintarItems();
+  // Recapadas propias en stock (una por una, con su marca grabada) para elegir cuál sale (12/11/2026)
+  VR_.uni = []; gsRun('gsFP_StockPropio').then(function(u) { VR_.uni = (u && u.UNIDADES) || []; vrPintarItems(); }).catch(function() {});
+}
+function vrUnidadesDe(idArt) { return (VR_.uni || []).filter(function(u) { return String(u.ID_ARTICULO) === String(idArt); }); }
+function vrMarcaTog(k, marca, on) {
+  var it = VR_.rem.ITEMS[k]; if (!it) return; it.MARCAS = it.MARCAS || [];
+  var i = it.MARCAS.indexOf(marca);
+  if (on && i === -1) { if (it.MARCAS.length >= it.CANT) { toast('Ya elegiste ' + it.CANT + ' (la cantidad del renglón)', 'r2'); vrPintarItems(); return; } it.MARCAS.push(marca); }
+  if (!on && i !== -1) it.MARCAS.splice(i, 1);
+  vrPintarItems();
 }
 function vrAgregar() {
   var t = ($v('vr-art') || '').split(' — ')[0].trim(), a = vtaArtCod(t), cant = parseInt($v('vr-cant'), 10);
@@ -4371,15 +4381,20 @@ function vrAgregar() {
 function vrPintarItems() {
   var el = $id('vr-items'); if (!el) return;
   el.innerHTML = VR_.rem.ITEMS.length ? '<div class="tw tw-cards"><table><thead><tr><th>Código</th><th>Producto</th><th class="tr">Cant.</th><th></th></tr></thead><tbody>' + VR_.rem.ITEMS.map(function(i, k) {
-    return '<tr><td class="mono">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + vMarcaVenta(i.DIBUJO, i.SIN_CARGO) + '</td><td class="tr">' + i.CANT + '</td><td><button class="btn btn-s btn-sm" onclick="VR_.rem.ITEMS.splice(' + k + ',1);vrPintarItems()">Quitar</button></td></tr>'; }).join('') + '</tbody></table></div>'
+    var us = vrUnidadesDe(i.ID_ARTICULO), elige = us.length ? '<div style="margin-top:6px;font-size:12px"><b>¿Cuál sale?</b> <span class="tdim">(elegí ' + i.CANT + ' por la marca grabada; si no elegís, salen las más viejas)</span>' +
+      us.map(function(u) { var on = (i.MARCAS || []).indexOf(u.MARCA) !== -1; return '<label style="display:flex;gap:6px;align-items:flex-start;margin-top:3px;cursor:pointer"><input type="checkbox"' + (on ? ' checked' : '') + ' onchange="vrMarcaTog(' + k + ',\'' + vEsc(u.MARCA) + '\',this.checked)"/><span><b class="mono">' + vEsc(u.MARCA) + '</b> · ' + (u.DOT ? 'DOT ' + vEsc(u.DOT) : 'sin DOT') + ' · <span class="tdim">' + vEsc(u.ORIGEN) + (u.FALTA_COSTO ? ' · <b style="color:#b91c1c">FALTA COSTO del casco</b>' : '') + '</span></span></label>'; }).join('') +
+      ((i.MARCAS || []).length && i.MARCAS.length !== i.CANT ? '<div style="color:#b91c1c;font-weight:700;margin-top:3px">Elegiste ' + i.MARCAS.length + ' de ' + i.CANT + '</div>' : '') + '</div>' : '';
+    return '<tr><td class="mono">' + vEsc(i.CODIGO || '') + '</td><td>' + vEsc(i.NOMBRE) + vMarcaVenta(i.DIBUJO, i.SIN_CARGO) + elige + '</td><td class="tr">' + i.CANT + '</td><td><button class="btn btn-s btn-sm" onclick="VR_.rem.ITEMS.splice(' + k + ',1);vrPintarItems()">Quitar</button></td></tr>'; }).join('') + '</tbody></table></div>'
     : '<div class="tdim" style="font-size:13px">Todavía no agregaste productos.</div>';
 }
 async function vrGrabar() {
   var cli = $v('vr-rcli'); if (!cli) { toast('Elegí el cliente', 'r2'); return; }
   if (!VR_.rem.ITEMS.length) { toast('Agregá al menos un producto', 'r2'); return; }
+  var malM = VR_.rem.ITEMS.filter(function(i) { return (i.MARCAS || []).length && i.MARCAS.length !== i.CANT; })[0];
+  if (malM) { toast(malM.NOMBRE + ': elegiste ' + malM.MARCAS.length + ' de ' + malM.CANT + ' cubiertas. Elegí todas o ninguna (salen las más viejas).', 'r2'); return; }
   var b = $id('vr-rok'); b.disabled = true;
   try {
-    var r = await gsRun('gsFP_RemitoVenta', { ID_CLIENTE: cli, OBS: $v('vr-obs'), ITEMS: VR_.rem.ITEMS.map(function(i) { return { ID_ARTICULO: i.ID_ARTICULO, CANT: i.CANT, DIBUJO: i.DIBUJO || 0, SIN_CARGO: i.SIN_CARGO || 0 }; }) });
+    var r = await gsRun('gsFP_RemitoVenta', { ID_CLIENTE: cli, OBS: $v('vr-obs'), ITEMS: VR_.rem.ITEMS.map(function(i) { return { ID_ARTICULO: i.ID_ARTICULO, CANT: i.CANT, DIBUJO: i.DIBUJO || 0, SIN_CARGO: i.SIN_CARGO || 0, MARCAS: (i.MARCAS || []).length ? i.MARCAS : undefined }; }) });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); b.disabled = false; return; }
     VR_.cli = cli; closeModal(); toast('Remito ' + r.NRO_REMITO + ' grabado: salió del stock', 'g');
     if (typeof vbBorrarCache === 'function') vbBorrarCache();
@@ -10364,7 +10379,9 @@ function pcCascos() {
   var h = (document.body.classList.contains('modo-cascos') ? '' : '<div class="mb3"><button class="btn btn-s" onclick="PC_.tab=\'otrab\';pcPintar()">← Volver a la lista de órdenes de trabajo</button></div>') + pcAvisoLinea() + (ult ? '<div class="al al-g mb3" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>✓ Grabada · ' + (ult.NRO_MANUAL ? 'Boleta N° <b style="font-size:18px">' + pcEsc(ult.NRO_MANUAL) + '</b> <span style="font-size:12px">(sistema ' + pcEsc(ult.NRO) + ')</span>' : 'N° de orden <b style="font-size:18px">' + pcEsc(ult.NRO) + '</b>') + ' · ' + pcEsc(ult.CLIENTE) + '<br><span style="font-size:12px">' + (ult.FIRMA_ID ? '✓ Entregó: ' + pcEsc(ult.FIRMA_NOMBRE) : '1) Que firme quien entrega los cascos') + ' · ' + (ult.RECEP_ESTADO === 'RECIBIDA' ? '✓ Recibida en planta por ' + pcEsc(ult.RECEP_USUARIO || '') : ult.RECEP_ESTADO === 'PARCIAL' ? 'Recibida en parte: faltan cascos' : '2) Confirmar la recepción en planta') + '</span></span><span class="flex gap2" style="flex-wrap:wrap">' + (ult.FIRMA_ID ? '' : '<button class="btn btn-p btn-sm" onclick="pcFirmaOT(' + ult.ID_OTRAB + ')">✍ Firma de quien entrega</button>') + (ult.RECEP_ESTADO === 'PENDIENTE' || ult.RECEP_ESTADO === 'PARCIAL' ? '<button class="btn btn-p btn-sm" onclick="pcRecibirOT(' + ult.ID_OTRAB + ')">📥 Confirmar recepción</button>' : '') + '<button class="btn ' + (ult.RECEP_ESTADO === 'RECIBIDA' ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="pcImpOTrab(' + ult.ID_OTRAB + ')"><i class="fas fa-file-pdf"></i> Comprobante (PDF)</button></span></div>' : '') +
     pcPorRecibir(ult) +
     '<div class="card mb3"><div class="card-hd"><span class="card-title">Nueva orden de trabajo (carga de cascos)</span><span class="tdim" style="font-size:12px">Se cargan los cascos con su trabajo y al grabar queda hecha la orden de trabajo.</span></div><div class="card-body">' +
-    '<div class="pc-fila3"><div class="fg"><label class="fl">Cliente *</label><input class="fi" id="pc-k-cli" list="pc-clientes" placeholder="Escribí el nombre..." value="' + pcEsc(pcCliTxt(PC_.kcli)) + '"/>' + pcCliList() + '</div>' +
+    pcCompraOrigenHtml() +
+    '<div class="pc-fila3"><div class="fg" id="pc-k-cli-fg"' + (PC_.korig === 'COMPRA' ? ' style="display:none"' : '') + '><label class="fl">Cliente *</label><input class="fi" id="pc-k-cli" list="pc-clientes" placeholder="Escribí el nombre..." value="' + pcEsc(pcCliTxt(PC_.kcli)) + '"/>' + pcCliList() + '</div>' +
+    (PC_.korig === 'COMPRA' ? '<div class="fg"><label class="fl">Quedan a nombre de</label><div class="fi" style="background:#f1f5f9"><b>' + pcEsc(pcCliTxt(pcStockPropioId()) || 'STOCK PROPIO') + '</b></div></div>' : '') +
     pcNroAuto('pc-k-man') +
     '<div class="fg"><label class="fl">Fecha</label><input class="fi" type="date" id="pc-k-f" value="' + fechaISO(new Date()) + '"/></div></div>' +
     pcMedidasList() + '<datalist id="pc-fabricantes">' + (d.marcas || []).map(function(m) { return '<option value="' + pcEsc(m) + '">'; }).join('') + '</datalist>' +
@@ -10374,7 +10391,48 @@ function pcCascos() {
     '<div class="card"><div class="card-hd"><span class="card-title">Cascos declarados con anterioridad</span><span class="badge b-blue" id="pc-k-n"></span></div><div id="pc-k-ant"></div></div>';
   $id('pc-body').innerHTML = h;
   $id('pc-k-cli').addEventListener('change', function() { var n = pcCliId(this.value); if (n === PC_.kcli) return; PC_.kcli = n; pcCasAnt(); pcCasFilas(); });
+  pcCompraEnganchar();
   pcCasFilas(); pcCasAnt();
+}
+// ── Cascos comprados (12/11/2026, Anibal): origen de los cascos en la carga ──
+function pcStockPropioId() { return String((PC_.d && PC_.d.param && PC_.d.param.STOCK_PROPIO_CLIENTE) || ''); }
+function pcCompraOrigenHtml() {
+  var k = PC_.kc || (PC_.kc = { TIPO: 'PROVEEDOR', VEND: '', NRO: '', SIN: 0, COSTO: '' }), comp = PC_.korig === 'COMPRA';
+  var provList = '<datalist id="pc-provs">' + (PC_.d.proveedores || []).map(function(p) { return '<option value="' + pcEsc(p.ID_PROVEEDOR + ' — ' + p.NOMBRE) + '">'; }).join('') + '</datalist>';
+  return '<div class="fg"><label class="fl">¿De dónde vienen estos cascos?</label><div class="flex gap2" style="flex-wrap:wrap">' +
+      '<label class="btn ' + (comp ? 'btn-s' : 'btn-p') + ' btn-sm" style="cursor:pointer"><input type="radio" name="pc-k-orig" value="CLIENTE"' + (comp ? '' : ' checked') + ' style="margin-right:6px"/>Los trae un cliente para recapar</label>' +
+      '<label class="btn ' + (comp ? 'btn-p' : 'btn-s') + ' btn-sm" style="cursor:pointer"><input type="radio" name="pc-k-orig" value="COMPRA"' + (comp ? ' checked' : '') + ' style="margin-right:6px"/>Los compramos</label>' +
+      '<button class="btn btn-s btn-sm" onclick="pcCascosComprados()">🧾 Cascos comprados</button></div></div>' +
+    (comp ? '<div class="card mb3" style="border-color:#93c5fd;background:#f8fbff"><div class="card-body">' +
+      '<div class="pc-fila3"><div class="fg"><label class="fl">A quién se los compramos *</label><select class="fi" id="pc-kc-tipo">' +
+        [['PROVEEDOR', 'Proveedor'], ['CLIENTE', 'Cliente'], ['PARTICULAR', 'Particular (no está cargado)']].map(function(o) { return '<option value="' + o[0] + '"' + (k.TIPO === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="fg"><label class="fl" id="pc-kc-vl">' + (k.TIPO === 'PARTICULAR' ? 'Nombre (y de dónde) *' : k.TIPO === 'CLIENTE' ? 'Cliente *' : 'Proveedor *') + '</label><input class="fi" id="pc-kc-vend" ' + (k.TIPO === 'PROVEEDOR' ? 'list="pc-provs"' : k.TIPO === 'CLIENTE' ? 'list="pc-clientes"' : '') + ' placeholder="' + (k.TIPO === 'PARTICULAR' ? 'Ej.: Juan, gomería de Güemes' : 'Escribí el nombre...') + '" value="' + pcEsc(k.VEND) + '"/>' + provList + '</div>' +
+      '<div class="fg"><label class="fl">N° de factura o remito de compra</label><input class="fi" id="pc-kc-nro" value="' + pcEsc(k.NRO) + '"' + (k.SIN ? ' disabled' : '') + ' placeholder="Ej.: 0001-00001234"/>' +
+        '<label style="font-size:12px;display:flex;gap:6px;align-items:center;margin-top:4px"><input type="checkbox" id="pc-kc-sin"' + (k.SIN ? ' checked' : '') + '/> Sin comprobante</label></div></div>' +
+      '<div class="pc-fila3"><div class="fg"><label class="fl">Costo por casco ($, sin IVA)</label><input class="fi" id="pc-kc-costo" inputmode="decimal" value="' + pcEsc(k.COSTO) + '" placeholder="Si no lo sabés, dejalo vacío"/>' +
+        '<div class="tdim" style="font-size:11.5px;margin-top:3px">Vacío = queda marcado <b>FALTA COSTO</b> y se completa después en "Cascos comprados".</div></div>' +
+      '<div class="fg" style="grid-column:span 2"><div class="al al-b" style="font-size:12.5px;margin:0">Los cascos quedan a nombre de <b>STOCK PROPIO</b>. Cuando se recapan entran solos al stock como recapada, con el costo del casco sumado, y se venden con un remito de venta eligiendo la marca grabada.</div></div></div>' +
+    '</div></div>' : '');
+}
+function pcCompraEnganchar() {
+  document.querySelectorAll('input[name="pc-k-orig"]').forEach(function(x) { x.addEventListener('change', function() {
+    if (this.value === 'COMPRA' && !pcStockPropioId()) { toast('Falta configurar el cliente de STOCK PROPIO en la configuración de producción', 'r2'); this.checked = false; return; }
+    PC_.korig = this.value; if (PC_.korig === 'COMPRA') PC_.kcli = pcStockPropioId(); else PC_.kcli = ''; pcCascos(); }); });
+  if (PC_.korig !== 'COMPRA') return;
+  var k = PC_.kc, g = function(id) { return $id(id); };
+  g('pc-kc-tipo').addEventListener('change', function() { k.TIPO = this.value; k.VEND = ''; pcCascos(); });
+  g('pc-kc-vend').addEventListener('input', function() { k.VEND = this.value; });
+  g('pc-kc-nro').addEventListener('input', function() { k.NRO = this.value; });
+  g('pc-kc-sin').addEventListener('change', function() { k.SIN = this.checked ? 1 : 0; g('pc-kc-nro').disabled = this.checked; if (this.checked) { k.NRO = ''; g('pc-kc-nro').value = ''; } });
+  g('pc-kc-costo').addEventListener('input', function() { k.COSTO = this.value; });
+}
+function pcCompraDatos() {
+  var k = PC_.kc || {}, o = { TIPO: k.TIPO, SIN_COMPROBANTE: k.SIN ? 1 : 0, NRO_COMPROBANTE: k.NRO, COSTO: k.COSTO }, v = String(k.VEND || '').trim();
+  if (k.TIPO === 'PROVEEDOR') { var p = (PC_.d.proveedores || []).filter(function(x) { return (x.ID_PROVEEDOR + ' — ' + x.NOMBRE) === v || String(x.NOMBRE).toUpperCase() === v.toUpperCase(); })[0]; if (!p) return { error: 'Elegí el proveedor de la lista' }; o.ID_PROVEEDOR = p.ID_PROVEEDOR; }
+  else if (k.TIPO === 'CLIENTE') { var c = pcCliId(v); if (!c) return { error: 'Elegí el cliente de la lista' }; o.ID_CLIENTE = c; }
+  else { if (!v) return { error: 'Escribí a quién se le compraron' }; o.NOMBRE = v; }
+  if (!o.SIN_COMPROBANTE && !String(o.NRO_COMPROBANTE || '').trim()) return { error: 'Escribí el N° de factura o remito, o tildá "Sin comprobante"' };
+  return o;
 }
 // Alta rápida de medida o marca sin salir de la carga de cascos (queda en el maestro y elegida en el renglón)
 function pcAltaRapida(que, i) {
@@ -10456,7 +10514,9 @@ async function pcDotGuardar(idCasco) {
 function pcCasErr(msg) { var e = $id('pc-k-err'); if (!e) { if (msg) toast(msg, 'r2'); return; } e.innerHTML = msg ? '<div class="al al-r"><span><b>No se grabó:</b> ' + pcEsc(msg) + '</span><button class="btn btn-xs btn-s" onclick="pcCasErr(\'\')">✕</button></div>' : ''; if (msg) e.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
 async function pcCasGrabar() {
   pcCasErr('');
-  var cli = pcCliId($v('pc-k-cli')); if (!cli) { pcCasErr('Elegí el cliente'); return; }
+  var compra = null;
+  if (PC_.korig === 'COMPRA') { compra = pcCompraDatos(); if (compra.error) { pcCasErr(compra.error); return; } }
+  var cli = compra ? pcStockPropioId() : pcCliId($v('pc-k-cli')); if (!cli) { pcCasErr('Elegí el cliente'); return; }
   var faltan = []; PC_.kf.forEach(function(f, i) { if (!f.TIPO || !f.MEDIDA) faltan.push(i + 1); });
   if (faltan.length) { pcCasErr('Casco ' + faltan.join(', ') + ': falta el tipo o la medida'); return; }
   var sinR = PC_.kf.filter(function(f) { return f.TRABAJO && !pcRecetaDe(f.TIPO, f.MEDIDA, f.TRABAJO, '', f.MARCA_FAB); });
@@ -10464,9 +10524,10 @@ async function pcCasGrabar() {
   if (pcNroFalta('pc-k-man')) return;
   var b = $id('pc-k-ok'); b.disabled = true;
   try {
-    var r = await gsRun('gsPC_CascosGuardar', { ID_CLIENTE: cli, FECHA: $v('pc-k-f'), NRO_MANUAL: $v('pc-k-man'), CASCOS: PC_.kf });
+    var r = await gsRun('gsPC_CascosGuardar', { ID_CLIENTE: cli, FECHA: $v('pc-k-f'), NRO_MANUAL: $v('pc-k-man'), CASCOS: PC_.kf, COMPRA: compra || undefined });
     if (!r || !r.ok) { pcCasErr((r && r.error) || 'No se pudo'); return; }
     toast('Grabados ' + r.IDS.length + ' cascos · marcas ' + (r.MARCAS || r.DOTS || []).join(', ') + (r.OT ? ' · orden de trabajo ' + r.OT + ' con ' + r.OT_N + ' cubiertas' : '') + (r.SIN_RECETA ? ' · ' + r.SIN_RECETA + ' sin receta' : '') + ' ✓', r.SIN_RECETA ? 'r2' : 'g');
+    if (compra) { toast('Compra de cascos registrada' + (r.FALTA_COSTO ? ' · FALTA COSTO: completalo en "Cascos comprados"' : '') + ' ✓', r.FALTA_COSTO ? 'b' : 'g'); PC_.kc = null; }
     PC_.kf = []; PC_.kcli = cli; PC_.kman = ''; PC_.ultOT = r.OT || ''; await pcRecargar(); var gOk = document.querySelector('#pc-body .al.al-g'); if (gOk) gOk.scrollIntoView({ block: 'center', behavior: 'smooth' });
   } catch (e) { pcCasErr(e.message); } finally { b.disabled = false; }
 }
@@ -10474,7 +10535,7 @@ async function pcCasGrabar() {
 async function pcCasCancelar() {
   var hay = PC_.kcli || PC_.kf.some(function(f) { return f.MEDIDA || f.DOT || f.MARCA_FAB || f.OBSERVACIONES; });
   if (hay && !(await uiConfirmar('¿Cancelar esta carga? No se graba nada de lo que escribiste.', 'Sí, cancelar'))) return;
-  PC_.kf = []; PC_.kcli = ''; PC_.kman = ''; PC_.ultOT = ''; pcCasErr(''); pcPintar(); window.scrollTo(0, 0); toast('Carga cancelada', 'g');
+  PC_.kf = []; PC_.kcli = ''; PC_.kman = ''; PC_.ultOT = ''; PC_.korig = ''; PC_.kc = null; pcCasErr(''); pcPintar(); window.scrollTo(0, 0); toast('Carga cancelada', 'g');
 }
 // Órdenes de trabajo y cascos anulados: quién, cuándo y por qué
 function pcAnuladas() {
@@ -10899,8 +10960,43 @@ function pcVidaCab(v) {
     f('Orden de trabajo', pcEsc(v.OTRAB + (v.NRO_MANUAL ? ' · boleta ' + v.NRO_MANUAL : ''))) + f('Orden de servicio', pcEsc(v.NRO_OT)) + f('Trabajo', pcEsc(v.TRABAJO)) + f('Estado', pcBadge(v.ESTADO)) +
     f('Inspección', pcEsc(v.INSPECCION === 'APTA' ? 'Apta' : v.INSPECCION === 'NO_APTA' ? 'No apta' : (v.INSPECCION || ''))) + f('Banda elegida', pcEsc(v.BANDA)) + f('Parches', pcEsc((v.PARCHES || []).join(' · '))) +
     f('Trabajos extra', pcEsc((v.EXTRAS || []).join(' · '))) + f('Parche', v.OTRAB ? pcEsc(pcParcheTxt(v)) + (v.PARCHE_EXCEPCION ? ' <span class="tdim">(excepción de esta cubierta)</span>' : '') : '') + f('Costo', v.COSTO_TOTAL ? '$ ' + Math.round(v.COSTO_TOTAL).toLocaleString('es-AR') : '') + f('Reprocesos', v.REPROCESOS ? String(v.REPROCESOS) : '') +
-    f('Motivo de rechazo', pcEsc(v.MOTIVO_RECHAZO)) + '</div>' +
+    f('Motivo de rechazo', pcEsc(v.MOTIVO_RECHAZO)) + '</div>' + pcTrazaHtml(v.TRAZA_COMPRA, v.TRAZA_VENTA) +
     (v.CAMBIOS || []).map(function(c) { return '<div style="font-size:12px;color:#b45309;margin-top:6px">Trabajo cambiado de ' + pcEsc(c.ANTES) + ' a ' + pcEsc(c.DESPUES) + ' en la inspección (' + fmtDT(c.FECHA) + ') · ' + pcEsc(c.MOTIVO) + ' · decidió ' + pcEsc(c.DECIDE) + '</div>'; }).join('') + '</div>';
+}
+// Casco comprado: a quién se compró y, si es propia, a quién se vendió (12/11/2026)
+function pcTrazaHtml(c, v) {
+  if (!c && !v) return '';
+  var sinP = typeof rolLinea === 'function' && rolLinea();
+  var $ = function(n) { return n === null || n === undefined ? '' : '$ ' + Number(n).toLocaleString('es-AR', { maximumFractionDigits: 2 }); };
+  var h = '<div style="margin-top:8px;padding:8px 10px;border-radius:8px;background:#f0f9ff;border:1px solid #bae6fd;font-size:12.5px">';
+  if (c) h += '🧾 <b>Casco comprado</b> a <b>' + pcEsc(c.VENDEDOR) + '</b> (' + pcEsc(String(c.VENDEDOR_TIPO || '').toLowerCase()) + ') el ' + fmtD(c.FECHA) + ' · ' + (c.SIN_COMPROBANTE ? '<b>sin comprobante</b>' : 'comprobante ' + pcEsc(c.NRO_COMPROBANTE)) + (sinP ? '' : ' · costo del casco ' + (c.COSTO_CASCO === null ? '<b style="color:#b91c1c">FALTA COSTO</b>' : $(c.COSTO_CASCO)));
+  if (v) h += (c ? '<br>' : '') + '📦 <b>Stock propio</b>: entró el ' + fmtD(v.FECHA_ALTA) + (sinP ? '' : ' con costo ' + $(v.COSTO)) + (v.ESTADO === 'VENDIDA' ? ' · <b>vendida</b>' + (v.CLIENTE ? ' a <b>' + pcEsc(v.CLIENTE) + '</b>' : '') + (v.FECHA_SALIDA ? ' el ' + fmtD(v.FECHA_SALIDA) : '') + (v.REMITO ? ' · remito ' + pcEsc(v.REMITO) : '') + (v.FACTURA ? ' · ' + pcEsc(v.FACTURA) : '') : ' · <b>en stock</b>');
+  return h + '</div>';
+}
+// Informe: cascos comprados, de quién, comprobante, costo, en qué están y a quién se vendieron
+async function pcCascosComprados() {
+  var r = await gsRun('gsPC_CascosComprados'); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  var $ = function(n) { return n === null || n === undefined ? '<b style="color:#b91c1c">FALTA COSTO</b>' : '$ ' + Number(n).toLocaleString('es-AR', { maximumFractionDigits: 2 }); };
+  var est = { NUEVO: 'Sin orden de trabajo', EN_OT: 'En orden de trabajo', ANULADO: 'Anulado' };
+  var filas = '';
+  (r.COMPRAS || []).forEach(function(c) {
+    (c.CASCOS.length ? c.CASCOS : [{}]).forEach(function(k, i) {
+      var vta = k.VENTA ? (k.VENTA.ESTADO === 'VENDIDA' ? 'Vendida' + (k.VENTA.CLIENTE ? ' a <b>' + pcEsc(k.VENTA.CLIENTE) + '</b>' : '') + (k.VENTA.REMITO ? '<br><span class="mono" style="font-size:11px">' + pcEsc(k.VENTA.REMITO) + (k.VENTA.FACTURA ? ' · ' + pcEsc(k.VENTA.FACTURA) : '') + '</span>' : '') : 'En stock (recapada)') : (k.CUBIERTA ? 'En producción (' + pcEsc(k.CUBIERTA) + ')' : (est[k.ESTADO_CASCO] || pcEsc(k.ESTADO_CASCO || '')));
+      filas += '<tr>' + (i === 0 ? '<td rowspan="' + Math.max(1, c.CASCOS.length) + '">' + fmtD(c.FECHA) + '</td><td rowspan="' + Math.max(1, c.CASCOS.length) + '"><b>' + pcEsc(c.VENDEDOR) + '</b><div class="tdim" style="font-size:11px">' + pcEsc(String(c.VENDEDOR_TIPO).toLowerCase()) + '</div></td><td rowspan="' + Math.max(1, c.CASCOS.length) + '">' + (c.SIN_COMPROBANTE ? '<span class="badge b-orange">Sin comprobante</span>' : pcEsc(c.NRO_COMPROBANTE)) + '</td>' : '') +
+        '<td class="mono"><b>' + pcEsc(k.MARCA || '') + '</b></td><td class="mono">' + pcEsc(k.DOT || '—') + '</td><td>' + pcEsc((k.TIPO || '') + ' ' + (k.MEDIDA || '')) + '</td><td class="tr">' + $(k.COSTO_CASCO) + '</td><td>' + vta + '</td>' +
+        (i === 0 ? '<td rowspan="' + Math.max(1, c.CASCOS.length) + '">' + (c.COSTO_UNIT === null && pcPuede('EDITAR') ? '<button class="btn btn-p btn-xs" onclick="pcCompraCosto(' + c.ID_CCOMPRA + ')">Cargar costo</button>' : '') + '</td>' : '') + '</tr>';
+    });
+  });
+  showModal('<div class="mh"><span class="mt">🧾 Cascos comprados</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    (filas ? '<div class="tw tw-cards"><table style="font-size:12px"><thead><tr><th>Fecha</th><th>Comprado a</th><th>Comprobante</th><th>Marca grabada</th><th>DOT</th><th>Cubierta</th><th class="tr">Costo casco</th><th>Dónde está</th><th></th></tr></thead><tbody>' + filas + '</tbody></table></div>'
+      : '<div class="tdim" style="padding:14px">Todavía no se cargaron cascos comprados. Se cargan en la carga de cascos eligiendo "Los compramos".</div>') +
+    '</div><div class="mf"><button class="btn btn-p" onclick="closeModal()">Cerrar</button></div>', 'md-lg');
+}
+async function pcCompraCosto(id) {
+  var v = await uiPedir('Costo por casco de esta compra ($, sin IVA)', { obligatorio: true }); if (v === null) return;
+  var r = await gsRun('gsPC_CascoCompraCosto', id, v); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  toast('Costo cargado en ' + r.CASCOS + ' casco' + (r.CASCOS === 1 ? '' : 's') + (r.EN_STOCK ? ' y ' + r.EN_STOCK + ' recapada' + (r.EN_STOCK === 1 ? '' : 's') + ' en stock' : '') + ' ✓', 'g');
+  closeModal(); pcCascosComprados();
 }
 // Cocción en la que entró la cubierta, con sus lecturas de temperatura y presión
 function pcAcDeCub(auto, idCub) { return (auto || []).filter(function(a) { try { var p = JSON.parse(a.POSICIONES || '{}'); return Object.keys(p).some(function(q) { return String(p[q]) === String(idCub); }); } catch (e) { return false; } })[0] || null; }
