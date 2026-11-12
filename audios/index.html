@@ -28,7 +28,7 @@ var AUD_ = { w: null, cola: [], items: [], sig: 1, ocupado: false, modelo: '', g
 function audCodigoWorker() {
   return [
     "var T = null, P = null, cargado = '';",
-    "function lib(url) { if (T) return Promise.resolve(T); return import(url).then(function(x) { T = x; T.env.allowLocalModels = false; try { if (self.crossOriginIsolated) T.env.backends.onnx.wasm.numThreads = Math.max(1, (self.navigator && navigator.hardwareConcurrency) || 4); } catch (z) {} return T; }); }",
+    "function lib(url, wp) { if (T) return Promise.resolve(T); return import(url).then(function(x) { T = x; T.env.allowLocalModels = false; try { if (wp) T.env.backends.onnx.wasm.wasmPaths = wp; T.env.backends.onnx.wasm.numThreads = (self.crossOriginIsolated && wp) ? Math.max(1, (self.navigator && navigator.hardwareConcurrency) || 4) : 1; } catch (z) {} return T; }); }",
     "function intentar(ids, i, disp) {",
     "  var id = ids[i], dt = disp === 'webgpu' ? { encoder_model: 'fp32', decoder_model_merged: 'q4' } : 'q8';",
     "  return T.pipeline('automatic-speech-recognition', id, { device: disp, dtype: dt, progress_callback: function(p) { self.postMessage({ tipo: 'descarga', p: { status: p.status, file: p.file, loaded: p.loaded, total: p.total, progress: p.progress } }); } })",
@@ -38,7 +38,7 @@ function audCodigoWorker() {
     "function cargar(m) {",
     "  var clave = m.clave + '|' + m.disp;",
     "  if (P && cargado === clave) return Promise.resolve(P);",
-    "  return lib(m.url).then(function() { return intentar(m.ids, 0, m.disp); }).then(function(r) { P = r.p; cargado = clave; self.postMessage({ tipo: 'modelo', id: r.id }); return P; });",
+    "  return lib(m.url, m.wp).then(function() { return intentar(m.ids, 0, m.disp); }).then(function(r) { P = r.p; cargado = clave; self.postMessage({ tipo: 'modelo', id: r.id }); return P; });",
     "}",
     "self.onmessage = function(e) {",
     "  var m = e.data;",
@@ -140,7 +140,8 @@ function audSiguiente() {
     var disp = AUD_.gpu ? 'webgpu' : 'wasm';
     if (m.gpu && !AUD_.gpu) { m = AUD_MODELOS.bueno; k = 'bueno'; }
     AUD_.cargando = (AUD_.clave !== k + '|' + disp); AUD_.clave = k + '|' + disp;
-    audWorker().postMessage({ tipo: 'transcribir', n: it.n, url: AUD_URL_LIB, clave: k, ids: m.ids, disp: disp, audio: r.datos }, [r.datos.buffer]);
+    var local = !!(window.crossOriginIsolated && /^\/audios\//.test(location.pathname)), base = location.origin + '/audios/lib/';
+    audWorker().postMessage({ tipo: 'transcribir', n: it.n, url: local ? base + 'transformers.min.js' : AUD_URL_LIB, wp: local ? base : '', clave: k, ids: m.ids, disp: disp, audio: r.datos }, [r.datos.buffer]);
   }).catch(function(e) {
     it.err = true; it.listo = true; it.estado = 'No se pudo leer este archivo (' + ((e && e.message) || 'formato no reconocido') + '). Probá abrirlo con otro programa y guardarlo como .mp3.';
     audPintarItem(it); AUD_.ocupado = false; audSiguiente();
