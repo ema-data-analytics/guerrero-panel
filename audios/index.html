@@ -96,9 +96,9 @@ function audHtml() {
       '<div id="aud-clave-w" style="margin-top:12px;padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc">' +
         '<div style="font-size:13px;font-weight:700">🔑 Clave de Google (se pone una sola vez)</div>' +
         '<div id="aud-clave-est" style="font-size:12.5px;color:#475569;margin:4px 0 8px"></div>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="aud-clave" type="password" autocomplete="off" class="form-control" style="flex:1;min-width:220px" placeholder="Pegá acá tu clave (empieza con AIza…)">' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="aud-clave" type="password" autocomplete="off" class="form-control" style="flex:1;min-width:220px" placeholder="Pegá acá tu clave de Google">' +
         '<button class="btn btn-s" id="aud-clave-ok"><i class="fas fa-save"></i> Guardar clave</button><button class="btn btn-s" id="aud-clave-borrar"><i class="fas fa-trash"></i> Borrar</button></div>' +
-        '<div style="font-size:12px;color:#64748b;margin-top:8px">Cómo sacarla: entrá a <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google → <b>Crear clave de API</b> → copiala y pegala acá. Queda guardada solo en este navegador. El audio se manda a Google para pasarlo a texto.</div>' +
+        '<div style="font-size:12px;color:#64748b;margin-top:8px">Cómo sacarla: entrá a <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google → <b>Crear clave de API</b> → copiala con el botón de copiar y pegala acá. Queda guardada solo en este navegador. El audio se manda a Google para pasarlo a texto.</div>' +
       '</div>' +
       '<div id="aud-aviso" style="display:none;margin-top:12px;padding:9px 12px;border:1px solid;border-radius:8px;font-size:13px"></div>' +
       '<div id="aud-barra-w" style="display:none;margin-top:10px"><div style="font-size:12px;color:#475569" id="aud-barra-t"></div><div style="height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin-top:4px"><div id="aud-barra" style="height:100%;width:0;background:#2563eb;transition:width .2s"></div></div></div>' +
@@ -123,7 +123,7 @@ function audEnganchar(el) {
   el.querySelector('#aud-bajar').onclick = audBajar;
   el.querySelector('#aud-limpiar').onclick = function() { if (AUD_.ocupado) { audAviso('Esperá que termine el audio que se está pasando.'); return; } AUD_.items = []; AUD_.cola = []; audPintarLista(); audAviso(''); };
   var sel = el.querySelector('#aud-modelo');
-  el.querySelector('#aud-clave-ok').onclick = function() { var v = String(el.querySelector('#aud-clave').value || '').trim(); if (!/^AIza[\w-]{20,}$/.test(v)) { audAviso('Esa clave no tiene la forma de una clave de Google (empieza con AIza). Copiala de nuevo desde aistudio.google.com/apikey.', true); return; } audClaveSet(v); el.querySelector('#aud-clave').value = ''; audClaveEstado(); audAviso('Clave guardada. Ya podés arrastrar los audios.'); };
+  el.querySelector('#aud-clave-ok').onclick = function() { var v = String(el.querySelector('#aud-clave').value || '').trim(); v = v.replace(/\s+/g, ''); if (v.length < 20) { audAviso('La clave está incompleta. Copiala entera desde aistudio.google.com/apikey (botón de copiar al lado de la clave).', true); return; } audClaveSet(v); el.querySelector('#aud-clave').value = ''; audClaveEstado(); audAviso('Clave guardada. Ya podés arrastrar los audios.'); };
   el.querySelector('#aud-clave-borrar').onclick = function() { audClaveSet(''); audClaveEstado(); };
   audClaveEstado();
   sel.addEventListener('change', audClaveEstado);
