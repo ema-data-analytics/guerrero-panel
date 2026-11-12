@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Audios a texto</title>
-<script>window.coi = { coepCredentialless: function() { return true; }, quiet: true };</script>
-<script src="coi-serviceworker.js"></script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f1f5f9;color:#0f172a}
@@ -28,7 +27,7 @@ var AUD_ = { w: null, cola: [], items: [], sig: 1, ocupado: false, modelo: '', g
 function audCodigoWorker() {
   return [
     "var T = null, P = null, cargado = '';",
-    "function lib(url, wp) { if (T) return Promise.resolve(T); return import(url).then(function(x) { T = x; T.env.allowLocalModels = false; try { if (wp) T.env.backends.onnx.wasm.wasmPaths = wp; T.env.backends.onnx.wasm.numThreads = (self.crossOriginIsolated && wp) ? Math.max(1, (self.navigator && navigator.hardwareConcurrency) || 4) : 1; } catch (z) {} return T; }); }",
+    "function lib(url, wp) { if (T) return Promise.resolve(T); return import(url).then(function(x) { T = x; T.env.allowLocalModels = false; try { if (wp) T.env.backends.onnx.wasm.wasmPaths = wp; T.env.backends.onnx.wasm.numThreads = 1; } catch (z) {} return T; }); }",
     "function intentar(ids, i, disp) {",
     "  var id = ids[i], dt = disp === 'webgpu' ? { encoder_model: 'fp32', decoder_model_merged: 'q4' } : 'q8';",
     "  return T.pipeline('automatic-speech-recognition', id, { device: disp, dtype: dt, progress_callback: function(p) { self.postMessage({ tipo: 'descarga', p: { status: p.status, file: p.file, loaded: p.loaded, total: p.total, progress: p.progress } }); } })",
@@ -82,7 +81,6 @@ function renderAudios() {
 function audHtml() {
   var ops = Object.keys(AUD_MODELOS).map(function(k) { var m = AUD_MODELOS[k]; return '<option value="' + k + '"' + (k === 'bueno' ? ' selected' : '') + '>' + m.nombre + ' — ' + audEsc(m.nota) + '</option>'; }).join('');
   return '<div class="page-header"><div><div class="page-title">🎙 Audios a texto</div><div class="page-sub">Pasá los audios de WhatsApp a texto. El audio no sale de esta computadora: se convierte acá mismo.</div></div></div>' +
-    (window.crossOriginIsolated || !document.getElementById('login-wrap') ? '' : '<div style="margin:-4px 0 12px;padding:10px 12px;border:1px solid #fde68a;background:#fffbeb;border-radius:8px;font-size:13px">⚡ Para audios largos o muchos audios usá la <a href="https://sistema.vulcantreadsrl.com.ar/audios/" target="_blank" rel="noopener" style="font-weight:700">versión rápida (se abre aparte)</a>: usa todos los núcleos de la computadora y pasa los audios unas 3 veces más rápido.</div>') +
     '<div class="card" style="padding:16px;margin-bottom:14px">' +
       '<div id="aud-zona" style="border:2px dashed #93c5fd;border-radius:12px;padding:26px 14px;text-align:center;cursor:pointer;background:#f8fbff">' +
         '<div style="font-size:34px">🎧</div>' +
@@ -119,6 +117,7 @@ function audEnganchar(el) {
   var sel = el.querySelector('#aud-modelo');
   sel.onchange = function() { if (sel.value === 'mejor' && AUD_.gpu === false) { audAviso('Esta computadora no tiene placa de video disponible para el modo "Muy bueno": se usa "Bueno".'); sel.value = 'bueno'; } };
   audWorker().postMessage({ tipo: 'gpu' });
+  var pc = !/Android|iPhone|iPad/i.test(navigator.userAgent); if (!pc) sel.value = 'rapido';
 }
 
 function audAgregar(lista) {
@@ -140,7 +139,7 @@ function audSiguiente() {
     var disp = AUD_.gpu ? 'webgpu' : 'wasm';
     if (m.gpu && !AUD_.gpu) { m = AUD_MODELOS.bueno; k = 'bueno'; }
     AUD_.cargando = (AUD_.clave !== k + '|' + disp); AUD_.clave = k + '|' + disp;
-    var local = !!(window.crossOriginIsolated && /^\/audios\//.test(location.pathname)), base = location.origin + '/audios/lib/';
+    var local = false, base = '';
     audWorker().postMessage({ tipo: 'transcribir', n: it.n, url: local ? base + 'transformers.min.js' : AUD_URL_LIB, wp: local ? base : '', clave: k, ids: m.ids, disp: disp, audio: r.datos }, [r.datos.buffer]);
   }).catch(function(e) {
     it.err = true; it.listo = true; it.estado = 'No se pudo leer este archivo (' + ((e && e.message) || 'formato no reconocido') + '). Probá abrirlo con otro programa y guardarlo como .mp3.';
