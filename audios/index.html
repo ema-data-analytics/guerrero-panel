@@ -128,7 +128,7 @@ function audEnganchar(el) {
   audClaveEstado();
   sel.addEventListener('change', audClaveEstado);
   sel.onchange = function() { if (sel.value === 'mejor' && AUD_.gpu === false) { audAviso('Esta computadora no tiene placa de video disponible para el modo "Muy bueno": se usa "Bueno".'); sel.value = 'bueno'; } };
-  audWorker().postMessage({ tipo: 'gpu' });
+  try { audWorker().postMessage({ tipo: 'gpu' }); } catch (x) { AUD_.gpu = false; }
   var pc = !/Android|iPhone|iPad/i.test(navigator.userAgent); if (!pc) sel.value = 'rapido';
 }
 
@@ -263,9 +263,9 @@ function audBajar() {
 }
 
 // ── Modo Google (Gemini): rápido, no carga la computadora. La clave queda solo en el navegador de quien la pone. ──
-var AUD_G_ = { activos: 0, max: 3, modelo: '' };
-function audClave() { try { return localStorage.getItem('ema_aud_clave_google') || ''; } catch (x) { return ''; } }
-function audClaveSet(v) { try { if (v) localStorage.setItem('ema_aud_clave_google', v); else localStorage.removeItem('ema_aud_clave_google'); localStorage.removeItem('ema_aud_modelo_google'); } catch (x) {} AUD_G_.modelo = ''; }
+var AUD_G_ = { activos: 0, max: 3, modelo: '', clave: '' };
+function audClave() { var v = ''; try { v = localStorage.getItem('ema_aud_clave_google') || ''; } catch (x) {} return v || AUD_G_.clave || ''; }
+function audClaveSet(v) { AUD_G_.clave = v || ''; try { if (v) localStorage.setItem('ema_aud_clave_google', v); else localStorage.removeItem('ema_aud_clave_google'); localStorage.removeItem('ema_aud_modelo_google'); } catch (x) {} AUD_G_.modelo = ''; }
 function audClaveEstado() {
   var w = document.getElementById('aud-clave-w'), e = document.getElementById('aud-clave-est'), sel = document.getElementById('aud-modelo');
   if (!w) return;
