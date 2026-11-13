@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7b2f96d4aae9"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a48343d0585a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -324,6 +324,23 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="taller" data-acc="mt-eq"><span class="nav-icon"><i class="fas fa-truck-moving"></i></span> Equipos (camiones y máquinas)</div>
         <div class="nav-item" data-page="taller" data-acc="mt-cat"><span class="nav-icon"><i class="fas fa-list-ul"></i></span> Servicios y recetas</div>
       </div></div>
+      <div class="sb-grp" data-g="flo"><div class="sb-gh" onclick="menuGrupo('flo')"><span class="sb-gi-ic">🚛</span><span class="sb-gt">Flota y cubiertas</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="flota" data-acc="fl-mapa"><span class="nav-icon"><i class="fas fa-dharmachakra"></i></span> Mapa de cubiertas</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-enganches"><span class="nav-icon"><i class="fas fa-link"></i></span> Enganches de acoplados</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cli_bases"><span class="nav-icon"><i class="fas fa-map-marker-alt"></i></span> Bases de clientes</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cli_contactos"><span class="nav-icon"><i class="fas fa-address-book"></i></span> Contactos de clientes</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mt_choferes"><span class="nav-icon"><i class="fas fa-id-card"></i></span> Choferes</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-config"><span class="nav-icon"><i class="fas fa-th"></i></span> Configuraciones de ejes</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mv_marcas"><span class="nav-icon"><i class="fas fa-copyright"></i></span> Marcas de vehículos</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mv_modelos"><span class="nav-icon"><i class="fas fa-truck"></i></span> Modelos de vehículos</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mt_equipo_tipos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Tipos de unidad</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mt_equipo_subtipos"><span class="nav-icon"><i class="fas fa-tag"></i></span> Subtipos de unidad</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cb_mov_tipos"><span class="nav-icon"><i class="fas fa-exchange-alt"></i></span> Tipos de movimiento de cubiertas</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cb_estados_cub"><span class="nav-icon"><i class="fas fa-heartbeat"></i></span> Estados de la cubierta</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cb_causas_rotura"><span class="nav-icon"><i class="fas fa-bolt"></i></span> Causas de rotura y baja</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cli_cargos"><span class="nav-icon"><i class="fas fa-user-tie"></i></span> Cargos de contactos</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mt_licencias_cat"><span class="nav-icon"><i class="fas fa-id-badge"></i></span> Categorías de licencia</div>
+      </div></div>
       <div class="sb-grp" data-g="pre"><div class="sb-gh" onclick="menuGrupo('pre')"><span class="sb-gi-ic">💲</span><span class="sb-gt">Precios</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="precios-nuevos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Lista de precios</div>
         <div class="nav-item" data-page="margen"><span class="nav-icon"><i class="fas fa-traffic-light"></i></span> Margen con descuento</div>
@@ -427,6 +444,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-cheques" class="hidden"></div>
     <div id="page-ventas" class="hidden"></div>
     <div id="page-taller" class="hidden"></div>
+    <div id="page-flota" class="hidden"></div>
     <div id="page-rpt-costo-cubiertas" class="hidden"></div>
     <div id="page-inteligencia" class="hidden"></div>
     <div id="page-objetivo" class="hidden"></div>
@@ -736,7 +754,7 @@ function _mcDelAll(){ _MC={}; }
 // El servidor devuelve un "pase" (token) que acompaña cada llamada.
 // ══════════════════════════════════════════════════════════════════
 var PAGINA_MODULO = {
-  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'tablero-linea':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'taller':'VENTAS', 'precios-nuevos':'VENTAS', 'catalogo-tienda':'VENTAS', 'margen':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
+  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'tablero-linea':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'taller':'VENTAS', 'flota':'VENTAS', 'precios-nuevos':'VENTAS', 'catalogo-tienda':'VENTAS', 'margen':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
   'carga-gastos':'GASTOS', 'carga-financiero':'ADMINISTRACION', 'carga-transporte':'ADMINISTRACION',
   'carga-impositivo':'ADMINISTRACION', 'carga-sueldos':'ADMINISTRACION', 'asistencia':'ADMINISTRACION', 'fichaje':'PRODUCCION', 'carga-combustible':'COMBUSTIBLE',
   'cheques':'COBRANZAS', 'cobranzas':'COBRANZAS', 'caja':'COBRANZAS', 'cta-cte-clientes':'COBRANZAS',
@@ -828,6 +846,8 @@ function menuClick(el) {
   if (acc.indexOf('pc-') === 0 && typeof PC_ !== 'undefined') { PC_.tab = acc.substring(3); PC_.otNueva = false; PC_.osNueva = false; }
   // Taller: órdenes, equipos, servicios o mantenimiento de planta (navTo borra _menuAcc antes de abrir la pantalla, por eso se pasa acá)
   if (acc.indexOf('mt-') === 0 && typeof MT_ !== 'undefined') { MT_.vista = acc.substring(3); MT_.nueva = false; MT_.ord = null; MT_.oe = null; MT_.eqNuevo = false; }
+  // Flota y cubiertas: cada catálogo es una entrada del menú
+  if (acc.indexOf('fl-') === 0 && typeof FL_ !== 'undefined' && FL_MENU[acc]) { if (FL_MENU[acc] !== FL_.t) FL_.F = { q: '', p: '', est: 'V' }; FL_.t = FL_MENU[acc]; }
   window._menuAcc = acc;
   navTo(pg);
 }
@@ -1282,6 +1302,7 @@ function getPage(name) {
     'estado-resultados': typeof renderEstadoResultados !== 'undefined' ? renderEstadoResultados : null,
     'ventas': typeof renderVentas !== 'undefined' ? renderVentas : null,
     'taller': function(){ if(typeof renderTaller!=='undefined') renderTaller(); },
+    'flota': function(){ if(typeof renderFlota!=='undefined') renderFlota(); },
     'stock': function(){ if(typeof renderStock!=='undefined') renderStock(); },
     'seguridad': typeof renderSeguridad !== 'undefined' ? renderSeguridad : null,
     'agenda': function(){ if(typeof renderAgenda!=='undefined') renderAgenda(); },
@@ -1572,7 +1593,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611131116';
+var EMA_BUILD = '202611132250';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16815,16 +16836,7 @@ async function mtOrdAnular(id) {
 // Listas para elegir (nada escrito a mano)
 var MT_PIDE = ['Service completo', 'Revisión antes de viaje', 'Frenos', 'Luces y sistema eléctrico', 'Neumáticos', 'Suspensión', 'Motor', 'Pérdida de aire', 'Pérdida de aceite o líquido', 'Ruido o vibración', 'Ejes y mazas'];
 var MT_FALLAS = ['Gastado', 'Roto', 'Pierde', 'No funciona', 'Falta', 'Flojo', 'Bajo nivel', 'Sucio'];
-// Marcas por tipo de equipo (1 tractor, 2 arrastre, 3 planta, 4 autoelevador, 5 camioneta, 6 auto). Se suman las ya cargadas en equipos de ese tipo.
-// Si no está, se escribe en el buscador y se toca «＋ Agregar».
-var MT_MARCAS_TIPO = {
-  1: ['SCANIA', 'MERCEDES-BENZ', 'IVECO', 'VOLKSWAGEN', 'FORD', 'VOLVO', 'RENAULT', 'DAF', 'INTERNATIONAL', 'AGRALE'],
-  2: ['HELVETICA', 'RANDON', 'SALTO', 'BONANO', 'MONTENEGRO', 'GENERICO'],
-  3: [],
-  4: ['HYSTER', 'YALE', 'CLARK', 'HELI', 'HANGCHA', 'KOMATSU', 'TOYOTA', 'NISSAN', 'MITSUBISHI', 'LINDE', 'JUNGHEINRICH', 'CATERPILLAR', 'DOOSAN', 'STILL'],
-  5: ['TOYOTA', 'FORD', 'CHEVROLET', 'VOLKSWAGEN', 'NISSAN', 'RAM', 'MITSUBISHI', 'RENAULT', 'FIAT', 'PEUGEOT'],
-  6: ['TOYOTA', 'FORD', 'CHEVROLET', 'VOLKSWAGEN', 'FIAT', 'PEUGEOT', 'CITROEN', 'RENAULT', 'NISSAN', 'HONDA', 'HYUNDAI', 'JEEP']
-};
+// Las marcas y modelos salen del catálogo (Flota y cubiertas → Marcas / Modelos de vehículos)
 function mtChips(lista, sel, js) { return '<div class="mt-chips">' + lista.map(function(x, i) { var on = sel.indexOf(x) !== -1; return '<button type="button" class="mt-chip' + (on ? ' on' : '') + '" onclick="' + js + '(' + i + ')">' + (on ? '✔ ' : '') + pcEsc(x) + '</button>'; }).join('') + '</div>'; }
 (function() { var st = document.createElement('style'); st.textContent = '.mt-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}.mt-chip{min-height:42px;padding:6px 14px;border-radius:22px;border:2px solid #cbd5e1;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#334155}.mt-chip.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}.mt-cli{display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #16a34a;border-radius:12px;background:#f0fdf4;margin-bottom:10px}.mt-res{max-height:260px;overflow:auto;margin-bottom:10px}.mt-bar.pegada{box-shadow:0 -60px 0 0 var(--card,#fff)}'; document.head.appendChild(st); })();
 function mtTop() { var m = document.querySelector('main'); if (m) m.scrollTop = 0; window.scrollTo(0, 0); }
@@ -17106,31 +17118,55 @@ function mtEqVer(id) {
   var e = mtEq(id), d = MT_.d, os = d.ORDENES.filter(function(o) { return o.EQUIPOS.some(function(x) { return x.ID_EQUIPO === id; }); });
   showModal('<div class="mh"><span class="mt">' + pcEsc((mtEqIdent(e)) + ' · ' + e.MARCA + ' ' + e.MODELO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="font-size:13.5px">' +
     '<div>Código <b>' + pcEsc(e.CODIGO) + '</b> · Chasis ' + pcEsc(e.CHASIS || '—') + ' · Año ' + (e.ANIO || '—') + ' · ' + (e.KM_HS ? Number(e.KM_HS).toLocaleString('es-AR') + ' km/h' : '') + '</div><div>Cliente: <b>' + pcEsc(e.CLIENTE || 'Propio') + '</b></div>' + mtCubTxt(e, 'div') + (e.OBSERVACIONES ? '<div class="tdim">' + pcEsc(e.OBSERVACIONES) + '</div>' : '') +
-    '<h4 class="mt2">Órdenes</h4>' + (os.length ? os.map(function(o) { return '<div>' + pcEsc(o.NRO) + ' · ' + fmtD(o.FECHA) + ' · ' + mtBadge(o.ESTADO) + (o.PRESUP ? ' · ' + mtPlata(o.PRESUP.TOTAL) : '') + '</div>'; }).join('') : '<div class="tdim">Sin órdenes.</div>') +
+    (function() { var c = mtFL().CONFIGS.filter(function(x) { return String(x.ID) === String(e.ID_CONFIG); })[0]; return c && typeof flDibujo === 'function' ? '<h4 class="mt2">Mapa de ruedas · ' + pcEsc(c.NOMBRE) + '</h4><div class="fl-map">' + flDibujo(c.EJES, c.POS, { ancho: 240 }) + '</div>' : ''; })() + '<h4 class="mt2">Órdenes</h4>' + (os.length ? os.map(function(o) { return '<div>' + pcEsc(o.NRO) + ' · ' + fmtD(o.FECHA) + ' · ' + mtBadge(o.ESTADO) + (o.PRESUP ? ' · ' + mtPlata(o.PRESUP.TOTAL) : '') + '</div>'; }).join('') : '<div class="tdim">Sin órdenes.</div>') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
 }
-function mtEqMarcas(v, tipo) { tipo = Number(tipo) || 0; var L = (MT_MARCAS_TIPO[tipo] || []).slice(); MT_.d.EQUIPOS.forEach(function(e) { if (Number(e.ID_TIPO) === tipo && e.MARCA && L.indexOf(e.MARCA) === -1) L.push(e.MARCA); }); if (v && L.indexOf(v) === -1) L.push(v);
-  return '<option value="">— elegí o escribí —</option>' + L.sort().map(function(x) { return '<option value="' + pcEsc(x) + '"' + (x === v ? ' selected' : '') + '>' + pcEsc(x) + '</option>'; }).join(''); }
-// Al cambiar el tipo, la marca muestra solo las de ese tipo (si la elegida no corresponde, se limpia)
+// ── Unidad: marca y modelo del catálogo, subtipo, configuración de ejes y base del cliente (Flota y cubiertas, 13/11) ──
+function mtFL() { return MT_.d.FL || { MARCAS: [], MODELOS: [], SUBTIPOS: [], CONFIGS: [], BASES: [] }; }
+function mtOps(L, sel, vacio) { return '<option value="">' + vacio + '</option>' + L.map(function(x) { return '<option value="' + x.V + '"' + (x.P !== undefined ? ' data-p="' + x.P + '"' : '') + (String(x.V) === String(sel || '') ? ' selected' : '') + '>' + pcEsc(x.T) + '</option>'; }).join(''); }
 // Check lists del tipo: si hay más de uno (máquinas de planta) se elige el de la máquina; si hay uno solo, va ese
 function mtEqPlOpts(tipo, sel) { var L = MT_.d.PLANTILLAS.filter(function(p) { return Number(p.ID_TIPO) === Number(tipo); }).sort(function(a, b) { return (/-GE$/.test(b.CODIGO) ? 1 : 0) - (/-GE$/.test(a.CODIGO) ? 1 : 0); });
   if (L.length <= 1) return '<option value="">' + (L.length ? pcEsc(L[0].NOMBRE) : 'Este tipo no tiene check list') + '</option>';
   return L.map(function(p) { return '<option value="' + p.ID_PLANTILLA + '"' + (String(p.ID_PLANTILLA) === String(sel || '') ? ' selected' : '') + '>' + pcEsc(p.NOMBRE) + '</option>'; }).join(''); }
-function mtEqTipoCambio() { var pls = $id('mt-e-pl'); if (pls) pls.innerHTML = mtEqPlOpts($v('mt-e-tipo'), ''); var w = $id('mt-e-dom-w'), sinPat = [3, 4].indexOf(Number($v('mt-e-tipo'))) !== -1; if (w) w.style.display = sinPat ? 'none' : ''; if (sinPat && $id('mt-e-dom')) $id('mt-e-dom').value = ''; var s = $id('mt-e-mar'); if (!s) return; var v = s.value, t = $v('mt-e-tipo'), L = (MT_MARCAS_TIPO[Number(t)] || []); s.innerHTML = mtEqMarcas(L.indexOf(v) !== -1 || MT_.d.EQUIPOS.some(function(e) { return String(e.ID_TIPO) === String(t) && e.MARCA === v; }) ? v : '', t); }
-function mtEqModelos() { var L = []; MT_.d.EQUIPOS.forEach(function(e) { if (e.MODELO && L.indexOf(e.MODELO) === -1) L.push(e.MODELO); }); return L.sort().map(function(x) { return '<option value="' + pcEsc(x) + '">'; }).join(''); }
+function mtEqLlenar(keep) {
+  var f = mtFL(), t = Number($v('mt-e-tipo')), mar = $v('mt-e-mar'), cli = $v('mt-e-cli');
+  var put = function(id, html) { var s = $id(id); if (!s) return; var v = keep ? s.value : ''; s.innerHTML = html; if (v && Array.prototype.some.call(s.options, function(o) { return o.value === v; })) s.value = v; if (s.__selb && typeof s.__selb.refrescar === 'function') s.__selb.refrescar(); };
+  put('mt-e-mod', mtOps(f.MODELOS.filter(function(m) { return m.A && m.TIPO === t && String(m.P) === String(mar); }), keep ? MT_.eqF.ID_MODELO : '', mar ? '— elegí el modelo —' : '— primero la marca —'));
+  put('mt-e-sub', mtOps(f.SUBTIPOS.filter(function(x) { return x.A && x.TIPO === t; }), keep ? MT_.eqF.ID_SUBTIPO : '', '— sin subtipo —'));
+  put('mt-e-cfg', mtOps(f.CONFIGS.filter(function(c) { return c.ACTIVO && c.ID_TIPO === t; }).map(function(c) { return { V: c.ID, T: c.NOMBRE }; }), keep ? MT_.eqF.ID_CONFIG : '', '— sin configuración de ejes —'));
+  put('mt-e-base', mtOps(f.BASES.filter(function(b) { return b.A && String(b.P) === String(cli); }), keep ? MT_.eqF.ID_BASE : '', cli ? '— sin base —' : '— elegí el cliente —'));
+  mtEqDibujo();
+}
+function mtEqDibujo() { var el = $id('mt-e-map'); if (!el) return; var c = mtFL().CONFIGS.filter(function(x) { return String(x.ID) === String($v('mt-e-cfg')); })[0];
+  el.innerHTML = c && typeof flDibujo === 'function' ? flDibujo(c.EJES, c.POS, { ancho: 210 }) : '<div class="tdim" style="padding:14px;font-size:13px">Elegí la configuración de ejes para ver el mapa de ruedas.</div>'; }
+function mtEqSubCambio() { var s = mtFL().SUBTIPOS.filter(function(x) { return String(x.V) === String($v('mt-e-sub')); })[0]; if (s && s.CFG && !$v('mt-e-cfg')) { $id('mt-e-cfg').value = String(s.CFG); mtEqDibujo(); } }
+function mtEqTipoCambio() { var pls = $id('mt-e-pl'); if (pls) pls.innerHTML = mtEqPlOpts($v('mt-e-tipo'), ''); var w = $id('mt-e-dom-w'), sinPat = [3, 4].indexOf(Number($v('mt-e-tipo'))) !== -1; if (w) w.style.display = sinPat ? 'none' : ''; if (sinPat && $id('mt-e-dom')) $id('mt-e-dom').value = ''; mtEqLlenar(false); }
+// ＋ marca o modelo nuevo: se da de alta en el catálogo (con su código) y queda elegido
+async function mtEqNuevaMarca() { var n = await uiPedir('Marca nueva (queda en el catálogo de marcas de vehículos)', { obligatorio: true }); if (n === null) return;
+  var r = await gsRun('gsCB_CatGuardar', { TABLA: 'mv_marcas', NOMBRE: n }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  mtFL().MARCAS.push({ V: r.ID, T: n.toUpperCase(), A: 1 }); var s = $id('mt-e-mar'); s.innerHTML = mtOps(mtFL().MARCAS.filter(function(x) { return x.A; }), r.ID, '— elegí la marca —'); if (s.__selb && s.__selb.refrescar) s.__selb.refrescar(); mtEqLlenar(false); toast('Marca agregada ✓ ' + r.CODIGO, 'g'); }
+async function mtEqNuevoModelo() { var mar = $v('mt-e-mar'), t = $v('mt-e-tipo'); if (!mar) { toast('Elegí primero la marca', 'r2'); return; }
+  var n = await uiPedir('Modelo nuevo de esta marca, para este tipo de unidad', { obligatorio: true }); if (n === null) return;
+  var r = await gsRun('gsCB_CatGuardar', { TABLA: 'mv_modelos', ID_MARCA_V: mar, NOMBRE: n, ID_TIPO: t }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  mtFL().MODELOS.push({ V: r.ID, T: n.toUpperCase(), P: Number(mar), TIPO: Number(t), A: 1 }); MT_.eqF.ID_MODELO = r.ID; mtEqLlenar(true); $id('mt-e-mod').value = String(r.ID); toast('Modelo agregado ✓ ' + r.CODIGO, 'g'); }
 function mtEqForm(id, desdeOrden) {
-  var e = id ? mtEq(id) : { ID_TIPO: 1, ID_CLIENTE: desdeOrden && MT_.N ? MT_.N.cli : '' }, d = MT_.d;
+  var e = id ? mtEq(id) : { ID_TIPO: 1, ID_CLIENTE: desdeOrden && MT_.N ? MT_.N.cli : '' }, d = MT_.d, f = mtFL();
+  MT_.eqF = { ID_MODELO: e.ID_MODELO || '', ID_SUBTIPO: e.ID_SUBTIPO || '', ID_CONFIG: e.ID_CONFIG || '', ID_BASE: e.ID_BASE || '' };
   var cli = d.CLIENTES.slice().sort(function(a, b) { return a.NOMBRE < b.NOMBRE ? -1 : 1; });
+  var viejo = id && !e.ID_MODELO && e.MARCA ? '<div class="fl-ayu" style="color:#9a3412">Antes decía: ' + pcEsc(e.MARCA + ' ' + e.MODELO) + '</div>' : '';
   showModal('<div class="mh"><span class="mt">' + (id ? '✏ Modificar ' + pcEsc(e.CODIGO) : '＋ Nuevo equipo') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     '<div class="pc-fila3" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
     '<div class="fg"><label class="fl">Tipo *</label><select class="fs" id="mt-e-tipo" onchange="mtEqTipoCambio()">' + mtOpt(d.TIPOS.map(function(t) { return [t.ID_TIPO, t.NOMBRE]; }), e.ID_TIPO) + '</select></div>' +
-    '<div class="fg"><label class="fl">Cliente (vacío = máquina propia)</label><select class="fs" id="mt-e-cli"><option value="">— propio —</option>' + cli.map(function(c) { return '<option value="' + c.ID + '"' + (String(c.ID) === String(e.ID_CLIENTE) ? ' selected' : '') + '>' + pcEsc(c.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Subtipo</label><select class="fs" id="mt-e-sub" onchange="mtEqSubCambio()"></select></div>' +
+    '<div class="fg"><label class="fl">Cliente (vacío = máquina propia)</label><select class="fs" id="mt-e-cli" data-filtro onchange="mtEqLlenar(false)"><option value="">— propio —</option>' + cli.map(function(c) { return '<option value="' + c.ID + '"' + (String(c.ID) === String(e.ID_CLIENTE) ? ' selected' : '') + '>' + pcEsc(c.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Base del cliente</label><select class="fs" id="mt-e-base"></select></div>' +
     '<div class="fg" id="mt-e-dom-w"' + ([3, 4].indexOf(Number(e.ID_TIPO)) !== -1 ? ' style="display:none"' : '') + '><label class="fl">Dominio (patente) <span class="tdim">· sin patente: dejalo vacío y cargá N° interno o serie</span></label><input class="fi" id="mt-e-dom" style="text-transform:uppercase" value="' + pcEsc(e.DOMINIO || '') + '"></div>' +
     '<div class="fg"><label class="fl">N° interno</label><input class="fi" id="mt-e-int" value="' + pcEsc(e.INTERNO || '') + '"></div>' +
-    '<div class="fg"><label class="fl">Marca <span class="tdim">· si no está, escribila y tocá ＋ Agregar</span></label><select class="fs" id="mt-e-mar" data-filtro data-agregar>' + mtEqMarcas(e.MARCA, e.ID_TIPO) + '</select></div>' +
-    '<div class="fg"><label class="fl">Modelo</label><input class="fi" id="mt-e-mod" list="mt-e-modl" placeholder="Elegí de la lista o escribí" value="' + pcEsc(e.MODELO || '') + '"><datalist id="mt-e-modl">' + mtEqModelos() + '</datalist></div>' +
+    '<div class="fg"><label class="fl">Marca * <button type="button" class="btn btn-s btn-xs" onclick="mtEqNuevaMarca()" title="Agregar una marca al catálogo">＋</button></label><select class="fs" id="mt-e-mar" data-filtro onchange="mtEqLlenar(false)">' + mtOps(f.MARCAS.filter(function(x) { return x.A || String(x.V) === String(e.ID_MARCA_V); }), e.ID_MARCA_V, '— elegí la marca —') + '</select>' + viejo + '</div>' +
+    '<div class="fg"><label class="fl">Modelo * <button type="button" class="btn btn-s btn-xs" onclick="mtEqNuevoModelo()" title="Agregar un modelo al catálogo">＋</button></label><select class="fs" id="mt-e-mod"></select></div>' +
     '<div class="fg"><label class="fl">Año</label><select class="fs" id="mt-e-anio"><option value="">—</option>' + (function() { var o = '', y = new Date().getFullYear() + 1; for (; y >= 1980; y--) o += '<option' + (Number(e.ANIO) === y ? ' selected' : '') + '>' + y + '</option>'; return o; })() + '</select></div>' +
     '<div class="fg"><label class="fl">Km / horas</label><input class="fi" id="mt-e-km" inputmode="numeric" value="' + (e.KM_HS || '') + '"></div>' +
+    '<div class="fg" style="grid-column:1/-1"><label class="fl">Configuración de ejes (mapa de ruedas)</label><div style="display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:10px;align-items:start"><select class="fs" id="mt-e-cfg" onchange="mtEqDibujo()"></select><div class="fl-map" id="mt-e-map"></div></div></div>' +
     '<div class="fg" id="mt-e-pl-w" style="grid-column:1/-1"><label class="fl">Check list</label><select class="fs" id="mt-e-pl">' + mtEqPlOpts(e.ID_TIPO, e.ID_PLANTILLA) + '</select></div>' +
     '<div class="fg"><label class="fl">Tipo de cubierta</label><select class="fs" id="mt-e-cubt">' + mtOpt([['', '—'], ['INFLABLE', 'Inflable (con aire)'], ['MACIZA', 'Maciza']], e.CUB_TIPO || '') + '</select></div>' +
     '<div class="fg"><label class="fl">Medida cubierta delantera</label><input class="fi" id="mt-e-cubd" style="text-transform:uppercase" placeholder="Ej.: 28X9-15" value="' + pcEsc(e.CUB_MED_DEL || '') + '"></div>' +
@@ -17138,10 +17174,11 @@ function mtEqForm(id, desdeOrden) {
     '<div class="fg" style="grid-column:1/-1"><label class="fl">Chasis / N° de serie</label><input class="fi" id="mt-e-cha" value="' + pcEsc(e.CHASIS || '') + '"></div>' +
     '<div class="fg" style="grid-column:1/-1"><label class="fl">Observaciones</label><input class="fi" id="mt-e-obs" value="' + pcEsc(e.OBSERVACIONES || '') + '"></div></div>' +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="mt-e-ok" onclick="mtEqGuardar(' + (id || 0) + ',' + (desdeOrden ? 1 : 0) + ')">Guardar</button></div>');
+  mtEqLlenar(true);
 }
 async function mtEqGuardar(id, desdeOrden) {
   var b = $id('mt-e-ok'); b.disabled = true;
-  try { var r = await gsRun('gsMT_EquipoGuardar', { ID_EQUIPO: id || '', ID_TIPO: $v('mt-e-tipo'), ID_CLIENTE: $v('mt-e-cli'), DOMINIO: $v('mt-e-dom'), INTERNO: $v('mt-e-int'), MARCA: $v('mt-e-mar'), MODELO: $v('mt-e-mod'), ANIO: $v('mt-e-anio'), KM_HS: $v('mt-e-km'), CHASIS: $v('mt-e-cha'), OBSERVACIONES: $v('mt-e-obs'), CUB_TIPO: $v('mt-e-cubt'), CUB_MED_DEL: $v('mt-e-cubd'), CUB_MED_TRAS: $v('mt-e-cubr'), ID_PLANTILLA: $v('mt-e-pl') });
+  try { var r = await gsRun('gsMT_EquipoGuardar', { ID_EQUIPO: id || '', ID_TIPO: $v('mt-e-tipo'), ID_SUBTIPO: $v('mt-e-sub'), ID_CLIENTE: $v('mt-e-cli'), ID_BASE: $v('mt-e-base'), DOMINIO: $v('mt-e-dom'), INTERNO: $v('mt-e-int'), ID_MODELO: $v('mt-e-mod'), ID_CONFIG: $v('mt-e-cfg'), ANIO: $v('mt-e-anio'), KM_HS: $v('mt-e-km'), CHASIS: $v('mt-e-cha'), OBSERVACIONES: $v('mt-e-obs'), CUB_TIPO: $v('mt-e-cubt'), CUB_MED_DEL: $v('mt-e-cubd'), CUB_MED_TRAS: $v('mt-e-cubr'), ID_PLANTILLA: $v('mt-e-pl') });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
     closeModal(); toast('Equipo guardado ✓', 'g');
     if (desdeOrden && MT_.N) { MT_.N.eqs[r.ID_EQUIPO] = true; if (!MT_.N.cli && MT_.N.tipo === 'SERVICIO_CLIENTE') MT_.N.cli = $v('mt-e-cli'); }
@@ -17332,6 +17369,466 @@ function mpCum(tabs) {
     ((M.d.PERSONAS || []).length ? '<div class="tw"><table><thead><tr><th>Usuario</th><th>Controles hechos</th><th>Días que controló</th></tr></thead><tbody>' + M.d.PERSONAS.map(function(p) { return '<tr><td>' + pcEsc(p.USUARIO) + '</td><td>' + p.CONTROLES + '</td><td>' + p.DIAS + '</td></tr>'; }).join('') + '</tbody></table></div>'
       : '<div class="al">Nadie registró controles en los últimos 30 días.</div>') + '</div></div>';
   $id('mt-body').innerHTML = h;
+}
+</script>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// FLOTA Y CUBIERTAS (13/11/2026, Anibal) · catálogos con código y su ABM estándar
+// (filtros arriba, grilla con todos los registros, Ver · PDF · Modificar · Anular en cada renglón),
+// bases, contactos y choferes del cliente, configuración de ejes con su dibujo.
+// ════════════════════════════════════════════════════════════════
+var FL_ = { t: '', d: null, F: { q: '', p: '', est: 'V' }, cfg: null, ed: null };
+(function() { var st = document.createElement('style');
+  st.textContent = '.fl-bd{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}.fl-v{background:#dcfce7;color:#166534}.fl-a{background:#e5e7eb;color:#374151}' +
+    '.fl-frm{display:grid;grid-template-columns:1fr 1fr;gap:10px}.fl-frm .full{grid-column:1/-1}.fl-ayu{font-size:11.5px;color:#64748b;margin-top:2px}' +
+    '.fl-eje{display:grid;grid-template-columns:46px minmax(0,1fr) minmax(0,1fr) 96px;gap:6px;align-items:center;margin:0 0 6px}.fl-eje select{font-size:13px;padding-left:6px;padding-right:22px}.fl-eje b{font-size:13px}' +
+    '.fl-map svg{min-width:0;flex:0 1 auto;max-width:100%;height:auto}.fl-map{display:flex;justify-content:center;padding:6px;min-width:0;overflow:hidden;background:#f8fafc;border:1px solid var(--border,#e2e8f0);border-radius:10px}' +
+    '@media(max-width:700px){.fl-cfg-g{grid-template-columns:1fr!important}.fl-frm{grid-template-columns:1fr}.fl-eje{grid-template-columns:40px 1fr 1fr;}.fl-eje .fl-fl{grid-column:2/-1}}';
+  document.head.appendChild(st); })();
+var FL_MENU = { 'fl-mapa': 'mapa', 'fl-enganches': 'enganches', 'fl-mv_marcas': 'mv_marcas', 'fl-mv_modelos': 'mv_modelos', 'fl-mt_equipo_tipos': 'mt_equipo_tipos', 'fl-mt_equipo_subtipos': 'mt_equipo_subtipos', 'fl-config': 'cb_config',
+  'fl-cb_mov_tipos': 'cb_mov_tipos', 'fl-cb_estados_cub': 'cb_estados_cub', 'fl-cb_causas_rotura': 'cb_causas_rotura', 'fl-cli_cargos': 'cli_cargos', 'fl-mt_licencias_cat': 'mt_licencias_cat',
+  'fl-cli_bases': 'cli_bases', 'fl-cli_contactos': 'cli_contactos', 'fl-mt_choferes': 'mt_choferes' };
+function flPuede(acc) { return typeof tienePermiso === 'function' ? tienePermiso('VENTAS', acc) : true; }
+function flBtn(cls, txt, js, tit) { return typeof pcBtnAbm === 'function' ? pcBtnAbm(cls, txt, js, tit) : '<button class="btn ' + cls + ' btn-xs" onclick="' + js + '">' + txt + '</button>'; }
+async function renderFlota() {
+  var el = $id('page-flota'); if (!el) return;
+  if (window._menuAcc && FL_MENU[window._menuAcc]) { var nt = FL_MENU[window._menuAcc]; if (nt !== FL_.t) FL_.F = { q: '', p: '', est: 'V' }; FL_.t = nt; window._menuAcc = ''; }
+  if (!FL_.t) FL_.t = 'mv_marcas';
+  el.innerHTML = '<div class="mb3" style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span id="fl-tit" style="font-size:20px;font-weight:800">🚛 Flota y cubiertas</span><span class="tdim" style="font-size:13px" id="fl-sub"></span></div><div id="fl-body"><div class="tdim" style="padding:20px">Cargando…</div></div>';
+  await flRecargar();
+}
+async function flRecargar() {
+  try {
+    if (FL_.t === 'mapa') return renderMapaCub();
+    if (FL_.t === 'enganches') return renderEnganches();
+    if (FL_.t === 'cb_config') { var r = await gsRun('gsCB_Configs'); if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo cargar'); FL_.cfg = r; return flCfgPintar(); }
+    var r2 = await gsRun('gsCB_Cat', FL_.t); if (!r2 || !r2.ok) throw new Error((r2 && r2.error) || 'No se pudo cargar'); FL_.d = r2; flPintar();
+  } catch (e) { $id('fl-body').innerHTML = '<div class="al">' + pcEsc(e.message) + '</div>'; }
+}
+// ── ABM genérico ──
+function flTipo(c) { return c[2]; }
+function flSelOps(c) { return c[2].substring(4).split('|').map(function(p) { var k = p.split('='); return [k[0], k[1]]; }); }
+function flValTxt(c, r) {
+  var v = r[c[0]], t = c[2];
+  if (v === '' || v === null || v === undefined) return '';
+  if (t.indexOf('fk:') === 0) { var l = (FL_.d.LISTAS[c[0]] || []).filter(function(x) { return String(x.V) === String(v); })[0]; return l ? l.T : '#' + v; }
+  if (t.indexOf('sel:') === 0) { var o = flSelOps(c).filter(function(x) { return String(x[0]) === String(v); })[0]; return o ? o[1] : v; }
+  if (t === '01') return Number(v) === 1 ? 'Sí' : 'No';
+  if (t === 'fecha') return v ? new Date(Number(v)).toLocaleDateString('es-AR') : '';
+  return String(v);
+}
+function flPadre() { return (FL_.d.CAMPOS || []).filter(function(c) { return c[2].indexOf('fk:') === 0 && c[3]; })[0]; }
+function flPintar() {
+  var d = FL_.d, F = FL_.F, pa = flPadre();
+  $id('fl-tit').textContent = '🚛 ' + d.TIT; $id('fl-sub').textContent = 'Flota y cubiertas · catálogo con código';
+  $id('fl-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">' + pcEsc(d.TIT) + '</span>' + (flPuede('AGREGAR') ? '<button class="btn btn-p btn-sm" onclick="flForm(0)">＋ Agregar ' + pcEsc(d.UNO) + '</button>' : '') + '</div><div class="card-body">' +
+    '<div class="pc-otf"><div class="fg" style="grid-column:span 3"><label class="fl">Buscar</label><input class="fi" id="fl-q" placeholder="Código, nombre…" value="' + pcEsc(F.q) + '" oninput="FL_.F.q=this.value;flGrilla()"></div>' +
+    (pa ? '<div class="fg" style="grid-column:span 2"><label class="fl">' + pcEsc(pa[1]) + '</label><select class="fs" id="fl-p" data-filtro onchange="FL_.F.p=this.value;flGrilla()"><option value="">Todos</option>' + (d.LISTAS[pa[0]] || []).map(function(x) { return '<option value="' + x.V + '"' + (String(x.V) === String(F.p) ? ' selected' : '') + '>' + pcEsc(x.T) + '</option>'; }).join('') + '</select></div>' : '') +
+    '<div class="fg"><label class="fl">Estado</label><select class="fs" onchange="FL_.F.est=this.value;flGrilla()">' + [['V', 'Vigentes'], ['A', 'Anulados'], ['', 'Todos']].map(function(x) { return '<option value="' + x[0] + '"' + (F.est === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg" style="align-self:end"><button class="btn btn-s" onclick="FL_.F={q:\'\',p:\'\',est:\'V\'};flPintar()">Limpiar filtros</button></div></div><div id="fl-g" class="mt2"></div></div></div>';
+  flGrilla();
+}
+function flFiltradas() {
+  var d = FL_.d, F = FL_.F, pa = flPadre(), q = String(F.q || '').toUpperCase().trim().split(/\s+/).filter(Boolean);
+  return d.FILAS.filter(function(r) {
+    if (F.est === 'V' && !r.ACTIVO) return false; if (F.est === 'A' && r.ACTIVO) return false;
+    if (pa && F.p && String(r[pa[0]]) !== String(F.p)) return false;
+    if (q.length) { var t = d.CAMPOS.map(function(c) { return flValTxt(c, r); }).join(' ').toUpperCase(); if (!q.every(function(w) { return t.indexOf(w) !== -1; })) return false; }
+    return true;
+  }).sort(function(a, b) { var ka = flValTxt(d.CAMPOS[1], a), kb = flValTxt(d.CAMPOS[1], b); return ka < kb ? -1 : ka > kb ? 1 : 0; });
+}
+function flGrilla() {
+  var d = FL_.d, el = $id('fl-g'); if (!el) return;
+  var l = flFiltradas(), cols = d.CAMPOS.filter(function(c) { return ['LAT', 'LNG', 'ORDEN'].indexOf(c[0]) === -1; });
+  el.innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> registro' + (l.length === 1 ? '' : 's') + '</div><div class="tw pc-abm"><table style="font-size:12.5px"><thead><tr>' + cols.map(function(c) { return '<th>' + pcEsc(c[1]) + '</th>'; }).join('') + '<th>Usado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' +
+    (l.length ? l.map(function(r) {
+      return '<tr' + (r.ACTIVO ? '' : ' style="opacity:.6"') + '>' + cols.map(function(c, i) { var v = flValTxt(c, r); return '<td' + (i === 0 ? ' class="mono"' : ' class="pc-wr"') + '>' + (i === 1 ? '<b>' + pcEsc(v) + '</b>' : pcEsc(v)) + '</td>'; }).join('') +
+        '<td class="tr">' + (r.USO || 0) + '</td><td>' + (r.ACTIVO ? '<span class="fl-bd fl-v">Vigente</span>' : '<span class="fl-bd fl-a" title="' + pcEsc(r.MOTIVO) + '">Anulado</span>') + '</td>' +
+        '<td><div class="pc-acc">' + flBtn('btn-s', '👁 Ver', 'flVer(' + r.ID + ')') + flBtn('btn-s', '📄 PDF', 'flPdf(' + r.ID + ')') +
+        (flPuede('EDITAR') && r.ACTIVO ? flBtn('btn-s', '✏ Modificar', 'flForm(' + r.ID + ')') : '') +
+        (flPuede('ANULAR') ? (r.ACTIVO ? flBtn('btn-d', '✖ Anular', 'flAnular(' + r.ID + ')') : flBtn('btn-s', '↺ Reactivar', 'flReactivar(' + r.ID + ')')) : '') + '</div></td></tr>';
+    }).join('') : '<tr><td colspan="' + (cols.length + 3) + '" class="tc tdim" style="padding:16px">No hay registros con esos filtros.</td></tr>') + '</tbody></table></div>';
+  if (typeof gridPonerBotones_ === 'function') setTimeout(gridPonerBotones_, 30);
+}
+function flFila(id) { return FL_.d.FILAS.filter(function(r) { return r.ID === id; })[0]; }
+function flVer(id) {
+  var d = FL_.d, r = flFila(id); if (!r) return;
+  showModal('<div class="mh"><span class="mt">' + pcEsc(d.TIT) + ' · ' + pcEsc(r.CODIGO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="font-size:14px"><table class="det" style="width:100%">' +
+    d.CAMPOS.map(function(c) { return '<tr><td class="tdim" style="width:40%;padding:4px 6px">' + pcEsc(c[1]) + '</td><td style="padding:4px 6px"><b>' + pcEsc(flValTxt(c, r) || '—') + '</b></td></tr>'; }).join('') +
+    '<tr><td class="tdim" style="padding:4px 6px">Estado</td><td style="padding:4px 6px">' + (r.ACTIVO ? 'Vigente' : 'Anulado · ' + pcEsc(r.MOTIVO)) + '</td></tr><tr><td class="tdim" style="padding:4px 6px">Usado en</td><td style="padding:4px 6px">' + (r.USO || 0) + ' registro(s)</td></tr></table></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="flPdf(' + id + ')">📄 PDF</button><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
+}
+function flPdf(id) {
+  var d = FL_.d, r = flFila(id); if (!r) return;
+  var c = (typeof pcEncImp === 'function' ? pcEncImp(d.TIT, r.CODIGO, '') : '<h1>' + pcEsc(d.TIT) + ' · ' + pcEsc(r.CODIGO) + '</h1>') +
+    '<table class="det"><tbody>' + d.CAMPOS.map(function(c) { return '<tr><td style="width:40%"><b>' + pcEsc(c[1]) + '</b></td><td>' + pcEsc(flValTxt(c, r) || '—') + '</td></tr>'; }).join('') +
+    '<tr><td><b>Estado</b></td><td>' + (r.ACTIVO ? 'Vigente' : 'Anulado · ' + pcEsc(r.MOTIVO)) + '</td></tr></tbody></table>';
+  pcImprimir(d.TIT + ' ' + r.CODIGO, c);
+}
+function flCampoHtml(c, r) {
+  var v = r ? r[c[0]] : '', t = c[2], id = 'fl-f-' + c[0], req = c[3] ? ' *' : '', ayu = c[4] ? '<div class="fl-ayu">' + pcEsc(c[4]) + '</div>' : '', h = '';
+  var full = ['NOMBRE', 'ID_CLIENTE', 'DIRECCION', 'ID_ARTICULO'].indexOf(c[0]) !== -1 && FL_.t !== 'cli_contactos' && FL_.t !== 'mt_choferes';
+  if (t.indexOf('fk:') === 0) {
+    var L = (FL_.d.LISTAS[c[0]] || []).filter(function(x) { return x.A || String(x.V) === String(v); });
+    h = '<select class="fs" id="' + id + '" data-filtro' + (c[0] === 'ID_CLIENTE' && FL_.t === 'cli_contactos' ? ' onchange="flFiltrarBases()"' : '') + '><option value="">' + (c[3] ? '— elegí —' : '— ninguno —') + '</option>' + L.map(function(x) { return '<option value="' + x.V + '"' + (x.P !== undefined ? ' data-p="' + x.P + '"' : '') + (String(x.V) === String(v) ? ' selected' : '') + '>' + pcEsc(x.T) + '</option>'; }).join('') + '</select>';
+  } else if (t.indexOf('sel:') === 0) {
+    h = '<select class="fs" id="' + id + '"><option value="">— elegí —</option>' + flSelOps(c).map(function(x) { return '<option value="' + x[0] + '"' + (String(x[0]) === String(v) ? ' selected' : '') + '>' + pcEsc(x[1]) + '</option>'; }).join('') + '</select>';
+  } else if (t === '01') {
+    h = '<label style="display:flex;gap:8px;align-items:center;min-height:40px"><input type="checkbox" id="' + id + '" style="width:22px;height:22px"' + (Number(v) === 1 ? ' checked' : '') + '> Sí</label>';
+  } else if (t === 'fecha') {
+    var iso = v ? new Date(Number(v)).toISOString().substring(0, 10) : '';
+    h = '<input class="fi" type="date" id="' + id + '" value="' + iso + '">';
+  } else {
+    h = '<input class="fi" id="' + id + '"' + (t === 'cod' ? ' style="text-transform:uppercase"' : '') + (t === 'num' || t === 'dni' ? ' inputmode="decimal"' : '') + (t === 'mail' ? ' type="email"' : '') + (t === 'tel' ? ' type="tel"' : '') + ' value="' + pcEsc(v === undefined || v === null ? '' : v) + '">';
+  }
+  return '<div class="fg' + (full ? ' full' : '') + '"><label class="fl">' + pcEsc(c[1]) + req + '</label>' + h + ayu + '</div>';
+}
+function flForm(id) {
+  var d = FL_.d, r = id ? flFila(id) : null;
+  showModal('<div class="mh"><span class="mt">' + (id ? '✏ Modificar ' + pcEsc(d.UNO) + ' ' + pcEsc(r.CODIGO) : '＋ Agregar ' + pcEsc(d.UNO)) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="fl-frm">' +
+    d.CAMPOS.map(function(c) { return flCampoHtml(c, r); }).join('') + '</div></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="fl-ok" onclick="flGuardar(' + (id || 0) + ')">Guardar</button></div>');
+  if (FL_.t === 'cli_contactos') flFiltrarBases(true);
+}
+// Contactos: la base se elige entre las del cliente elegido
+function flFiltrarBases(inicio) {
+  var cli = $v('fl-f-ID_CLIENTE'), s = $id('fl-f-ID_BASE'); if (!s) return;
+  for (var i = 0; i < s.options.length; i++) { var o = s.options[i], p = o.getAttribute('data-p'); var ve = !p || !cli || p === String(cli); o.hidden = !ve; o.disabled = !ve; if (!ve && o.selected) s.value = ''; }
+  if (!inicio && s.__selb && typeof s.__selb.refrescar === 'function') s.__selb.refrescar();
+}
+async function flGuardar(id) {
+  var d = FL_.d, b = $id('fl-ok'), o = { TABLA: FL_.t, ID: id || '' };
+  d.CAMPOS.forEach(function(c) { var el = $id('fl-f-' + c[0]); if (!el) return;
+    if (c[2] === '01') o[c[0]] = el.checked ? 1 : 0;
+    else if (c[2] === 'fecha') o[c[0]] = el.value ? new Date(el.value + 'T12:00:00').getTime() : '';
+    else o[c[0]] = el.value; });
+  b.disabled = true; b.textContent = 'Guardando…';
+  try { var r = await gsRun('gsCB_CatGuardar', o); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); return; }
+    closeModal(); toast('Guardado ✓ ' + (r.CODIGO || ''), 'g'); await flRecargar();
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Guardar'; } }
+}
+async function flAnular(id) {
+  var r = flFila(id); if (!r) return;
+  var m = await uiPedir('Anular ' + FL_.d.UNO + ' ' + r.CODIGO + (r.USO ? ' (se usa en ' + r.USO + ' registro' + (r.USO === 1 ? '' : 's') + ': siguen igual, pero ya no se puede elegir)' : '') + '. ¿Por qué?', { obligatorio: true });
+  if (m === null) return;
+  var x = await gsRun('gsCB_CatAnular', { TABLA: FL_.t, ID: id, MOTIVO: m }); if (!x || !x.ok) { toast((x && x.error) || 'No se pudo', 'r2'); return; }
+  toast('Anulado ✓', 'g'); await flRecargar();
+}
+async function flReactivar(id) {
+  var x = await gsRun('gsCB_CatAnular', { TABLA: FL_.t, ID: id, REACTIVAR: 1 }); if (!x || !x.ok) { toast((x && x.error) || 'No se pudo', 'r2'); return; }
+  toast('Reactivado ✓', 'g'); await flRecargar();
+}
+// ── Dibujo de una unidad vista desde arriba (frente arriba). Se usa en configuraciones, en la ficha de la unidad y en el mapa. ──
+// pos: [{ID, COD, X, Y, AUX}] · opt: { ancho, fn(pos)->{fill,txt,tit}, click:'fn' }
+function flDibujo(ejes, pos, opt) {
+  opt = opt || {}; var W = opt.ancho || 260, sx = W / 6, rw = sx * 0.78, rh = 46, gy = 78, top = 34, n = ejes.length;
+  var aux = pos.filter(function(p) { return p.AUX; }), H = top + n * gy + (aux.length ? 70 : 20);
+  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;font-family:Arial,sans-serif">';
+  s += '<rect x="' + (sx * 1.55) + '" y="6" width="' + (sx * 2.9) + '" height="' + (top + (n - 1) * gy + 30) + '" rx="10" fill="#e2e8f0" stroke="#94a3b8"/>';
+  s += '<text x="' + (W / 2) + '" y="22" text-anchor="middle" font-size="11" fill="#475569">▲ FRENTE</text>';
+  ejes.forEach(function(e, k) { var y = top + k * gy + rh / 2; s += '<line x1="' + (sx * 0.5) + '" y1="' + y + '" x2="' + (W - sx * 0.5) + '" y2="' + y + '" stroke="#334155" stroke-width="4"' + (e.FLOTANTE ? ' stroke-dasharray="6 4"' : '') + '/>' +
+    '<text x="' + (W / 2) + '" y="' + (y - 6) + '" text-anchor="middle" font-size="10.5" fill="#0f172a" font-weight="700">EJE ' + e.NRO + (e.FUNCION === 'DIRECCION' ? ' · DIR' : e.FUNCION === 'TRACCION' ? ' · TRAC' : '') + (e.FLOTANTE ? ' · FLOT' : '') + '</text>'; });
+  pos.forEach(function(p) {
+    var x, y, w = rw, h = rh;
+    if (p.AUX) { x = sx * 0.5 + p.X * (rw + 10); y = top + n * gy + 8; h = 40; }
+    else { var k = p.Y - 1, xs = { 0: 0.15, 1: 1.05, 3: 3.95 - 0.78 + 0.0, 4: 4.85 - 0.0 }; x = (p.X === 0 ? 0.12 : p.X === 1 ? 0.98 : p.X === 3 ? 4.24 : 5.1) * sx; y = top + k * gy; }
+    var f = opt.fn ? opt.fn(p) : { fill: '#fff', txt: '', tit: p.COD };
+    s += '<g' + (opt.click ? ' style="cursor:pointer" data-eq="' + (opt.eq || '') + '" data-pos="' + p.ID + '" onclick="' + opt.click + '(' + (opt.eq ? opt.eq + ',' : '') + p.ID + ')"' : '') + '><title>' + pcEsc(f.tit || p.COD) + '</title><rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="7" fill="' + (f.fill || '#fff') + '" stroke="' + (f.borde || '#1e293b') + '" stroke-width="' + (f.sel ? 4 : 2) + '"' + (f.vacia ? ' stroke-dasharray="4 3"' : '') + '/>' +
+      '<text x="' + (x + w / 2) + '" y="' + (y + 15) + '" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0f172a">' + pcEsc(p.COD) + '</text>' +
+      (f.txt ? '<text x="' + (x + w / 2) + '" y="' + (y + 30) + '" text-anchor="middle" font-size="' + Math.min(9, w / 5.6).toFixed(1) + '" fill="#0f172a">' + pcEsc(f.txt) + '</text>' : '') + (f.txt2 ? '<text x="' + (x + w / 2) + '" y="' + (y + 41) + '" text-anchor="middle" font-size="8.5" fill="#334155">' + pcEsc(f.txt2) + '</text>' : '') + '</g>';
+  });
+  if (aux.length) s += '<text x="' + (sx * 0.5) + '" y="' + (top + n * gy + 4) + '" font-size="10" fill="#475569">Auxilio' + (aux.length > 1 ? 's' : '') + '</text>';
+  return s + '</svg>';
+}
+// ── Configuraciones de ejes (ABM con dibujo) ──
+function flCfgPintar() {
+  var d = FL_.cfg, F = FL_.F;
+  $id('fl-tit').textContent = '🚛 Configuraciones de ejes'; $id('fl-sub').textContent = 'Flota y cubiertas · las posiciones de rueda se generan solas';
+  $id('fl-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">Configuraciones de ejes</span>' + (flPuede('AGREGAR') ? '<button class="btn btn-p btn-sm" onclick="flCfgForm(0,0)">＋ Nueva configuración</button>' : '') + '</div><div class="card-body">' +
+    '<div class="pc-otf"><div class="fg" style="grid-column:span 3"><label class="fl">Buscar</label><input class="fi" placeholder="Código, nombre…" value="' + pcEsc(F.q) + '" oninput="FL_.F.q=this.value;flCfgGrilla()"></div>' +
+    '<div class="fg" style="grid-column:span 2"><label class="fl">Tipo de unidad</label><select class="fs" onchange="FL_.F.p=this.value;flCfgGrilla()"><option value="">Todos</option>' + d.TIPOS.map(function(x) { return '<option value="' + x.V + '"' + (String(x.V) === String(F.p) ? ' selected' : '') + '>' + pcEsc(x.T) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Estado</label><select class="fs" onchange="FL_.F.est=this.value;flCfgGrilla()">' + [['V', 'Vigentes'], ['A', 'Anuladas'], ['', 'Todas']].map(function(x) { return '<option value="' + x[0] + '"' + (F.est === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></div></div><div id="fl-g" class="mt2"></div></div></div>';
+  flCfgGrilla();
+}
+function flTipoTxt(id) { var t = FL_.cfg.TIPOS.filter(function(x) { return x.V === id; })[0]; return t ? t.T : ''; }
+function flCfg(id) { return FL_.cfg.CONFIGS.filter(function(c) { return c.ID === id; })[0]; }
+function flCfgResumen(c) { return c.EJES.map(function(e) { return e.RODADO === 'DUAL' ? 'D' : 'S'; }).join('-') + ' · ' + c.POS.filter(function(p) { return !p.AUX; }).length + ' ruedas' + (c.AUXILIOS ? ' + ' + c.AUXILIOS + ' aux.' : ''); }
+function flCfgGrilla() {
+  var F = FL_.F, q = String(F.q || '').toUpperCase().trim(), el = $id('fl-g');
+  var l = FL_.cfg.CONFIGS.filter(function(c) { if (F.est === 'V' && !c.ACTIVO) return false; if (F.est === 'A' && c.ACTIVO) return false; if (F.p && String(c.ID_TIPO) !== String(F.p)) return false; return !q || (c.CODIGO + ' ' + c.NOMBRE).toUpperCase().indexOf(q) !== -1; });
+  el.innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> configuraci' + (l.length === 1 ? 'ón' : 'ones') + '</div><div class="tw pc-abm"><table style="font-size:12.5px"><thead><tr><th>Código</th><th>Nombre</th><th>Tipo de unidad</th><th>Ejes</th><th>Unidades</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' +
+    (l.length ? l.map(function(c) { return '<tr' + (c.ACTIVO ? '' : ' style="opacity:.6"') + '><td class="mono">' + pcEsc(c.CODIGO) + '</td><td class="pc-wr"><b>' + pcEsc(c.NOMBRE) + '</b></td><td>' + pcEsc(flTipoTxt(c.ID_TIPO)) + '</td><td>' + pcEsc(flCfgResumen(c)) + '</td><td class="tr">' + c.USO + '</td><td>' + (c.ACTIVO ? '<span class="fl-bd fl-v">Vigente</span>' : '<span class="fl-bd fl-a" title="' + pcEsc(c.MOTIVO) + '">Anulada</span>') + '</td>' +
+      '<td><div class="pc-acc">' + flBtn('btn-s', '👁 Ver', 'flCfgVer(' + c.ID + ')') + flBtn('btn-s', '📄 PDF', 'flCfgPdf(' + c.ID + ')') + (flPuede('EDITAR') && c.ACTIVO ? flBtn('btn-s', '✏ Modificar', 'flCfgForm(' + c.ID + ',0)') : '') + (flPuede('AGREGAR') ? flBtn('btn-s', '⧉ Copiar como nueva', 'flCfgForm(' + c.ID + ',1)') : '') +
+      (flPuede('ANULAR') ? (c.ACTIVO ? flBtn('btn-d', '✖ Anular', 'flCfgAnular(' + c.ID + ')') : flBtn('btn-s', '↺ Reactivar', 'flCfgReactivar(' + c.ID + ')')) : '') + '</div></td></tr>'; }).join('')
+      : '<tr><td colspan="7" class="tc tdim" style="padding:16px">No hay configuraciones con esos filtros.</td></tr>') + '</tbody></table></div>';
+  if (typeof gridPonerBotones_ === 'function') setTimeout(gridPonerBotones_, 30);
+}
+function flCfgVer(id) {
+  var c = flCfg(id); if (!c) return;
+  showModal('<div class="mh"><span class="mt">' + pcEsc(c.CODIGO + ' · ' + c.NOMBRE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="tdim mb2">' + pcEsc(flTipoTxt(c.ID_TIPO)) + ' · ' + pcEsc(flCfgResumen(c)) + ' · ' + c.USO + ' unidad(es)</div><div class="fl-map">' + flDibujo(c.EJES, c.POS, { ancho: 280 }) + '</div>' +
+    '<div class="tdim mt2" style="font-size:12px">Posiciones: ' + c.POS.map(function(p) { return p.COD; }).join(' · ') + '</div></div><div class="mf"><button class="btn btn-s" onclick="flCfgPdf(' + id + ')">📄 PDF</button><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
+}
+function flCfgPdf(id) {
+  var c = flCfg(id); if (!c) return;
+  pcImprimir('Configuración ' + c.CODIGO, (typeof pcEncImp === 'function' ? pcEncImp('Configuración de ejes', c.CODIGO, c.NOMBRE) : '<h1>' + pcEsc(c.NOMBRE) + '</h1>') + '<p>' + pcEsc(flTipoTxt(c.ID_TIPO)) + ' · ' + pcEsc(flCfgResumen(c)) + '</p><div style="text-align:center">' + flDibujo(c.EJES, c.POS, { ancho: 320 }) + '</div>' +
+    '<table class="det"><thead><tr><th>Eje</th><th>Función</th><th>Rodado</th><th>Flotante</th></tr></thead><tbody>' + c.EJES.map(function(e) { return '<tr><td>' + e.NRO + '</td><td>' + e.FUNCION + '</td><td>' + e.RODADO + '</td><td>' + (e.FLOTANTE ? 'Sí' : 'No') + '</td></tr>'; }).join('') + '</tbody></table>');
+}
+// Editor: al crear se elige todo; al modificar solo nombre, código, tipo, función y flotante
+function flCfgForm(id, copia) {
+  var c = id ? flCfg(id) : null, nuevo = !c || copia;
+  FL_.ed = { ID: c && !copia ? c.ID : 0, CODIGO: c && !copia ? c.CODIGO : '', NOMBRE: c ? (copia ? c.NOMBRE + ' (copia)' : c.NOMBRE) : '', ID_TIPO: c ? c.ID_TIPO : 1, AUXILIOS: c ? c.AUXILIOS : 1,
+    EJES: c ? c.EJES.map(function(e) { return { FUNCION: e.FUNCION, RODADO: e.RODADO, FLOTANTE: e.FLOTANTE }; }) : [{ FUNCION: 'DIRECCION', RODADO: 'SIMPLE', FLOTANTE: 0 }, { FUNCION: 'TRACCION', RODADO: 'DUAL', FLOTANTE: 0 }], NUEVO: nuevo };
+  showModal('<div class="mh"><span class="mt">' + (nuevo ? '＋ Nueva configuración de ejes' : '✏ Modificar ' + pcEsc(c.CODIGO)) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" id="fl-cfg-ed"></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="fl-ok" onclick="flCfgGuardar()">Guardar</button></div>');
+  flCfgEd();
+}
+function flCfgPos(ed) { var pos = [], o = 0; ed.EJES.forEach(function(e, k) { var L = e.RODADO === 'DUAL' ? [['IE', 0], ['II', 1], ['DI', 3], ['DE', 4]] : [['I', 0], ['D', 4]]; L.forEach(function(l) { o++; pos.push({ ID: o, COD: 'E' + (k + 1) + '-' + l[0], X: l[1], Y: k + 1, AUX: 0 }); }); });
+  for (var a = 0; a < ed.AUXILIOS; a++) { o++; pos.push({ ID: o, COD: 'AUX' + (a + 1), X: a, Y: ed.EJES.length + 1, AUX: 1 }); } return pos; }
+function flCfgEd() {
+  var ed = FL_.ed, dis = ed.NUEVO ? '' : ' disabled';
+  var ejes = ed.EJES.map(function(e, k) { e.NRO = k + 1; return '<div class="fl-eje"><b>Eje ' + (k + 1) + '</b><select class="fs" onchange="FL_.ed.EJES[' + k + '].FUNCION=this.value;flCfgEd()">' + [['DIRECCION', 'Dirección'], ['TRACCION', 'Tracción'], ['LIBRE', 'Libre']].map(function(x) { return '<option value="' + x[0] + '"' + (e.FUNCION === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>' +
+    '<select class="fs"' + dis + ' onchange="FL_.ed.EJES[' + k + '].RODADO=this.value;flCfgEd()">' + [['SIMPLE', 'Simple · 2'], ['DUAL', 'Dual · 4']].map(function(x) { return '<option value="' + x[0] + '"' + (e.RODADO === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>' +
+    '<label class="fl-fl" style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox"' + (e.FLOTANTE ? ' checked' : '') + ' onchange="FL_.ed.EJES[' + k + '].FLOTANTE=this.checked?1:0;flCfgEd()"> Flotante</label></div>'; }).join('');
+  $id('fl-cfg-ed').innerHTML = (ed.NUEVO ? '' : '<div class="al" style="background:#fff7ed;color:#9a3412;margin-bottom:10px">La cantidad de ejes, simple/dual y los auxilios no se cambian. Para otra estructura usá «Copiar como nueva».</div>') +
+    '<div class="fl-frm"><div class="fg"><label class="fl">Código <span class="tdim">(vacío = se arma con el nombre)</span></label><input class="fi" style="text-transform:uppercase" value="' + pcEsc(ed.CODIGO) + '" oninput="FL_.ed.CODIGO=this.value"></div>' +
+    '<div class="fg"><label class="fl">Tipo de unidad *</label><select class="fs" onchange="FL_.ed.ID_TIPO=Number(this.value)">' + FL_.cfg.TIPOS.filter(function(x) { return x.A || x.V === ed.ID_TIPO; }).map(function(x) { return '<option value="' + x.V + '"' + (x.V === ed.ID_TIPO ? ' selected' : '') + '>' + pcEsc(x.T) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg full"><label class="fl">Nombre *</label><input class="fi" value="' + pcEsc(ed.NOMBRE) + '" oninput="FL_.ed.NOMBRE=this.value"></div></div>' +
+    '<div style="display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:10px" class="fl-cfg-g"><div><div class="fl mb2">Ejes (del frente hacia atrás)</div>' + ejes +
+    (ed.NUEVO ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-s btn-sm" onclick="if(FL_.ed.EJES.length<9){FL_.ed.EJES.push({FUNCION:\'LIBRE\',RODADO:\'DUAL\',FLOTANTE:0});flCfgEd()}">＋ Agregar eje</button><button class="btn btn-s btn-sm" onclick="if(FL_.ed.EJES.length>1){FL_.ed.EJES.pop();flCfgEd()}">－ Quitar el último</button></div>' : '') +
+    '<div class="fg mt2"><label class="fl">Auxilios</label><select class="fs"' + dis + ' onchange="FL_.ed.AUXILIOS=Number(this.value);flCfgEd()">' + [0, 1, 2, 3, 4].map(function(n) { return '<option' + (n === ed.AUXILIOS ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></div></div>' +
+    '<div class="fl-map">' + flDibujo(ed.EJES, flCfgPos(ed), { ancho: 300 }) + '</div></div>';
+}
+async function flCfgGuardar() {
+  var ed = FL_.ed, b = $id('fl-ok'); b.disabled = true; b.textContent = 'Guardando…';
+  try { var r = await gsRun('gsCB_ConfigGuardar', { ID: ed.ID || '', CODIGO: ed.CODIGO, NOMBRE: ed.NOMBRE, ID_TIPO: ed.ID_TIPO, AUXILIOS: ed.AUXILIOS, EJES: ed.EJES });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); return; }
+    closeModal(); toast('Configuración guardada ✓', 'g'); await flRecargar();
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Guardar'; } }
+}
+async function flCfgAnular(id) {
+  var c = flCfg(id); var m = await uiPedir('Anular la configuración ' + c.CODIGO + (c.USO ? ' (la usan ' + c.USO + ' unidades: siguen igual, pero ya no se puede elegir)' : '') + '. ¿Por qué?', { obligatorio: true }); if (m === null) return;
+  var x = await gsRun('gsCB_CatAnular', { TABLA: 'cb_config', ID: id, MOTIVO: m }); if (!x || !x.ok) { toast((x && x.error) || 'No se pudo', 'r2'); return; } toast('Anulada ✓', 'g'); await flRecargar();
+}
+async function flCfgReactivar(id) { var x = await gsRun('gsCB_CatAnular', { TABLA: 'cb_config', ID: id, REACTIVAR: 1 }); if (!x || !x.ok) { toast((x && x.error) || 'No se pudo', 'r2'); return; } toast('Reactivada ✓', 'g'); await flRecargar(); }
+
+// ════════════════════════════════════════════════════════════════
+// MAPA DE CUBIERTAS (13/11/2026): la unidad vista desde arriba con su acoplado enganchado «como arrastrando».
+// Tocar/arrastrar: de la lista a una rueda = montar · de una rueda a otra = rotar (si está ocupada se intercambian) · tocar una rueda = su ficha.
+// Todo queda como movimiento de la cubierta (con su marca grabada), con km y medición.
+// ════════════════════════════════════════════════════════════════
+var FLM_ = { d: null, eq: '', cli: '', sel: null, drag: null };
+function flmCubTxt(c) { return c ? (c.MARCA || 'sin marca') + ' · ' + (c.MEDIDA || '') + (c.FAB ? ' · ' + c.FAB : '') : ''; }
+function flmColor(c) { if (!c) return '#ffffff'; if (c.GRAV === 2) return '#fecaca'; if (c.GRAV === 1) return '#fde68a'; if (c.GRAV === 0) return '#bbf7d0'; return '#e0f2fe'; }
+async function flmCargar(idEq) {
+  var r = await gsRun('gsCB_Mapa', idEq || ''); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo cargar', 'r2'); return; }
+  FLM_.d = r; if (idEq) FLM_.eq = String(idEq); flmPintar();
+}
+async function renderMapaCub() {
+  $id('fl-tit').textContent = '🚛 Mapa de cubiertas'; $id('fl-sub').textContent = 'Flota y cubiertas · tocá o arrastrá: de la lista a una rueda, o de una rueda a otra';
+  FLM_.sel = null; await flmCargar(FLM_.eq);
+}
+function flmUnidades() { var d = FLM_.d; return d.UNIDADES.filter(function(u) { return !FLM_.cli || String(u.ID_CLIENTE) === String(FLM_.cli); }); }
+function flmPintar() {
+  var d = FLM_.d, clis = {}; d.UNIDADES.forEach(function(u) { if (u.ID_CLIENTE) clis[u.ID_CLIENTE] = u.CLIENTE; });
+  var h = '<div class="card mb3"><div class="card-body"><div class="pc-otf">' +
+    '<div class="fg" style="grid-column:span 2"><label class="fl">Cliente</label><select class="fs" id="flm-cli" data-filtro onchange="FLM_.cli=this.value;FLM_.eq=\'\';FLM_.d.UNIDAD=null;flmPintar()"><option value="">Todos</option>' + Object.keys(clis).sort(function(a, b) { return clis[a] < clis[b] ? -1 : 1; }).map(function(k) { return '<option value="' + k + '"' + (String(k) === String(FLM_.cli) ? ' selected' : '') + '>' + pcEsc(clis[k]) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg" style="grid-column:span 3"><label class="fl">Unidad (patente, interno, marca)</label><select class="fs" id="flm-eq" data-filtro onchange="flmCargar(this.value)"><option value="">— elegí la unidad —</option>' + flmUnidades().map(function(u) { return '<option value="' + u.ID + '"' + (String(u.ID) === String(FLM_.eq) ? ' selected' : '') + '>' + pcEsc(u.IDENT + ' · ' + u.MM + ' · ' + u.CLIENTE + (u.CFG ? '' : ' (sin configuración de ejes)')) + '</option>'; }).join('') + '</select></div>' +
+    '</div></div></div><div id="flm-body"></div>';
+  $id('fl-body').innerHTML = h;
+  if (!d.UNIDAD) { $id('flm-body').innerHTML = '<div class="tdim" style="padding:16px">Elegí una unidad para ver su mapa de cubiertas.</div>'; return; }
+  flmMapa();
+}
+function flmUnidadBloque(u, esAcop) {
+  var monta = {}; (u.MONT || []).forEach(function(m) { monta[m.ID_POS] = m; });
+  var sel = FLM_.sel, dib = u.CFG ? flDibujo(u.CFG.EJES, u.CFG.POS, { ancho: 340, eq: u.ID, click: 'flmClickPos', fn: function(p) { var m = monta[p.ID], c = m && m.C;
+      var esSel = sel && sel.t === 'POS' && String(sel.eq) === String(u.ID) && String(sel.pos) === String(p.ID);
+      return { fill: flmColor(c), txt: c ? c.MARCA : '', txt2: c ? (c.PROF !== '' ? c.PROF + ' mm' : '') : 'vacía', tit: p.COD + (c ? ' · ' + flmCubTxt(c) + (c.DOT ? ' · DOT ' + c.DOT : '') : ' · vacía'), sel: esSel, borde: esSel ? '#2563eb' : '#1e293b', vacia: !c }; } })
+    : '<div class="al">Esta unidad no tiene configuración de ejes. Asignala en Equipos → Modificar.</div>';
+  return '<div class="card mb2" style="' + (esAcop ? 'border-top:6px solid #94a3b8' : '') + '"><div class="card-hd"><span class="card-title">' + (esAcop ? '⛓ ' : '🚚 ') + pcEsc(u.IDENT) + ' · ' + pcEsc((u.MARCA + ' ' + u.MODELO).trim()) + '</span><span class="tdim" style="font-size:12px">' + (u.CFG ? pcEsc(u.CFG.NOMBRE) : '') + ' · ' + (esAcop ? 'km ' + Number(u.KM || 0).toLocaleString('es-AR') + ' acumulados' : Number(u.KM || 0).toLocaleString('es-AR') + ' km') + '</span></div>' +
+    '<div class="card-body"><div class="fl-map">' + dib + '</div>' + (esAcop && u.ENGANCHE ? '<div class="mt2" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="tdim" style="font-size:12px">Enganchado ' + pcEsc(u.ENGANCHE.NRO) + ' desde ' + fmtD(u.ENGANCHE.DESDE) + ' (km tractor ' + Number(u.ENGANCHE.KM_DESDE).toLocaleString('es-AR') + ')</span>' + flBtn('btn-s', '⛓ Desenganchar / traspaso', 'flmDesenganchar(' + u.ENGANCHE.ID + ',' + u.ID + ')') + '</div>' : '') + '</div></div>';
+}
+function flmMapa() {
+  var d = FLM_.d, u = d.UNIDAD;
+  var izq = flmUnidadBloque(u, false) + d.ACOPLADOS.map(function(a) { return flmUnidadBloque(a, true); }).join('') +
+    (u.ID_TIPO === 1 ? '<div class="mb3">' + flBtn('btn-s', '⛓ Enganchar acoplado', 'flmEnganchar(' + u.ID + ')') + '</div>' : '');
+  var lista = function(tit, ub, arr) { return '<div class="card mb2"><div class="card-hd"><span class="card-title">' + tit + ' <span class="tdim">(' + arr.length + ')</span></span></div><div class="card-body" style="padding:6px"><div class="tw" data-noimp="1" style="max-height:230px;overflow:auto"><table style="font-size:12px"><thead><tr><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Fabricante</th><th>Dibujo</th></tr></thead><tbody>' +
+    (arr.length ? arr.map(function(c) { var esSel = FLM_.sel && FLM_.sel.t === 'LISTA' && FLM_.sel.c === c.ID; return '<tr data-cas="' + c.ID + '" data-ub="' + ub + '" style="cursor:pointer;' + (esSel ? 'background:#dbeafe;font-weight:700' : '') + '" onclick="flmClickLista(' + c.ID + ',\'' + ub + '\')"><td class="mono">' + pcEsc(c.MARCA) + '</td><td>' + pcEsc(c.DOT || '—') + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FAB) + '</td><td>' + (c.PROF !== '' ? c.PROF + ' mm' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="tdim tc">No hay.</td></tr>') + '</tbody></table></div></div></div>'; };
+  var der = '<div id="flm-ficha"></div>' +
+    lista('📦 En nuestro depósito (del cliente y de Vulcan)', 'DEPOSITO', d.DISP.DEPOSITO) + lista('🏢 Del cliente, en su poder (no montadas)', 'CLIENTE', d.DISP.CLIENTE) + lista('🏭 En el taller (recapado)', 'TALLER', d.DISP.TALLER) +
+    '<div class="card"><div class="card-body" style="display:flex;gap:6px;flex-wrap:wrap">' + flBtn('btn-s', '＋ Alta de cubierta (relevamiento)', 'flmAlta()') + flBtn('btn-s', '🖨 Imprimir mapa', 'flmImprimir()') + '</div></div>';
+  $id('flm-body').innerHTML = '<div class="flm-g" style="display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:12px;align-items:start"><div>' + izq + '</div><div>' + der + '</div></div>' +
+    '<div class="tdim" style="font-size:12px;margin-top:6px">Colores: <span style="background:#bbf7d0;padding:0 6px">bien</span> <span style="background:#fde68a;padding:0 6px">observar</span> <span style="background:#fecaca;padding:0 6px">sacar</span> <span style="background:#e0f2fe;padding:0 6px">sin medir</span> · línea punteada = posición vacía · eje punteado = flotante</div>';
+  if (!document.getElementById('flm-css')) { var st = document.createElement('style'); st.id = 'flm-css'; st.textContent = '.flm-g>div{min-width:0}@media(max-width:800px){.flm-g{grid-template-columns:1fr!important}}'; document.head.appendChild(st); }
+  flmFicha(); flmArrastre();
+  if (FLM_.sel && FLM_.sel.t === 'POS' && window.innerWidth < 800) { var fi = $id('flm-ficha'); if (fi) fi.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+}
+function flmTodas() { var d = FLM_.d; return [d.UNIDAD].concat(d.ACOPLADOS); }
+function flmUnidad(id) { return flmTodas().filter(function(u) { return String(u.ID) === String(id); })[0]; }
+function flmMontaje(eq, pos) { var u = flmUnidad(eq); return u ? (u.MONT || []).filter(function(m) { return String(m.ID_POS) === String(pos); })[0] : null; }
+function flmPosCod(eq, pos) { var u = flmUnidad(eq); var p = u && u.CFG ? u.CFG.POS.filter(function(x) { return String(x.ID) === String(pos); })[0] : null; return p ? p.COD : ''; }
+function flmCasLista(id) { var D = FLM_.d.DISP, r = null; ['DEPOSITO', 'CLIENTE', 'TALLER'].forEach(function(k) { D[k].forEach(function(c) { if (c.ID === id) r = c; }); }); return r; }
+// Tocar: si había algo elegido, es el destino; si no, se elige
+function flmClickPos(eq, pos) {
+  if (FLM_.ignorarClick) { FLM_.ignorarClick = false; return; }
+  var s = FLM_.sel, m = flmMontaje(eq, pos);
+  if (s && s.t === 'LISTA') { if (m) { toast('Esa rueda ya tiene cubierta: sacala o rotala primero', 'r2'); return; } return flmAccion(s.ub === 'DEPOSITO' ? 'MONTAJE' : s.ub === 'CLIENTE' ? 'MONTAJE_CLI' : '', s.c, eq, pos); }
+  if (s && s.t === 'POS' && s.rotar) { var ms = flmMontaje(s.eq, s.pos); if (!(String(s.eq) === String(eq) && String(s.pos) === String(pos))) return flmAccion('ROTACION', ms.C.ID, eq, pos); }
+  FLM_.sel = { t: 'POS', eq: eq, pos: pos }; flmMapa();
+}
+function flmClickLista(id, ub) { var s = FLM_.sel; FLM_.sel = s && s.t === 'LISTA' && s.c === id ? null : { t: 'LISTA', c: id, ub: ub }; flmMapa(); if (FLM_.sel) toast('Ahora tocá la rueda donde la montás', 'b'); }
+// Arrastrar con mouse o dedo (se suelta sobre una rueda)
+function flmArrastre() {
+  var cont = $id('flm-body'); if (!cont || cont._arr) return; cont._arr = 1;
+  var origen = function(t) { var g = t.closest && t.closest('[data-pos],[data-cas]'); return g; };
+  var ini = function(ev) { var o = origen(ev.target); if (!o) return; FLM_.drag = o.hasAttribute('data-pos') ? { t: 'POS', eq: o.getAttribute('data-eq'), pos: o.getAttribute('data-pos') } : { t: 'LISTA', c: Number(o.getAttribute('data-cas')), ub: o.getAttribute('data-ub') }; FLM_.dragXY = ev.touches ? [ev.touches[0].clientX, ev.touches[0].clientY] : [ev.clientX, ev.clientY]; };
+  var fin = function(ev) { var dr = FLM_.drag; FLM_.drag = null; if (!dr) return; var xy = ev.changedTouches ? [ev.changedTouches[0].clientX, ev.changedTouches[0].clientY] : [ev.clientX, ev.clientY];
+    if (Math.abs(xy[0] - FLM_.dragXY[0]) + Math.abs(xy[1] - FLM_.dragXY[1]) < 12) return; // fue un toque, lo maneja el click
+    var el = document.elementFromPoint(xy[0], xy[1]), dest = el && el.closest ? el.closest('[data-pos]') : null; if (!dest) return;
+    FLM_.ignorarClick = true; setTimeout(function() { FLM_.ignorarClick = false; }, 400);
+    var eq = dest.getAttribute('data-eq'), pos = dest.getAttribute('data-pos');
+    if (dr.t === 'LISTA') { FLM_.sel = dr; flmClickPos(eq, pos); return; }
+    if (dr.t === 'POS') { var m = flmMontaje(dr.eq, dr.pos); if (!m) return; if (String(dr.eq) === String(eq) && String(dr.pos) === String(pos)) return; flmAccion('ROTACION', m.C.ID, eq, pos); } };
+  cont.addEventListener('mousedown', ini); document.addEventListener('mouseup', fin); cont.addEventListener('touchstart', ini, { passive: true }); cont.addEventListener('touchend', fin);
+}
+function flmFicha() {
+  var el = $id('flm-ficha'), s = FLM_.sel; if (!el) return;
+  if (!s) { el.innerHTML = '<div class="card mb2"><div class="card-body tdim" style="font-size:13px">Tocá una rueda para ver su cubierta, o elegí una cubierta de la lista y tocá la rueda donde se monta.</div></div>'; return; }
+  if (s.t === 'LISTA') { var c0 = flmCasLista(s.c); el.innerHTML = '<div class="card mb2" style="border:2px solid #2563eb"><div class="card-body"><b>' + pcEsc(flmCubTxt(c0)) + '</b>' + (c0 && c0.DOT ? ' · <span class="tdim">DOT</span> ' + pcEsc(c0.DOT) : '') + '<div class="tdim mt2">Tocá la rueda donde la montás (o arrastrala).' + (s.ub === 'TALLER' ? ' <b>Está en el taller: primero tiene que volver al depósito.</b>' : '') + '</div><div class="mt2" style="display:flex;gap:6px;flex-wrap:wrap">' + flBtn('btn-s', '📜 Vida', 'flmVida(' + s.c + ')') + flBtn('btn-s', '✖ Soltar', 'FLM_.sel=null;flmMapa()') + '</div></div></div>'; return; }
+  var m = flmMontaje(s.eq, s.pos), cod = flmPosCod(s.eq, s.pos), u = flmUnidad(s.eq);
+  if (!m) { el.innerHTML = '<div class="card mb2" style="border:2px solid #2563eb"><div class="card-body"><b>' + pcEsc(u.IDENT) + ' · ' + pcEsc(cod) + '</b> · vacía<div class="tdim mt2">Elegí una cubierta de la lista y tocá esta rueda, o dala de alta si ya estaba montada y nunca la registramos.</div><div class="mt2">' + flBtn('btn-p', '＋ Alta de cubierta en esta rueda', 'flmAlta()') + '</div></div></div>'; return; }
+  var c = m.C, A = function(cod2, txt) { return flBtn('btn-s', txt, 'flmAccion(\'' + cod2 + '\',' + c.ID + ',' + s.eq + ',' + s.pos + ')'); };
+  el.innerHTML = '<div class="card mb2" style="border:2px solid #2563eb"><div class="card-hd"><span class="card-title">' + pcEsc(u.IDENT) + ' · ' + pcEsc(cod) + '</span><span class="tdim" style="font-size:12px">desde ' + fmtD(m.DESDE) + ' · km ' + Number(m.KM_DESDE).toLocaleString('es-AR') + '</span></div><div class="card-body" style="font-size:13.5px">' +
+    '<div><span class="tdim">Marca grabada</span> <b class="mono">' + pcEsc(c.MARCA) + '</b> · <span class="tdim">DOT</span> <b>' + pcEsc(c.DOT || '—') + '</b></div><div>' + pcEsc(c.MEDIDA) + ' · ' + pcEsc(c.FAB) + ' · ' + (c.RECAP ? 'recapada ' + c.RECAP + ' vez/veces' : 'sin recapar') + '</div>' +
+    '<div>' + (c.FMED ? 'Última medición ' + fmtD(c.FMED) + ': ' + (c.PROF !== '' ? c.PROF + ' mm · ' : '') + (c.PRES !== '' ? c.PRES + ' PSI · ' : '') + pcEsc(c.EST) : '<span class="tdim">Sin mediciones</span>') + '</div>' +
+    '<div class="mt2" style="display:flex;gap:6px;flex-wrap:wrap">' + flBtn(s.rotar ? 'btn-p' : 'btn-s', '🔄 Rotar', 'FLM_.sel.rotar=!FLM_.sel.rotar;flmMapa();if(FLM_.sel.rotar)toast(\'Tocá la rueda de destino\',\'b\')') + A('INSPECCION', '📏 Medir') + A('CALIBRADO', '🛞 Calibrar') + A('REPARACION', '🔧 Reparar') + A('ROTURA', '⚠ Rotura') +
+    A('DESMONTAJE', '📦 Sacar al depósito') + A('DESMONTAJE_CLI', '🏢 Sacar: queda al cliente') + A('DESMONTAJE_TALLER', '🏭 Sacar a recapado') + A('BAJA', '✖ Baja') + flBtn('btn-s', '📜 Vida', 'flmVida(' + c.ID + ')') + '</div></div></div>';
+}
+function flmTipo(cod) { return FLM_.d.TIPOS_MOV.filter(function(t) { return t.COD === cod; })[0]; }
+function flmKmDe(eq) { var u = flmUnidad(eq), d = FLM_.d; if (!u) return { km: 0, txt: '' }; if (u.ENGANCHE) return { km: d.UNIDAD.KM, txt: 'Km del tractor ' + d.UNIDAD.IDENT + ' (el que lleva el acoplado)' }; return { km: u.KM, txt: 'Km de ' + u.IDENT }; }
+// Ventana para confirmar un movimiento: km, en llanta, medición, causa, observaciones
+function flmAccion(cod, idCasco, eq, pos) {
+  if (!cod) { toast('Esa cubierta está en el taller: primero tiene que volver al depósito', 'r2'); return; }
+  var t = flmTipo(cod), d = FLM_.d; if (!t) return;
+  var c = flmCasLista(idCasco) || (function() { var r = null; flmTodas().forEach(function(u) { (u.MONT || []).forEach(function(m) { if (m.C && m.C.ID === idCasco) r = m.C; }); }); return r; })();
+  var origen = '', mo = null; flmTodas().forEach(function(u) { (u.MONT || []).forEach(function(m) { if (m.C && m.C.ID === idCasco) { mo = m; origen = u.IDENT + ' ' + flmPosCod(u.ID, m.ID_POS); } }); });
+  var destino = (t.HACIA === 'UNIDAD' ? flmUnidad(eq).IDENT + ' ' + flmPosCod(eq, pos) : { DEPOSITO: 'nuestro depósito', CLIENTE: 'queda al cliente', TALLER: 'taller de recapado', BAJA: 'baja definitiva', MISMO: 'donde está' }[t.HACIA]);
+  var otro = cod === 'ROTACION' ? flmMontaje(eq, pos) : null;
+  var kmEq = t.HACIA === 'UNIDAD' ? eq : (mo ? (flmTodas().filter(function(u) { return (u.MONT || []).indexOf(mo) !== -1; })[0] || {}).ID : eq), km = flmKmDe(kmEq), tocaU = t.HACIA === 'UNIDAD' || t.DESDE === 'UNIDAD' || !!mo;
+  FLM_.acc = { COD: cod, ID_CASCO: idCasco, ID_EQUIPO: t.HACIA === 'UNIDAD' && cod !== 'ROTACION' ? eq : (mo ? kmEq : eq), ID_POSICION: pos, ID_EQUIPO_DEST: eq, MED: t.MED, CAU: t.CAU, TOCA: tocaU };
+  showModal('<div class="mh"><span class="mt">' + pcEsc(t.N) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="font-size:14px">' +
+    '<div><span class="tdim">Cubierta</span> <b class="mono">' + pcEsc(c ? c.MARCA : '') + '</b> · <span class="tdim">DOT</span> ' + pcEsc((c && c.DOT) || '—') + ' · ' + pcEsc(c ? c.MEDIDA + ' ' + c.FAB : '') + '</div>' +
+    '<div><span class="tdim">De</span> <b>' + pcEsc(origen || { DEPOSITO: 'nuestro depósito', CLIENTE: 'el cliente', TALLER: 'el taller' }[t.DESDE] || '—') + '</b> <span class="tdim">a</span> <b>' + pcEsc(destino || '') + '</b>' + (otro ? ' <span class="al" style="display:inline-block;padding:2px 6px;margin:0">se intercambia con ' + pcEsc(otro.C.MARCA) + '</span>' : '') + '</div>' +
+    '<div class="fl-frm mt2">' + (tocaU ? '<div class="fg"><label class="fl">' + pcEsc(km.txt) + ' *</label><input class="fi" id="flm-km" inputmode="numeric" value="' + (km.km === undefined || km.km === null ? '' : km.km) + '"></div>' : '') +
+    ((t.HACIA === 'UNIDAD' || t.DESDE === 'UNIDAD') && cod !== 'ROTACION' ? '<div class="fg"><label class="fl">¿Con llanta?</label><label style="display:flex;gap:8px;align-items:center;min-height:40px"><input type="checkbox" id="flm-llanta" style="width:22px;height:22px"> Sí, armada en llanta</label></div>' : '') +
+    (t.CAU ? '<div class="fg full"><label class="fl">Causa *</label><select class="fs" id="flm-cau"><option value="">— elegí —</option>' + d.CAUSAS.map(function(x) { return '<option value="' + x.V + '">' + pcEsc(x.T) + '</option>'; }).join('') + '</select></div>' : '') +
+    '<div class="fg"><label class="fl">Estado de la cubierta' + (t.MED ? ' *' : '') + '</label><select class="fs" id="flm-est"><option value="">' + (t.MED ? '— elegí —' : '— sin medir —') + '</option>' + d.ESTADOS.map(function(x) { return '<option value="' + x.V + '">' + pcEsc(x.T) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Dibujo (mm)</label><input class="fi" id="flm-prof" inputmode="decimal"></div><div class="fg"><label class="fl">Presión (PSI)</label><input class="fi" id="flm-pres" inputmode="decimal"></div>' +
+    '<div class="fg full"><label class="fl">Observaciones</label><input class="fi" id="flm-obs"></div></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="flm-ok" onclick="flmAccionOk()">Confirmar</button></div>');
+}
+async function flmAccionOk() {
+  var a = FLM_.acc, b = $id('flm-ok'), o = { COD: a.COD, ID_CASCO: a.ID_CASCO, ID_EQUIPO: a.ID_EQUIPO, ID_POSICION: a.ID_POSICION, ID_EQUIPO_DEST: a.ID_EQUIPO_DEST, KM: $id('flm-km') ? $v('flm-km').replace(/\./g, '') : '', EN_LLANTA: $id('flm-llanta') ? ($id('flm-llanta').checked ? 1 : 0) : '', ID_CAUSA: $id('flm-cau') ? $v('flm-cau') : '', OBS: $v('flm-obs') };
+  if ($v('flm-est')) o.MED = { ID_ESTADO: $v('flm-est'), PROF: $v('flm-prof').replace(',', '.'), PRES: $v('flm-pres').replace(',', '.') };
+  b.disabled = true; b.textContent = 'Guardando…';
+  try { var r = await gsRun('gsCB_Mover', o); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    closeModal(); toast('Listo ✓ ' + r.MOVS.join(' · '), 'g'); FLM_.sel = null; await flmCargar(FLM_.eq);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Confirmar'; } }
+}
+// Alta de una cubierta que ya estaba montada (primera vez que la registramos): queda con su marca grabada y se ubica en la rueda elegida
+function flmAlta() {
+  var s = FLM_.sel, d = FLM_.d; if (!s || s.t !== 'POS' || flmMontaje(s.eq, s.pos)) { toast('Primero tocá la rueda vacía donde está la cubierta', 'r2'); return; }
+  var u = flmUnidad(s.eq), km = flmKmDe(s.eq);
+  showModal('<div class="mh"><span class="mt">＋ Alta de cubierta · ' + pcEsc(u.IDENT + ' ' + flmPosCod(s.eq, s.pos)) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="fl-frm">' +
+    '<div class="fg"><label class="fl">Medida *</label><select class="fs" id="fla-med" data-filtro><option value="">— elegí —</option>' + d.MEDIDAS.map(function(m) { return '<option>' + pcEsc(m) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Marca del fabricante *</label><select class="fs" id="fla-mar" data-filtro><option value="">— elegí —</option>' + d.MARCAS_CUB.map(function(m) { return '<option value="' + pcEsc(m.V) + '">' + pcEsc(m.T) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">DOT <span class="tdim">(como está en la cubierta; si no se lee, vacío)</span></label><input class="fi" id="fla-dot" style="text-transform:uppercase"></div>' +
+    '<div class="fg"><label class="fl">Marca grabada <span class="tdim">(si ya tiene; vacío = el sistema da una nueva para grabar)</span></label><input class="fi" id="fla-mk" style="text-transform:uppercase"></div>' +
+    '<div class="fg"><label class="fl">Es</label><select class="fs" id="fla-ori"><option value="CASCO_CLIENTE">Usada / recapada</option><option value="NUEVA">Nueva</option></select></div>' +
+    '<div class="fg"><label class="fl">' + pcEsc(km.txt) + ' *</label><input class="fi" id="fla-km" inputmode="numeric" value="' + (km.km === undefined || km.km === null ? '' : km.km) + '"></div>' +
+    '<div class="fg"><label class="fl">Estado *</label><select class="fs" id="fla-est"><option value="">— elegí —</option>' + d.ESTADOS.map(function(x) { return '<option value="' + x.V + '">' + pcEsc(x.T) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Dibujo (mm)</label><input class="fi" id="fla-prof" inputmode="decimal"></div><div class="fg"><label class="fl">Presión (PSI)</label><input class="fi" id="fla-pres" inputmode="decimal"></div></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="fla-ok" onclick="flmAltaOk()">Dar de alta y ubicar</button></div>');
+}
+async function flmAltaOk() {
+  var s = FLM_.sel, u = flmUnidad(s.eq), b = $id('fla-ok');
+  if (!$v('fla-est')) { toast('Elegí el estado de la cubierta', 'r2'); return; }
+  b.disabled = true; b.textContent = 'Guardando…';
+  try { var r = await gsRun('gsCB_CascoAlta', { ID_CLIENTE: u.ID_CLIENTE, MEDIDA: $v('fla-med'), ID_MARCA: $v('fla-mar'), DOT: $v('fla-dot'), MARCA: $v('fla-mk'), ORIGEN: $v('fla-ori') });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    var m = await gsRun('gsCB_Mover', { COD: 'RELEVAMIENTO', ID_CASCO: r.ID_CASCO, ID_EQUIPO: s.eq, ID_POSICION: s.pos, KM: $v('fla-km').replace(/\./g, ''), MED: { ID_ESTADO: $v('fla-est'), PROF: $v('fla-prof').replace(',', '.'), PRES: $v('fla-pres').replace(',', '.') } });
+    if (!m || !m.ok) { toast('La cubierta ' + r.MARCA + ' quedó dada de alta pero no se ubicó: ' + ((m && m.error) || ''), 'r2'); await flmCargar(FLM_.eq); return; }
+    closeModal(); toast('Cubierta ' + r.MARCA + ' dada de alta y ubicada ✓ (grabarle esa marca)', 'g'); FLM_.sel = null; await flmCargar(FLM_.eq);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Dar de alta y ubicar'; } }
+}
+// Enganchar un acoplado / desenganchar (traspaso), con el control de las cubiertas del acoplado
+function flmControlTabla(u) { var d = FLM_.d; return '<div class="fl mt2">Control de las cubiertas del acoplado ' + pcEsc(u ? u.IDENT : '') + ' ' + (u && u.MONT.length ? flBtn('btn-s', '✔ Todas bien', 'document.querySelectorAll(\'.flm-ce\').forEach(function(s){s.value=\'1\'})') : '') + '</div>' +
+  (u && u.MONT.length ? '<div class="tw" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Rueda</th><th>Marca grabada</th><th>Estado *</th><th>Dibujo mm</th><th>PSI</th></tr></thead><tbody>' + u.MONT.map(function(m) { return '<tr data-cas="' + m.C.ID + '"><td>' + pcEsc(flmPosCod(u.ID, m.ID_POS)) + '</td><td class="mono">' + pcEsc(m.C.MARCA) + '</td><td><select class="fs flm-ce" style="min-width:130px"><option value="">—</option>' + d.ESTADOS.map(function(x) { return '<option value="' + x.V + '">' + pcEsc(x.T) + '</option>'; }).join('') + '</select></td><td><input class="fi flm-cp" inputmode="decimal" style="width:70px"></td><td><input class="fi flm-cpr" inputmode="decimal" style="width:70px"></td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="tdim">El acoplado no tiene cubiertas registradas.</div>'); }
+function flmLeerControl() { return Array.prototype.map.call(document.querySelectorAll('.mo tr[data-cas]'), function(tr) { return { ID_CASCO: Number(tr.getAttribute('data-cas')), ID_ESTADO: tr.querySelector('.flm-ce').value, PROF: tr.querySelector('.flm-cp').value.replace(',', '.'), PRES: tr.querySelector('.flm-cpr').value.replace(',', '.') }; }); }
+async function flmEnganchar(idTr) {
+  var d = FLM_.d, u = d.UNIDAD, acops = d.UNIDADES.filter(function(x) { return x.ID_TIPO === 2 && String(x.ID_CLIENTE) === String(u.ID_CLIENTE); });
+  showModal('<div class="mh"><span class="mt">⛓ Enganchar acoplado a ' + pcEsc(u.IDENT) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="fl-frm">' +
+    '<div class="fg full"><label class="fl">Acoplado / semirremolque *</label><select class="fs" id="fle-ac" data-filtro onchange="flmEngAcop()"><option value="">— elegí —</option>' + acops.map(function(a) { return '<option value="' + a.ID + '">' + pcEsc(a.IDENT + ' · ' + a.MM) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Km del tractor *</label><input class="fi" id="fle-km" inputmode="numeric" value="' + (u.KM || '') + '"></div>' +
+    '<div class="fg"><label class="fl">Chofer</label><select class="fs" id="fle-ch" data-filtro><option value="">—</option>' + d.CHOFERES.filter(function(c) { return String(c.P) === String(u.ID_CLIENTE); }).map(function(c) { return '<option value="' + c.V + '">' + pcEsc(c.T) + '</option>'; }).join('') + '</select></div></div><div id="fle-ctrl" class="tdim mt2">Elegí el acoplado para controlar sus cubiertas.</div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="fle-ok" onclick="flmEngancharOk(' + idTr + ')">Enganchar</button></div>');
+}
+async function flmEngAcop() { var id = $v('fle-ac'), el = $id('fle-ctrl'); if (!id) { el.innerHTML = ''; return; } el.innerHTML = 'Cargando…'; var r = await gsRun('gsCB_Mapa', id); if (!r || !r.ok) { el.innerHTML = pcEsc((r && r.error) || ''); return; }
+  var a = String(r.UNIDAD.ID) === String(id) ? r.UNIDAD : r.ACOPLADOS.filter(function(x) { return String(x.ID) === String(id); })[0]; if (a && a.ENGANCHE) { el.innerHTML = '<div class="al">Ese acoplado está enganchado a ' + pcEsc(r.UNIDAD.IDENT) + ': desengancharlo primero.</div>'; return; }
+  FLM_.engAc = a; el.innerHTML = flmControlTabla(a); }
+async function flmEngancharOk(idTr) {
+  var b = $id('fle-ok'); b.disabled = true;
+  try { var r = await gsRun('gsCB_Enganchar', { ID_TRACTOR: idTr, ID_ACOPLADO: $v('fle-ac'), KM: $v('fle-km').replace(/\./g, ''), ID_CHOFER: $v('fle-ch'), MEDS: flmLeerControl() });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Enganchado ✓ ' + r.NRO, 'g'); await flmCargar(FLM_.eq);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
+}
+function flmDesenganchar(idEng, idAc) {
+  var d = FLM_.d, a = flmUnidad(idAc);
+  showModal('<div class="mh"><span class="mt">⛓ Desenganchar ' + pcEsc(a.IDENT) + ' de ' + pcEsc(d.UNIDAD.IDENT) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="tdim">Para pasarlo a otro camión: desenganchalo acá y después enganchalo al otro (cada paso con el control de sus cubiertas).</div><div class="fl-frm mt2">' +
+    '<div class="fg"><label class="fl">Km del tractor ' + pcEsc(d.UNIDAD.IDENT) + ' *</label><input class="fi" id="fld-km" inputmode="numeric" value="' + (d.UNIDAD.KM || '') + '"></div></div>' + flmControlTabla(a) + '</div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="fld-ok" onclick="flmDesengancharOk(' + idEng + ')">Desenganchar</button></div>');
+}
+async function flmDesengancharOk(idEng) {
+  var b = $id('fld-ok'); b.disabled = true;
+  try { var r = await gsRun('gsCB_Desenganchar', { ID_ENGANCHE: idEng, KM: $v('fld-km').replace(/\./g, ''), MEDS: flmLeerControl() });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Desenganchado ✓ · el acoplado hizo ' + Number(r.KM_ACOPLADO).toLocaleString('es-AR') + ' km con este tractor', 'g'); await flmCargar(FLM_.eq);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
+}
+// Vida de la cubierta: todo lo que le pasó, con km
+async function flmVida(id) {
+  var r = await gsRun('gsCB_Vida', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } FLM_.vida = r;
+  showModal('<div class="mh"><span class="mt">📜 Vida de la cubierta ' + pcEsc(r.C.MARCA) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' + flmVidaHtml(r, true) + '</div><div class="mf"><button class="btn btn-s" onclick="flmVidaPdf()">📄 PDF</button><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
+}
+function flmVidaHtml(r, conBoton) {
+  var c = r.C;
+  return '<div style="font-size:13.5px"><b>Marca grabada</b> ' + pcEsc(c.MARCA) + ' · <b>DOT</b> ' + pcEsc(c.DOT || '—') + ' · ' + pcEsc(c.MEDIDA + ' · ' + c.FAB) + ' · ' + pcEsc(c.CLIENTE || 'Vulcan') + ' · ' + (c.RECAP ? 'recapada ' + c.RECAP + ' vez/veces' : 'sin recapar') + ' · <b>' + Number(r.KM_TOTAL).toLocaleString('es-AR') + ' km</b> registrados</div>' +
+    '<h4 class="mt2">Montajes</h4><div class="tw"><table class="det" style="font-size:12px"><thead><tr><th>Unidad</th><th>Rueda</th><th>Desde</th><th>Hasta</th><th class="tr">Km</th></tr></thead><tbody>' + (r.MONTAJES.length ? r.MONTAJES.map(function(m) { return '<tr><td>' + pcEsc(m.UNIDAD) + '</td><td>' + pcEsc(m.POS) + '</td><td>' + fmtD(m.DESDE) + '</td><td>' + (m.HASTA ? fmtD(m.HASTA) : 'montada') + '</td><td class="tr">' + Number(m.KM).toLocaleString('es-AR') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="tdim">Sin montajes.</td></tr>') + '</tbody></table></div>' +
+    '<h4 class="mt2">Movimientos</h4><div class="tw"><table class="det" style="font-size:12px"><thead><tr><th>N°</th><th>Fecha</th><th>Qué</th><th>Unidad</th><th>De → a</th><th class="tr">Km</th><th>Medición</th><th>Obs.</th><th></th></tr></thead><tbody>' +
+    (r.MOVS.length ? r.MOVS.map(function(m, i) { var ult = conBoton && m.EST === 'VIGENTE' && !r.MOVS.slice(i + 1).some(function(x) { return x.EST === 'VIGENTE'; }); return '<tr' + (m.EST === 'ANULADO' ? ' style="opacity:.5;text-decoration:line-through" title="' + pcEsc(m.MOT) + '"' : '') + '><td class="mono">' + pcEsc(m.NRO) + '</td><td>' + fmtD(m.F) + '</td><td>' + pcEsc(m.TIPO) + (m.CAUSA ? ' · ' + pcEsc(m.CAUSA) : '') + '</td><td>' + pcEsc(m.UNIDAD) + '</td><td>' + pcEsc((m.DE || '') + (m.DE || m.A ? ' → ' : '') + (m.A || '')) + '</td><td class="tr">' + (m.KM !== '' ? Number(m.KM).toLocaleString('es-AR') : '') + '</td><td>' + (m.MED ? pcEsc((m.MED.PROF ? m.MED.PROF + ' mm · ' : '') + (m.MED.PRES ? m.MED.PRES + ' PSI · ' : '') + m.MED.EST) : '') + '</td><td>' + pcEsc(m.OBS) + '</td><td>' + (ult ? flBtn('btn-d', '↩ Deshacer', 'flmDeshacer(' + m.ID + ')') : '') + '</td></tr>'; }).join('') : '<tr><td colspan="9" class="tdim">Sin movimientos.</td></tr>') + '</tbody></table></div>' +
+    (r.PROD.length ? '<h4 class="mt2">Producción (recapados)</h4><div>' + r.PROD.map(function(p) { return pcEsc(fmtD(p.F) + ' · ' + p.TRABAJO + ' · ' + p.ESTADO); }).join('<br>') + '</div>' : '');
+}
+function flmVidaPdf() { var r = FLM_.vida; pcImprimir('Vida ' + r.C.MARCA, (typeof pcEncImp === 'function' ? pcEncImp('Vida de la cubierta', r.C.MARCA, 'DOT ' + (r.C.DOT || '—')) : '') + flmVidaHtml(r, false)); }
+async function flmDeshacer(idMov) { var m = await uiPedir('Deshacer este movimiento. ¿Por qué?', { obligatorio: true }); if (m === null) return;
+  var r = await gsRun('gsCB_MovAnular', { ID_MOV: idMov, MOTIVO: m }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Deshecho ✓', 'g'); FLM_.sel = null; await flmCargar(FLM_.eq); }
+function flmImprimir() {
+  var d = FLM_.d, c = (typeof pcEncImp === 'function' ? pcEncImp('Mapa de cubiertas', d.UNIDAD.IDENT, (d.UNIDAD.MARCA + ' ' + d.UNIDAD.MODELO).trim()) : '');
+  flmTodas().forEach(function(u) { var monta = {}; (u.MONT || []).forEach(function(m) { monta[m.ID_POS] = m; });
+    c += '<h2>' + pcEsc(u.IDENT + ' · ' + (u.CFG ? u.CFG.NOMBRE : '')) + '</h2>' + (u.CFG ? '<div style="text-align:center">' + flDibujo(u.CFG.EJES, u.CFG.POS, { ancho: 320, fn: function(p) { var m = monta[p.ID]; return { fill: '#fff', txt: m ? m.C.MARCA : '', txt2: m && m.C.PROF !== '' ? m.C.PROF + ' mm' : '', vacia: !m }; } }) + '</div>' : '') +
+      '<table class="det"><thead><tr><th>Rueda</th><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Fabricante</th><th>Dibujo</th><th>Estado</th></tr></thead><tbody>' + (u.CFG ? u.CFG.POS.map(function(p) { var m = monta[p.ID], x = m && m.C; return '<tr><td>' + pcEsc(p.COD) + '</td><td>' + pcEsc(x ? x.MARCA : '') + '</td><td>' + pcEsc(x ? x.DOT : '') + '</td><td>' + pcEsc(x ? x.MEDIDA : '') + '</td><td>' + pcEsc(x ? x.FAB : '') + '</td><td>' + (x && x.PROF !== '' ? x.PROF + ' mm' : '') + '</td><td>' + pcEsc(x ? x.EST : '') + '</td></tr>'; }).join('') : '') + '</tbody></table>'; });
+  pcImprimir('Mapa ' + d.UNIDAD.IDENT, c);
+}
+// ── Enganches de acoplados (ABM estándar) ──
+async function renderEnganches() {
+  $id('fl-tit').textContent = '🚛 Enganches de acoplados'; $id('fl-sub').textContent = 'Flota y cubiertas · qué camión llevó cada acoplado, con km y control de cubiertas';
+  var r = await gsRun('gsCB_Enganches'); if (!r || !r.ok) { $id('fl-body').innerHTML = '<div class="al">' + pcEsc((r && r.error) || 'No se pudo') + '</div>'; return; } FL_.eng = r.ENGANCHES; FL_.F.est = FL_.F.est || 'V';
+  $id('fl-body').innerHTML = '<div class="card mb3"><div class="card-body"><div class="pc-otf"><div class="fg" style="grid-column:span 3"><label class="fl">Buscar</label><input class="fi" placeholder="N°, tractor, acoplado, chofer" value="' + pcEsc(FL_.F.q) + '" oninput="FL_.F.q=this.value;flEngGrilla()"></div>' +
+    '<div class="fg"><label class="fl">Estado</label><select class="fs" onchange="FL_.F.est=this.value;flEngGrilla()">' + [['V', 'Enganchados hoy'], ['H', 'Historial'], ['', 'Todos']].map(function(x) { return '<option value="' + x[0] + '"' + (FL_.F.est === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></div></div><div id="fl-g" class="mt2"></div></div></div>';
+  flEngGrilla();
+}
+function flEngGrilla() {
+  var q = String(FL_.F.q || '').toUpperCase(), F = FL_.F, l = FL_.eng.filter(function(g) { var viva = !g.HASTA && g.ESTADO === 'VIGENTE'; if (F.est === 'V' && !viva) return false; if (F.est === 'H' && viva) return false; return !q || [g.NRO, g.TRACTOR, g.ACOPLADO, g.CHOFER].join(' ').toUpperCase().indexOf(q) !== -1; }).sort(function(a, b) { return b.ID - a.ID; });
+  $id('fl-g').innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> enganche(s)</div><div class="tw pc-abm"><table style="font-size:12.5px"><thead><tr><th>N°</th><th>Tractor</th><th>Acoplado</th><th>Chofer</th><th>Desde</th><th class="tr">Km desde</th><th>Hasta</th><th class="tr">Km hasta</th><th class="tr">Km hechos</th><th class="tr">Controles</th><th>Acciones</th></tr></thead><tbody>' +
+    (l.length ? l.map(function(g) { return '<tr><td class="mono">' + pcEsc(g.NRO) + '</td><td><b>' + pcEsc(g.TRACTOR) + '</b></td><td><b>' + pcEsc(g.ACOPLADO) + '</b></td><td>' + pcEsc(g.CHOFER || '—') + '</td><td>' + fmtD(g.DESDE) + '</td><td class="tr">' + Number(g.KM_DESDE).toLocaleString('es-AR') + '</td><td>' + (g.HASTA ? fmtD(g.HASTA) : '<span class="fl-bd fl-v">Enganchado</span>') + '</td><td class="tr">' + (g.KM_HASTA !== '' ? Number(g.KM_HASTA).toLocaleString('es-AR') : '') + '</td><td class="tr">' + (g.KM_HASTA !== '' ? Number(g.KM_HASTA - g.KM_DESDE).toLocaleString('es-AR') : '') + '</td><td class="tr">' + g.CONTROLES + '</td>' +
+      '<td><div class="pc-acc">' + flBtn('btn-s', '🗺 Ver mapa', 'FLM_.eq=\'' + g.ID_TRACTOR + '\';FL_.t=\'mapa\';renderFlota()') + '</div></td></tr>'; }).join('') : '<tr><td colspan="11" class="tdim tc" style="padding:16px">No hay enganches con esos filtros.</td></tr>') + '</tbody></table></div>';
+  if (typeof gridPonerBotones_ === 'function') setTimeout(gridPonerBotones_, 30);
 }
 </script>
 
