@@ -1595,7 +1595,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611141921';
+var EMA_BUILD = '202611141934';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -18048,7 +18048,10 @@ async function flpCerrarOk() {
   var b = $id('flp-c-ok'), mot = {}; Array.prototype.forEach.call(document.querySelectorAll('.flp-c-m'), function(x) { if (x.value.trim()) mot[x.getAttribute('data-p')] = x.value.trim(); });
   b.disabled = true; b.textContent = 'Guardando…';
   try { var r = await gsRun('gsMT_PlanCerrar', { ID_ORDEN: FLP_.v.O.ID, MOTIVOS: mot, OBS: $v('flp-c-o') }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
-    toast('Orden cerrada ✓' + (r.REMITO ? ' · remito ' + r.REMITO.NRO : ''), 'g'); closeModal(); if ($id('flp-g')) await renderPlanes(); else if ($id('mt-body') && typeof mtRecargar === 'function') await mtRecargar(); flpVer(FLP_.v.O.ID);
+    toast('Orden cerrada ✓' + (r.REMITO ? ' · remito ' + r.REMITO.NRO : ''), 'g'); flpSinModales();
+    // desde la orden del taller: vuelve a la orden del taller ya terminada; desde Órdenes en campo: refresca la grilla y muestra la orden
+    if (!$id('flp-g') && $id('mt-body') && typeof MT_ !== 'undefined' && MT_.ord && typeof mtRecargar === 'function') { var idT = MT_.ord.ORDEN.ID_ORDEN; await mtRecargar(); await mtAbrir(idT); return; }
+    if ($id('flp-g')) await renderPlanes(); flpVer(FLP_.v.O.ID);
   } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Cerrar orden'; } }
 }
 // Desde la orden del taller: abre el cierre con lo aprobado del presupuesto
