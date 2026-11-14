@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a48343d0585a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "4bf3641a0212"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -326,6 +326,8 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
       </div></div>
       <div class="sb-grp" data-g="flo"><div class="sb-gh" onclick="menuGrupo('flo')"><span class="sb-gi-ic">🚛</span><span class="sb-gt">Flota y cubiertas</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="flota" data-acc="fl-mapa"><span class="nav-icon"><i class="fas fa-dharmachakra"></i></span> Mapa de cubiertas</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-planes"><span class="nav-icon"><i class="fas fa-truck-pickup"></i></span> Órdenes en campo</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-reportes"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Reportes de flota</div>
         <div class="nav-item" data-page="flota" data-acc="fl-enganches"><span class="nav-icon"><i class="fas fa-link"></i></span> Enganches de acoplados</div>
         <div class="nav-item" data-page="flota" data-acc="fl-cli_bases"><span class="nav-icon"><i class="fas fa-map-marker-alt"></i></span> Bases de clientes</div>
         <div class="nav-item" data-page="flota" data-acc="fl-cli_contactos"><span class="nav-icon"><i class="fas fa-address-book"></i></span> Contactos de clientes</div>
@@ -1593,7 +1595,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611132250';
+var EMA_BUILD = '202611140955';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16741,7 +16743,7 @@ var MT_ = { d: null, vista: 'ord', nueva: false, F: null, FE: null, ord: null, o
     '.mt-pick{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1.5px solid var(--border,#e2e8f0);border-radius:10px;margin:0 0 8px;cursor:pointer;font-size:14px}.mt-pick input{width:22px;height:22px}.mt-pick:has(input:checked){border-color:#16a34a;background:#f0fdf4}' +
     '@media(max-width:700px){#page-taller .pc-abm td.pc-wr{min-width:190px!important}.mt-rb button{min-width:58px;min-height:48px;font-size:15px}.mt-it .mt-n{flex-basis:100%;font-size:15px}.mt-rb{width:100%;justify-content:flex-end}.mt-gh{font-size:16px;padding:14px}}';
   document.head.appendChild(st); })();
-var MT_EST = { CHECK_LIST: ['mt-b-o', 'Check list'], PRESUPUESTADA: ['mt-b-b', 'Presupuestada'], APROBADA: ['mt-b-g', 'Aprobada'], EN_TRABAJO: ['mt-b-v', 'En trabajo'], TERMINADA: ['mt-b-g', 'Terminada'], FACTURADA: ['mt-b-g', 'Facturada'], ANULADA: ['mt-b-x', 'Anulada'],
+var MT_EST = { PLANIFICADA: ['mt-b-b', 'Planificada (en campo)'], CHECK_LIST: ['mt-b-o', 'Check list'], PRESUPUESTADA: ['mt-b-b', 'Presupuestada'], APROBADA: ['mt-b-g', 'Aprobada'], EN_TRABAJO: ['mt-b-v', 'En trabajo'], TERMINADA: ['mt-b-g', 'Terminada'], FACTURADA: ['mt-b-g', 'Facturada'], ANULADA: ['mt-b-x', 'Anulada'],
   BORRADOR: ['mt-b-o', 'Borrador'], ENVIADO: ['mt-b-b', 'Enviado'], APROBADO: ['mt-b-g', 'Aprobado'], RECHAZADO: ['mt-b-r', 'Rechazado'], VENCIDO: ['mt-b-x', 'Vencido'], ANULADO: ['mt-b-x', 'Anulado'] };
 function mtMalaResp(g) { return g && g.RESP === 'SI_NO_NA' ? 'SI' : 'NO'; }
 function mtGrupoDeItem(pl, id) { var r = null; pl.GRUPOS.forEach(function(g) { g.ITEMS.forEach(function(i) { if (i.ID === Number(id)) r = g; }); }); return r; }
@@ -16779,7 +16781,7 @@ function mtOrdenes() {
   $id('mt-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">Órdenes del taller · ' + pcEsc(d.SUC.NOMBRE) + '</span>' + (mtPuede('AGREGAR') ? '<button class="btn btn-p btn-sm" onclick="MT_.nueva=true;mtPintar()">＋ Nueva orden del taller</button>' : '') + '</div><div class="card-body">' +
     '<div class="pc-otf"><div class="fg" style="grid-column:span 2"><label class="fl">Buscar</label><input class="fi" placeholder="N° de orden, cliente, dominio, quién la pidió" value="' + pcEsc(F.q) + '" oninput="MT_.F.q=this.value;MT_.F.pag=0;mtOrdGrilla()"></div>' +
     '<div class="fg"><label class="fl">Sucursal</label><select class="fs" onchange="MT_.F.suc=this.value;MT_.F.pag=0;mtOrdGrilla()">' + mtOpt([['', 'Todas']].concat(Object.keys(sucs).sort().map(function(s) { return [s, s]; })), F.suc) + '</select></div>' +
-    '<div class="fg"><label class="fl">Estado</label><select class="fs" onchange="MT_.F.est=this.value;MT_.F.pag=0;mtOrdGrilla()">' + mtOpt([['VIG', 'Vigentes'], ['', 'Todas'], ['CHECK_LIST', 'En check list'], ['PRESUPUESTADA', 'Presupuestadas'], ['APROBADA', 'Aprobadas'], ['ANULADA', 'Anuladas']], F.est) + '</select></div>' +
+    '<div class="fg"><label class="fl">Estado</label><select class="fs" onchange="MT_.F.est=this.value;MT_.F.pag=0;mtOrdGrilla()">' + mtOpt([['VIG', 'Vigentes'], ['', 'Todas'], ['CHECK_LIST', 'En check list'], ['PRESUPUESTADA', 'Presupuestadas'], ['APROBADA', 'Aprobadas'], ['PLANIFICADA', 'Planificadas (en campo)'], ['EN_TRABAJO', 'En trabajo'], ['TERMINADA', 'Terminadas'], ['ANULADA', 'Anuladas']], F.est) + '</select></div>' +
     '<div class="fg"><label class="fl">Desde</label><input class="fi" type="date" value="' + F.desde + '" onchange="MT_.F.desde=this.value;MT_.F.pag=0;mtOrdGrilla()"></div>' +
     '<div class="fg"><label class="fl">Hasta</label><input class="fi" type="date" value="' + F.hasta + '" onchange="MT_.F.hasta=this.value;MT_.F.pag=0;mtOrdGrilla()"></div>' +
     '<div class="fg" style="align-self:end"><button class="btn btn-s" onclick="MT_.F=null;mtPintar()">Limpiar filtros</button></div></div>' +
@@ -16934,7 +16936,7 @@ function mtOrdenVer() {
       ((P.ESTADO === 'BORRADOR' || P.ESTADO === 'ENVIADO' || P.ESTADO === 'RECHAZADO') ? '<button class="btn btn-s" onclick="mtPresCorregir()">✏ Corregir (versión nueva)</button>' : '') +
       (P.ESTADO === 'BORRADOR' ? '<button class="btn btn-s" onclick="mtPresEstado(\'ENVIADO\')">📤 Marcar como enviado al cliente</button>' : '') +
       ((P.ESTADO === 'BORRADOR' || P.ESTADO === 'ENVIADO') ? '<button class="btn btn-p" onclick="mtPresEstado(\'APROBADO\')">✅ El cliente lo aprobó</button><button class="btn btn-d" onclick="mtPresEstado(\'RECHAZADO\')">✖ El cliente no lo aprobó</button>' : '') +
-      (P.ESTADO === 'APROBADO' ? '<div class="al" style="flex:1">Aprobado. Lo que sigue (fase 2): el mecánico carga las horas y los repuestos que usó, se descuenta el stock, y se hace el remito y la factura.</div>' : '') + '</div>';
+      (P.ESTADO === 'APROBADO' ? '<div class="al" style="flex:1">Aprobado. Al terminar el trabajo cerrá la orden: se hace el remito con lo aprobado (los repuestos descuentan stock) y se factura desde Ventas → Facturar remitos pendientes.</div>' + (typeof flpCerrarDesde === 'function' && mtPuede('AGREGAR') ? '<button class="btn btn-p" onclick="flpCerrarDesde(' + O.ORDEN.ID_ORDEN + ')">✅ Cerrar orden y hacer el remito</button>' : '') : '') + '</div>';
   }
   h += '</div></div>';
   $id('mt-body').innerHTML = h;
@@ -17386,14 +17388,14 @@ var FL_ = { t: '', d: null, F: { q: '', p: '', est: 'V' }, cfg: null, ed: null }
     '.fl-map svg{min-width:0;flex:0 1 auto;max-width:100%;height:auto}.fl-map{display:flex;justify-content:center;padding:6px;min-width:0;overflow:hidden;background:#f8fafc;border:1px solid var(--border,#e2e8f0);border-radius:10px}' +
     '@media(max-width:700px){.fl-cfg-g{grid-template-columns:1fr!important}.fl-frm{grid-template-columns:1fr}.fl-eje{grid-template-columns:40px 1fr 1fr;}.fl-eje .fl-fl{grid-column:2/-1}}';
   document.head.appendChild(st); })();
-var FL_MENU = { 'fl-mapa': 'mapa', 'fl-enganches': 'enganches', 'fl-mv_marcas': 'mv_marcas', 'fl-mv_modelos': 'mv_modelos', 'fl-mt_equipo_tipos': 'mt_equipo_tipos', 'fl-mt_equipo_subtipos': 'mt_equipo_subtipos', 'fl-config': 'cb_config',
+var FL_MENU = { 'fl-mapa': 'mapa', 'fl-planes': 'planes', 'fl-reportes': 'reportes', 'fl-enganches': 'enganches', 'fl-mv_marcas': 'mv_marcas', 'fl-mv_modelos': 'mv_modelos', 'fl-mt_equipo_tipos': 'mt_equipo_tipos', 'fl-mt_equipo_subtipos': 'mt_equipo_subtipos', 'fl-config': 'cb_config',
   'fl-cb_mov_tipos': 'cb_mov_tipos', 'fl-cb_estados_cub': 'cb_estados_cub', 'fl-cb_causas_rotura': 'cb_causas_rotura', 'fl-cli_cargos': 'cli_cargos', 'fl-mt_licencias_cat': 'mt_licencias_cat',
   'fl-cli_bases': 'cli_bases', 'fl-cli_contactos': 'cli_contactos', 'fl-mt_choferes': 'mt_choferes' };
 function flPuede(acc) { return typeof tienePermiso === 'function' ? tienePermiso('VENTAS', acc) : true; }
 function flBtn(cls, txt, js, tit) { return typeof pcBtnAbm === 'function' ? pcBtnAbm(cls, txt, js, tit) : '<button class="btn ' + cls + ' btn-xs" onclick="' + js + '">' + txt + '</button>'; }
 async function renderFlota() {
   var el = $id('page-flota'); if (!el) return;
-  if (window._menuAcc && FL_MENU[window._menuAcc]) { var nt = FL_MENU[window._menuAcc]; if (nt !== FL_.t) FL_.F = { q: '', p: '', est: 'V' }; FL_.t = nt; window._menuAcc = ''; }
+  if (window._menuAcc && FL_MENU[window._menuAcc]) { var nt = FL_MENU[window._menuAcc]; if (nt !== FL_.t) FL_.F = { q: '', p: '', est: 'V' }; if (nt === 'mapa' && typeof FLM_ !== 'undefined') FLM_.orden = null; FL_.t = nt; window._menuAcc = ''; }
   if (!FL_.t) FL_.t = 'mv_marcas';
   el.innerHTML = '<div class="mb3" style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span id="fl-tit" style="font-size:20px;font-weight:800">🚛 Flota y cubiertas</span><span class="tdim" style="font-size:13px" id="fl-sub"></span></div><div id="fl-body"><div class="tdim" style="padding:20px">Cargando…</div></div>';
   await flRecargar();
@@ -17402,6 +17404,8 @@ async function flRecargar() {
   try {
     if (FL_.t === 'mapa') return renderMapaCub();
     if (FL_.t === 'enganches') return renderEnganches();
+    if (FL_.t === 'planes') return renderPlanes();
+    if (FL_.t === 'reportes') return renderReportesFlota();
     if (FL_.t === 'cb_config') { var r = await gsRun('gsCB_Configs'); if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo cargar'); FL_.cfg = r; return flCfgPintar(); }
     var r2 = await gsRun('gsCB_Cat', FL_.t); if (!r2 || !r2.ok) throw new Error((r2 && r2.error) || 'No se pudo cargar'); FL_.d = r2; flPintar();
   } catch (e) { $id('fl-body').innerHTML = '<div class="al">' + pcEsc(e.message) + '</div>'; }
@@ -17655,7 +17659,8 @@ function flmMapa() {
   var der = '<div id="flm-ficha"></div>' +
     lista('📦 En nuestro depósito (del cliente y de Vulcan)', 'DEPOSITO', d.DISP.DEPOSITO) + lista('🏢 Del cliente, en su poder (no montadas)', 'CLIENTE', d.DISP.CLIENTE) + lista('🏭 En el taller (recapado)', 'TALLER', d.DISP.TALLER) +
     '<div class="card"><div class="card-body" style="display:flex;gap:6px;flex-wrap:wrap">' + flBtn('btn-s', '＋ Alta de cubierta (relevamiento)', 'flmAlta()') + flBtn('btn-s', '🖨 Imprimir mapa', 'flmImprimir()') + '</div></div>';
-  $id('flm-body').innerHTML = '<div class="flm-g" style="display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:12px;align-items:start"><div>' + izq + '</div><div>' + der + '</div></div>' +
+  var banO = FLM_.orden ? '<div class="al mb2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fef3c7;border-color:#f59e0b"><b>Trabajando con la orden ' + pcEsc(FLM_.orden.NRO) + '</b><span class="tdim">cada movimiento queda cargado a esta orden y se cobra al cerrarla</span>' + flBtn('btn-s', '← Volver a la orden', 'flpVolverOrden()') + '</div>' : '';
+  $id('flm-body').innerHTML = banO + '<div class="flm-g" style="display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:12px;align-items:start"><div>' + izq + '</div><div>' + der + '</div></div>' +
     '<div class="tdim" style="font-size:12px;margin-top:6px">Colores: <span style="background:#bbf7d0;padding:0 6px">bien</span> <span style="background:#fde68a;padding:0 6px">observar</span> <span style="background:#fecaca;padding:0 6px">sacar</span> <span style="background:#e0f2fe;padding:0 6px">sin medir</span> · línea punteada = posición vacía · eje punteado = flotante</div>';
   if (!document.getElementById('flm-css')) { var st = document.createElement('style'); st.id = 'flm-css'; st.textContent = '.flm-g>div{min-width:0}@media(max-width:800px){.flm-g{grid-template-columns:1fr!important}}'; document.head.appendChild(st); }
   flmFicha(); flmArrastre();
@@ -17726,7 +17731,7 @@ function flmAccion(cod, idCasco, eq, pos) {
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="flm-ok" onclick="flmAccionOk()">Confirmar</button></div>');
 }
 async function flmAccionOk() {
-  var a = FLM_.acc, b = $id('flm-ok'), o = { COD: a.COD, ID_CASCO: a.ID_CASCO, ID_EQUIPO: a.ID_EQUIPO, ID_POSICION: a.ID_POSICION, ID_EQUIPO_DEST: a.ID_EQUIPO_DEST, KM: $id('flm-km') ? $v('flm-km').replace(/\./g, '') : '', EN_LLANTA: $id('flm-llanta') ? ($id('flm-llanta').checked ? 1 : 0) : '', ID_CAUSA: $id('flm-cau') ? $v('flm-cau') : '', OBS: $v('flm-obs') };
+  var a = FLM_.acc, b = $id('flm-ok'), o = { COD: a.COD, ID_CASCO: a.ID_CASCO, ID_EQUIPO: a.ID_EQUIPO, ID_POSICION: a.ID_POSICION, ID_EQUIPO_DEST: a.ID_EQUIPO_DEST, KM: $id('flm-km') ? $v('flm-km').replace(/\./g, '') : '', EN_LLANTA: $id('flm-llanta') ? ($id('flm-llanta').checked ? 1 : 0) : '', ID_CAUSA: $id('flm-cau') ? $v('flm-cau') : '', OBS: $v('flm-obs'), ID_ORDEN: FLM_.orden ? FLM_.orden.ID : '' };
   if ($v('flm-est')) o.MED = { ID_ESTADO: $v('flm-est'), PROF: $v('flm-prof').replace(',', '.'), PRES: $v('flm-pres').replace(',', '.') };
   b.disabled = true; b.textContent = 'Guardando…';
   try { var r = await gsRun('gsCB_Mover', o); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
@@ -17828,6 +17833,246 @@ function flEngGrilla() {
   $id('fl-g').innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> enganche(s)</div><div class="tw pc-abm"><table style="font-size:12.5px"><thead><tr><th>N°</th><th>Tractor</th><th>Acoplado</th><th>Chofer</th><th>Desde</th><th class="tr">Km desde</th><th>Hasta</th><th class="tr">Km hasta</th><th class="tr">Km hechos</th><th class="tr">Controles</th><th>Acciones</th></tr></thead><tbody>' +
     (l.length ? l.map(function(g) { return '<tr><td class="mono">' + pcEsc(g.NRO) + '</td><td><b>' + pcEsc(g.TRACTOR) + '</b></td><td><b>' + pcEsc(g.ACOPLADO) + '</b></td><td>' + pcEsc(g.CHOFER || '—') + '</td><td>' + fmtD(g.DESDE) + '</td><td class="tr">' + Number(g.KM_DESDE).toLocaleString('es-AR') + '</td><td>' + (g.HASTA ? fmtD(g.HASTA) : '<span class="fl-bd fl-v">Enganchado</span>') + '</td><td class="tr">' + (g.KM_HASTA !== '' ? Number(g.KM_HASTA).toLocaleString('es-AR') : '') + '</td><td class="tr">' + (g.KM_HASTA !== '' ? Number(g.KM_HASTA - g.KM_DESDE).toLocaleString('es-AR') : '') + '</td><td class="tr">' + g.CONTROLES + '</td>' +
       '<td><div class="pc-acc">' + flBtn('btn-s', '🗺 Ver mapa', 'FLM_.eq=\'' + g.ID_TRACTOR + '\';FL_.t=\'mapa\';renderFlota()') + '</div></td></tr>'; }).join('') : '<tr><td colspan="11" class="tdim tc" style="padding:16px">No hay enganches con esos filtros.</td></tr>') + '</tbody></table></div>';
+  if (typeof gridPonerBotones_ === 'function') setTimeout(gridPonerBotones_, 30);
+}
+// ── Órdenes de servicio en campo (ABM estándar): planificar → hoja impresa → salida → trabajo en el mapa → regreso → cierre con remito ──
+var FLP_ = { l: null, F: { q: '', est: 'VIG', cli: '', desde: '', hasta: '' }, pd: null, pn: null, v: null };
+var FLP_EST = { PLANIFICADA: ['#e0e7ff', '#3730a3', 'Planificada'], EN_TRABAJO: ['#fef3c7', '#92400e', 'En trabajo'], TERMINADA: ['#dcfce7', '#166534', 'Terminada'], FACTURADA: ['#dcfce7', '#166534', 'Facturada'], ANULADA: ['#e5e7eb', '#374151', 'Anulada'],
+  CHECK_LIST: ['#ffedd5', '#9a3412', 'Check list'], PRESUPUESTADA: ['#dbeafe', '#1e40af', 'Presupuestada'], APROBADA: ['#dcfce7', '#166534', 'Aprobada'] };
+var FLP_PEST = { PREVISTO: ['#e0e7ff', '#3730a3', 'Previsto'], HECHO: ['#dcfce7', '#166534', 'Hecho'], NO_HECHO: ['#fee2e2', '#991b1b', 'No se hizo'], DEVUELTA: ['#fef3c7', '#92400e', 'Cubierta devuelta'], ANULADO: ['#e5e7eb', '#374151', 'Anulado'] };
+var FLP_TAREAS = ['MONTAJE', 'MONTAJE_CLI', 'DESMONTAJE', 'DESMONTAJE_CLI', 'DESMONTAJE_TALLER', 'ROTACION', 'INSPECCION', 'CALIBRADO', 'REPARACION', 'RELEVAMIENTO'];
+function flpSinModales() { Array.prototype.forEach.call(document.querySelectorAll('.mo'), function(m) { m.remove(); }); }
+function flpBd(m, e) { var x = m[e] || ['#e5e7eb', '#374151', e || '—']; return '<span class="fl-bd" style="background:' + x[0] + ';color:' + x[1] + '">' + pcEsc(x[2]) + '</span>'; }
+function flpPlata(n) { return '$ ' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function flpFechaIn(ms) { if (!ms) return ''; var d = new Date(Number(ms)); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+async function renderPlanes() {
+  $id('fl-tit').textContent = '🚛 Órdenes de servicio en campo'; $id('fl-sub').textContent = 'Flota y cubiertas · qué se hace en cada unidad del cliente, quién va, con qué, y el remito para facturar';
+  var r = await gsRun('gsMT_Planes'); if (!r || !r.ok) { $id('fl-body').innerHTML = '<div class="al">' + pcEsc((r && r.error) || 'No se pudo cargar') + '</div>'; return; }
+  FLP_.l = r.ORDENES; var F = FLP_.F, clis = {}; r.ORDENES.forEach(function(o) { if (o.ID_CLIENTE) clis[o.ID_CLIENTE] = o.CLIENTE; });
+  $id('fl-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">Órdenes en campo</span>' + (flPuede('AGREGAR') ? '<button class="btn btn-p btn-sm" onclick="flpNuevo()">＋ Planificar servicio en campo</button>' : '') + '</div><div class="card-body"><div class="pc-otf">' +
+    '<div class="fg" style="grid-column:span 2"><label class="fl">Buscar</label><input class="fi" id="flp-q" placeholder="N°, cliente, base, unidad, remito" value="' + pcEsc(F.q) + '" oninput="FLP_.F.q=this.value;flpGrilla()"></div>' +
+    '<div class="fg"><label class="fl">Cliente</label><select class="fs" data-filtro onchange="FLP_.F.cli=this.value;flpGrilla()"><option value="">Todos</option>' + Object.keys(clis).sort(function(a, b) { return clis[a] < clis[b] ? -1 : 1; }).map(function(k) { return '<option value="' + k + '"' + (String(F.cli) === String(k) ? ' selected' : '') + '>' + pcEsc(clis[k]) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Estado</label><select class="fs" id="flp-est" onchange="FLP_.F.est=this.value;flpGrilla()">' + [['VIG', 'Abiertas (planificada / en trabajo)'], ['', 'Todas'], ['PLANIFICADA', 'Planificadas'], ['EN_TRABAJO', 'En trabajo'], ['TERMINADA', 'Terminadas'], ['FACTURADA', 'Facturadas'], ['ANULADA', 'Anuladas']].map(function(x) { return '<option value="' + x[0] + '"' + (F.est === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Fecha desde</label><input class="fi" type="date" value="' + F.desde + '" onchange="FLP_.F.desde=this.value;flpGrilla()"></div><div class="fg"><label class="fl">Fecha hasta</label><input class="fi" type="date" value="' + F.hasta + '" onchange="FLP_.F.hasta=this.value;flpGrilla()"></div>' +
+    '<div class="fg" style="align-self:end"><button class="btn btn-s" onclick="FLP_.F={q:\'\',est:\'VIG\',cli:\'\',desde:\'\',hasta:\'\'};renderPlanes()">Limpiar filtros</button></div></div><div id="flp-g" class="mt2"></div></div></div>';
+  flpGrilla();
+}
+function flpGrilla() {
+  var F = FLP_.F, q = String(F.q || '').toUpperCase().trim(), dd = F.desde ? new Date(F.desde + 'T00:00:00').getTime() : 0, dh = F.hasta ? new Date(F.hasta + 'T23:59:59').getTime() : 0;
+  var l = FLP_.l.filter(function(o) { if (F.est === 'VIG' && ['PLANIFICADA', 'EN_TRABAJO'].indexOf(o.ESTADO) === -1) return false; if (F.est && F.est !== 'VIG' && o.ESTADO !== F.est) return false; if (F.cli && String(o.ID_CLIENTE) !== String(F.cli)) return false;
+    var f = o.FECHA_PROG || o.FECHA; if (dd && f < dd) return false; if (dh && f > dh) return false; return !q || [o.NRO, o.CLIENTE, o.BASE, o.UNIDADES, o.REMITO, o.SALIDA ? o.SALIDA.NRO : ''].join(' ').toUpperCase().indexOf(q) !== -1; }).sort(function(a, b) { return (b.FECHA_PROG || b.FECHA) - (a.FECHA_PROG || a.FECHA) || b.ID - a.ID; });
+  $id('flp-g').innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> orden(es)</div><div class="tw pc-abm"><table style="font-size:12.5px"><thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Base</th><th>Unidades</th><th class="tr">Tareas</th><th>Salida</th><th>Remito</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' +
+    (l.length ? l.map(function(o) { var ab = ['PLANIFICADA', 'EN_TRABAJO'].indexOf(o.ESTADO) !== -1;
+      return '<tr><td class="mono">' + pcEsc(o.NRO) + '</td><td>' + fmtD(o.FECHA_PROG || o.FECHA) + '</td><td><b>' + pcEsc(o.CLIENTE) + '</b></td><td>' + pcEsc(o.BASE || '—') + '</td><td>' + pcEsc(o.UNIDADES) + '</td><td class="tr">' + o.HECHAS + '/' + o.TAREAS + '</td><td>' + (o.SALIDA ? pcEsc(o.SALIDA.NRO) + (o.SALIDA.ESTADO === 'EN_CURSO' ? ' <span class="fl-bd" style="background:#fef3c7;color:#92400e">afuera</span>' : '') : '—') + '</td><td class="mono">' + pcEsc(o.REMITO || '—') + '</td><td>' + flpBd(FLP_EST, o.ESTADO) + (o.MOTIVO ? '<div class="tdim" style="font-size:11px">' + pcEsc(o.MOTIVO) + '</div>' : '') + '</td>' +
+        '<td><div class="pc-acc">' + flBtn('btn-s', '👁 Ver', 'flpVer(' + o.ID + ')') + flBtn('btn-s', '📄 PDF', 'flpHoja(' + o.ID + ')', 'Hoja de la orden para llevar') + (ab && o.ESTADO === 'PLANIFICADA' && flPuede('EDITAR') ? flBtn('btn-s', '✏ Modificar', 'flpVer(' + o.ID + ')') : '') + (ab && flPuede('ANULAR') ? flBtn('btn-d', '✖ Anular', 'flpAnular(' + o.ID + ')') : '') + '</div></td></tr>'; }).join('')
+      : '<tr><td colspan="10" class="tdim tc" style="padding:16px">No hay órdenes en campo con esos filtros.</td></tr>') + '</tbody></table></div>';
+  if (typeof gridPonerBotones_ === 'function') setTimeout(gridPonerBotones_, 30);
+}
+async function flpAnular(id) {
+  var o = (FLP_.l || []).filter(function(x) { return x.ID === id; })[0] || (FLP_.v && FLP_.v.O.ID === id ? { NRO: FLP_.v.O.NRO, CLIENTE: FLP_.v.O.CLIENTE } : null); if (!o) return;
+  var m = await uiPedir('Anular la orden ' + o.NRO + ' de ' + o.CLIENTE + '. ¿Por qué?', { obligatorio: true }); if (m === null) return;
+  var r = await gsRun('gsMT_OrdenAnular', id, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  toast('Orden anulada ✓', 'g'); closeModal(); if ($id('flp-g')) await renderPlanes(); else if (typeof mtRecargar === 'function') mtRecargar();
+}
+// ── Planificar: cliente, base, contacto, fecha y las tareas de cada unidad ──
+async function flpDatos(cli) { var r = await gsRun('gsMT_PlanDatos', cli || ''); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo cargar', 'r2'); return null; } return r; }
+function flpOpt(arr, sel, vacio) { return (vacio ? '<option value="">' + pcEsc(vacio) + '</option>' : '') + arr.map(function(x) { return '<option value="' + pcEsc(String(x.V)) + '"' + (String(x.V) === String(sel) ? ' selected' : '') + '>' + pcEsc(x.T) + '</option>'; }).join(''); }
+function flpTareasOps(pd) { return pd.TIPOS_MOV.filter(function(t) { return FLP_TAREAS.indexOf(t.COD) !== -1; }).map(function(t) { return { V: 'M:' + t.ID, T: '🛞 ' + t.N }; }).concat(pd.SERVICIOS.map(function(s) { return { V: 'S:' + s.V, T: '🔧 ' + s.T }; })); }
+function flpTareaTxt(pd, v) { var x = flpTareasOps(pd).filter(function(o) { return o.V === v; })[0]; return x ? x.T : ''; }
+async function flpNuevo() {
+  var pd = await flpDatos(''); if (!pd) return; FLP_.pd = pd; FLP_.pn = { ID_CLIENTE: '', PLAN: [] };
+  showModal('<div class="mh"><span class="mt">＋ Planificar servicio en campo</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" id="flp-nv"></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="flp-ok" onclick="flpGuardar()">Guardar orden</button></div>');
+  flpNuevoPintar();
+}
+async function flpNuevoCli(v) { FLP_.pn = { ID_CLIENTE: v, PLAN: [], ID_BASE: '', ID_CONTACTO_PIDE: '', FECHA: $v('flp-fec'), OBS: $v('flp-obs') }; if (v) { var pd = await flpDatos(v); if (!pd) return; FLP_.pd = pd; } flpNuevoPintar(); }
+function flpNuevoPintar() {
+  var pd = FLP_.pd, n = FLP_.pn, el = $id('flp-nv'); if (!el) return;
+  var h = '<div class="fl-frm"><div class="fg full"><label class="fl">Cliente *</label><select class="fs" id="flp-cli" onchange="flpNuevoCli(this.value)">' + flpOpt(pd.CLIENTES.filter(function(c) { return c.A; }), n.ID_CLIENTE, '— elegí el cliente —') + '</select></div>';
+  if (n.ID_CLIENTE) {
+    h += '<div class="fg"><label class="fl">Base del cliente</label><select class="fs" id="flp-base" onchange="FLP_.pn.ID_BASE=this.value">' + flpOpt(pd.BASES || [], n.ID_BASE, (pd.BASES || []).length ? '— elegí —' : 'El cliente no tiene bases cargadas') + '</select></div>' +
+      '<div class="fg"><label class="fl">Quién lo pide</label><select class="fs" id="flp-con" onchange="FLP_.pn.ID_CONTACTO_PIDE=this.value">' + flpOpt(pd.CONTACTOS || [], n.ID_CONTACTO_PIDE, (pd.CONTACTOS || []).length ? '— elegí —' : 'Sin contactos cargados') + '</select></div>' +
+      '<div class="fg"><label class="fl">Fecha en que se va *</label><input class="fi" type="date" id="flp-fec" value="' + pcEsc(n.FECHA || '') + '" onchange="FLP_.pn.FECHA=this.value"></div>' +
+      '<div class="fg"><label class="fl">Observaciones</label><input class="fi" id="flp-obs" value="' + pcEsc(n.OBS || '') + '" oninput="FLP_.pn.OBS=this.value"></div></div>' +
+      '<div class="mt3"><b>Qué se hace</b> <span class="tdim" style="font-size:12px">(cada tarea en su unidad; si se lleva una cubierta, con su marca grabada y la rueda donde va)</span></div>' + flpPlanTabla(n.PLAN, true) + flpLineaEditor('flpAgregarNueva()');
+  } else h += '</div>';
+  el.innerHTML = h;
+}
+function flpPlanTabla(plan, borrar) {
+  var pd = FLP_.pd;
+  return '<div class="tw mt2"><table style="font-size:12.5px"><thead><tr><th>Unidad</th><th>Tarea</th><th>Cubierta</th><th>Rueda</th><th>Llanta</th><th>Obs.</th>' + (borrar ? '<th></th>' : '') + '</tr></thead><tbody>' +
+    (plan.length ? plan.map(function(x, i) { var u = (pd.UNIDADES || []).filter(function(y) { return String(y.ID) === String(x.ID_EQUIPO); })[0], k = (pd.CUBIERTAS || []).filter(function(y) { return String(y.ID) === String(x.ID_CASCO); })[0];
+      var p = u && u.CFG ? u.CFG.POS.filter(function(y) { return String(y.ID) === String(x.ID_POSICION); })[0] : null;
+      return '<tr><td><b>' + pcEsc(u ? u.IDENT : '') + '</b></td><td>' + pcEsc(flpTareaTxt(pd, x.ID_MOV_TIPO ? 'M:' + x.ID_MOV_TIPO : 'S:' + x.ID_SERVICIO)) + '</td><td class="mono">' + pcEsc(k ? k.MARCA : '') + '</td><td>' + pcEsc(p ? p.COD : '') + '</td><td>' + (x.EN_LLANTA === 1 ? 'Sí' : '') + '</td><td>' + pcEsc(x.OBSERVACIONES || '') + '</td>' + (borrar ? '<td>' + flBtn('btn-d', 'Sacar', 'FLP_.pn.PLAN.splice(' + i + ',1);flpNuevoPintar()', 'Sacar') + '</td>' : '') + '</tr>'; }).join('')
+      : '<tr><td colspan="7" class="tdim tc" style="padding:10px">Todavía no hay tareas.</td></tr>') + '</tbody></table></div>';
+}
+function flpLineaEditor(fnOk) {
+  var pd = FLP_.pd, us = pd.UNIDADES || [];
+  return '<div class="card mt2" style="background:#f8fafc"><div class="card-body"><div class="fl-frm">' +
+    '<div class="fg"><label class="fl">Unidad *</label><select class="fs" id="flp-l-eq" onchange="flpLineaCambio()">' + flpOpt(us.map(function(u) { return { V: u.ID, T: u.IDENT + ' · ' + (u.MARCA + ' ' + u.MODELO).trim() + (u.CFG ? '' : ' (sin ejes)') }; }), '', us.length ? '— elegí la unidad —' : 'El cliente no tiene unidades cargadas') + '</select></div>' +
+    '<div class="fg"><label class="fl">Tarea *</label><select class="fs" id="flp-l-t" onchange="flpLineaCambio()">' + flpOpt(flpTareasOps(pd), '', '— elegí —') + '</select></div>' +
+    '<div class="fg" id="flp-l-cw" style="display:none"><label class="fl">Cubierta que se lleva (de nuestro depósito)</label><select class="fs" id="flp-l-c">' + flpOpt((pd.CUBIERTAS || []).map(function(k) { return { V: k.ID, T: k.MARCA + ' · ' + k.MEDIDA + ' · ' + k.FAB + (k.DOT ? ' · DOT ' + k.DOT : '') }; }), '', (pd.CUBIERTAS || []).length ? '— elegí —' : 'No hay cubiertas en el depósito para este cliente') + '</select></div>' +
+    '<div class="fg" id="flp-l-pw" style="display:none"><label class="fl">Rueda</label><select class="fs" id="flp-l-p"></select></div>' +
+    '<div class="fg" id="flp-l-lw" style="display:none"><label class="fl">¿Con llanta?</label><label style="display:flex;gap:8px;align-items:center;min-height:40px"><input type="checkbox" id="flp-l-ll" style="width:22px;height:22px"> Sí, va armada en llanta</label></div>' +
+    '<div class="fg"><label class="fl">Observaciones</label><input class="fi" id="flp-l-o"></div></div><div class="mt2">' + flBtn('btn-p', '＋ Agregar tarea', fnOk) + '</div></div></div>';
+}
+function flpLineaCambio() {
+  var pd = FLP_.pd, t = $v('flp-l-t'), tm = t.indexOf('M:') === 0 ? pd.TIPOS_MOV.filter(function(x) { return 'M:' + x.ID === t; })[0] : null, u = (pd.UNIDADES || []).filter(function(x) { return String(x.ID) === $v('flp-l-eq'); })[0];
+  var lleva = tm && tm.COD === 'MONTAJE', rueda = tm && u && u.CFG;
+  $id('flp-l-cw').style.display = lleva ? '' : 'none'; $id('flp-l-lw').style.display = lleva ? '' : 'none'; $id('flp-l-pw').style.display = rueda ? '' : 'none';
+  if (rueda) { var mont = {}; (u.MONT || []).forEach(function(m) { mont[m.ID_POS] = m; }); $id('flp-l-p').innerHTML = flpOpt(u.CFG.POS.map(function(p) { var m = mont[p.ID]; return { V: p.ID, T: p.COD + (m && m.C ? ' · tiene ' + m.C.MARCA : ' · vacía') }; }), '', lleva ? '— elegí la rueda —' : 'Toda la unidad'); }
+}
+function flpLineaLeer() {
+  var t = $v('flp-l-t'), x = { ID_EQUIPO: $v('flp-l-eq'), ID_MOV_TIPO: t.indexOf('M:') === 0 ? t.substring(2) : '', ID_SERVICIO: t.indexOf('S:') === 0 ? t.substring(2) : '', ID_CASCO: $id('flp-l-cw').style.display === '' ? $v('flp-l-c') : '', ID_POSICION: $id('flp-l-pw').style.display === '' ? $v('flp-l-p') : '', EN_LLANTA: $id('flp-l-lw').style.display === '' ? ($id('flp-l-ll').checked ? 1 : 0) : '', OBSERVACIONES: $v('flp-l-o') };
+  if (!x.ID_EQUIPO) { toast('Elegí la unidad', 'r2'); return null; } if (!t) { toast('Elegí la tarea', 'r2'); return null; } return x;
+}
+function flpAgregarNueva() { var x = flpLineaLeer(); if (!x) return; FLP_.pn.FECHA = $v('flp-fec'); FLP_.pn.OBS = $v('flp-obs'); FLP_.pn.PLAN.push(x); flpNuevoPintar(); }
+async function flpGuardar() {
+  var n = FLP_.pn, b = $id('flp-ok'); if (!n.ID_CLIENTE) { toast('Elegí el cliente', 'r2'); return; }
+  var f = $v('flp-fec'); if (!f) { toast('Poné la fecha en que se va', 'r2'); return; } if (!n.PLAN.length) { toast('Cargá al menos una tarea', 'r2'); return; }
+  b.disabled = true; b.textContent = 'Guardando…';
+  try { var r = await gsRun('gsMT_PlanCrear', { ID_CLIENTE: n.ID_CLIENTE, ID_BASE: $v('flp-base'), ID_CONTACTO_PIDE: $v('flp-con'), FECHA_PROG: new Date(f + 'T08:00:00').getTime(), OBSERVACIONES: $v('flp-obs'), PLAN: n.PLAN });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    closeModal(); toast('Orden ' + r.NRO + ' planificada ✓', 'g'); FLP_.F.est = 'VIG'; await renderPlanes(); flpVer(r.ID_ORDEN);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Guardar orden'; } }
+}
+// ── Ver la orden: plan con su avance y el paso que sigue ──
+async function flpVer(id) {
+  var r = await gsRun('gsMT_Plan', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } FLP_.v = r;
+  var O = r.O, S = r.SALIDA, ab = ['PLANIFICADA', 'EN_TRABAJO'].indexOf(O.ESTADO) !== -1, pend = r.PLAN.filter(function(p) { return p.ESTADO === 'PREVISTO'; }).length;
+  var paso = '';
+  if (O.ESTADO === 'PLANIFICADA') paso = (flPuede('AGREGAR') ? flBtn('btn-p', '🚚 Registrar la salida', 'flpSalida()') : '') + flBtn('btn-s', '＋ Agregar tarea', 'flpAgregarVer()');
+  else if (O.ESTADO === 'EN_TRABAJO') paso = r.EQUIPOS.map(function(e) { return flBtn('btn-p', '🗺 Trabajar en ' + pcEsc(e.IDENT), 'flpMapa(' + O.ID + ',' + e.ID + ')'); }).join('') + (S && S.ESTADO === 'EN_CURSO' ? flBtn('btn-s', '↩ Registrar el regreso', 'flpRegreso()') : flBtn('btn-p', '✅ Cerrar y hacer el remito', 'flpCerrar()'));
+  var h = '<div class="mh"><span class="mt">' + pcEsc(O.NRO) + ' · ' + pcEsc(O.CLIENTE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="font-size:13.5px">' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' + flpBd(FLP_EST, O.ESTADO) + '<span>Fecha <b>' + fmtD(O.FECHA_PROG) + '</b></span>' + (O.BASE ? '<span>Base <b>' + pcEsc(O.BASE) + '</b></span>' : '') + (O.CONTACTO ? '<span>Pidió <b>' + pcEsc(O.CONTACTO) + '</b></span>' : '') + '</div>' + (O.OBS ? '<div class="tdim mt2">' + pcEsc(O.OBS) + '</div>' : '') +
+    '<div class="mt3"><b>Plan</b> <span class="tdim">(' + r.PLAN.filter(function(p) { return p.ESTADO === 'HECHO'; }).length + ' hechas de ' + r.PLAN.length + (pend ? ' · ' + pend + ' pendiente(s)' : '') + ')</span></div><div class="tw mt2"><table style="font-size:12.5px"><thead><tr><th>Unidad</th><th>Tarea</th><th>Cubierta</th><th>Rueda</th><th>Llanta</th><th>Estado</th><th>Obs.</th>' + (O.ESTADO === 'PLANIFICADA' ? '<th></th>' : '') + '</tr></thead><tbody>' +
+    r.PLAN.map(function(p) { return '<tr><td><b>' + pcEsc(p.UNIDAD) + '</b></td><td>' + pcEsc(p.TAREA) + '</td><td class="mono">' + pcEsc(p.C ? p.C.MARCA : '') + (p.C && p.C.DOT ? '<div class="tdim" style="font-size:11px">DOT ' + pcEsc(p.C.DOT) + '</div>' : '') + '</td><td>' + pcEsc(p.POS) + '</td><td>' + (p.EN_LLANTA === 1 ? 'Sí' : '') + '</td><td>' + flpBd(FLP_PEST, p.ESTADO) + '</td><td>' + pcEsc(p.OBS) + '</td>' + (O.ESTADO === 'PLANIFICADA' ? '<td>' + flBtn('btn-d', 'Anular', 'flpLineaAnular(' + p.ID + ')', 'Anular tarea') + '</td>' : '') + '</tr>'; }).join('') + '</tbody></table></div>' +
+    '<div id="flp-agr"></div>' +
+    (S ? '<div class="mt3"><b>Salida ' + pcEsc(S.NRO) + '</b> · ' + fmtD(S.FECHA) + (S.REGRESO ? ' · volvió ' + fmtD(S.REGRESO) : ' · <b>afuera</b>') + '<div class="tdim">Vehículo <b>' + pcEsc(S.VEH) + '</b> · ' + S.PERS.map(function(p) { return pcEsc(p.N) + (p.ROL === 'RESPONSABLE' ? ' (responsable)' : ''); }).join(', ') + '</div><div class="tdim" style="font-size:12px">' + S.ITEMS.map(function(i) { return pcEsc(i.NOMBRE) + (i.TIPO === 'INSUMO' ? ' ×' + i.SALE : '') + (i.EST && i.EST !== 'OK' ? ' [' + pcEsc(i.EST) + ']' : ''); }).join(' · ') + '</div></div>' : '') +
+    (r.MOVS ? '<div class="mt2 tdim">' + r.MOVS + ' movimiento(s) de cubiertas cargados con esta orden</div>' : '') +
+    (r.REMITO ? '<div class="mt2">Remito <b class="mono">' + pcEsc(r.REMITO.NRO) + '</b> · se factura desde Ventas → Facturar remitos pendientes</div>' : '') +
+    (ab && paso ? '<div class="mt3" style="display:flex;gap:6px;flex-wrap:wrap">' + paso + '</div>' : '') + '</div>' +
+    '<div class="mf">' + (ab && flPuede('ANULAR') ? '<button class="btn btn-d" onclick="flpAnular(' + O.ID + ')">✖ Anular</button>' : '') + '<button class="btn btn-s" onclick="flpHoja(' + O.ID + ')">📄 Hoja de la orden</button><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>';
+  flpSinModales(); showModal(h);
+}
+async function flpAgregarVer() { var pd = await flpDatos(FLP_.v.O.ID_CLIENTE); if (!pd) return; FLP_.pd = pd; $id('flp-agr').innerHTML = flpLineaEditor('flpAgregarOk()'); }
+async function flpAgregarOk() { var x = flpLineaLeer(); if (!x) return; x.ID_ORDEN = FLP_.v.O.ID; var r = await gsRun('gsMT_PlanLinea', x); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Tarea agregada ✓', 'g'); flpVer(FLP_.v.O.ID); }
+async function flpLineaAnular(idPlan) { var r = await gsRun('gsMT_PlanLinea', { ID_ORDEN: FLP_.v.O.ID, ANULAR: idPlan }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Tarea anulada ✓', 'g'); flpVer(FLP_.v.O.ID); }
+// ── Hoja de la orden (para llevar): encabezado, mapa de cada unidad con columnas en blanco, tareas, cubiertas, personal y herramientas ──
+async function flpHoja(id) {
+  var r = (FLP_.v && FLP_.v.O.ID === id) ? FLP_.v : await gsRun('gsMT_Plan', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  var O = r.O, S = r.SALIDA, c = (typeof pcEncImp === 'function' ? pcEncImp('Orden de servicio en campo', O.NRO, O.CLIENTE) : '<h1>Orden de servicio ' + pcEsc(O.NRO) + '</h1>');
+  c += '<table class="det"><tbody><tr><td><b>Cliente</b></td><td>' + pcEsc(O.CLIENTE) + '</td><td><b>Fecha</b></td><td>' + fmtD(O.FECHA_PROG) + '</td></tr><tr><td><b>Base</b></td><td>' + pcEsc(O.BASE || '—') + '</td><td><b>Pidió</b></td><td>' + pcEsc(O.CONTACTO || '—') + '</td></tr>' +
+    (S ? '<tr><td><b>Salida</b></td><td>' + pcEsc(S.NRO) + ' · vehículo ' + pcEsc(S.VEH) + '</td><td><b>Personal</b></td><td>' + S.PERS.map(function(p) { return pcEsc(p.N) + (p.ROL === 'RESPONSABLE' ? ' (resp.)' : ''); }).join(', ') + '</td></tr>' : '') + (O.OBS ? '<tr><td><b>Obs.</b></td><td colspan="3">' + pcEsc(O.OBS) + '</td></tr>' : '') + '</tbody></table>';
+  c += '<h2>Tareas</h2><table class="det"><thead><tr><th>Unidad</th><th>Tarea</th><th>Cubierta (marca grabada)</th><th>DOT</th><th>Rueda</th><th>Llanta</th><th>Hecho</th><th>Observaciones</th></tr></thead><tbody>' +
+    r.PLAN.map(function(p) { return '<tr><td>' + pcEsc(p.UNIDAD) + '</td><td>' + pcEsc(p.TAREA) + '</td><td>' + pcEsc(p.C ? p.C.MARCA : '') + '</td><td>' + pcEsc(p.C ? (p.C.DOT || 'sin DOT') : '') + '</td><td>' + pcEsc(p.POS) + '</td><td>' + (p.EN_LLANTA === 1 ? 'Sí' : '') + '</td><td>' + (p.ESTADO === 'HECHO' ? '✔' : '☐') + '</td><td>' + pcEsc(p.OBS) + '</td></tr>'; }).join('') + '</tbody></table>';
+  var lleva = r.PLAN.filter(function(p) { return p.C; }); if (lleva.length) c += '<h2>Cubiertas que se llevan (' + lleva.length + ')</h2><table class="det"><thead><tr><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Fabricante</th><th>Para</th><th>Salió ☐</th></tr></thead><tbody>' + lleva.map(function(p) { return '<tr><td>' + pcEsc(p.C.MARCA) + '</td><td>' + pcEsc(p.C.DOT || 'sin DOT') + '</td><td>' + pcEsc(p.C.MEDIDA) + '</td><td>' + pcEsc(p.C.FAB) + '</td><td>' + pcEsc(p.UNIDAD + ' ' + p.POS) + '</td><td>☐</td></tr>'; }).join('') + '</tbody></table>';
+  r.UNIDADES.forEach(function(u) { var monta = {}; (u.MONT || []).forEach(function(m) { monta[m.ID_POS] = m; });
+    c += '<h2>' + pcEsc(u.IDENT + ' · ' + (u.MARCA + ' ' + u.MODELO).trim() + (u.CFG ? ' · ' + u.CFG.NOMBRE : '')) + '</h2><div>Km al llegar: ____________</div>' + (u.CFG ? '<div style="text-align:center">' + flDibujo(u.CFG.EJES, u.CFG.POS, { ancho: 300, fn: function(p) { var m = monta[p.ID]; return { fill: '#fff', txt: m && m.C ? m.C.MARCA : '', txt2: '', vacia: !m }; } }) + '</div>' +
+      '<table class="det"><thead><tr><th>Rueda</th><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Dibujo (mm)</th><th>Presión (PSI)</th><th>Estado</th><th>Qué se hizo</th></tr></thead><tbody>' + u.CFG.POS.map(function(p) { var m = monta[p.ID], x = m && m.C; return '<tr><td>' + pcEsc(p.COD) + '</td><td>' + pcEsc(x ? x.MARCA : '') + '</td><td>' + pcEsc(x ? (x.DOT || 'sin DOT') : '') + '</td><td>' + pcEsc(x ? x.MEDIDA : '') + '</td><td></td><td></td><td></td><td></td></tr>'; }).join('') + '</tbody></table>' : '<div>Sin configuración de ejes.</div>'); });
+  if (S) c += '<h2>Herramientas e insumos</h2><table class="det"><thead><tr><th>Ítem</th><th>Sale</th><th>Vuelve</th></tr></thead><tbody>' + S.ITEMS.map(function(i) { return '<tr><td>' + pcEsc(i.NOMBRE) + '</td><td>' + i.SALE + '</td><td>' + (i.VUELVE !== '' ? pcEsc(String(i.VUELVE)) : '') + '</td></tr>'; }).join('') + '</tbody></table>';
+  c += '<div style="display:flex;gap:40px;margin-top:40px"><div style="flex:1;border-top:1px solid #000;text-align:center;padding-top:4px">Responsable Vulcan</div><div style="flex:1;border-top:1px solid #000;text-align:center;padding-top:4px">Firma y aclaración del cliente</div></div>';
+  pcImprimir('Orden ' + O.NRO, c);
+}
+// ── Salida: vehículo, responsable, acompañantes, herramientas e insumos ──
+async function flpSalida() {
+  var pd = await flpDatos(''); if (!pd) return; FLP_.pd = pd; FLP_.ins = [];
+  var O = FLP_.v.O;
+  flpSinModales(); showModal('<div class="mh"><span class="mt">🚚 Salida · ' + pcEsc(O.NRO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="fl-frm">' +
+    '<div class="fg"><label class="fl">Responsable *</label><select class="fs" id="flp-s-r">' + flpOpt(pd.EMPLEADOS, '', '— elegí —') + '</select></div>' +
+    '<div class="fg"><label class="fl">Vehículo *</label><select class="fs" id="flp-s-v">' + flpOpt(pd.VEHICULOS, '', '— elegí —') + '</select></div>' +
+    '<div class="fg full"><label class="fl">Acompañantes</label><div style="display:flex;flex-wrap:wrap;gap:4px 14px;max-height:120px;overflow:auto">' + pd.EMPLEADOS.map(function(e) { return '<label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" class="flp-s-a" value="' + e.V + '"> ' + pcEsc(e.T) + '</label>'; }).join('') + '</div></div>' +
+    '<div class="fg full"><label class="fl">Herramientas que salen *</label><div style="display:flex;flex-wrap:wrap;gap:4px 14px;max-height:160px;overflow:auto">' + (pd.HERRAMIENTAS.length ? pd.HERRAMIENTAS.map(function(h) { return '<label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" class="flp-s-h" value="' + pcEsc(h.V) + '"> ' + pcEsc(h.T) + '</label>'; }).join('') : '<span class="tdim">No hay herramientas disponibles</span>') + '</div></div>' +
+    '<div class="fg full"><label class="fl">Insumos que salen</label><div style="display:flex;gap:6px"><input class="fi" id="flp-s-i" list="flp-s-il" placeholder="Buscá el insumo" style="flex:1"><input class="fi" id="flp-s-c" inputmode="decimal" placeholder="Cant." style="width:90px">' + flBtn('btn-s', '＋', 'flpSalIns()') + '</div><datalist id="flp-s-il">' + pd.INSUMOS.map(function(i) { return '<option value="' + pcEsc(i.T) + '">'; }).join('') + '</datalist><div id="flp-s-il2" class="mt2"></div></div>' +
+    '<div class="fg full"><label class="fl">Observaciones</label><input class="fi" id="flp-s-o"></div></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="flp-s-ok" onclick="flpSalidaOk()">Registrar salida</button></div>');
+}
+function flpSalIns() { var t = $v('flp-s-i'), x = FLP_.pd.INSUMOS.filter(function(i) { return i.T === t; })[0], c = Number(String($v('flp-s-c')).replace(',', '.')); if (!x) { toast('Elegí un insumo de la lista', 'r2'); return; } if (!(c > 0)) { toast('Poné la cantidad', 'r2'); return; }
+  FLP_.ins.push({ ID_INSUMO: x.V, T: x.T, CANTIDAD: c }); $id('flp-s-i').value = ''; $id('flp-s-c').value = '';
+  $id('flp-s-il2').innerHTML = FLP_.ins.map(function(i, k) { return '<div style="display:flex;gap:6px;align-items:center;font-size:13px">' + pcEsc(i.T) + ' × <b>' + i.CANTIDAD + '</b> ' + flBtn('btn-d', '✖', 'FLP_.ins.splice(' + k + ',1);flpSalIns2()') + '</div>'; }).join(''); }
+function flpSalIns2() { $id('flp-s-il2').innerHTML = FLP_.ins.map(function(i, k) { return '<div style="display:flex;gap:6px;align-items:center;font-size:13px">' + pcEsc(i.T) + ' × <b>' + i.CANTIDAD + '</b> ' + flBtn('btn-d', '✖', 'FLP_.ins.splice(' + k + ',1);flpSalIns2()') + '</div>'; }).join(''); }
+async function flpSalidaOk() {
+  var b = $id('flp-s-ok'), o = { ID_ORDEN: FLP_.v.O.ID, ID_RESPONSABLE: $v('flp-s-r'), ID_VEHICULO: $v('flp-s-v'), OBSERVACIONES: $v('flp-s-o'),
+    ACOMP: Array.prototype.map.call(document.querySelectorAll('.flp-s-a:checked'), function(x) { return x.value; }), HERR: Array.prototype.map.call(document.querySelectorAll('.flp-s-h:checked'), function(x) { return x.value; }), INSUMOS: FLP_.ins.map(function(i) { return { ID_INSUMO: i.ID_INSUMO, CANTIDAD: i.CANTIDAD }; }) };
+  b.disabled = true; b.textContent = 'Guardando…';
+  try { var r = await gsRun('gsMT_PlanSalida', o); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast('Salida ' + r.NRO + ' registrada ✓' + (r.SIN_STOCK && r.SIN_STOCK.length ? ' · ojo, sin stock: ' + r.SIN_STOCK.join(', ') : ''), 'g'); closeModal(); if ($id('flp-g')) await renderPlanes(); flpVer(o.ID_ORDEN);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Registrar salida'; } }
+}
+// ── Trabajar en el mapa con la orden: cada movimiento queda con su orden ──
+function flpMapa(idOrden, idEq) { flpSinModales(); FLM_.orden = { ID: idOrden, NRO: FLP_.v.O.NRO, CLI: FLP_.v.O.ID_CLIENTE }; FLM_.cli = FLP_.v.O.ID_CLIENTE; FLM_.eq = String(idEq); FL_.t = 'mapa'; renderFlota(); }
+function flpVolverOrden() { var id = FLM_.orden.ID; FLM_.orden = null; FL_.t = 'planes'; renderFlota().then(function() { flpVer(id); }); }
+// ── Regreso: cada herramienta (volvió / falta / rota) y cuánto vuelve de cada insumo ──
+function flpRegreso() {
+  var S = FLP_.v.SALIDA;
+  flpSinModales(); showModal('<div class="mh"><span class="mt">↩ Regreso · ' + pcEsc(S.NRO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="tw"><table style="font-size:13px"><thead><tr><th>Ítem</th><th>Salió</th><th>Vuelve</th><th>Motivo (si falta o está rota)</th></tr></thead><tbody>' +
+    S.ITEMS.map(function(i) { return '<tr data-it="' + i.ID_ITEM + '" data-t="' + i.TIPO + '" data-h="' + pcEsc(i.ID_HERR) + '"><td>' + pcEsc(i.NOMBRE) + '</td><td>' + i.SALE + '</td><td>' + (i.TIPO === 'HERRAMIENTA' ? '<select class="fs flp-r-e"><option value="OK">Volvió bien</option><option value="FALTA">Falta</option><option value="ROTA">Volvió rota</option></select>' : '<input class="fi flp-r-v" inputmode="decimal" style="width:90px" placeholder="cant.">') + '</td><td><input class="fi flp-r-m"></td></tr>'; }).join('') + '</tbody></table></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="flp-r-ok" onclick="flpRegresoOk()">Registrar regreso</button></div>');
+}
+async function flpRegresoOk() {
+  var b = $id('flp-r-ok'), o = { ID_SERV: FLP_.v.SALIDA.ID, HERR: [], INSUMOS: [] };
+  Array.prototype.forEach.call(document.querySelectorAll('.mo tr[data-it]'), function(tr) { var m = tr.querySelector('.flp-r-m').value;
+    if (tr.getAttribute('data-t') === 'HERRAMIENTA') o.HERR.push({ ID_HERR: tr.getAttribute('data-h'), ESTADO: tr.querySelector('.flp-r-e').value, MOTIVO: m }); else o.INSUMOS.push({ ID_ITEM: tr.getAttribute('data-it'), VUELVE: String(tr.querySelector('.flp-r-v').value).replace(',', '.'), MOTIVO: m }); });
+  b.disabled = true; b.textContent = 'Guardando…';
+  try { var r = await gsRun('gsMT_PlanRegreso', o); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast('Regreso registrado ✓' + (r.FALTANTES && r.FALTANTES.length ? ' · faltantes: ' + r.FALTANTES.length : ''), 'g'); closeModal(); flpVer(FLP_.v.O.ID);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Registrar regreso'; } }
+}
+// ── Cierre: lo que se cobra (precio de la lista vigente) y por qué no se hizo lo que quedó pendiente ──
+function flpCerrar() {
+  var r = FLP_.v, L = r.COBRAR.LINEAS, tot = 0; L.forEach(function(l) { tot += l.CANT * l.PRECIO; });
+  var pend = r.PLAN.filter(function(p) { return p.ESTADO !== 'HECHO' || p.COD === 'SERVICIO'; });
+  flpSinModales(); showModal('<div class="mh"><span class="mt">✅ Cerrar ' + pcEsc(r.O.NRO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="font-size:13.5px">' +
+    '<b>Lo que va al remito</b><div class="tw mt2"><table style="font-size:12.5px"><thead><tr><th>Artículo</th><th>De</th><th class="tr">Cant.</th><th class="tr">Precio s/IVA</th><th class="tr">Subtotal</th></tr></thead><tbody>' +
+    (L.length ? L.map(function(l) { return '<tr><td>' + pcEsc(l.NOMBRE) + (l.TIPO !== 'SERVICIO' ? ' <span class="tdim">(descuenta stock)</span>' : '') + '</td><td>' + pcEsc(l.ORIGEN) + '</td><td class="tr">' + l.CANT + '</td><td class="tr">' + (l.PRECIO ? flpPlata(l.PRECIO) : '<b style="color:#b91c1c">sin precio</b>') + '</td><td class="tr">' + flpPlata(l.CANT * l.PRECIO) + '</td></tr>'; }).join('') + '<tr><td colspan="4" class="tr"><b>Total sin IVA</b></td><td class="tr"><b>' + flpPlata(tot) + '</b></td></tr>'
+      : '<tr><td colspan="5" class="tdim tc" style="padding:10px">No hay nada para cobrar: se cierra sin remito.</td></tr>') + '</tbody></table></div>' +
+    (r.COBRAR.SIN_ARTICULO.length ? '<div class="al mt2">Sin artículo de venta (no van al remito): ' + pcEsc(r.COBRAR.SIN_ARTICULO.join(', ')) + '</div>' : '') +
+    (pend.length ? '<div class="mt3"><b>Tareas sin hacer</b> <span class="tdim" style="font-size:12px">(las de cubiertas pendientes piden el motivo; en los servicios, escribí el motivo solo si no se hizo)</span></div>' + pend.map(function(p) { return '<div class="fg mt2"><label class="fl">' + pcEsc(p.UNIDAD + ' · ' + p.TAREA + (p.C ? ' · ' + p.C.MARCA : '')) + (p.COD !== 'SERVICIO' ? ' *' : '') + '</label><input class="fi flp-c-m" data-p="' + p.ID + '" placeholder="' + (p.COD === 'SERVICIO' ? 'vacío = se hizo' : '¿por qué no se hizo?') + '"></div>'; }).join('') : '') +
+    '<div class="fg mt3"><label class="fl">Observaciones del remito</label><input class="fi" id="flp-c-o"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="flp-c-ok" onclick="flpCerrarOk()">Cerrar orden' + (L.length ? ' y hacer el remito' : '') + '</button></div>');
+}
+async function flpCerrarOk() {
+  var b = $id('flp-c-ok'), mot = {}; Array.prototype.forEach.call(document.querySelectorAll('.flp-c-m'), function(x) { if (x.value.trim()) mot[x.getAttribute('data-p')] = x.value.trim(); });
+  b.disabled = true; b.textContent = 'Guardando…';
+  try { var r = await gsRun('gsMT_PlanCerrar', { ID_ORDEN: FLP_.v.O.ID, MOTIVOS: mot, OBS: $v('flp-c-o') }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast('Orden cerrada ✓' + (r.REMITO ? ' · remito ' + r.REMITO.NRO : ''), 'g'); closeModal(); if ($id('flp-g')) await renderPlanes(); else if ($id('mt-body') && typeof mtRecargar === 'function') await mtRecargar(); flpVer(FLP_.v.O.ID);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Cerrar orden'; } }
+}
+// Desde la orden del taller: abre el cierre con lo aprobado del presupuesto
+async function flpCerrarDesde(id) { var r = await gsRun('gsMT_Plan', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } FLP_.v = r; flpCerrar(); }
+// ── Reportes de flota y cubiertas ──
+var FLR_ = { F: { cli: '', desde: '', hasta: '' }, tab: 'UBIC', d: null };
+async function renderReportesFlota() {
+  $id('fl-tit').textContent = '📊 Reportes de flota y cubiertas'; $id('fl-sub').textContent = 'Flota y cubiertas · dónde están, cuánto cuestan por km, qué se rompe y qué trabajos hicimos';
+  var F = FLR_.F, o = { ID_CLIENTE: F.cli, DESDE: F.desde ? new Date(F.desde + 'T00:00:00').getTime() : '', HASTA: F.hasta ? new Date(F.hasta + 'T23:59:59').getTime() : '' };
+  var r = await gsRun('gsCB_Reportes', o); if (!r || !r.ok) { $id('fl-body').innerHTML = '<div class="al">' + pcEsc((r && r.error) || 'No se pudo cargar') + '</div>'; return; } FLR_.d = r;
+  var tabs = [['UBIC', '📍 Cubiertas por ubicación'], ['COSTO', '💲 Costo por km'], ['ROT', '⚠ Roturas y bajas'], ['TRAB', '🔧 Trabajos hechos']];
+  $id('fl-body').innerHTML = '<div class="card mb3"><div class="card-body"><div class="pc-otf">' +
+    '<div class="fg" style="grid-column:span 2"><label class="fl">Cliente</label><select class="fs" id="flr-cli" data-filtro onchange="FLR_.F.cli=this.value;renderReportesFlota()"><option value="">Todos</option>' + r.CLIENTES.filter(function(c) { return c.A; }).map(function(c) { return '<option value="' + c.V + '"' + (String(F.cli) === String(c.V) ? ' selected' : '') + '>' + pcEsc(c.T) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Desde (roturas y trabajos)</label><input class="fi" type="date" value="' + F.desde + '" onchange="FLR_.F.desde=this.value;renderReportesFlota()"></div><div class="fg"><label class="fl">Hasta</label><input class="fi" type="date" value="' + F.hasta + '" onchange="FLR_.F.hasta=this.value;renderReportesFlota()"></div>' +
+    '<div class="fg" style="align-self:end"><button class="btn btn-s" onclick="FLR_.F={cli:\'\',desde:\'\',hasta:\'\'};renderReportesFlota()">Limpiar filtros</button></div></div>' +
+    '<div class="mt2" style="display:flex;gap:6px;flex-wrap:wrap">' + tabs.map(function(t) { return '<button class="btn ' + (FLR_.tab === t[0] ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="FLR_.tab=\'' + t[0] + '\';renderReportesFlota()">' + t[1] + '</button>'; }).join('') + '</div><div id="flr-c" class="mt3"></div></div></div>';
+  flrPintar();
+}
+function flrTabla(tit, cols, filas, pie) {
+  return '<div class="mb3"><b>' + pcEsc(tit) + '</b> <span class="tdim">(' + filas.length + ')</span><div class="tw pc-abm mt2"><table style="font-size:12.5px"><thead><tr>' + cols.map(function(c) { return '<th' + (c[2] ? ' class="tr"' : '') + '>' + pcEsc(c[0]) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    (filas.length ? filas.map(function(f) { return '<tr>' + cols.map(function(c) { var v = c[1](f); return '<td' + (c[2] ? ' class="tr"' : '') + '>' + v + '</td>'; }).join('') + '</tr>'; }).join('') + (pie || '') : '<tr><td colspan="' + cols.length + '" class="tdim tc" style="padding:14px">Sin datos con esos filtros.</td></tr>') + '</tbody></table></div></div>';
+}
+function flrN(n) { return Number(n || 0).toLocaleString('es-AR'); }
+function flrPintar() {
+  var d = FLR_.d, h = '', e = pcEsc;
+  if (FLR_.tab === 'UBIC') { var t = { UNIDAD: 0, DEPOSITO: 0, TALLER: 0, CLIENTE_: 0, BAJA: 0, OTRA: 0, TOTAL: 0 }; d.UBIC.forEach(function(x) { Object.keys(t).forEach(function(k) { t[k] += x[k]; }); });
+    h = flrTabla('Cubiertas por cliente y dónde están', [['Cliente', function(x) { return '<b>' + e(x.CLIENTE) + '</b>'; }], ['Montadas', function(x) { return flrN(x.UNIDAD); }, 1], ['En nuestro depósito', function(x) { return flrN(x.DEPOSITO); }, 1], ['En el taller', function(x) { return flrN(x.TALLER); }, 1], ['En poder del cliente', function(x) { return flrN(x.CLIENTE_); }, 1], ['De baja', function(x) { return flrN(x.BAJA); }, 1], ['Total', function(x) { return '<b>' + flrN(x.TOTAL) + '</b>'; }, 1]], d.UBIC,
+      d.UBIC.length > 1 ? '<tr><td><b>Total</b></td><td class="tr"><b>' + flrN(t.UNIDAD) + '</b></td><td class="tr"><b>' + flrN(t.DEPOSITO) + '</b></td><td class="tr"><b>' + flrN(t.TALLER) + '</b></td><td class="tr"><b>' + flrN(t.CLIENTE_) + '</b></td><td class="tr"><b>' + flrN(t.BAJA) + '</b></td><td class="tr"><b>' + flrN(t.TOTAL) + '</b></td></tr>' : ''); }
+  if (FLR_.tab === 'COSTO') h = '<div class="tdim mb2" style="font-size:12.5px">Costo conocido = compra del casco (si es nuestro) + recapados terminados al precio de la lista vigente + servicios de cubiertas cobrados en remitos. Km = los recorridos montada (acoplados: km del tractor que los llevó). Sin km o sin costo no hay costo por km.</div>' +
+    flrTabla('Costo por km de cada cubierta', [['Marca grabada', function(x) { return '<span class="mono">' + e(x.MARCA) + '</span>'; }], ['DOT', function(x) { return e(x.DOT || '—'); }], ['Medida', function(x) { return e(x.MEDIDA); }], ['Fabricante', function(x) { return e(x.FAB); }], ['Cliente', function(x) { return e(x.CLIENTE); }], ['Km', function(x) { return flrN(x.KM); }, 1], ['Recap.', function(x) { return x.RECAP + (x.RECAP_SIN_PRECIO ? ' <span title="sin precio en la lista">⚠</span>' : ''); }, 1], ['Compra', function(x) { return x.COMPRA ? flpPlata(x.COMPRA) : '—'; }, 1], ['Recapados', function(x) { return x.RECAPADOS ? flpPlata(x.RECAPADOS) : '—'; }, 1], ['Servicios', function(x) { return x.SERVICIOS ? flpPlata(x.SERVICIOS) : '—'; }, 1], ['Costo', function(x) { return '<b>' + flpPlata(x.COSTO) + '</b>'; }, 1], ['$ por km', function(x) { return x.POR_KM !== '' ? '<b>' + flpPlata(x.POR_KM) + '</b>' : '—'; }, 1]], d.COSTOS);
+  if (FLR_.tab === 'ROT') { var cR = [['', function(x) { return '<b>' + e(x.K) + '</b>'; }], ['Roturas', function(x) { return flrN(x.ROTURAS); }, 1], ['Bajas', function(x) { return flrN(x.BAJAS); }, 1], ['Total', function(x) { return '<b>' + flrN(x.ROTURAS + x.BAJAS) + '</b>'; }, 1]];
+    var cc = function(n) { var c = cR.slice(); c[0] = [n, cR[0][1]]; return c; };
+    h = '<div class="flr-g" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">' + '<div>' + flrTabla('Por causa', cc('Causa'), d.ROT_CAUSA) + '</div><div>' + flrTabla('Por chofer', cc('Chofer'), d.ROT_CHOFER) + '</div><div>' + flrTabla('Por unidad', cc('Unidad'), d.ROT_UNIDAD) + '</div></div>' +
+      flrTabla('Detalle', [['Fecha', function(x) { return fmtD(x.F); }], ['N°', function(x) { return '<span class="mono">' + e(x.NRO) + '</span>'; }], ['Qué', function(x) { return x.TIPO === 'ROTURA' ? 'Rotura' : 'Baja'; }], ['Causa', function(x) { return e(x.CAUSA); }], ['Cubierta', function(x) { return '<span class="mono">' + e(x.MARCA) + '</span>'; }], ['Unidad', function(x) { return e(x.UNIDAD); }], ['Cliente', function(x) { return e(x.CLIENTE); }], ['Chofer', function(x) { return e(x.CHOFER); }], ['Km de la cubierta', function(x) { return flrN(x.KM_CUB); }, 1]], d.ROTURAS.slice().sort(function(a, b) { return b.F - a.F; })); }
+  if (FLR_.tab === 'TRAB') { var cT = function(n) { return [[n, function(x) { return '<b>' + e(x.K) + '</b>'; }], ['Trabajos', function(x) { return flrN(x.N); }, 1], ['Con orden', function(x) { return flrN(x.ORDEN); }, 1], ['Cobrados', function(x) { return flrN(x.COBRADO); }, 1]]; };
+    h = '<div class="tdim mb2" style="font-size:12.5px"><b>' + flrN(d.TRABAJOS) + '</b> movimientos de cubiertas en el período (montajes, rotaciones, mediciones, calibrados, reparaciones…). «Cobrados» = ya están en un remito.</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px"><div>' + flrTabla('Por tipo de trabajo', cT('Trabajo'), d.TR_TIPO) + '</div><div>' + flrTabla('Por cliente', cT('Cliente'), d.TR_CLIENTE) + '</div><div>' + flrTabla('Por base', cT('Base'), d.TR_BASE) + '</div><div>' + flrTabla('Por unidad', cT('Unidad'), d.TR_UNIDAD) + '</div><div>' + flrTabla('Por empleado / usuario', cT('Quién'), d.TR_EMPLEADO) + '</div></div>'; }
+  $id('flr-c').innerHTML = h;
   if (typeof gridPonerBotones_ === 'function') setTimeout(gridPonerBotones_, 30);
 }
 </script>
