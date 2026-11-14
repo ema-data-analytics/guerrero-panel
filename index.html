@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "2f29445858f0"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d429f1d35d21"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1595,7 +1595,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611141934';
+var EMA_BUILD = '202611142058';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16276,7 +16276,7 @@ async function pcEquipos() {
     '<div class="tw"><table style="font-size:12px" id="pq-herr"><thead><tr><th>Código</th><th>Herramienta</th><th>Estación</th><th>Está en</th><th>Responsable</th><th>Estado</th><th>Próx. service</th><th>Último control</th><th></th></tr></thead><tbody>' +
     hs.map(function(x) {
       var u = x.ULTIMO_CONTROL, baja = x.ESTADO === 'BAJA' || x.ESTADO === 'PERDIDA', venc = x.PROX_SERVICE && +x.PROX_SERVICE < Date.now();
-      return '<tr' + (baja ? ' style="opacity:.45"' : '') + '><td class="mono"><b>' + pcEsc(x.CODIGO) + '</b></td><td>' + pcEsc(x.NOMBRE) + (x.OBSERVACIONES ? '<div class="tdim" style="font-size:10px">' + pcEsc(x.OBSERVACIONES) + '</div>' : '') + '</td>' +
+      return '<tr' + (baja ? ' style="opacity:.45"' : '') + '><td class="mono"><b>' + pcEsc(x.CODIGO) + '</b></td><td>' + pcEsc(x.NOMBRE) + (String(x.SALE_CAMPO) === '0' ? ' <span class="badge b-gray" title="Máquina fija: no sale a servicios afuera">fija de planta</span>' : '') + (x.OBSERVACIONES ? '<div class="tdim" style="font-size:10px">' + pcEsc(x.OBSERVACIONES) + '</div>' : '') + '</td>' +
         '<td>' + pcEsc(pqEst(x.ID_ESTACION)) + '</td><td>' + (Number(x.ID_SERV_FUERA) > 0 ? '<span class="badge b-blue">afuera: servicio externo</span>' : (String(x.EN_ESTACION) !== String(x.ID_ESTACION) ? '<span class="badge b-orange">prestada: ' + pcEsc(pqEst(x.EN_ESTACION)) + '</span>' : '<span class="tdim">su estación</span>')) + '</td>' +
         '<td>' + pcEsc(x.RESPONSABLE || '—') + (x.RESPONSABLE && x.FECHA_ENTREGA ? '<div class="tdim" style="font-size:10px">desde ' + fmtD(+x.FECHA_ENTREGA) + '</div>' : '') + '</td><td>' + pcEsc(PQ_EST_H[x.ESTADO] || x.ESTADO) + '</td>' +
         '<td' + (venc ? ' style="color:var(--danger);font-weight:700"' : '') + '>' + pqFecha(x.PROX_SERVICE) + '</td>' +
@@ -16324,10 +16324,11 @@ function pqHerrForm(id) {
     '<div class="fr"><div class="fg"><label class="fl">Estación *</label><select class="fs" id="pq-h-e"><option value="">—</option>' + PQ_.d.estaciones.map(function(e) { return '<option value="' + e.ID_ESTACION + '"' + (String(x.ID_ESTACION) === String(e.ID_ESTACION) ? ' selected' : '') + '>' + (e.NRO || e.ORDEN) + ' · ' + pcEsc(e.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
     '<div class="fg"><label class="fl">Responsable</label><input class="fi" id="pq-h-r" list="pq-pers" placeholder="Elegí de la lista" value="' + pcEsc(x.RESPONSABLE || '') + '"/>' + pqPersList() + '</div></div>' +
     '<div class="fr"><div class="fg"><label class="fl">Próximo service</label><input class="fi" type="date" id="pq-h-s" value="' + ps + '"/></div><div class="fg"><label class="fl">Valor ($)</label><input class="fi" type="number" id="pq-h-v" value="' + (x.VALOR || '') + '"/></div></div>' +
-    '<div class="fg"><label class="fl">Observaciones</label><input class="fi" id="pq-h-o" value="' + pcEsc(x.OBSERVACIONES || '') + '"/></div></div>' +
+    '<div class="fg"><label class="fl">Observaciones</label><input class="fi" id="pq-h-o" value="' + pcEsc(x.OBSERVACIONES || '') + '"/></div>' +
+    '<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:6px"><input type="checkbox" id="pq-h-sc"' + (String(x.SALE_CAMPO) === '0' ? '' : ' checked') + '/> Puede salir a servicios afuera <span class="tdim">(sacá el tilde en máquinas fijas de la planta: extrusora, autoclave, embandadora…)</span></label></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pq-h-ok">Guardar</button></div>');
   $id('pq-h-ok').onclick = async function() {
-    var r = await gsRun('gsPC_HerrGuardar', { ID_HERR: id || '', NOMBRE: $v('pq-h-n'), CODIGO: $v('pq-h-c'), ID_ESTACION: $v('pq-h-e'), RESPONSABLE: $v('pq-h-r'), PROX_SERVICE: $v('pq-h-s'), VALOR: $v('pq-h-v'), OBSERVACIONES: $v('pq-h-o') });
+    var r = await gsRun('gsPC_HerrGuardar', { ID_HERR: id || '', NOMBRE: $v('pq-h-n'), CODIGO: $v('pq-h-c'), ID_ESTACION: $v('pq-h-e'), RESPONSABLE: $v('pq-h-r'), PROX_SERVICE: $v('pq-h-s'), VALOR: $v('pq-h-v'), OBSERVACIONES: $v('pq-h-o'), SALE_CAMPO: $id('pq-h-sc').checked ? 1 : 0 });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
     closeModal(); toast((id ? 'Guardada ' : 'Alta ') + r.CODIGO + ' ✓', 'g'); pcEquipos();
   };
@@ -16646,7 +16647,7 @@ function pqServicios() {
 }
 function pqServForm() {
   var ct = PQ_.d.ctrl;
-  var disp = (PQ_.d.herramientas || []).filter(function(h) { return h.ESTADO === 'EN_USO' && !(Number(h.ID_SERV_FUERA) > 0); });
+  var disp = (PQ_.d.herramientas || []).filter(function(h) { return h.ESTADO === 'EN_USO' && !(Number(h.ID_SERV_FUERA) > 0) && !(String(h.SALE_CAMPO) === '0'); });
   PQ_.sv = { h: {}, ins: [] };
   showModal('<div class="mh"><span class="mt">Nueva salida a servicio externo</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     '<div class="fr"><div class="fg"><label class="fl">Cliente *</label><select class="fs" id="pq-sv-c"><option value="">—</option>' + ct.clientes.map(function(c) { return '<option value="' + c.ID_CLIENTE + '">' + pcEsc(c.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
@@ -18037,7 +18038,7 @@ function flpCerrar() {
   var pend = r.PLAN.filter(function(p) { return p.ESTADO !== 'HECHO' || p.COD === 'SERVICIO'; });
   flpSinModales(); showModal('<div class="mh"><span class="mt">✅ Cerrar ' + pcEsc(r.O.NRO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="font-size:13.5px">' +
     '<b>Lo que va al remito</b><div class="tw mt2"><table style="font-size:12.5px"><thead><tr><th>Artículo</th><th>De</th><th class="tr">Cant.</th><th class="tr">Precio s/IVA</th><th class="tr">Subtotal</th></tr></thead><tbody>' +
-    (L.length ? L.map(function(l) { return '<tr><td>' + pcEsc(l.NOMBRE) + (l.TIPO !== 'SERVICIO' ? ' <span class="tdim">(descuenta stock)</span>' : '') + '</td><td>' + pcEsc(l.ORIGEN) + '</td><td class="tr">' + l.CANT + '</td><td class="tr">' + (l.PRECIO ? flpPlata(l.PRECIO) : '<b style="color:#b91c1c">sin precio</b>') + '</td><td class="tr">' + flpPlata(l.CANT * l.PRECIO) + '</td></tr>'; }).join('') + '<tr><td colspan="4" class="tr"><b>Total sin IVA</b></td><td class="tr"><b>' + flpPlata(tot) + '</b></td></tr>'
+    (L.length ? L.map(function(l) { return '<tr><td>' + pcEsc(l.NOMBRE) + (l.TIPO !== 'SERVICIO' ? ' <span class="tdim">(descuenta stock)</span>' : '') + '</td><td>' + pcEsc(l.ORIGEN) + '</td><td class="tr">' + l.CANT + '</td><td class="tr">' + (l.PRECIO ? flpPlata(l.PRECIO) + (l.DTO ? '<div class="tdim" style="font-size:10.5px">lista ' + flpPlata(l.PRECIO_LISTA) + ' − ' + String(l.DTO).replace('.', ',') + '%</div>' : '') : '<b style="color:#b91c1c">sin precio</b>') + '</td><td class="tr">' + flpPlata(l.CANT * l.PRECIO) + '</td></tr>'; }).join('') + '<tr><td colspan="4" class="tr"><b>Total sin IVA</b></td><td class="tr"><b>' + flpPlata(tot) + '</b></td></tr>'
       : '<tr><td colspan="5" class="tdim tc" style="padding:10px">No hay nada para cobrar: se cierra sin remito.</td></tr>') + '</tbody></table></div>' +
     (r.COBRAR.SIN_ARTICULO.length ? '<div class="al mt2">Sin artículo de venta (no van al remito): ' + pcEsc(r.COBRAR.SIN_ARTICULO.join(', ')) + '</div>' : '') +
     (pend.length ? '<div class="mt3"><b>Tareas sin hacer</b> <span class="tdim" style="font-size:12px">(las de cubiertas pendientes piden el motivo; en los servicios, escribí el motivo solo si no se hizo)</span></div>' + pend.map(function(p) { return '<div class="fg mt2"><label class="fl">' + pcEsc(p.UNIDAD + ' · ' + p.TAREA + (p.C ? ' · ' + p.C.MARCA : '')) + (p.COD !== 'SERVICIO' ? ' *' : '') + '</label><input class="fi flp-c-m" data-p="' + p.ID + '" placeholder="' + (p.COD === 'SERVICIO' ? 'vacío = se hizo' : '¿por qué no se hizo?') + '"></div>'; }).join('') : '') +
