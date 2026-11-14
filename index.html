@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d429f1d35d21"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f7a7d59908a9"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1595,7 +1595,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611142058';
+var EMA_BUILD = '202611142145';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16910,7 +16910,7 @@ async function mtNuevaOk() {
 }
 // ── VER ORDEN: equipos con su check list + presupuesto ──
 async function mtAbrir(id) {
-  try { var r = await gsRun('gsMT_Orden', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } MT_.ord = r; MT_.lin = null; mtPintar(); mtTop(); }
+  try { var r = await gsRun('gsMT_Orden', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } MT_.ord = r; MT_.lin = null; MT_.dg = 0; mtPintar(); mtTop(); }
   catch (e) { toast(e.message, 'r2'); }
 }
 // Qué falta del check list en la orden abierta (el presupuesto se arma con todo revisado)
@@ -16933,7 +16933,7 @@ function mtOrdenVer() {
   if (MT_.lin) h += mtPresEditorHtml();
   else if (!P) h += '<div class="tdim mb2">Todavía no hay presupuesto. Se arma solo con lo que dio <b>NO</b> en el check list: el servicio que corresponde, sus repuestos y los precios de la lista vigente (' + pcEsc(MT_.d.LISTA) + '). Después se puede corregir.</div>' + (an || cerr ? '' : (mtChkFaltaTxt() ? '<div class="al mb2">' + pcEsc(mtChkFaltaTxt()) + '</div>' : '') + '<button class="btn btn-p" style="min-height:48px" onclick="mtPresArmar()">⚙ Armar el presupuesto desde el check list</button>');
   else {
-    h += mtPresTabla(P.DET, true) + '<div class="tdim mt2" style="font-size:12px">Fecha ' + fmtD(P.FECHA) + ' · válido ' + P.VALIDEZ + ' días · versión ' + P.VERSION + (P.APROBADO_POR ? ' · aprobó <b>' + pcEsc(P.APROBADO_POR) + '</b> (' + pcEsc(P.MEDIO) + ') el ' + fmtD(P.FECHA_APROB) : '') + (P.MOTIVO ? ' · ' + pcEsc(P.MOTIVO) : '') + '</div>';
+    h += mtPresTabla(P.DET, true, P.DESCUENTO_PCT) + '<div class="tdim mt2" style="font-size:12px">Fecha ' + fmtD(P.FECHA) + ' · válido ' + P.VALIDEZ + ' días · versión ' + P.VERSION + (P.APROBADO_POR ? ' · aprobó <b>' + pcEsc(P.APROBADO_POR) + '</b> (' + pcEsc(P.MEDIO) + ') el ' + fmtD(P.FECHA_APROB) : '') + (P.MOTIVO ? ' · ' + pcEsc(P.MOTIVO) : '') + '</div>';
     if (!an && !cerr) h += '<div class="flex gap2 mt2" style="flex-wrap:wrap">' +
       ((P.ESTADO === 'BORRADOR' || P.ESTADO === 'ENVIADO' || P.ESTADO === 'RECHAZADO') ? '<button class="btn btn-s" onclick="mtPresCorregir()">✏ Corregir (versión nueva)</button>' : '') +
       (P.ESTADO === 'BORRADOR' ? '<button class="btn btn-s" onclick="mtPresEstado(\'ENVIADO\')">📤 Marcar como enviado al cliente</button>' : '') +
@@ -16945,13 +16945,19 @@ function mtOrdenVer() {
 }
 function mtStockDe(idArt) { if (!idArt) return null; var a = MT_.d.ARTS.filter(function(x) { return x.I === Number(idArt); })[0]; if (a) return a.S; var s = null; MT_.d.SERVICIOS.forEach(function(sv) { sv.RECETA.forEach(function(r) { if (r.ID_ARTICULO === Number(idArt)) s = r.STOCK; }); }); return s; }
 function mtStockTd(l) { if (l.CLASE !== 'REPUESTO' && l.CLASE !== 'INSUMO') return '<td class="tr tdim">—</td>'; var s = mtStockDe(l.ID_ARTICULO); if (s === null) return '<td class="tr tdim">?</td>'; var falta = s < l.CANTIDAD; return '<td class="tr" style="font-weight:700;color:' + (falta ? '#dc2626' : '#16a34a') + '" title="Stock actual (solo en pantalla)">' + s + '</td>'; }
-function mtPresTabla(det, soloVer) {
+// Filas del pie: subtotal de renglones, descuento general (si hay) y total sin IVA (igual que el total guardado del presupuesto)
+function mtPresPie(tot, dg, cols, extra) {
+  var dgv = Number(dg) || 0, fin = Math.round(tot * (1 - dgv / 100) * 100) / 100;
+  return (dgv ? '<tr><td colspan="' + cols + '" class="tr">Subtotal</td><td class="tr">' + mtPlata(tot) + '</td>' + (extra || '') + '</tr><tr><td colspan="' + cols + '" class="tr">Descuento general ' + String(dgv).replace('.', ',') + '%</td><td class="tr">− ' + mtPlata(Math.round((tot - fin) * 100) / 100) + '</td>' + (extra || '') + '</tr>' : '') +
+    '<tr><td colspan="' + cols + '" class="tr"><b>Total sin IVA</b></td><td class="tr"><b>' + mtPlata(fin) + '</b></td>';
+}
+function mtPresTabla(det, soloVer, dg) {
   var tot = 0, ve = MT_.d.VE_COSTO, cos = 0;
   var cls = { SERVICIO: 'mt-b-b', REPUESTO: 'mt-b-g', INSUMO: 'mt-b-v', TERCERO: 'mt-b-o', CLIENTE: 'mt-b-x' };
   var rows = det.map(function(l) { tot += l.SUBTOTAL; cos += (l.COSTO_UNIT || 0) * l.CANTIDAD;
     return '<tr><td><span class="mt-bd ' + (cls[l.CLASE] || 'mt-b-x') + '">' + pcEsc(l.CLASE) + '</span></td><td class="pc-wr">' + pcEsc(l.DESCRIPCION) + '</td>' + mtStockTd(l) + '<td class="tr">' + l.CANTIDAD + '</td><td class="tr">' + mtPlata(l.PRECIO_LISTA) + '</td><td class="tr">' + (l.DESCUENTO_PCT ? l.DESCUENTO_PCT + '%' : '') + '</td><td class="tr"><b>' + mtPlata(l.SUBTOTAL) + '</b></td>' + (ve ? '<td class="tr tdim">' + mtPlata((l.COSTO_UNIT || 0) * l.CANTIDAD) + '</td>' : '') + '</tr>'; }).join('');
   return '<div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Clase</th><th>Descripción</th><th class="tr">Stock</th><th class="tr">Cant.</th><th class="tr">Precio s/IVA</th><th class="tr">Desc.</th><th class="tr">Subtotal</th>' + (ve ? '<th class="tr">Costo</th>' : '') + '</tr></thead><tbody>' + rows +
-    '<tr><td colspan="6" class="tr"><b>Total sin IVA</b></td><td class="tr"><b>' + mtPlata(tot) + '</b></td>' + (ve ? '<td class="tr tdim">' + mtPlata(cos) + (tot ? ' · margen ' + Math.round((tot - cos) / tot * 100) + '%' : '') + '</td>' : '') + '</tr></tbody></table></div>';
+    mtPresPie(tot, dg, 6, ve ? '<td></td>' : '') + (ve ? (function() { var fin = Math.round(tot * (1 - (Number(dg) || 0) / 100) * 100) / 100; return '<td class="tr tdim">' + mtPlata(cos) + (fin ? ' · margen ' + Math.round((fin - cos) / fin * 100) + '%' : '') + '</td>'; })() : '') + '</tr></tbody></table></div>';
 }
 async function mtPresArmar() {
   try { var r = await gsRun('gsMT_PresupSugerido', MT_.ord.ORDEN.ID_ORDEN); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
@@ -16959,7 +16965,7 @@ async function mtPresArmar() {
     MT_.lin = r.LINEAS; mtOrdenVer();
   } catch (e) { toast(e.message, 'r2'); }
 }
-function mtPresCorregir() { MT_.lin = MT_.ord.PRESUP.DET.map(function(l) { var c = {}; Object.keys(l).forEach(function(k) { c[k] = l[k]; }); return c; }); mtOrdenVer(); }
+function mtPresCorregir() { MT_.lin = MT_.ord.PRESUP.DET.map(function(l) { var c = {}; Object.keys(l).forEach(function(k) { c[k] = l[k]; }); return c; }); MT_.dg = Number(MT_.ord.PRESUP.DESCUENTO_PCT) || 0; mtOrdenVer(); }
 function mtPresEditorHtml() {
   var L = MT_.lin, tot = 0, d = MT_.d;
   var rows = L.map(function(l, i) { var pu = Math.round(l.PRECIO_LISTA * (1 - (l.DESCUENTO_PCT || 0) / 100) * 100) / 100, sub = Math.round(pu * l.CANTIDAD * 100) / 100; tot += sub; var te = l.CLASE === 'TERCERO';
@@ -16970,7 +16976,8 @@ function mtPresEditorHtml() {
       '<td class="tr"><b>' + mtPlata(sub) + '</b></td><td><button class="btn btn-d btn-xs" title="Sacar el renglón" onclick="MT_.lin.splice(' + i + ',1);mtOrdenVer()">✖</button></td></tr>'; }).join('');
   return '<div class="tdim mb2" style="font-size:12.5px">Precios sin IVA de la lista vigente (' + pcEsc(d.LISTA) + '). Se cambia la cantidad o el descuento; el precio sale de la lista. Los trabajos de tercero llevan el costo y el precio se sugiere con +' + (d.MARGEN_TERC || 30) + '%.</div>' +
     '<div class="tw pc-abm mt-lin" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Clase</th><th>Descripción</th><th class="tr">Stock</th><th>Cant.</th><th class="tr">Precio s/IVA</th><th>Desc. %</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody>' + (rows || '<tr><td colspan="8" class="tc tdim" style="padding:14px">Sin renglones: agregá un servicio o un repuesto.</td></tr>') +
-    '<tr><td colspan="6" class="tr"><b>Total sin IVA</b></td><td class="tr"><b>' + mtPlata(tot) + '</b></td><td></td></tr></tbody></table></div>' +
+    mtPresPie(tot, MT_.dg, 6, '<td></td>') + '<td></td></tr></tbody></table></div>' +
+    '<div class="fg mt2" style="max-width:260px"><label class="fl">Descuento general sobre el total (%)</label><input class="fi tr" id="mt-p-dg" inputmode="decimal" value="' + (Number(MT_.dg) || 0) + '" onchange="MT_.dg=parseFloat(this.value.replace(\',\',\'.\'))||0;mtOrdenVer()"></div>' +
     '<div class="pc-fila3 mt2" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">' +
     '<div class="fg"><label class="fl">＋ Agregar servicio (con su receta)</label><select class="fs" onchange="mtPresAddServ(this.value);this.value=\'\'"><option value="">— elegí —</option>' + d.SERVICIOS.map(function(s) { return '<option value="' + s.ID_SERVICIO + '">' + pcEsc(s.SISTEMA + ' · ' + s.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
     '<div class="fg"><label class="fl">＋ Agregar repuesto, insumo o cubierta</label><input class="fi" list="mt-arts" placeholder="Escribí código o nombre" onchange="mtPresAddArt(this.value);this.value=\'\'"><datalist id="mt-arts">' + d.ARTS.filter(function(a) { return a.T !== 'SERVICIO'; }).map(function(a) { return '<option value="' + pcEsc(a.C + ' · ' + a.N) + '">' + pcEsc(mtPlata(a.P) + ' · stock ' + a.S) + '</option>'; }).join('') + '</datalist></div>' +
@@ -16990,7 +16997,7 @@ function mtPresAddArt(v) {
 }
 async function mtPresGuardar() {
   var b = $id('mt-p-ok'); b.disabled = true;
-  try { var r = await gsRun('gsMT_PresupGuardar', { ID_ORDEN: MT_.ord.ORDEN.ID_ORDEN, LINEAS: MT_.lin });
+  try { var r = await gsRun('gsMT_PresupGuardar', { ID_ORDEN: MT_.ord.ORDEN.ID_ORDEN, LINEAS: MT_.lin, DESCUENTO_PCT: Number(MT_.dg) || 0 });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
     toast('Presupuesto ' + r.NRO + ' guardado · ' + mtPlata(r.TOTAL) + ' sin IVA ✓', 'g'); MT_.lin = null; var id = MT_.ord.ORDEN.ID_ORDEN; await mtRecargar(); await mtAbrir(id);
   } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
@@ -17090,7 +17097,8 @@ function mtImpPresup() {
     '<div><b>Equipos</b>' + o.EQUIPOS.map(function(e) { return pcEsc(e.DOMINIO + ' ' + e.EQUIPO); }).join(' · ') + '</div></div>' +
     '<table class="det"><thead><tr><th style="width:52%">Descripción</th><th class="n">Cant.</th><th class="n">Precio s/IVA</th><th class="n">Desc.</th><th class="n">Subtotal</th></tr></thead><tbody>' +
     P.DET.map(function(l) { tot += l.SUBTOTAL; return '<tr><td>' + pcEsc(l.DESCRIPCION) + '</td><td class="n">' + l.CANTIDAD + '</td><td class="n">' + mtPlata(l.PRECIO_LISTA) + '</td><td class="n">' + (l.DESCUENTO_PCT ? l.DESCUENTO_PCT + '%' : '') + '</td><td class="n">' + mtPlata(l.SUBTOTAL) + '</td></tr>'; }).join('') +
-    '<tr class="tot"><td colspan="4" class="n"><b>Total sin IVA</b></td><td class="n"><b>' + mtPlata(tot) + '</b></td></tr></tbody></table>' +
+    (Number(P.DESCUENTO_PCT) ? '<tr><td colspan="4" class="n">Subtotal</td><td class="n">' + mtPlata(tot) + '</td></tr><tr><td colspan="4" class="n">Descuento general ' + String(P.DESCUENTO_PCT).replace('.', ',') + '%</td><td class="n">− ' + mtPlata(Math.round((tot - Math.round(tot * (1 - P.DESCUENTO_PCT / 100) * 100) / 100) * 100) / 100) + '</td></tr>' : '') +
+    '<tr class="tot"><td colspan="4" class="n"><b>Total sin IVA</b></td><td class="n"><b>' + mtPlata(Math.round(tot * (1 - (Number(P.DESCUENTO_PCT) || 0) / 100) * 100) / 100) + '</b></td></tr></tbody></table>' +
     '<div class="nota">Precios sin IVA. Los repuestos se confirman al momento del trabajo según disponibilidad. Trabajos adicionales que aparezcan al desarmar se presupuestan aparte.</div>' +
     '<div class="firmas"><div>Vulcan Tread Neumáticos</div><div>Aprobación del cliente</div></div>';
   pcImprimir(P.NRO, c);
