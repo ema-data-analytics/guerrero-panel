@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "4bf3641a0212"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e0682b7d9d04"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1595,7 +1595,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611140955';
+var EMA_BUILD = '202611141547';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16277,7 +16277,7 @@ async function pcEquipos() {
     hs.map(function(x) {
       var u = x.ULTIMO_CONTROL, baja = x.ESTADO === 'BAJA' || x.ESTADO === 'PERDIDA', venc = x.PROX_SERVICE && +x.PROX_SERVICE < Date.now();
       return '<tr' + (baja ? ' style="opacity:.45"' : '') + '><td class="mono"><b>' + pcEsc(x.CODIGO) + '</b></td><td>' + pcEsc(x.NOMBRE) + (x.OBSERVACIONES ? '<div class="tdim" style="font-size:10px">' + pcEsc(x.OBSERVACIONES) + '</div>' : '') + '</td>' +
-        '<td>' + pcEsc(pqEst(x.ID_ESTACION)) + '</td><td>' + (/^SERV-/.test(String(x.EN_ESTACION)) ? '<span class="badge b-blue">afuera: servicio externo</span>' : (String(x.EN_ESTACION) !== String(x.ID_ESTACION) ? '<span class="badge b-orange">prestada: ' + pcEsc(pqEst(x.EN_ESTACION)) + '</span>' : '<span class="tdim">su estación</span>')) + '</td>' +
+        '<td>' + pcEsc(pqEst(x.ID_ESTACION)) + '</td><td>' + (Number(x.ID_SERV_FUERA) > 0 ? '<span class="badge b-blue">afuera: servicio externo</span>' : (String(x.EN_ESTACION) !== String(x.ID_ESTACION) ? '<span class="badge b-orange">prestada: ' + pcEsc(pqEst(x.EN_ESTACION)) + '</span>' : '<span class="tdim">su estación</span>')) + '</td>' +
         '<td>' + pcEsc(x.RESPONSABLE || '—') + (x.RESPONSABLE && x.FECHA_ENTREGA ? '<div class="tdim" style="font-size:10px">desde ' + fmtD(+x.FECHA_ENTREGA) + '</div>' : '') + '</td><td>' + pcEsc(PQ_EST_H[x.ESTADO] || x.ESTADO) + '</td>' +
         '<td' + (venc ? ' style="color:var(--danger);font-weight:700"' : '') + '>' + pqFecha(x.PROX_SERVICE) + '</td>' +
         '<td>' + (u ? (u.ESTADO === 'OK' ? '<span style="color:var(--success)">✓</span>' : '<b style="color:var(--danger)">' + (u.ESTADO === 'FALTA' ? '✗ falta' : '⚠ rota') + '</b>') + ' <span class="tdim" style="font-size:10px">' + fmtD(u.FECHA) + ' · ' + pcEsc(u.OPERARIO) + '</span>' : '<span class="tdim">sin control</span>') + '</td>' +
@@ -16460,7 +16460,7 @@ function pqEntForm(idEmp) {
     if (!e) { $id('pq-ef-lista').innerHTML = '<div class="tdim" style="padding:12px">Elegí la estación y aparece la lista de lo que se le entrega.</div>'; return; }
     var hs = (PQ_.d.herramientas || []).filter(function(x) { return String(x.ID_ESTACION) === e && x.ESTADO === 'EN_USO'; });
     var ks = PQ_.d.ent.kit.filter(function(k) { return String(k.ID_ESTACION) === e && k.ACTIVO; });
-    var filas = hs.map(function(x) { var no = /^SERV-/.test(String(x.EN_ESTACION)) ? 'afuera en un servicio' : (falt[String(x.ID_HERR)] ? 'faltante sin decidir' : ''); return '<tr><td><input type="checkbox" class="pq-ef-h" data-id="' + x.ID_HERR + '"' + (no ? ' disabled' : ' checked') + '/></td><td><b>' + pcEsc(x.NOMBRE) + '</b> <span class="tdim mono" style="font-size:10px">' + pcEsc(x.CODIGO) + '</span>' + (no ? ' <span class="badge b-gray">' + no + '</span>' : '') + (x.RESPONSABLE ? '<div class="tdim" style="font-size:10px">hoy la tiene ' + pcEsc(x.RESPONSABLE) + '</div>' : '') + '</td><td><span class="badge b-blue">Herramienta</span></td><td class="tr">1</td></tr>'; })
+    var filas = hs.map(function(x) { var no = Number(x.ID_SERV_FUERA) > 0 ? 'afuera en un servicio' : (falt[String(x.ID_HERR)] ? 'faltante sin decidir' : ''); return '<tr><td><input type="checkbox" class="pq-ef-h" data-id="' + x.ID_HERR + '"' + (no ? ' disabled' : ' checked') + '/></td><td><b>' + pcEsc(x.NOMBRE) + '</b> <span class="tdim mono" style="font-size:10px">' + pcEsc(x.CODIGO) + '</span>' + (no ? ' <span class="badge b-gray">' + no + '</span>' : '') + (x.RESPONSABLE ? '<div class="tdim" style="font-size:10px">hoy la tiene ' + pcEsc(x.RESPONSABLE) + '</div>' : '') + '</td><td><span class="badge b-blue">Herramienta</span></td><td class="tr">1</td></tr>'; })
       .concat(ks.map(function(k) { return '<tr><td><input type="checkbox" class="pq-ef-k" data-id="' + k.ID_KIT + '" checked/></td><td><b>' + pcEsc(k.NOMBRE) + '</b></td><td><span class="badge b-purple">Protección</span></td><td class="tr"><input class="fi pq-ef-c" data-id="' + k.ID_KIT + '" type="number" min="0" step="any" value="' + k.CANTIDAD + '" style="width:80px;text-align:right"/></td></tr>'; }));
     $id('pq-ef-lista').innerHTML = '<div class="tw"><table style="font-size:12px" id="pq-ef-t"><thead><tr><th style="width:30px"></th><th>Qué</th><th>Tipo</th><th class="tr">Cantidad</th></tr></thead><tbody>' +
       (filas.length ? filas.join('') : '<tr><td colspan="4" class="tc tdim" style="padding:16px">Esta estación no tiene herramientas ni protección cargadas.</td></tr>') + '</tbody></table></div>';
@@ -16646,7 +16646,7 @@ function pqServicios() {
 }
 function pqServForm() {
   var ct = PQ_.d.ctrl;
-  var disp = (PQ_.d.herramientas || []).filter(function(h) { return h.ESTADO === 'EN_USO' && !/^SERV-/.test(String(h.EN_ESTACION)); });
+  var disp = (PQ_.d.herramientas || []).filter(function(h) { return h.ESTADO === 'EN_USO' && !(Number(h.ID_SERV_FUERA) > 0); });
   PQ_.sv = { h: {}, ins: [] };
   showModal('<div class="mh"><span class="mt">Nueva salida a servicio externo</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     '<div class="fr"><div class="fg"><label class="fl">Cliente *</label><select class="fs" id="pq-sv-c"><option value="">—</option>' + ct.clientes.map(function(c) { return '<option value="' + c.ID_CLIENTE + '">' + pcEsc(c.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
@@ -17133,6 +17133,9 @@ function mtEqPlOpts(tipo, sel) { var L = MT_.d.PLANTILLAS.filter(function(p) { r
 function mtEqLlenar(keep) {
   var f = mtFL(), t = Number($v('mt-e-tipo')), mar = $v('mt-e-mar'), cli = $v('mt-e-cli');
   var put = function(id, html) { var s = $id(id); if (!s) return; var v = keep ? s.value : ''; s.innerHTML = html; if (v && Array.prototype.some.call(s.options, function(o) { return o.value === v; })) s.value = v; if (s.__selb && typeof s.__selb.refrescar === 'function') s.__selb.refrescar(); };
+  // marcas: solo las que tienen modelos de este tipo (más la ya elegida); una marca nueva se agrega con ＋
+  var conMod = {}; f.MODELOS.forEach(function(m) { if (m.A && m.TIPO === t) conMod[String(m.P)] = 1; });
+  var sm = $id('mt-e-mar'); if (sm) { var mv = sm.value || (keep ? String(MT_.eqF.ID_MARCA_V || '') : ''); sm.innerHTML = mtOps(f.MARCAS.filter(function(x) { return x.A && (conMod[String(x.V)] || String(x.V) === String(mv)); }), mv, '— elegí la marca —'); if (sm.__selb && typeof sm.__selb.refrescar === 'function') sm.__selb.refrescar(); mar = sm.value; }
   put('mt-e-mod', mtOps(f.MODELOS.filter(function(m) { return m.A && m.TIPO === t && String(m.P) === String(mar); }), keep ? MT_.eqF.ID_MODELO : '', mar ? '— elegí el modelo —' : '— primero la marca —'));
   put('mt-e-sub', mtOps(f.SUBTIPOS.filter(function(x) { return x.A && x.TIPO === t; }), keep ? MT_.eqF.ID_SUBTIPO : '', '— sin subtipo —'));
   put('mt-e-cfg', mtOps(f.CONFIGS.filter(function(c) { return c.ACTIVO && c.ID_TIPO === t; }).map(function(c) { return { V: c.ID, T: c.NOMBRE }; }), keep ? MT_.eqF.ID_CONFIG : '', '— sin configuración de ejes —'));
@@ -17704,7 +17707,7 @@ function flmFicha() {
   el.innerHTML = '<div class="card mb2" style="border:2px solid #2563eb"><div class="card-hd"><span class="card-title">' + pcEsc(u.IDENT) + ' · ' + pcEsc(cod) + '</span><span class="tdim" style="font-size:12px">desde ' + fmtD(m.DESDE) + ' · km ' + Number(m.KM_DESDE).toLocaleString('es-AR') + '</span></div><div class="card-body" style="font-size:13.5px">' +
     '<div><span class="tdim">Marca grabada</span> <b class="mono">' + pcEsc(c.MARCA) + '</b> · <span class="tdim">DOT</span> <b>' + pcEsc(c.DOT || '—') + '</b></div><div>' + pcEsc(c.MEDIDA) + ' · ' + pcEsc(c.FAB) + ' · ' + (c.RECAP ? 'recapada ' + c.RECAP + ' vez/veces' : 'sin recapar') + '</div>' +
     '<div>' + (c.FMED ? 'Última medición ' + fmtD(c.FMED) + ': ' + (c.PROF !== '' ? c.PROF + ' mm · ' : '') + (c.PRES !== '' ? c.PRES + ' PSI · ' : '') + pcEsc(c.EST) : '<span class="tdim">Sin mediciones</span>') + '</div>' +
-    '<div class="mt2" style="display:flex;gap:6px;flex-wrap:wrap">' + flBtn(s.rotar ? 'btn-p' : 'btn-s', '🔄 Rotar', 'FLM_.sel.rotar=!FLM_.sel.rotar;flmMapa();if(FLM_.sel.rotar)toast(\'Tocá la rueda de destino\',\'b\')') + A('INSPECCION', '📏 Medir') + A('CALIBRADO', '🛞 Calibrar') + A('REPARACION', '🔧 Reparar') + A('ROTURA', '⚠ Rotura') +
+    '<div class="mt2" style="display:flex;gap:6px;flex-wrap:wrap">' + flBtn(s.rotar ? 'btn-p' : 'btn-s', '🔄 Rotar', 'FLM_.sel.rotar=!FLM_.sel.rotar;flmMapa();if(FLM_.sel.rotar)toast(\'Tocá la rueda de destino\',\'b\')') + A('INSPECCION', '📏 Medir') + A('CALIBRADO', '◉ Calibrar') + A('REPARACION', '🔧 Reparar') + A('ROTURA', '⚠ Rotura') +
     A('DESMONTAJE', '📦 Sacar al depósito') + A('DESMONTAJE_CLI', '🏢 Sacar: queda al cliente') + A('DESMONTAJE_TALLER', '🏭 Sacar a recapado') + A('BAJA', '✖ Baja') + flBtn('btn-s', '📜 Vida', 'flmVida(' + c.ID + ')') + '</div></div></div>';
 }
 function flmTipo(cod) { return FLM_.d.TIPOS_MOV.filter(function(t) { return t.COD === cod; })[0]; }
@@ -17877,7 +17880,7 @@ async function flpAnular(id) {
 // ── Planificar: cliente, base, contacto, fecha y las tareas de cada unidad ──
 async function flpDatos(cli) { var r = await gsRun('gsMT_PlanDatos', cli || ''); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo cargar', 'r2'); return null; } return r; }
 function flpOpt(arr, sel, vacio) { return (vacio ? '<option value="">' + pcEsc(vacio) + '</option>' : '') + arr.map(function(x) { return '<option value="' + pcEsc(String(x.V)) + '"' + (String(x.V) === String(sel) ? ' selected' : '') + '>' + pcEsc(x.T) + '</option>'; }).join(''); }
-function flpTareasOps(pd) { return pd.TIPOS_MOV.filter(function(t) { return FLP_TAREAS.indexOf(t.COD) !== -1; }).map(function(t) { return { V: 'M:' + t.ID, T: '🛞 ' + t.N }; }).concat(pd.SERVICIOS.map(function(s) { return { V: 'S:' + s.V, T: '🔧 ' + s.T }; })); }
+function flpTareasOps(pd) { return pd.TIPOS_MOV.filter(function(t) { return FLP_TAREAS.indexOf(t.COD) !== -1; }).map(function(t) { return { V: 'M:' + t.ID, T: '◉ ' + t.N }; }).concat(pd.SERVICIOS.map(function(s) { return { V: 'S:' + s.V, T: '🔧 ' + s.T }; })); }
 function flpTareaTxt(pd, v) { var x = flpTareasOps(pd).filter(function(o) { return o.V === v; })[0]; return x ? x.T : ''; }
 async function flpNuevo() {
   var pd = await flpDatos(''); if (!pd) return; FLP_.pd = pd; FLP_.pn = { ID_CLIENTE: '', PLAN: [] };
