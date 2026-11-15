@@ -1595,7 +1595,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611142145';
+var EMA_BUILD = '202611152215';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17670,7 +17670,7 @@ function flmUnidadBloque(u, esAcop) {
       return { fill: flmColor(c), txt: c ? c.MARCA : '', txt2: c ? (c.PROF !== '' ? c.PROF + ' mm' : '') : 'vacía', tit: p.COD + (c ? ' · ' + flmCubTxt(c) + (c.DOT ? ' · DOT ' + c.DOT : '') : ' · vacía'), sel: esSel, borde: esSel ? '#2563eb' : '#1e293b', vacia: !c }; } })
     : '<div class="al">Esta unidad no tiene configuración de ejes. Asignala en Equipos → Modificar.</div>';
   return '<div class="card mb2" style="' + (esAcop ? 'border-top:6px solid #94a3b8' : '') + '"><div class="card-hd"><span class="card-title">' + (esAcop ? '⛓ ' : '🚚 ') + pcEsc(u.IDENT) + ' · ' + pcEsc((u.MARCA + ' ' + u.MODELO).trim()) + '</span><span class="tdim" style="font-size:12px">' + (u.CFG ? pcEsc(u.CFG.NOMBRE) : '') + ' · ' + (esAcop ? 'km ' + Number(u.KM || 0).toLocaleString('es-AR') + ' acumulados' : Number(u.KM || 0).toLocaleString('es-AR') + ' km') + '</span></div>' +
-    '<div class="card-body"><div class="fl-map">' + dib + '</div>' + (esAcop && u.ENGANCHE ? '<div class="mt2" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="tdim" style="font-size:12px">Enganchado ' + pcEsc(u.ENGANCHE.NRO) + ' desde ' + fmtD(u.ENGANCHE.DESDE) + ' (km tractor ' + Number(u.ENGANCHE.KM_DESDE).toLocaleString('es-AR') + ')</span>' + flBtn('btn-s', '⛓ Desenganchar / traspaso', 'flmDesenganchar(' + u.ENGANCHE.ID + ',' + u.ID + ')') + '</div>' : '') + '</div></div>';
+    '<div class="card-body"><div class="fl-map">' + dib + '</div>' + (esAcop && u.ENGANCHE ? '<div class="mt2" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="tdim" style="font-size:12px">Enganchado ' + pcEsc(u.ENGANCHE.NRO) + ' desde ' + fmtD(u.ENGANCHE.DESDE) + ' (km camión ' + Number(u.ENGANCHE.KM_DESDE).toLocaleString('es-AR') + ')</span>' + flBtn('btn-s', '⛓ Desenganchar / traspaso', 'flmDesenganchar(' + u.ENGANCHE.ID + ',' + u.ID + ')') + '</div>' : '') + '</div></div>';
 }
 function flmMapa() {
   var d = FLM_.d, u = d.UNIDAD;
@@ -17730,7 +17730,7 @@ function flmFicha() {
     A('DESMONTAJE', '📦 Sacar al depósito') + A('DESMONTAJE_CLI', '🏢 Sacar: queda al cliente') + A('DESMONTAJE_TALLER', '🏭 Sacar a recapado') + A('BAJA', '✖ Baja') + flBtn('btn-s', '📜 Vida', 'flmVida(' + c.ID + ')') + '</div></div></div>';
 }
 function flmTipo(cod) { return FLM_.d.TIPOS_MOV.filter(function(t) { return t.COD === cod; })[0]; }
-function flmKmDe(eq) { var u = flmUnidad(eq), d = FLM_.d; if (!u) return { km: 0, txt: '' }; if (u.ENGANCHE) return { km: d.UNIDAD.KM, txt: 'Km del tractor ' + d.UNIDAD.IDENT + ' (el que lleva el acoplado)' }; return { km: u.KM, txt: 'Km de ' + u.IDENT }; }
+function flmKmDe(eq) { var u = flmUnidad(eq), d = FLM_.d; if (!u) return { km: 0, txt: '' }; if (u.ENGANCHE) return { km: d.UNIDAD.KM, txt: 'Km del camión ' + d.UNIDAD.IDENT + ' (el que lleva el acoplado)' }; return { km: u.KM, txt: 'Km de ' + u.IDENT }; }
 // Ventana para confirmar un movimiento: km, en llanta, medición, causa, observaciones
 function flmAccion(cod, idCasco, eq, pos) {
   if (!cod) { toast('Esa cubierta está en el taller: primero tiene que volver al depósito', 'r2'); return; }
@@ -17794,7 +17794,7 @@ async function flmEnganchar(idTr) {
   var d = FLM_.d, u = d.UNIDAD, acops = d.UNIDADES.filter(function(x) { return x.ID_TIPO === 2 && String(x.ID_CLIENTE) === String(u.ID_CLIENTE); });
   showModal('<div class="mh"><span class="mt">⛓ Enganchar acoplado a ' + pcEsc(u.IDENT) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="fl-frm">' +
     '<div class="fg full"><label class="fl">Acoplado / semirremolque *</label><select class="fs" id="fle-ac" data-filtro onchange="flmEngAcop()"><option value="">— elegí —</option>' + acops.map(function(a) { return '<option value="' + a.ID + '">' + pcEsc(a.IDENT + ' · ' + a.MM) + '</option>'; }).join('') + '</select></div>' +
-    '<div class="fg"><label class="fl">Km del tractor *</label><input class="fi" id="fle-km" inputmode="numeric" value="' + (u.KM || '') + '"></div>' +
+    '<div class="fg"><label class="fl">Km del camión *</label><input class="fi" id="fle-km" inputmode="numeric" value="' + (u.KM || '') + '"></div>' +
     '<div class="fg"><label class="fl">Chofer</label><select class="fs" id="fle-ch" data-filtro><option value="">—</option>' + d.CHOFERES.filter(function(c) { return String(c.P) === String(u.ID_CLIENTE); }).map(function(c) { return '<option value="' + c.V + '">' + pcEsc(c.T) + '</option>'; }).join('') + '</select></div></div><div id="fle-ctrl" class="tdim mt2">Elegí el acoplado para controlar sus cubiertas.</div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="fle-ok" onclick="flmEngancharOk(' + idTr + ')">Enganchar</button></div>');
 }
@@ -17810,13 +17810,13 @@ async function flmEngancharOk(idTr) {
 function flmDesenganchar(idEng, idAc) {
   var d = FLM_.d, a = flmUnidad(idAc);
   showModal('<div class="mh"><span class="mt">⛓ Desenganchar ' + pcEsc(a.IDENT) + ' de ' + pcEsc(d.UNIDAD.IDENT) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="tdim">Para pasarlo a otro camión: desenganchalo acá y después enganchalo al otro (cada paso con el control de sus cubiertas).</div><div class="fl-frm mt2">' +
-    '<div class="fg"><label class="fl">Km del tractor ' + pcEsc(d.UNIDAD.IDENT) + ' *</label><input class="fi" id="fld-km" inputmode="numeric" value="' + (d.UNIDAD.KM || '') + '"></div></div>' + flmControlTabla(a) + '</div>' +
+    '<div class="fg"><label class="fl">Km del camión ' + pcEsc(d.UNIDAD.IDENT) + ' *</label><input class="fi" id="fld-km" inputmode="numeric" value="' + (d.UNIDAD.KM || '') + '"></div></div>' + flmControlTabla(a) + '</div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="fld-ok" onclick="flmDesengancharOk(' + idEng + ')">Desenganchar</button></div>');
 }
 async function flmDesengancharOk(idEng) {
   var b = $id('fld-ok'); b.disabled = true;
   try { var r = await gsRun('gsCB_Desenganchar', { ID_ENGANCHE: idEng, KM: $v('fld-km').replace(/\./g, ''), MEDS: flmLeerControl() });
-    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Desenganchado ✓ · el acoplado hizo ' + Number(r.KM_ACOPLADO).toLocaleString('es-AR') + ' km con este tractor', 'g'); await flmCargar(FLM_.eq);
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Desenganchado ✓ · el acoplado hizo ' + Number(r.KM_ACOPLADO).toLocaleString('es-AR') + ' km con este camión', 'g'); await flmCargar(FLM_.eq);
   } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
 }
 // Vida de la cubierta: todo lo que le pasó, con km
@@ -17846,13 +17846,13 @@ function flmImprimir() {
 async function renderEnganches() {
   $id('fl-tit').textContent = '🚛 Enganches de acoplados'; $id('fl-sub').textContent = 'Flota y cubiertas · qué camión llevó cada acoplado, con km y control de cubiertas';
   var r = await gsRun('gsCB_Enganches'); if (!r || !r.ok) { $id('fl-body').innerHTML = '<div class="al">' + pcEsc((r && r.error) || 'No se pudo') + '</div>'; return; } FL_.eng = r.ENGANCHES; FL_.F.est = FL_.F.est || 'V';
-  $id('fl-body').innerHTML = '<div class="card mb3"><div class="card-body"><div class="pc-otf"><div class="fg" style="grid-column:span 3"><label class="fl">Buscar</label><input class="fi" placeholder="N°, tractor, acoplado, chofer" value="' + pcEsc(FL_.F.q) + '" oninput="FL_.F.q=this.value;flEngGrilla()"></div>' +
+  $id('fl-body').innerHTML = '<div class="card mb3"><div class="card-body"><div class="pc-otf"><div class="fg" style="grid-column:span 3"><label class="fl">Buscar</label><input class="fi" placeholder="N°, camión, acoplado, chofer" value="' + pcEsc(FL_.F.q) + '" oninput="FL_.F.q=this.value;flEngGrilla()"></div>' +
     '<div class="fg"><label class="fl">Estado</label><select class="fs" onchange="FL_.F.est=this.value;flEngGrilla()">' + [['V', 'Enganchados hoy'], ['H', 'Historial'], ['', 'Todos']].map(function(x) { return '<option value="' + x[0] + '"' + (FL_.F.est === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></div></div><div id="fl-g" class="mt2"></div></div></div>';
   flEngGrilla();
 }
 function flEngGrilla() {
   var q = String(FL_.F.q || '').toUpperCase(), F = FL_.F, l = FL_.eng.filter(function(g) { var viva = !g.HASTA && g.ESTADO === 'VIGENTE'; if (F.est === 'V' && !viva) return false; if (F.est === 'H' && viva) return false; return !q || [g.NRO, g.TRACTOR, g.ACOPLADO, g.CHOFER].join(' ').toUpperCase().indexOf(q) !== -1; }).sort(function(a, b) { return b.ID - a.ID; });
-  $id('fl-g').innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> enganche(s)</div><div class="tw pc-abm"><table style="font-size:12.5px"><thead><tr><th>N°</th><th>Tractor</th><th>Acoplado</th><th>Chofer</th><th>Desde</th><th class="tr">Km desde</th><th>Hasta</th><th class="tr">Km hasta</th><th class="tr">Km hechos</th><th class="tr">Controles</th><th>Acciones</th></tr></thead><tbody>' +
+  $id('fl-g').innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> enganche(s)</div><div class="tw pc-abm"><table style="font-size:12.5px"><thead><tr><th>N°</th><th>Camión</th><th>Acoplado</th><th>Chofer</th><th>Desde</th><th class="tr">Km desde</th><th>Hasta</th><th class="tr">Km hasta</th><th class="tr">Km hechos</th><th class="tr">Controles</th><th>Acciones</th></tr></thead><tbody>' +
     (l.length ? l.map(function(g) { return '<tr><td class="mono">' + pcEsc(g.NRO) + '</td><td><b>' + pcEsc(g.TRACTOR) + '</b></td><td><b>' + pcEsc(g.ACOPLADO) + '</b></td><td>' + pcEsc(g.CHOFER || '—') + '</td><td>' + fmtD(g.DESDE) + '</td><td class="tr">' + Number(g.KM_DESDE).toLocaleString('es-AR') + '</td><td>' + (g.HASTA ? fmtD(g.HASTA) : '<span class="fl-bd fl-v">Enganchado</span>') + '</td><td class="tr">' + (g.KM_HASTA !== '' ? Number(g.KM_HASTA).toLocaleString('es-AR') : '') + '</td><td class="tr">' + (g.KM_HASTA !== '' ? Number(g.KM_HASTA - g.KM_DESDE).toLocaleString('es-AR') : '') + '</td><td class="tr">' + g.CONTROLES + '</td>' +
       '<td><div class="pc-acc">' + flBtn('btn-s', '🗺 Ver mapa', 'FLM_.eq=\'' + g.ID_TRACTOR + '\';FL_.t=\'mapa\';renderFlota()') + '</div></td></tr>'; }).join('') : '<tr><td colspan="11" class="tdim tc" style="padding:16px">No hay enganches con esos filtros.</td></tr>') + '</tbody></table></div>';
   if (typeof gridPonerBotones_ === 'function') setTimeout(gridPonerBotones_, 30);
@@ -18089,7 +18089,7 @@ function flrPintar() {
   if (FLR_.tab === 'UBIC') { var t = { UNIDAD: 0, DEPOSITO: 0, TALLER: 0, CLIENTE_: 0, BAJA: 0, OTRA: 0, TOTAL: 0 }; d.UBIC.forEach(function(x) { Object.keys(t).forEach(function(k) { t[k] += x[k]; }); });
     h = flrTabla('Cubiertas por cliente y dónde están', [['Cliente', function(x) { return '<b>' + e(x.CLIENTE) + '</b>'; }], ['Montadas', function(x) { return flrN(x.UNIDAD); }, 1], ['En nuestro depósito', function(x) { return flrN(x.DEPOSITO); }, 1], ['En el taller', function(x) { return flrN(x.TALLER); }, 1], ['En poder del cliente', function(x) { return flrN(x.CLIENTE_); }, 1], ['De baja', function(x) { return flrN(x.BAJA); }, 1], ['Total', function(x) { return '<b>' + flrN(x.TOTAL) + '</b>'; }, 1]], d.UBIC,
       d.UBIC.length > 1 ? '<tr><td><b>Total</b></td><td class="tr"><b>' + flrN(t.UNIDAD) + '</b></td><td class="tr"><b>' + flrN(t.DEPOSITO) + '</b></td><td class="tr"><b>' + flrN(t.TALLER) + '</b></td><td class="tr"><b>' + flrN(t.CLIENTE_) + '</b></td><td class="tr"><b>' + flrN(t.BAJA) + '</b></td><td class="tr"><b>' + flrN(t.TOTAL) + '</b></td></tr>' : ''); }
-  if (FLR_.tab === 'COSTO') h = '<div class="tdim mb2" style="font-size:12.5px">Costo conocido = compra del casco (si es nuestro) + recapados terminados al precio de la lista vigente + servicios de cubiertas cobrados en remitos. Km = los recorridos montada (acoplados: km del tractor que los llevó). Sin km o sin costo no hay costo por km.</div>' +
+  if (FLR_.tab === 'COSTO') h = '<div class="tdim mb2" style="font-size:12.5px">Costo conocido = compra del casco (si es nuestro) + recapados terminados al precio de la lista vigente + servicios de cubiertas cobrados en remitos. Km = los recorridos montada (acoplados: km del camión que los llevó). Sin km o sin costo no hay costo por km.</div>' +
     flrTabla('Costo por km de cada cubierta', [['Marca grabada', function(x) { return '<span class="mono">' + e(x.MARCA) + '</span>'; }], ['DOT', function(x) { return e(x.DOT || '—'); }], ['Medida', function(x) { return e(x.MEDIDA); }], ['Fabricante', function(x) { return e(x.FAB); }], ['Cliente', function(x) { return e(x.CLIENTE); }], ['Km', function(x) { return flrN(x.KM); }, 1], ['Recap.', function(x) { return x.RECAP + (x.RECAP_SIN_PRECIO ? ' <span title="sin precio en la lista">⚠</span>' : ''); }, 1], ['Compra', function(x) { return x.COMPRA ? flpPlata(x.COMPRA) : '—'; }, 1], ['Recapados', function(x) { return x.RECAPADOS ? flpPlata(x.RECAPADOS) : '—'; }, 1], ['Servicios', function(x) { return x.SERVICIOS ? flpPlata(x.SERVICIOS) : '—'; }, 1], ['Costo', function(x) { return '<b>' + flpPlata(x.COSTO) + '</b>'; }, 1], ['$ por km', function(x) { return x.POR_KM !== '' ? '<b>' + flpPlata(x.POR_KM) + '</b>' : '—'; }, 1]], d.COSTOS);
   if (FLR_.tab === 'ROT') { var cR = [['', function(x) { return '<b>' + e(x.K) + '</b>'; }], ['Roturas', function(x) { return flrN(x.ROTURAS); }, 1], ['Bajas', function(x) { return flrN(x.BAJAS); }, 1], ['Total', function(x) { return '<b>' + flrN(x.ROTURAS + x.BAJAS) + '</b>'; }, 1]];
     var cc = function(n) { var c = cR.slice(); c[0] = [n, cR[0][1]]; return c; };
