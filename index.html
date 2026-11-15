@@ -1599,7 +1599,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611152355';
+var EMA_BUILD = '202611160005';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17555,25 +17555,60 @@ async function flReactivar(id) {
 }
 // ── Dibujo de una unidad vista desde arriba (frente arriba). Se usa en configuraciones, en la ficha de la unidad y en el mapa. ──
 // pos: [{ID, COD, X, Y, AUX}] · opt: { ancho, fn(pos)->{fill,txt,tit}, click:'fn' }
+// Mapa de ruedas visto desde arriba, como es la unidad: cabina adelante (si el primer eje es de dirección), chasis, ejes y cubiertas
+// (negras con su banda de rodamiento; el color de adentro es el estado). Los auxilios van abajo, en su soporte.
 function flDibujo(ejes, pos, opt) {
-  opt = opt || {}; var W = opt.ancho || 260, sx = W / 6, rw = sx * 0.78, rh = 46, gy = 78, top = 34, n = ejes.length;
-  var aux = pos.filter(function(p) { return p.AUX; }), H = top + n * gy + (aux.length ? 70 : 20);
-  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;font-family:Arial,sans-serif">';
-  s += '<rect x="' + (sx * 1.55) + '" y="6" width="' + (sx * 2.9) + '" height="' + (top + (n - 1) * gy + 30) + '" rx="10" fill="#e2e8f0" stroke="#94a3b8"/>';
-  s += '<text x="' + (W / 2) + '" y="22" text-anchor="middle" font-size="11" fill="#475569">▲ FRENTE</text>';
-  ejes.forEach(function(e, k) { var y = top + k * gy + rh / 2; s += '<line x1="' + (sx * 0.5) + '" y1="' + y + '" x2="' + (W - sx * 0.5) + '" y2="' + y + '" stroke="#334155" stroke-width="4"' + (e.FLOTANTE ? ' stroke-dasharray="6 4"' : '') + '/>' +
-    '<text x="' + (W / 2) + '" y="' + (y - 6) + '" text-anchor="middle" font-size="10.5" fill="#0f172a" font-weight="700">EJE ' + e.NRO + (e.FUNCION === 'DIRECCION' ? ' · DIR' : e.FUNCION === 'TRACCION' ? ' · TRAC' : '') + (e.FLOTANTE ? ' · FLOT' : '') + '</text>'; });
+  opt = opt || {}; var W = opt.ancho || 260, n = ejes.length, cab = ejes.length && ejes[0].FUNCION === 'DIRECCION';
+  var tw = Math.round(W * 0.14), th = 66, mx = Math.round(W * 0.05), gap = 4, cx = W / 2;
+  var aux = pos.filter(function(p) { return p.AUX; });
+  // dónde va cada eje: en el camión, el primero debajo de la cabina y los de atrás juntos (tándem); en el acoplado/semi, atrás
+  var yEje = [], y0 = cab ? 70 : 120, sep = th + 18;
+  ejes.forEach(function(e, k) { if (k === 0) yEje.push(y0); else yEje.push(yEje[k - 1] + (cab && k === 1 ? th + 70 : sep)); });
+  var largo = (n ? yEje[n - 1] + th / 2 : 120) + 26, H = largo + (aux.length ? th + 26 : 6);
+  var s = '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" width="' + W + '" height="' + (H + 16) + '" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;font-family:Arial,sans-serif">' +
+    '<text x="' + cx + '" y="11" text-anchor="middle" font-size="9.5" fill="#64748b" font-weight="700">▲ FRENTE</text><g transform="translate(0,16)">';
+  s += '<defs><linearGradient id="flg-cab" x1="0" x2="1"><stop offset="0" stop-color="#94a3b8"/><stop offset=".5" stop-color="#e2e8f0"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>' +
+    '<linearGradient id="flg-caja" x1="0" x2="1"><stop offset="0" stop-color="#cbd5e1"/><stop offset=".5" stop-color="#f8fafc"/><stop offset="1" stop-color="#cbd5e1"/></linearGradient></defs>';
+  var bx = mx + tw + gap + tw * 0.35, bw = W - 2 * bx;
+  // chasis: dos largueros y travesaños
+  var rl = cx - bw * 0.22, rr = cx + bw * 0.22 - 7, chTop = cab ? 30 : 20;
+  if (!cab) s += '<rect x="' + (bx - tw * 0.25) + '" y="6" width="' + (bw + tw * 0.5) + '" height="' + (largo - 10) + '" rx="6" fill="url(#flg-caja)" stroke="#64748b" stroke-width="1.5"/>' +
+    '<circle cx="' + cx + '" cy="34" r="7" fill="#475569"/><text x="' + cx + '" y="54" text-anchor="middle" font-size="9" fill="#475569">perno rey</text>';
+  s += '<rect x="' + rl + '" y="' + chTop + '" width="7" height="' + (largo - chTop - 8) + '" fill="#334155"/><rect x="' + rr + '" y="' + chTop + '" width="7" height="' + (largo - chTop - 8) + '" fill="#334155"/>';
+  for (var t = chTop + (cab ? 30 : 56); t < largo - 14; t += 46) s += '<rect x="' + rl + '" y="' + t + '" width="' + (rr - rl + 7) + '" height="4" fill="#475569"/>';
+  if (cab) {
+    var cxl = mx + (tw + gap) / 2 + tw * 0.5, cw = W - 2 * cxl;
+    s += '<rect x="' + (cxl - 7) + '" y="34" width="9" height="16" rx="2" fill="#334155"/><rect x="' + (cxl + cw - 2) + '" y="34" width="9" height="16" rx="2" fill="#334155"/>' + // espejos
+      '<path d="M' + (cxl + 10) + ' 6 H' + (cxl + cw - 10) + ' Q' + (cxl + cw) + ' 6 ' + (cxl + cw) + ' 18 V' + (y0 + 26) + ' H' + cxl + ' V18 Q' + cxl + ' 6 ' + (cxl + 10) + ' 6 Z" fill="url(#flg-cab)" stroke="#475569" stroke-width="1.5"/>' +
+      '<rect x="' + (cxl + 8) + '" y="12" width="' + (cw - 16) + '" height="16" rx="4" fill="#1e3a5f" opacity=".85"/>' + // parabrisas
+      '<text x="' + cx + '" y="' + (y0 - 10) + '" text-anchor="middle" font-size="9.5" fill="#334155" font-weight="700">CABINA</text>';
+  }
+  // ejes
+  ejes.forEach(function(e, k) { var y = yEje[k];
+    s += '<rect x="' + (mx + tw - 2) + '" y="' + (y - 4) + '" width="' + (W - 2 * mx - 2 * tw + 4) + '" height="8" rx="3" fill="#1f2937"' + (e.FLOTANTE ? ' stroke="#f59e0b" stroke-dasharray="5 3" stroke-width="2"' : '') + '/>' +
+      '<rect x="' + (cx - 26) + '" y="' + (y + 7) + '" width="52" height="13" rx="6" fill="#fff" stroke="#94a3b8"/><text x="' + cx + '" y="' + (y + 17) + '" text-anchor="middle" font-size="9" fill="#0f172a" font-weight="700">EJE ' + e.NRO + (e.FUNCION === 'DIRECCION' ? ' DIR' : e.FUNCION === 'TRACCION' ? ' TRAC' : '') + (e.FLOTANTE ? ' FLOT' : '') + '</text>'; });
+  // cubiertas
+  var xDe = function(X, dual) { if (!dual) return X === 0 ? mx + (tw + gap) / 2 : W - mx - tw - (tw + gap) / 2; return { 0: mx, 1: mx + tw + gap, 3: W - mx - 2 * tw - gap, 4: W - mx - tw }[X]; };
+  var duales = {}; pos.forEach(function(p) { if (!p.AUX && (p.X === 1 || p.X === 3)) duales[p.Y] = 1; });
   pos.forEach(function(p) {
-    var x, y, w = rw, h = rh;
-    if (p.AUX) { x = sx * 0.5 + p.X * (rw + 10); y = top + n * gy + 8; h = 40; }
-    else { var k = p.Y - 1, xs = { 0: 0.15, 1: 1.05, 3: 3.95 - 0.78 + 0.0, 4: 4.85 - 0.0 }; x = (p.X === 0 ? 0.12 : p.X === 1 ? 0.98 : p.X === 3 ? 4.24 : 5.1) * sx; y = top + k * gy; }
+    var x, y, w = tw, h = th;
+    if (p.AUX) { var ia = aux.indexOf(p); w = th; h = tw; x = cx - (aux.length * (w + 10) - 10) / 2 + ia * (w + 10); y = largo + 14; }
+    else { x = xDe(p.X, duales[p.Y]); y = yEje[p.Y - 1] - th / 2; }
     var f = opt.fn ? opt.fn(p) : { fill: '#fff', txt: '', tit: p.COD };
-    s += '<g' + (opt.click ? ' style="cursor:pointer" data-eq="' + (opt.eq || '') + '" data-pos="' + p.ID + '" onclick="' + opt.click + '(' + (opt.eq ? opt.eq + ',' : '') + p.ID + ')"' : '') + '><title>' + pcEsc(f.tit || p.COD) + '</title><rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="7" fill="' + (f.fill || '#fff') + '" stroke="' + (f.borde || '#1e293b') + '" stroke-width="' + (f.sel ? 4 : 2) + '"' + (f.vacia ? ' stroke-dasharray="4 3"' : '') + '/>' +
-      '<text x="' + (x + w / 2) + '" y="' + (y + 15) + '" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0f172a">' + pcEsc(p.COD) + '</text>' +
-      (f.txt ? '<text x="' + (x + w / 2) + '" y="' + (y + 30) + '" text-anchor="middle" font-size="' + Math.min(9, w / 5.6).toFixed(1) + '" fill="#0f172a">' + pcEsc(f.txt) + '</text>' : '') + (f.txt2 ? '<text x="' + (x + w / 2) + '" y="' + (y + 41) + '" text-anchor="middle" font-size="8.5" fill="#334155">' + pcEsc(f.txt2) + '</text>' : '') + '</g>';
+    var ins = 5, iw = w - 2 * ins, ih = h - 2 * ins, marcas = '';
+    if (p.AUX) { for (var a = x + 6; a < x + w - 4; a += 6) marcas += '<rect x="' + a + '" y="' + y + '" width="2.5" height="3" fill="#4b5563"/><rect x="' + a + '" y="' + (y + h - 3) + '" width="2.5" height="3" fill="#4b5563"/>'; }
+    else { for (var b = y + 6; b < y + h - 4; b += 6) marcas += '<rect x="' + x + '" y="' + b + '" width="3" height="2.5" fill="#4b5563"/><rect x="' + (x + w - 3) + '" y="' + b + '" width="3" height="2.5" fill="#4b5563"/>'; }
+    var vac = f.vacia, borde = f.sel ? '#2563eb' : (f.borde && f.borde !== '#1e293b' ? f.borde : '#111827');
+    s += '<g' + (opt.click ? ' style="cursor:pointer" data-eq="' + (opt.eq || '') + '" data-pos="' + p.ID + '" onclick="' + opt.click + '(' + (opt.eq ? opt.eq + ',' : '') + p.ID + ')"' : '') + '><title>' + pcEsc(f.tit || p.COD) + '</title>' +
+      (vac ? '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="8" fill="#f8fafc" stroke="' + (f.sel ? '#2563eb' : '#94a3b8') + '" stroke-width="' + (f.sel ? 3 : 1.5) + '" stroke-dasharray="5 4"/>'
+        : '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="8" fill="#1f2937" stroke="' + borde + '" stroke-width="' + (f.sel ? 3.5 : 1) + '"/>' + marcas +
+          '<rect x="' + (x + ins) + '" y="' + (y + ins) + '" width="' + iw + '" height="' + ih + '" rx="5" fill="' + (f.fill || '#fff') + '"/>') +
+      '<text x="' + (x + w / 2) + '" y="' + (y + ins + 11) + '" text-anchor="middle" font-size="9" font-weight="700" fill="#0f172a">' + pcEsc(p.COD) + '</text>' +
+      (f.txt ? '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 4) + '" text-anchor="middle" font-size="' + Math.min(9, (iw - 2) * 1.55 / Math.max(1, String(f.txt).length)).toFixed(1) + '" font-weight="700" fill="#0f172a">' + pcEsc(f.txt) + '</text>' : '') +
+      (f.txt2 ? '<text x="' + (x + w / 2) + '" y="' + (y + h - ins - 5) + '" text-anchor="middle" font-size="' + Math.min(8.5, iw / 4.6).toFixed(1) + '" fill="#334155">' + pcEsc(f.txt2) + '</text>' : '') + '</g>';
   });
-  if (aux.length) s += '<text x="' + (sx * 0.5) + '" y="' + (top + n * gy + 4) + '" font-size="10" fill="#475569">Auxilio' + (aux.length > 1 ? 's' : '') + '</text>';
-  return s + '</svg>';
+  if (aux.length) s += '<text x="' + (bx - tw * 0.25 > 0 ? mx : 4) + '" y="' + (largo + 10) + '" font-size="9.5" fill="#475569">Auxilio' + (aux.length > 1 ? 's' : '') + '</text>';
+  return s + '</g></svg>';
 }
 // ── Configuraciones de ejes (ABM con dibujo) ──
 function flCfgPintar() {
