@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7fae5ffb70b5"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "5d3bb9b4d4e0"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1602,7 +1602,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611161300';
+var EMA_BUILD = '202611161530';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17979,7 +17979,10 @@ async function flmAccionOk() {
   if ($v('flm-est')) o.MED = { ID_ESTADO: $v('flm-est'), PROF: $v('flm-prof').replace(',', '.'), PRES: $v('flm-pres').replace(',', '.') };
   b.disabled = true; b.textContent = 'Guardando…';
   var ca = flmCasLista(a.ID_CASCO), tdesc = (flmTipo(a.COD) || {}).N + ' · ' + (ca ? ca.MARCA : (function() { var x = ''; flmTodas().forEach(function(u) { (u.MONT || []).forEach(function(m) { if (m.C && m.C.ID === a.ID_CASCO) x = m.C.MARCA; }); }); return x; })()) + ' · ' + (FLM_.d.UNIDAD ? FLM_.d.UNIDAD.IDENT : '');
-  try { var r = await flEnviar('gsCB_Mover', o, tdesc); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  try { var r = await flEnviar('gsCB_Mover', o, tdesc);
+    if (r && !r.ok && r.CODIGO === 'MEDIDA') { var mot = await uiPedir('⚠ ' + r.error + '. Si igual se monta, escribí el motivo (queda registrado)', { obligatorio: true });
+      if (mot === null) return; o.FORZAR_MEDIDA = 1; o.OBS = (mot.trim() + (o.OBS ? ' · ' + o.OBS : '')).substring(0, 300); r = await flEnviar('gsCB_Mover', o, tdesc); }
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
     closeModal(); FLM_.sel = null;
     if (r.COLA) { toast('📵 Sin señal: quedó guardado en el celular y se envía solo cuando vuelva', 'w'); flmMapa(); return; }
     toast('Listo ✓ ' + r.MOVS.join(' · '), 'g'); await flmCargar(FLM_.eq);
