@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "1c2574944788"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9456632d7830"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1600,7 +1600,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611160930';
+var EMA_BUILD = '202611161000';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16745,7 +16745,7 @@ var MT_ = { d: null, vista: 'ord', nueva: false, F: null, FE: null, ord: null, o
     '.mt-it.r-NO,.mt-it.r-SI{background:#fef2f2}.mt-it.r-OK{background:#f7fef9}.mt-obs{flex:1 1 100%;margin-top:4px}.mt-obs input{width:100%;min-height:40px;font-size:15px}' +
     '.mt-bar{position:sticky;top:0;z-index:5;background:var(--card,#fff);padding:10px 0 8px;border-bottom:1px solid var(--border,#e2e8f0);margin-bottom:10px}' +
     '.mt-prog{height:10px;border-radius:6px;background:#e5e7eb;overflow:hidden;margin-top:6px}.mt-prog>div{height:100%;background:#16a34a}' +
-    '.mt-eqs{display:flex;gap:8px;flex-wrap:wrap}.mt-eqs button{min-height:44px}.mt-lin td input{min-width:64px}' +
+    '.mt-it button:disabled{opacity:.45;cursor:not-allowed}#mt-trab .selb-in{min-width:230px}.mt-eqs{display:flex;gap:8px;flex-wrap:wrap}.mt-eqs button{min-height:44px}.mt-lin td input{min-width:64px}' +
     '.mt-pick{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1.5px solid var(--border,#e2e8f0);border-radius:10px;margin:0 0 8px;cursor:pointer;font-size:14px}.mt-pick input{width:22px;height:22px}.mt-pick:has(input:checked){border-color:#16a34a;background:#f0fdf4}' +
     '@media(max-width:700px){#page-taller .pc-abm td.pc-wr{min-width:190px!important}.mt-rb button{min-width:58px;min-height:48px;font-size:15px}.mt-it .mt-n{flex-basis:100%;font-size:15px}.mt-rb{width:100%;justify-content:flex-end}.mt-gh{font-size:16px;padding:14px}}';
   document.head.appendChild(st); })();
@@ -16943,10 +16943,82 @@ function mtOrdenVer() {
       ((P.ESTADO === 'BORRADOR' || P.ESTADO === 'ENVIADO' || P.ESTADO === 'RECHAZADO') ? '<button class="btn btn-s" onclick="mtPresCorregir()">✏ Corregir (versión nueva)</button>' : '') +
       (P.ESTADO === 'BORRADOR' ? '<button class="btn btn-s" onclick="mtPresEstado(\'ENVIADO\')">📤 Marcar como enviado al cliente</button>' : '') +
       ((P.ESTADO === 'BORRADOR' || P.ESTADO === 'ENVIADO') ? '<button class="btn btn-p" onclick="mtPresEstado(\'APROBADO\')">✅ El cliente lo aprobó</button><button class="btn btn-d" onclick="mtPresEstado(\'RECHAZADO\')">✖ El cliente no lo aprobó</button>' : '') +
-      (P.ESTADO === 'APROBADO' ? '<div class="al" style="flex:1">Aprobado. Al terminar el trabajo cerrá la orden: se hace el remito con lo aprobado (los repuestos descuentan stock) y se factura desde Ventas → Facturar remitos pendientes.</div>' + (typeof flpCerrarDesde === 'function' && mtPuede('AGREGAR') ? '<button class="btn btn-p" onclick="flpCerrarDesde(' + O.ORDEN.ID_ORDEN + ')">✅ Cerrar orden y hacer el remito</button>' : '') : '') + '</div>';
+      (P.ESTADO === 'APROBADO' ? '<div class="al" style="flex:1">Aprobado. Abajo, en <b>Trabajo y control final</b>, se reparten las tareas a los mecánicos; con todas controladas se cierra la orden y se hace el remito.</div>' : '') + '</div>';
   }
   h += '</div></div>';
+  if (P && P.ESTADO === 'APROBADO' && O.TRAB) h += mtTrabHtml(O, an);
   $id('mt-body').innerHTML = h;
+}
+// ── TRABAJO Y CONTROL FINAL: una tarea por servicio aprobado; mecánico, empecé / terminé y control OK o rechazo ──
+var MT_TRAB_EST = { PENDIENTE: ['mt-b-o', 'Para hacer'], EN_CURSO: ['mt-b-v', 'Haciéndose'], TERMINADO: ['mt-b-b', 'Terminada: falta control'], OK: ['mt-b-g', 'Control OK'], RECHAZADO: ['mt-b-r', 'Rechazada: rehacer'] };
+function mtMin(m) { m = Math.round(Number(m) || 0); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60 ? (m % 60) + ' min' : ''); }
+function mtHora(ms) { if (!ms) return ''; var d = new Date(Number(ms)); return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }); }
+function mtTrabHtml(O, an) {
+  var T = O.TRAB, tr = T.TRABAJOS || [], est = O.ORDEN.ESTADO, ed = est === 'EN_TRABAJO' && mtPuede('EDITAR'), nok = tr.filter(function(t) { return t.ESTADO === 'OK'; }).length;
+  var h = '<div class="card mb3" id="mt-trab"><div class="card-hd"><span class="card-title">Trabajo y control final</span>' + (tr.length ? '<span class="mt-bd ' + (nok === tr.length ? 'mt-b-g' : 'mt-b-o') + '">' + nok + ' de ' + tr.length + ' con control OK</span>' : '') + '</div><div class="card-body">';
+  if (!tr.length) {
+    h += '<div class="tdim mb2">Se arma una tarea por cada servicio aprobado (si el presupuesto solo tiene repuestos, una por equipo). Después a cada tarea se le elige el mecánico, él marca <b>Empecé</b> y <b>Terminé</b>, y el encargado hace el <b>control final</b>: OK o rechazo para rehacer.</div>' +
+      (est === 'APROBADA' && !an && mtPuede('AGREGAR') ? '<button class="btn btn-p" style="min-height:48px" id="mt-tr-armar" onclick="mtTrabArmar()">🛠 Armar el trabajo</button>' : '');
+    return h + '</div></div>';
+  }
+  h += '<div class="mt-prog mb3"><div style="width:' + Math.round(nok * 100 / tr.length) + '%"></div></div>';
+  var porEq = {}, orden = [];
+  tr.forEach(function(t) { var k = String(t.ID_OE || 0); if (!porEq[k]) { porEq[k] = []; orden.push(k); } porEq[k].push(t); });
+  orden.forEach(function(k) {
+    var x = O.EQUIPOS.filter(function(q) { return String(q.ID_OE) === k; })[0], e = x ? mtEq(x.ID_EQUIPO) : null;
+    var reps = (T.REPUESTOS || []).filter(function(r) { return String(r.ID_OE || 0) === k; });
+    h += '<div class="mt-gr"><div class="mt-gh" style="cursor:default">' + (e ? '🚛 ' + pcEsc(mtEqIdent(e)) + ' <span class="tdim" style="font-weight:500;font-size:13px">' + pcEsc((e.MARCA || '') + ' ' + (e.MODELO || '')) + '</span>' : 'General') + '</div>';
+    porEq[k].forEach(function(t) { h += mtTrabFila(t, T, ed); });
+    if (reps.length) h += '<div class="mt-it" style="background:#f8fafc;font-size:13px"><div class="mt-n"><b>Repuestos del presupuesto</b> (se descuentan del stock al cerrar la orden): ' + reps.map(function(r) { return pcEsc(r.DESCRIPCION) + ' × ' + r.CANTIDAD + (r.CLASE === 'CLIENTE' ? ' (los trae el cliente)' : ''); }).join(' · ') + '</div></div>';
+    h += '</div>';
+  });
+  if (ed) h += '<div class="flex gap2 mt2" style="flex-wrap:wrap;align-items:center"><select class="fs" id="mt-tr-eq" style="max-width:220px">' + O.EQUIPOS.map(function(x) { return '<option value="' + x.ID_OE + '">' + pcEsc(mtEqIdent(mtEq(x.ID_EQUIPO))) + '</option>'; }).join('') + '</select><button class="btn btn-s" onclick="mtTrabAgregar()">＋ Agregar una tarea que apareció</button></div>';
+  if (est === 'EN_TRABAJO' && !an) {
+    if (nok === tr.length) h += '<div class="al mt3" style="background:#f0fdf4;border-color:#86efac">Todas las tareas tienen control OK. Al cerrar se hace el remito con lo aprobado (los repuestos descuentan stock) y se factura desde Ventas → Facturar remitos pendientes.</div>' + (typeof flpCerrarDesde === 'function' && mtPuede('AGREGAR') ? '<button class="btn btn-p mt2" style="min-height:52px;width:100%;font-size:16px" onclick="flpCerrarDesde(' + O.ORDEN.ID_ORDEN + ')">✅ Cerrar la orden y hacer el remito</button>' : '');
+    else h += '<div class="tdim mt3" style="font-size:13px">La orden se cierra cuando todas las tareas tengan control OK (faltan ' + (tr.length - nok) + ').</div>';
+  }
+  return h + '</div></div>';
+}
+function mtTrabFila(t, T, ed) {
+  var x = MT_TRAB_EST[t.ESTADO] || ['mt-b-x', t.ESTADO], b = '';
+  var sel = '<select class="fs" style="max-width:200px;min-height:42px" onchange="mtTrabAcc(' + t.ID_TRAB + ',\'ASIGNAR\',this.value)"' + (ed && t.ESTADO !== 'OK' && t.ESTADO !== 'EN_CURSO' ? '' : ' disabled') + '><option value="">— quién la hace —</option>' + (T.MECANICOS || []).map(function(m) { return '<option value="' + m.ID + '"' + (m.ID === t.ID_EMPLEADO ? ' selected' : '') + '>' + pcEsc(m.N) + (m.P ? ' · ' + pcEsc(m.P.toLowerCase()) : '') + '</option>'; }).join('') + '</select>';
+  if (ed) {
+    if (t.ESTADO === 'PENDIENTE' || t.ESTADO === 'RECHAZADO') b += '<button class="btn btn-p" style="min-height:44px" onclick="mtTrabAcc(' + t.ID_TRAB + ',\'EMPEZAR\')"' + (t.ID_EMPLEADO ? '' : ' disabled title="Primero elegí quién la hace"') + '>▶ Empecé</button>';
+    if (t.ESTADO === 'EN_CURSO') b += '<button class="btn btn-p" style="min-height:44px" onclick="mtTrabAcc(' + t.ID_TRAB + ',\'TERMINAR\')">⏹ Terminé</button>';
+    if (t.ESTADO === 'TERMINADO') b += '<button class="btn btn-p" style="min-height:44px;background:#16a34a;border-color:#16a34a" onclick="mtTrabAcc(' + t.ID_TRAB + ',\'OK\')">✔ Control OK</button><button class="btn btn-d" style="min-height:44px" onclick="mtTrabAcc(' + t.ID_TRAB + ',\'RECHAZAR\')">✖ Rechazar</button>';
+    if (t.ESTADO === 'PENDIENTE' && t.INTENTOS <= 1 && !t.MINUTOS) b += '<button class="btn btn-s btn-xs" onclick="mtTrabAcc(' + t.ID_TRAB + ',\'ANULAR\')" title="Sacar la tarea (no se hace)">Sacar</button>';
+  }
+  var inf = [];
+  if (t.ESTADO === 'EN_CURSO') inf.push('empezó ' + mtHora(t.INICIO));
+  if (t.MINUTOS) inf.push('tiempo ' + mtMin(t.MINUTOS));
+  if (t.OBS) inf.push('nota: ' + pcEsc(t.OBS));
+  if (t.ESTADO === 'OK') inf.push('controló ' + pcEsc(t.CONTROL_POR) + ' ' + mtHora(t.CONTROL_FECHA) + (t.CONTROL_OBS ? ' · ' + pcEsc(t.CONTROL_OBS) : ''));
+  if (t.ESTADO === 'RECHAZADO') inf.push('<b style="color:#b91c1c">rechazó ' + pcEsc(t.CONTROL_POR) + ': ' + pcEsc(t.CONTROL_OBS) + '</b>');
+  if (t.INTENTOS > 1) inf.push('vez ' + t.INTENTOS);
+  return '<div class="mt-it' + (t.ESTADO === 'OK' ? ' r-OK' : t.ESTADO === 'RECHAZADO' ? ' r-NO' : '') + '" data-trab="' + t.ID_TRAB + '"><div class="mt-n"><b>' + pcEsc(t.DESCRIPCION) + '</b> <span class="mt-bd ' + x[0] + '">' + pcEsc(x[1]) + '</span>' + (inf.length ? '<div class="tdim" style="font-size:12.5px;margin-top:3px">' + inf.join(' · ') + '</div>' : '') + '</div>' + sel + '<div class="flex gap2" style="flex-wrap:wrap">' + b + '</div></div>';
+}
+async function mtTrabRecargar() { var id = MT_.ord.ORDEN.ID_ORDEN; await mtRecargar(); await mtAbrir(id); var el = $id('mt-trab'); if (el) el.scrollIntoView({ block: 'start' }); }
+async function mtTrabArmar() {
+  var b = $id('mt-tr-armar'); if (b) b.disabled = true;
+  try { var r = await gsRun('gsMT_TrabArmar', MT_.ord.ORDEN.ID_ORDEN); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast(r.N + ' tarea' + (r.N === 1 ? '' : 's') + ' para hacer ✓', 'g'); await mtTrabRecargar();
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
+}
+async function mtTrabAcc(id, acc, v) {
+  var d = { ID_TRAB: id, ACCION: acc };
+  if (acc === 'ASIGNAR') { if (!v) return; d.ID_EMPLEADO = v; }
+  if (acc === 'TERMINAR') { var n = await uiPedir('Terminé. ¿Algo para anotar? (podés dejarlo vacío)', {}); if (n === null) return; d.OBS = n; }
+  if (acc === 'RECHAZAR') { var m = await uiPedir('¿Qué está mal? (vuelve al mecánico para rehacerla)', { obligatorio: true }); if (m === null) return; d.OBS = m; }
+  if (acc === 'ANULAR') { var a = await uiPedir('¿Por qué se saca esta tarea?', { obligatorio: true }); if (a === null) return; d.OBS = a; }
+  try { var r = await gsRun('gsMT_TrabAccion', d); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast({ ASIGNAR: 'Mecánico asignado ✓', EMPEZAR: 'Empezada ✓', TERMINAR: 'Terminada: falta el control ✓', OK: 'Control OK ✓', RECHAZAR: 'Rechazada: vuelve al mecánico', ANULAR: 'Tarea sacada' }[acc], acc === 'RECHAZAR' ? 'r2' : 'g'); await mtTrabRecargar();
+  } catch (e) { toast(e.message, 'r2'); }
+}
+async function mtTrabAgregar() {
+  var oe = $v('mt-tr-eq'), ds = await uiPedir('¿Qué hay que hacer? (tarea nueva que apareció al trabajar)', { obligatorio: true }); if (ds === null) return;
+  try { var r = await gsRun('gsMT_TrabAccion', { ACCION: 'AGREGAR', ID_ORDEN: MT_.ord.ORDEN.ID_ORDEN, ID_OE: oe, DESCRIPCION: ds }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast('Tarea agregada ✓', 'g'); await mtTrabRecargar();
+  } catch (e) { toast(e.message, 'r2'); }
 }
 function mtStockDe(idArt) { if (!idArt) return null; var a = MT_.d.ARTS.filter(function(x) { return x.I === Number(idArt); })[0]; if (a) return a.S; var s = null; MT_.d.SERVICIOS.forEach(function(sv) { sv.RECETA.forEach(function(r) { if (r.ID_ARTICULO === Number(idArt)) s = r.STOCK; }); }); return s; }
 function mtStockTd(l) { if (l.CLASE !== 'REPUESTO' && l.CLASE !== 'INSUMO') return '<td class="tr tdim">—</td>'; var s = mtStockDe(l.ID_ARTICULO); if (s === null) return '<td class="tr tdim">?</td>'; var falta = s < l.CANTIDAD; return '<td class="tr" style="font-weight:700;color:' + (falta ? '#dc2626' : '#16a34a') + '" title="Stock actual (solo en pantalla)">' + s + '</td>'; }
@@ -17092,7 +17164,12 @@ async function mtImpOrden(id) {
     pl.GRUPOS.forEach(function(g) { c += '<tr><td colspan="5" style="background:#f3f4f6;font-weight:700">' + pcEsc(g.NOMBRE) + '</td></tr>';
       g.ITEMS.forEach(function(i) { var v = (x.RESP[i.ID] || {}).R || ''; c += '<tr><td>' + pcEsc(i.NOMBRE) + '</td><td class="ck">' + (v === 'OK' || v === 'SI' ? '✔' : '') + '</td><td class="ck">' + (v === 'NO' ? '✖' : '') + '</td><td class="ck">' + (v === 'NA' ? '—' : '') + '</td><td>' + pcEsc((x.RESP[i.ID] || {}).OBS || '') + '</td></tr>'; }); });
     c += '</tbody></table>' + (x.OBSERVACIONES ? '<div class="nota">Observaciones: ' + pcEsc(x.OBSERVACIONES) + '</div>' : ''); });
-  c += '<div class="firmas"><div>Mecánico</div><div>Cliente / chofer</div></div>';
+  if (r.TRAB && r.TRAB.TRABAJOS && r.TRAB.TRABAJOS.length) {
+    c += '<h2>Trabajo y control final</h2><table class="det"><thead><tr><th style="width:38%">Tarea</th><th>Equipo</th><th>Mecánico</th><th class="n">Tiempo</th><th>Control final</th></tr></thead><tbody>' +
+      r.TRAB.TRABAJOS.map(function(t) { var x = r.EQUIPOS.filter(function(q) { return q.ID_OE === t.ID_OE; })[0];
+        return '<tr><td>' + pcEsc(t.DESCRIPCION) + (t.OBS ? '<div style="font-size:10px">' + pcEsc(t.OBS) + '</div>' : '') + '</td><td>' + (x ? pcEsc(mtEqIdent(mtEq(x.ID_EQUIPO))) : '') + '</td><td>' + pcEsc(t.EMPLEADO || '—') + '</td><td class="n">' + (t.MINUTOS ? mtMin(t.MINUTOS) : '') + '</td><td>' + pcEsc((MT_TRAB_EST[t.ESTADO] || [0, t.ESTADO])[1]) + (t.CONTROL_POR ? ' · ' + pcEsc(t.CONTROL_POR) + ' ' + mtHora(t.CONTROL_FECHA) : '') + (t.CONTROL_OBS ? ' · ' + pcEsc(t.CONTROL_OBS) : '') + '</td></tr>'; }).join('') + '</tbody></table>';
+  }
+  c += '<div class="firmas"><div>Mecánico</div><div>Control final</div><div>Cliente / chofer</div></div>';
   pcImprimir(r.ORDEN.NRO, c);
 }
 function mtImpPresup() {
@@ -17697,6 +17774,7 @@ function flmPintar() {
     '.flm-lista{max-height:420px;overflow:auto;border:1px solid var(--border,#e2e8f0);border-radius:8px;margin-top:6px}.flm-lista div{padding:6px 8px;font-size:12.5px;cursor:pointer;border-bottom:1px solid #f1f5f9}.flm-lista div:hover{background:#f1f5f9}.flm-lista div.on{background:#dbeafe;font-weight:700}' +
     '.flm-g{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;align-items:start}#flm-body .flm-g svg{width:100%!important;height:auto;max-width:400px!important;display:block;margin:0 auto}.flm-der .card-hd{padding:8px 10px}.flm-drop{transition:box-shadow .15s}body.flm-arr .flm-drop{box-shadow:0 0 0 2px #93c5fd}.flm-drop.flm-sobre{box-shadow:0 0 0 3px #2563eb!important;background:#eff6ff}' +
     '@media(min-width:901px){body.flm-full:has(#page-flota:not(.hidden) #flm-body) #sidebar{display:none}}' +
+    'body:has(#page-flota:not(.hidden) #flm-body) .as-aviso{display:none!important}' +
     '#flm-ghost{position:fixed;z-index:9999;pointer-events:none;background:#111827;color:#fff;font-size:12px;font-weight:700;padding:6px 10px;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,.3)}' +
     '@media(max-width:900px){.flm-w{grid-template-columns:1fr}.flm-g{grid-template-columns:1fr}.flm-lista{max-height:150px}.flm-tgl{display:none}}'; document.head.appendChild(st); }
   if (FLM_.full === undefined) FLM_.full = 1; document.body.classList.toggle('flm-full', !!FLM_.full);
