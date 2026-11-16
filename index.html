@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "75cd7eeff8c5"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d744c1283795"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -330,6 +330,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="flota" data-acc="fl-planes"><span class="nav-icon"><i class="fas fa-truck-pickup"></i></span> Órdenes en campo</div>
         <div class="nav-item" data-page="flota" data-acc="fl-recapado"><span class="nav-icon"><i class="fas fa-recycle"></i></span> Cubiertas para recapar</div>
         <div class="nav-item" data-page="flota" data-acc="fl-combustible"><span class="nav-icon"><i class="fas fa-gas-pump"></i></span> Combustible de la flota</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-informe"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Informe de flota</div>
         <div class="nav-item" data-page="flota" data-acc="fl-importar"><span class="nav-icon"><i class="fas fa-file-excel"></i></span> Importar flota (Excel)</div>
         <div class="nav-item" data-page="flota" data-acc="fl-reportes"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Reportes de flota</div>
         <div class="nav-item" data-page="flota" data-acc="fl-enganches"><span class="nav-icon"><i class="fas fa-link"></i></span> Enganches de acoplados</div>
@@ -1601,7 +1602,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611161100';
+var EMA_BUILD = '202611161200';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17530,7 +17531,7 @@ var FL_ = { t: '', d: null, F: { q: '', p: '', est: 'V' }, cfg: null, ed: null }
 var FL_MENU = { 'fl-mapa': 'mapa', 'fl-planes': 'planes', 'fl-reportes': 'reportes', 'fl-enganches': 'enganches', 'fl-mv_marcas': 'mv_marcas', 'fl-mv_modelos': 'mv_modelos', 'fl-mt_equipo_tipos': 'mt_equipo_tipos', 'fl-mt_equipo_subtipos': 'mt_equipo_subtipos', 'fl-config': 'cb_config',
   'fl-cb_mov_tipos': 'cb_mov_tipos', 'fl-cb_estados_cub': 'cb_estados_cub', 'fl-cb_causas_rotura': 'cb_causas_rotura', 'fl-cli_cargos': 'cli_cargos', 'fl-mt_licencias_cat': 'mt_licencias_cat',
   'fl-cli_bases': 'cli_bases', 'fl-cli_contactos': 'cli_contactos', 'fl-mt_choferes': 'mt_choferes',
-  'fl-importar': 'importar', 'fl-cb_lugares': 'cb_lugares', 'fl-preventivo': 'preventivo', 'fl-recapado': 'recapado', 'fl-mt_service_plan': 'mt_service_plan', 'fl-combustible': 'combustible' };
+  'fl-importar': 'importar', 'fl-cb_lugares': 'cb_lugares', 'fl-preventivo': 'preventivo', 'fl-recapado': 'recapado', 'fl-mt_service_plan': 'mt_service_plan', 'fl-combustible': 'combustible', 'fl-informe': 'informe' };
 function flPuede(acc) { return typeof tienePermiso === 'function' ? tienePermiso('VENTAS', acc) : true; }
 function flBtn(cls, txt, js, tit) { return typeof pcBtnAbm === 'function' ? pcBtnAbm(cls, txt, js, tit) : '<button class="btn ' + cls + ' btn-xs" onclick="' + js + '">' + txt + '</button>'; }
 async function renderFlota() {
@@ -17551,6 +17552,7 @@ async function flRecargar() {
     if (FL_.t === 'preventivo') return renderPreventivo();
     if (FL_.t === 'recapado') return renderRecapado();
     if (FL_.t === 'combustible') return renderCombustible();
+    if (FL_.t === 'informe') return renderInforme();
     if (FL_.t === 'cb_config') { var r = await gsRun('gsCB_Configs'); if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo cargar'); FL_.cfg = r; return flCfgPintar(); }
     var r2 = await gsRun('gsCB_Cat', FL_.t); if (!r2 || !r2.ok) throw new Error((r2 && r2.error) || 'No se pudo cargar'); FL_.d = r2; flPintar();
   } catch (e) { $id('fl-body').innerHTML = '<div class="al">' + pcEsc(e.message) + '</div>'; }
@@ -18665,6 +18667,56 @@ async function flcEditarOk(id) { var c = flcCarga(id), b = $id('flce-ok'); b.dis
   } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; } }
 async function flcAnular(id) { var c = flcCarga(id); var m = await uiPedir('¿Por qué se anula la carga ' + c.NRO + '?', { obligatorio: true }); if (m === null) return;
   try { var r = await gsRun('gsFC_Anular', { ID_CARGA: id, MOTIVO: m }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Carga anulada', 'g'); await renderCombustible(); } catch (e) { toast(e.message, 'r2'); } }
+
+// ════════════════════════════════════════════════════════════════
+// INFORME DE FLOTA (16/11/2026, Anibal): diario, semanal, quincenal o mensual; de la flota o de un vehículo.
+// Rubros (cubiertas, combustible, check list, mecánica, electricidad), avisos pendientes, vehículos y la trazabilidad de cada trabajo.
+// ════════════════════════════════════════════════════════════════
+var FLI2_ = { F: { cli: '', eq: '', per: 7, desde: '', hasta: '', rub: '' }, d: null };
+var FLI2_COL = { 'Cubiertas': ['#e0e7ff', '#3730a3'], 'Combustible': ['#fef3c7', '#92400e'], 'Check list': ['#e0f2fe', '#075985'], 'Mecánica': ['#dcfce7', '#166534'], 'Electricidad': ['#fae8ff', '#86198f'] };
+function fli2Rango() { var F = FLI2_.F; if (F.per === 'R') return { D: flcFecha(F.desde), H: flcFecha(F.hasta, true) || Date.now() };
+  var h = new Date(); h.setHours(0, 0, 0, 0); return { D: h.getTime() - (Number(F.per) - 1) * 86400000, H: Date.now() }; }
+function fli2Bd(r) { var c = FLI2_COL[r] || ['#e5e7eb', '#374151']; return '<span class="fl-bd" style="background:' + c[0] + ';color:' + c[1] + '">' + pcEsc(r) + '</span>'; }
+async function renderInforme() {
+  $id('fl-tit').textContent = '📊 Informe de flota'; $id('fl-sub').textContent = 'Flota y cubiertas · diario, semanal, quincenal o mensual, con la trazabilidad de cada trabajo';
+  var F = FLI2_.F;
+  if (!F.cli) { var cl = await gsRun('gsFC_Datos', {}); FLI2_.cl = cl && cl.ok ? cl.CLIENTES : []; $id('fl-body').innerHTML = '<div class="card"><div class="card-body"><div class="fg" style="max-width:420px"><label class="fl">Empresa</label><select class="fs" data-filtro onchange="FLI2_.F.cli=this.value;FLI2_.F.eq=\'\';renderInforme()">' + flpOpt(FLI2_.cl, '', '— elegí la empresa —') + '</select></div><div class="tdim mt2">Elegí la empresa para ver el informe de su flota.</div></div></div>'; return; }
+  var R = fli2Rango(), r = await gsRun('gsFL_Informe', { ID_CLIENTE: F.cli, ID_EQUIPO: F.eq, DESDE: R.D, HASTA: R.H });
+  if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo cargar'); FLI2_.d = r; fli2Pintar();
+}
+function fli2Pintar() {
+  var d = FLI2_.d, F = FLI2_.F, rub = F.rub, ev = d.EVENTOS.filter(function(x) { return !rub || x.RUBRO === rub; }), av = d.AVISOS.filter(function(x) { return !rub || x.RUBRO === rub; });
+  var pers = [[1, 'Hoy'], [7, 'Semana'], [15, 'Quincena'], [30, 'Mes'], ['R', 'Desde / hasta']];
+  var h = '<div class="card mb3"><div class="card-body"><div class="pc-otf">' +
+    '<div class="fg" style="grid-column:span 2"><label class="fl">Empresa</label><select class="fs" data-filtro onchange="FLI2_.F.cli=this.value;FLI2_.F.eq=\'\';renderInforme()">' + flpOpt(d.CLIENTES, F.cli, '— elegí —') + '</select></div>' +
+    '<div class="fg" style="grid-column:span 2"><label class="fl">Vehículo</label><select class="fs" onchange="FLI2_.F.eq=this.value;renderInforme()">' + flpOpt(d.EQUIPOS, F.eq, 'Toda la flota') + '</select></div>' +
+    '<div class="fg"><label class="fl">Rubro</label><select class="fs" onchange="FLI2_.F.rub=this.value;fli2Pintar()">' + flpOpt(d.RUBROS.map(function(x) { return { V: x.RUBRO, T: x.RUBRO }; }), F.rub, 'Todos') + '</select></div>' +
+    '<div class="fg" style="align-self:end"><button class="btn btn-s" onclick="FLI2_.F.eq=\'\';FLI2_.F.rub=\'\';FLI2_.F.per=7;renderInforme()">Limpiar filtros</button></div></div>' +
+    '<div class="mt2" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' + pers.map(function(p) { return '<button class="btn btn-sm ' + (String(F.per) === String(p[0]) ? 'btn-p' : 'btn-s') + '" onclick="FLI2_.F.per=\'' + p[0] + '\';' + (p[0] === 'R' ? 'fli2Pintar()' : 'renderInforme()') + '">' + p[1] + '</button>'; }).join('') +
+    (String(F.per) === 'R' ? '<input class="fi" type="date" style="max-width:160px" value="' + F.desde + '" onchange="FLI2_.F.desde=this.value"><input class="fi" type="date" style="max-width:160px" value="' + F.hasta + '" onchange="FLI2_.F.hasta=this.value"><button class="btn btn-p btn-sm" onclick="renderInforme()">Ver</button>' : '') +
+    '<span style="flex:1"></span><button class="btn btn-s btn-sm" onclick="fli2Pdf()">🖨 PDF del informe</button></div></div></div>';
+  h += '<div class="card mb3"><div class="card-hd"><span class="card-title">' + pcEsc(d.EMPRESA) + (F.eq ? ' · ' + pcEsc((d.EQUIPOS.filter(function(x) { return String(x.V) === String(F.eq); })[0] || {}).T || '') : ' · toda la flota') + '</span><span class="tdim" style="font-size:12.5px">Del ' + fmtD(d.DESDE) + ' al ' + fmtD(d.HASTA) + '</span></div><div class="card-body">' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">' + d.RUBROS.map(function(x) { var c = FLI2_COL[x.RUBRO]; return '<div style="border:1.5px solid ' + c[0] + ';border-left:6px solid ' + c[1] + ';border-radius:10px;padding:10px 12px;cursor:pointer" onclick="FLI2_.F.rub=FLI2_.F.rub===\'' + x.RUBRO + '\'?\'\':\'' + x.RUBRO + '\';fli2Pintar()"><div style="font-size:12px;font-weight:700;color:' + c[1] + '">' + x.RUBRO + '</div><div style="font-size:26px;font-weight:800">' + x.N + '</div><div class="tdim" style="font-size:12px">registro(s) en el período' + (x.PEND ? ' · <b style="color:#b45309">' + x.PEND + ' sin terminar</b>' : '') + ' · <b>' + d.AVISOS.filter(function(a) { return a.RUBRO === x.RUBRO; }).length + '</b> aviso(s)</div></div>'; }).join('') + '</div></div></div>';
+  h += '<div class="card mb3"><div class="card-hd"><span class="card-title">⚠ Lo que hay que hacer (' + av.length + ')</span></div><div class="card-body">' + (av.length ? '<div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th></th><th>Rubro</th><th>Unidad</th><th>Qué pasa</th></tr></thead><tbody>' + av.map(function(a) { return '<tr' + (a.GRAV === 2 ? ' style="background:#fef2f2"' : '') + '><td><span class="fl-bd" style="background:' + (a.GRAV === 2 ? '#fee2e2;color:#991b1b">Urgente' : '#fef3c7;color:#92400e">Planificar') + '</span></td><td>' + fli2Bd(a.RUBRO) + '</td><td><b>' + pcEsc(a.UNIDAD) + '</b></td><td>' + pcEsc(a.T) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="tdim">No hay avisos pendientes.</div>') + '</div></div>';
+  if (!F.eq) h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Vehículos</span></div><div class="card-body"><div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Unidad</th><th>Marca y modelo</th><th>Base</th><th class="tr">Km</th><th class="tr">Km en el período</th><th class="tr">L/100 km</th><th class="tr">Trabajos</th><th class="tr">Avisos</th><th>Acciones</th></tr></thead><tbody>' +
+    d.VEHICULOS.map(function(v) { return '<tr><td><b>' + pcEsc(v.IDENT) + '</b>' + (v.TIPO === 2 ? ' <span class="tdim">semi</span>' : '') + '</td><td>' + pcEsc(v.MM) + '</td><td>' + pcEsc(v.BASE || '—') + '</td><td class="tr">' + flrN(v.KM) + '</td><td class="tr">' + flcN(v.KM_PER, 0) + '</td><td class="tr">' + flcN(v.L100) + '</td><td class="tr">' + v.TRAB + '</td><td class="tr">' + (v.AVISOS ? '<b style="color:#b91c1c">' + v.AVISOS + '</b>' : '0') + '</td><td><div class="pc-acc">' + flBtn('btn-s', '📜 Historial', 'FLI2_.F.eq=\'' + v.ID + '\';renderInforme()') + '</div></td></tr>'; }).join('') + '</tbody></table></div></div></div>';
+  h += '<div class="card"><div class="card-hd"><span class="card-title">Historial y trazabilidad (' + ev.length + ')</span></div><div class="card-body"><div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Fecha</th><th>Rubro</th><th>Unidad</th><th>Qué se hizo</th><th>Detalle</th><th class="tr">Km</th><th>Lo hizo</th><th>Controló</th><th>Documento</th></tr></thead><tbody>' +
+    (ev.length ? ev.map(function(x) { return '<tr><td style="white-space:nowrap">' + new Date(x.F).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) + '</td><td>' + fli2Bd(x.RUBRO) + (x.SIS && x.SIS !== x.RUBRO ? '<div class="tdim" style="font-size:11px">' + pcEsc(x.SIS) + '</div>' : '') + '</td><td><b>' + pcEsc(x.UNIDAD) + '</b></td><td>' + pcEsc(x.QUE) + '</td><td class="pc-wr" style="min-width:200px' + (x.AV ? ';color:#b45309;font-weight:700' : '') + '">' + pcEsc(x.DET) + '</td><td class="tr">' + (x.KM === '' ? '—' : flrN(x.KM)) + '</td><td>' + pcEsc(x.QUIEN || '—') + '</td><td>' + (x.CONTROL ? '✔ ' + pcEsc(x.CONTROL) : '—') + '</td><td class="mono" style="white-space:nowrap">' + pcEsc(x.DOC) + '</td></tr>'; }).join('')
+      : '<tr><td colspan="9" class="tc tdim" style="padding:14px">No hay registros en el período.</td></tr>') + '</tbody></table></div></div></div>';
+  $id('fl-body').innerHTML = h;
+  if (typeof gridPonerBotones_ === 'function') setTimeout(gridPonerBotones_, 30);
+}
+function fli2Pdf() {
+  var d = FLI2_.d, F = FLI2_.F, rub = F.rub, ev = d.EVENTOS.filter(function(x) { return !rub || x.RUBRO === rub; }), av = d.AVISOS.filter(function(x) { return !rub || x.RUBRO === rub; });
+  var veh = F.eq ? ' · ' + ((d.EQUIPOS.filter(function(x) { return String(x.V) === String(F.eq); })[0] || {}).T || '') : ' · toda la flota';
+  var c = pcEncImp('Informe de flota' + (rub ? ' · ' + rub : ''), '', d.EMPRESA + veh + ' · del ' + fmtD(d.DESDE) + ' al ' + fmtD(d.HASTA)) +
+    '<h2>Resumen por rubro</h2><table class="det"><thead><tr>' + d.RUBROS.map(function(x) { return '<th class="n">' + x.RUBRO + '</th>'; }).join('') + '</tr></thead><tbody><tr>' + d.RUBROS.map(function(x) { return '<td class="n"><b>' + x.N + '</b> reg. · ' + d.AVISOS.filter(function(a) { return a.RUBRO === x.RUBRO; }).length + ' avisos</td>'; }).join('') + '</tr></tbody></table>' +
+    '<h2>Lo que hay que hacer</h2><table class="det"><thead><tr><th style="width:12%"></th><th style="width:14%">Rubro</th><th style="width:12%">Unidad</th><th>Qué pasa</th></tr></thead><tbody>' + (av.length ? av.map(function(a) { return '<tr><td>' + (a.GRAV === 2 ? 'Urgente' : 'Planificar') + '</td><td>' + pcEsc(a.RUBRO) + '</td><td>' + pcEsc(a.UNIDAD) + '</td><td>' + pcEsc(a.T) + '</td></tr>'; }).join('') : '<tr><td colspan="4">No hay avisos pendientes.</td></tr>') + '</tbody></table>' +
+    (F.eq ? '' : '<h2>Vehículos</h2><table class="det"><thead><tr><th>Unidad</th><th>Marca y modelo</th><th>Base</th><th class="n">Km</th><th class="n">Km período</th><th class="n">L/100 km</th><th class="n">Trabajos</th><th class="n">Avisos</th></tr></thead><tbody>' + d.VEHICULOS.map(function(v) { return '<tr><td>' + pcEsc(v.IDENT) + '</td><td>' + pcEsc(v.MM) + '</td><td>' + pcEsc(v.BASE) + '</td><td class="n">' + flrN(v.KM) + '</td><td class="n">' + flcN(v.KM_PER, 0) + '</td><td class="n">' + flcN(v.L100) + '</td><td class="n">' + v.TRAB + '</td><td class="n">' + v.AVISOS + '</td></tr>'; }).join('') + '</tbody></table>') +
+    '<h2>Historial y trazabilidad</h2><table class="det"><thead><tr><th style="width:9%">Fecha</th><th style="width:10%">Rubro</th><th style="width:7%">Unidad</th><th style="width:18%">Qué se hizo</th><th>Detalle</th><th class="n" style="width:7%">Km</th><th style="width:10%">Lo hizo</th><th style="width:8%">Controló</th><th style="width:12%">Documento</th></tr></thead><tbody>' +
+    ev.map(function(x) { return '<tr><td>' + new Date(x.F).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) + '</td><td>' + pcEsc(x.RUBRO) + (x.SIS && x.SIS !== x.RUBRO ? ' · ' + pcEsc(x.SIS) : '') + '</td><td>' + pcEsc(x.UNIDAD) + '</td><td>' + pcEsc(x.QUE) + '</td><td>' + pcEsc(x.DET) + '</td><td class="n">' + (x.KM === '' ? '' : flrN(x.KM)) + '</td><td>' + pcEsc(x.QUIEN) + '</td><td>' + pcEsc(x.CONTROL) + '</td><td>' + pcEsc(x.DOC) + '</td></tr>'; }).join('') + '</tbody></table>';
+  pcImprimir('Informe de flota ' + d.EMPRESA, c, true);
+}
 </script>
 
 <script>
