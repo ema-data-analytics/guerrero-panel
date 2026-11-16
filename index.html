@@ -1599,7 +1599,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611160005';
+var EMA_BUILD = '202611160015';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17555,60 +17555,46 @@ async function flReactivar(id) {
 }
 // ── Dibujo de una unidad vista desde arriba (frente arriba). Se usa en configuraciones, en la ficha de la unidad y en el mapa. ──
 // pos: [{ID, COD, X, Y, AUX}] · opt: { ancho, fn(pos)->{fill,txt,tit}, click:'fn' }
-// Mapa de ruedas visto desde arriba, como es la unidad: cabina adelante (si el primer eje es de dirección), chasis, ejes y cubiertas
-// (negras con su banda de rodamiento; el color de adentro es el estado). Los auxilios van abajo, en su soporte.
+// Mapa de ruedas como en los sistemas de gestión de cubiertas: chasis visto desde arriba, ejes y cada cubierta dibujada
+// como cubierta (negra con su banda). Encima: la rueda y la marca grabada; el punto de color es el estado.
 function flDibujo(ejes, pos, opt) {
-  opt = opt || {}; var W = opt.ancho || 260, n = ejes.length, cab = ejes.length && ejes[0].FUNCION === 'DIRECCION';
-  var tw = Math.round(W * 0.14), th = 66, mx = Math.round(W * 0.05), gap = 4, cx = W / 2;
+  opt = opt || {}; var W = opt.ancho || 260, n = ejes.length, cx = W / 2;
+  var tw = Math.round(W * 0.12), th = 62, mx = Math.round(W * 0.06), gap = 3;
   var aux = pos.filter(function(p) { return p.AUX; });
-  // dónde va cada eje: en el camión, el primero debajo de la cabina y los de atrás juntos (tándem); en el acoplado/semi, atrás
-  var yEje = [], y0 = cab ? 70 : 120, sep = th + 18;
-  ejes.forEach(function(e, k) { if (k === 0) yEje.push(y0); else yEje.push(yEje[k - 1] + (cab && k === 1 ? th + 70 : sep)); });
-  var largo = (n ? yEje[n - 1] + th / 2 : 120) + 26, H = largo + (aux.length ? th + 26 : 6);
-  var s = '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" width="' + W + '" height="' + (H + 16) + '" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;font-family:Arial,sans-serif">' +
-    '<text x="' + cx + '" y="11" text-anchor="middle" font-size="9.5" fill="#64748b" font-weight="700">▲ FRENTE</text><g transform="translate(0,16)">';
-  s += '<defs><linearGradient id="flg-cab" x1="0" x2="1"><stop offset="0" stop-color="#94a3b8"/><stop offset=".5" stop-color="#e2e8f0"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>' +
-    '<linearGradient id="flg-caja" x1="0" x2="1"><stop offset="0" stop-color="#cbd5e1"/><stop offset=".5" stop-color="#f8fafc"/><stop offset="1" stop-color="#cbd5e1"/></linearGradient></defs>';
-  var bx = mx + tw + gap + tw * 0.35, bw = W - 2 * bx;
-  // chasis: dos largueros y travesaños
-  var rl = cx - bw * 0.22, rr = cx + bw * 0.22 - 7, chTop = cab ? 30 : 20;
-  if (!cab) s += '<rect x="' + (bx - tw * 0.25) + '" y="6" width="' + (bw + tw * 0.5) + '" height="' + (largo - 10) + '" rx="6" fill="url(#flg-caja)" stroke="#64748b" stroke-width="1.5"/>' +
-    '<circle cx="' + cx + '" cy="34" r="7" fill="#475569"/><text x="' + cx + '" y="54" text-anchor="middle" font-size="9" fill="#475569">perno rey</text>';
-  s += '<rect x="' + rl + '" y="' + chTop + '" width="7" height="' + (largo - chTop - 8) + '" fill="#334155"/><rect x="' + rr + '" y="' + chTop + '" width="7" height="' + (largo - chTop - 8) + '" fill="#334155"/>';
-  for (var t = chTop + (cab ? 30 : 56); t < largo - 14; t += 46) s += '<rect x="' + rl + '" y="' + t + '" width="' + (rr - rl + 7) + '" height="4" fill="#475569"/>';
-  if (cab) {
-    var cxl = mx + (tw + gap) / 2 + tw * 0.5, cw = W - 2 * cxl;
-    s += '<rect x="' + (cxl - 7) + '" y="34" width="9" height="16" rx="2" fill="#334155"/><rect x="' + (cxl + cw - 2) + '" y="34" width="9" height="16" rx="2" fill="#334155"/>' + // espejos
-      '<path d="M' + (cxl + 10) + ' 6 H' + (cxl + cw - 10) + ' Q' + (cxl + cw) + ' 6 ' + (cxl + cw) + ' 18 V' + (y0 + 26) + ' H' + cxl + ' V18 Q' + cxl + ' 6 ' + (cxl + 10) + ' 6 Z" fill="url(#flg-cab)" stroke="#475569" stroke-width="1.5"/>' +
-      '<rect x="' + (cxl + 8) + '" y="12" width="' + (cw - 16) + '" height="16" rx="4" fill="#1e3a5f" opacity=".85"/>' + // parabrisas
-      '<text x="' + cx + '" y="' + (y0 - 10) + '" text-anchor="middle" font-size="9.5" fill="#334155" font-weight="700">CABINA</text>';
-  }
-  // ejes
-  ejes.forEach(function(e, k) { var y = yEje[k];
-    s += '<rect x="' + (mx + tw - 2) + '" y="' + (y - 4) + '" width="' + (W - 2 * mx - 2 * tw + 4) + '" height="8" rx="3" fill="#1f2937"' + (e.FLOTANTE ? ' stroke="#f59e0b" stroke-dasharray="5 3" stroke-width="2"' : '') + '/>' +
-      '<rect x="' + (cx - 26) + '" y="' + (y + 7) + '" width="52" height="13" rx="6" fill="#fff" stroke="#94a3b8"/><text x="' + cx + '" y="' + (y + 17) + '" text-anchor="middle" font-size="9" fill="#0f172a" font-weight="700">EJE ' + e.NRO + (e.FUNCION === 'DIRECCION' ? ' DIR' : e.FUNCION === 'TRACCION' ? ' TRAC' : '') + (e.FLOTANTE ? ' FLOT' : '') + '</text>'; });
-  // cubiertas
+  var yEje = [], sep = th + 30; ejes.forEach(function(e, k) { yEje.push(26 + th / 2 + k * sep); });
+  var largo = (n ? yEje[n - 1] + th / 2 : 80) + 14, H = largo + (aux.length ? tw + 34 : 4);
+  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;font-family:Arial,sans-serif;user-select:none">';
+  s += '<text x="' + cx + '" y="12" text-anchor="middle" font-size="9.5" fill="#64748b" font-weight="700">▲ FRENTE</text>';
+  // chasis: largueros y travesaños
+  var rl = cx - W * 0.09, rr = cx + W * 0.09 - 6;
+  s += '<rect x="' + rl + '" y="20" width="6" height="' + (largo - 22) + '" rx="2" fill="#475569"/><rect x="' + rr + '" y="20" width="6" height="' + (largo - 22) + '" rx="2" fill="#475569"/>';
+  for (var t = 30; t < largo - 6; t += 28) s += '<rect x="' + rl + '" y="' + t + '" width="' + (rr - rl + 6) + '" height="3" fill="#94a3b8"/>';
   var xDe = function(X, dual) { if (!dual) return X === 0 ? mx + (tw + gap) / 2 : W - mx - tw - (tw + gap) / 2; return { 0: mx, 1: mx + tw + gap, 3: W - mx - 2 * tw - gap, 4: W - mx - tw }[X]; };
   var duales = {}; pos.forEach(function(p) { if (!p.AUX && (p.X === 1 || p.X === 3)) duales[p.Y] = 1; });
+  ejes.forEach(function(e, k) { var y = yEje[k], d = duales[k + 1], x1 = xDe(d ? 1 : 0, d) + tw - 2, x2 = xDe(d ? 3 : 4, d) + 2;
+    s += '<rect x="' + x1 + '" y="' + (y - 5) + '" width="' + (x2 - x1) + '" height="10" rx="4" fill="#64748b"' + (e.FLOTANTE ? ' stroke="#f59e0b" stroke-dasharray="5 3" stroke-width="2"' : '') + '/>' +
+      '<circle cx="' + cx + '" cy="' + y + '" r="9" fill="#334155"/><text x="' + cx + '" y="' + (y + 3.5) + '" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">' + e.NRO + '</text>' +
+      '<text x="' + cx + '" y="' + (y + 22) + '" text-anchor="middle" font-size="8" fill="#64748b">' + (e.FUNCION === 'DIRECCION' ? 'dirección' : e.FUNCION === 'TRACCION' ? 'tracción' : '') + (e.FLOTANTE ? ' flotante' : '') + '</text>'; });
+  var cub = function(x, y, w, h, horiz) { var r = '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + Math.min(w, h) * 0.28 + '" fill="#111827"/>', k;
+    if (!horiz) { for (k = y + 5; k < y + h - 4; k += 5) r += '<path d="M' + (x + 2) + ' ' + k + ' l' + (w / 2 - 2) + ' 2.5 l' + (w / 2 - 2) + ' -2.5" stroke="#4b5563" stroke-width="1.6" fill="none"/>'; }
+    else { for (k = x + 5; k < x + w - 4; k += 5) r += '<path d="M' + k + ' ' + (y + 2) + ' l2.5 ' + (h / 2 - 2) + ' l-2.5 ' + (h / 2 - 2) + '" stroke="#4b5563" stroke-width="1.6" fill="none"/>'; }
+    return r; };
   pos.forEach(function(p) {
-    var x, y, w = tw, h = th;
-    if (p.AUX) { var ia = aux.indexOf(p); w = th; h = tw; x = cx - (aux.length * (w + 10) - 10) / 2 + ia * (w + 10); y = largo + 14; }
+    var x, y, w = tw, h = th, hz = !!p.AUX;
+    if (p.AUX) { var ia = aux.indexOf(p); w = th; h = tw; x = cx - (aux.length * (w + 10) - 10) / 2 + ia * (w + 10); y = largo + 22; }
     else { x = xDe(p.X, duales[p.Y]); y = yEje[p.Y - 1] - th / 2; }
-    var f = opt.fn ? opt.fn(p) : { fill: '#fff', txt: '', tit: p.COD };
-    var ins = 5, iw = w - 2 * ins, ih = h - 2 * ins, marcas = '';
-    if (p.AUX) { for (var a = x + 6; a < x + w - 4; a += 6) marcas += '<rect x="' + a + '" y="' + y + '" width="2.5" height="3" fill="#4b5563"/><rect x="' + a + '" y="' + (y + h - 3) + '" width="2.5" height="3" fill="#4b5563"/>'; }
-    else { for (var b = y + 6; b < y + h - 4; b += 6) marcas += '<rect x="' + x + '" y="' + b + '" width="3" height="2.5" fill="#4b5563"/><rect x="' + (x + w - 3) + '" y="' + b + '" width="3" height="2.5" fill="#4b5563"/>'; }
-    var vac = f.vacia, borde = f.sel ? '#2563eb' : (f.borde && f.borde !== '#1e293b' ? f.borde : '#111827');
+    var f = opt.fn ? opt.fn(p) : { fill: '', txt: '', tit: p.COD }, vac = f.vacia || (!f.txt && !opt.fn);
+    var col = f.fill && f.fill !== '#ffffff' && f.fill !== '#fff' ? f.fill : '';
     s += '<g' + (opt.click ? ' style="cursor:pointer" data-eq="' + (opt.eq || '') + '" data-pos="' + p.ID + '" onclick="' + opt.click + '(' + (opt.eq ? opt.eq + ',' : '') + p.ID + ')"' : '') + '><title>' + pcEsc(f.tit || p.COD) + '</title>' +
-      (vac ? '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="8" fill="#f8fafc" stroke="' + (f.sel ? '#2563eb' : '#94a3b8') + '" stroke-width="' + (f.sel ? 3 : 1.5) + '" stroke-dasharray="5 4"/>'
-        : '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="8" fill="#1f2937" stroke="' + borde + '" stroke-width="' + (f.sel ? 3.5 : 1) + '"/>' + marcas +
-          '<rect x="' + (x + ins) + '" y="' + (y + ins) + '" width="' + iw + '" height="' + ih + '" rx="5" fill="' + (f.fill || '#fff') + '"/>') +
-      '<text x="' + (x + w / 2) + '" y="' + (y + ins + 11) + '" text-anchor="middle" font-size="9" font-weight="700" fill="#0f172a">' + pcEsc(p.COD) + '</text>' +
-      (f.txt ? '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 4) + '" text-anchor="middle" font-size="' + Math.min(9, (iw - 2) * 1.55 / Math.max(1, String(f.txt).length)).toFixed(1) + '" font-weight="700" fill="#0f172a">' + pcEsc(f.txt) + '</text>' : '') +
-      (f.txt2 ? '<text x="' + (x + w / 2) + '" y="' + (y + h - ins - 5) + '" text-anchor="middle" font-size="' + Math.min(8.5, iw / 4.6).toFixed(1) + '" fill="#334155">' + pcEsc(f.txt2) + '</text>' : '') + '</g>';
+      (f.vacia ? '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + Math.min(w, h) * 0.28 + '" fill="#f1f5f9" stroke="' + (f.sel ? '#2563eb' : '#94a3b8') + '" stroke-width="' + (f.sel ? 3 : 1.4) + '" stroke-dasharray="4 3"/>'
+        : cub(x, y, w, h, hz) + (f.sel ? '<rect x="' + (x - 3) + '" y="' + (y - 3) + '" width="' + (w + 6) + '" height="' + (h + 6) + '" rx="' + (Math.min(w, h) * 0.28 + 2) + '" fill="none" stroke="#2563eb" stroke-width="3"/>' : '') +
+          (col ? '<circle cx="' + (x + w - 5) + '" cy="' + (y + 5) + '" r="5" fill="' + col + '" stroke="#fff" stroke-width="1.2"/>' : '')) +
+      '<text x="' + (x + w / 2) + '" y="' + (y - 3) + '" text-anchor="middle" font-size="8.5" font-weight="700" fill="#334155">' + pcEsc(p.COD) + '</text>' +
+      (f.txt ? '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 3) + '" text-anchor="middle" font-size="' + Math.min(8.5, (w - 4) * 1.6 / Math.max(1, String(f.txt).length)).toFixed(1) + '" font-weight="700" fill="#fff"' + (hz ? '' : ' transform="rotate(-90 ' + (x + w / 2) + ' ' + (y + h / 2) + ')"') + '>' + pcEsc(f.txt) + '</text>' : '') +
+      (f.txt2 && !f.vacia ? '<text x="' + (x + w / 2) + '" y="' + (y + h + 9) + '" text-anchor="middle" font-size="8" fill="#475569">' + pcEsc(f.txt2) + '</text>' : (f.vacia ? '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 3) + '" text-anchor="middle" font-size="8" fill="#94a3b8">vacía</text>' : '')) + '</g>';
   });
-  if (aux.length) s += '<text x="' + (bx - tw * 0.25 > 0 ? mx : 4) + '" y="' + (largo + 10) + '" font-size="9.5" fill="#475569">Auxilio' + (aux.length > 1 ? 's' : '') + '</text>';
-  return s + '</g></svg>';
+  if (aux.length) s += '<text x="' + mx + '" y="' + (largo + 14) + '" font-size="9" fill="#475569" font-weight="700">AUXILIOS</text>';
+  return s + '</svg>';
 }
 // ── Configuraciones de ejes (ABM con dibujo) ──
 function flCfgPintar() {
@@ -17700,19 +17686,28 @@ async function flmCargar(idEq) {
   FLM_.d = r; if (idEq) FLM_.eq = String(idEq); flmPintar();
 }
 async function renderMapaCub() {
-  $id('fl-tit').textContent = '🚛 Mapa de cubiertas'; $id('fl-sub').textContent = 'Flota y cubiertas · tocá o arrastrá: de la lista a una rueda, o de una rueda a otra';
+  $id('fl-tit').textContent = '🚛 Mapa de cubiertas'; $id('fl-sub').textContent = 'Flota y cubiertas · arrastrá las cubiertas: del depósito a la rueda, de rueda a rueda, de la rueda al depósito o al taller';
   FLM_.sel = null; await flmCargar(FLM_.eq);
 }
 function flmUnidades() { var d = FLM_.d; return d.UNIDADES.filter(function(u) { return !FLM_.cli || String(u.ID_CLIENTE) === String(FLM_.cli); }); }
 function flmPintar() {
   var d = FLM_.d, clis = {}; d.UNIDADES.forEach(function(u) { if (u.ID_CLIENTE) clis[u.ID_CLIENTE] = u.CLIENTE; });
-  var h = '<div class="card mb3"><div class="card-body"><div class="pc-otf">' +
-    '<div class="fg" style="grid-column:span 2"><label class="fl">Cliente</label><select class="fs" id="flm-cli" data-filtro onchange="FLM_.cli=this.value;FLM_.eq=\'\';FLM_.d.UNIDAD=null;flmPintar()"><option value="">Todos</option>' + Object.keys(clis).sort(function(a, b) { return clis[a] < clis[b] ? -1 : 1; }).map(function(k) { return '<option value="' + k + '"' + (String(k) === String(FLM_.cli) ? ' selected' : '') + '>' + pcEsc(clis[k]) + '</option>'; }).join('') + '</select></div>' +
-    '<div class="fg" style="grid-column:span 3"><label class="fl">Unidad (patente, interno, marca)</label><select class="fs" id="flm-eq" data-filtro onchange="flmCargar(this.value)"><option value="">— elegí la unidad —</option>' + flmUnidades().map(function(u) { return '<option value="' + u.ID + '"' + (String(u.ID) === String(FLM_.eq) ? ' selected' : '') + '>' + pcEsc(u.IDENT + ' · ' + u.MM + ' · ' + u.CLIENTE + (u.CFG ? '' : ' (sin configuración de ejes)')) + '</option>'; }).join('') + '</select></div>' +
-    '</div></div></div><div id="flm-body"></div>';
-  $id('fl-body').innerHTML = h;
-  if (!d.UNIDAD) { $id('flm-body').innerHTML = '<div class="tdim" style="padding:16px">Elegí una unidad para ver su mapa de cubiertas.</div>'; return; }
+  if (!document.getElementById('flm-css')) { var st = document.createElement('style'); st.id = 'flm-css'; st.textContent = '.flm-w{display:grid;grid-template-columns:240px minmax(0,1fr);gap:12px;align-items:start}.flm-w>div,.flm-g>div{min-width:0}' +
+    '.flm-lista{max-height:340px;overflow:auto;border:1px solid var(--border,#e2e8f0);border-radius:8px;margin-top:6px}.flm-lista div{padding:6px 8px;font-size:12.5px;cursor:pointer;border-bottom:1px solid #f1f5f9}.flm-lista div:hover{background:#f1f5f9}.flm-lista div.on{background:#dbeafe;font-weight:700}' +
+    '.flm-g{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:12px;align-items:start}.flm-drop{transition:box-shadow .15s}body.flm-arr .flm-drop{box-shadow:0 0 0 2px #93c5fd}.flm-drop.flm-sobre{box-shadow:0 0 0 3px #2563eb!important;background:#eff6ff}' +
+    '#flm-ghost{position:fixed;z-index:9999;pointer-events:none;background:#111827;color:#fff;font-size:12px;font-weight:700;padding:6px 10px;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,.3)}' +
+    '@media(max-width:900px){.flm-w{grid-template-columns:1fr}.flm-g{grid-template-columns:1fr}.flm-lista{max-height:180px}}'; document.head.appendChild(st); }
+  $id('fl-body').innerHTML = '<div class="flm-w"><div><div class="card"><div class="card-hd"><span class="card-title">🚚 Equipos</span></div><div class="card-body" style="padding:8px">' +
+    '<select class="fs" id="flm-cli" data-filtro onchange="FLM_.cli=this.value;flmListaEq()"><option value="">Todos los clientes</option>' + Object.keys(clis).sort(function(a, b) { return clis[a] < clis[b] ? -1 : 1; }).map(function(k) { return '<option value="' + k + '"' + (String(k) === String(FLM_.cli) ? ' selected' : '') + '>' + pcEsc(clis[k]) + '</option>'; }).join('') + '</select>' +
+    '<input class="fi mt2" id="flm-q" placeholder="Buscar patente, interno, marca" value="' + pcEsc(FLM_.q || '') + '" oninput="FLM_.q=this.value;flmListaEq()"><div class="flm-lista" id="flm-lista"></div><div id="flm-datos" class="mt2"></div></div></div></div><div id="flm-body"></div></div>';
+  flmListaEq();
+  if (!d.UNIDAD) { $id('flm-body').innerHTML = '<div class="card"><div class="card-body tdim" style="padding:16px">Elegí un equipo de la lista para ver sus cubiertas.</div></div>'; return; }
   flmMapa();
+}
+function flmListaEq() {
+  var el = $id('flm-lista'); if (!el) return; var q = String(FLM_.q || '').toUpperCase().trim(), l = flmUnidades().filter(function(u) { return !q || (u.IDENT + ' ' + u.MM + ' ' + u.CLIENTE).toUpperCase().indexOf(q) !== -1; });
+  el.innerHTML = l.length ? l.map(function(u) { return '<div class="' + (String(u.ID) === String(FLM_.eq) ? 'on' : '') + '" onclick="FLM_.sel=null;flmCargar(' + u.ID + ')"><b>' + pcEsc(u.IDENT) + '</b> <span class="tdim">' + pcEsc(u.MM) + '</span>' + (FLM_.cli ? '' : '<div class="tdim" style="padding:0;border:0;font-size:11px">' + pcEsc(u.CLIENTE) + '</div>') + (u.CFG ? '' : ' <span class="tdim" style="font-size:11px">(sin ejes)</span>') + '</div>'; }).join('') : '<div class="tdim">No hay equipos.</div>';
+  var dd = $id('flm-datos'), U = FLM_.d.UNIDAD; if (dd) dd.innerHTML = U ? '<div style="font-size:12.5px;line-height:1.7"><div><span class="tdim">Patente</span> <b>' + pcEsc(U.IDENT) + '</b></div><div><span class="tdim">Marca y modelo</span> ' + pcEsc((U.MARCA + ' ' + U.MODELO).trim()) + '</div><div><span class="tdim">Configuración</span> ' + pcEsc(U.CFG ? U.CFG.NOMBRE : 'sin asignar') + '</div><div><span class="tdim">Km</span> <b>' + Number(U.KM || 0).toLocaleString('es-AR') + '</b></div><div><span class="tdim">Cubiertas montadas</span> ' + flmTodas().reduce(function(a, x) { return a + (x.MONT || []).length; }, 0) + '</div></div>' : '';
 }
 function flmUnidadBloque(u, esAcop) {
   var monta = {}; (u.MONT || []).forEach(function(m) { monta[m.ID_POS] = m; });
@@ -17727,17 +17722,17 @@ function flmUnidadBloque(u, esAcop) {
 function flmMapa() {
   var d = FLM_.d, u = d.UNIDAD;
   var izq = flmUnidadBloque(u, false) + d.ACOPLADOS.map(function(a) { return flmUnidadBloque(a, true); }).join('') +
-    (u.ID_TIPO === 1 ? '<div class="mb3">' + flBtn('btn-s', '⛓ Enganchar acoplado', 'flmEnganchar(' + u.ID + ')') + '</div>' : '');
-  var lista = function(tit, ub, arr) { return '<div class="card mb2"><div class="card-hd"><span class="card-title">' + tit + ' <span class="tdim">(' + arr.length + ')</span></span></div><div class="card-body" style="padding:6px"><div class="tw" data-noimp="1" style="max-height:230px;overflow:auto"><table style="font-size:12px"><thead><tr><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Fabricante</th><th>Dibujo</th></tr></thead><tbody>' +
-    (arr.length ? arr.map(function(c) { var esSel = FLM_.sel && FLM_.sel.t === 'LISTA' && FLM_.sel.c === c.ID; return '<tr data-cas="' + c.ID + '" data-ub="' + ub + '" style="cursor:pointer;' + (esSel ? 'background:#dbeafe;font-weight:700' : '') + '" onclick="flmClickLista(' + c.ID + ',\'' + ub + '\')"><td class="mono">' + pcEsc(c.MARCA) + '</td><td>' + pcEsc(c.DOT || '—') + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FAB) + '</td><td>' + (c.PROF !== '' ? c.PROF + ' mm' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="tdim tc">No hay.</td></tr>') + '</tbody></table></div></div></div>'; };
-  var der = '<div id="flm-ficha"></div>' +
+    (u.ID_TIPO === 1 ? '<div class="mb2">' + flBtn('btn-s', '⛓ Enganchar acoplado', 'flmEnganchar(' + u.ID + ')') + '</div>' : '') + '<div id="flm-ficha"></div>';
+  var ayu = { DEPOSITO: 'Arrastrá una cubierta de la unidad acá para sacarla al depósito', CLIENTE: 'Arrastrá acá la que queda en poder del cliente', TALLER: 'Arrastrá acá la que va a recapado' };
+  var lista = function(tit, ub, arr) { return '<div class="card mb2 flm-drop" data-drop="' + ub + '"><div class="card-hd"><span class="card-title">' + tit + ' <span class="tdim">(' + arr.length + ')</span></span></div><div class="card-body" style="padding:6px"><div class="tw" data-noimp="1" style="max-height:230px;overflow:auto"><table style="font-size:12px"><thead><tr><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Fabricante</th><th>Dibujo</th></tr></thead><tbody>' +
+    (arr.length ? arr.map(function(c) { var esSel = FLM_.sel && FLM_.sel.t === 'LISTA' && FLM_.sel.c === c.ID; return '<tr data-cas="' + c.ID + '" data-ub="' + ub + '" style="cursor:pointer;' + (esSel ? 'background:#dbeafe;font-weight:700' : '') + '" onclick="flmClickLista(' + c.ID + ',\'' + ub + '\')"><td class="mono">' + pcEsc(c.MARCA) + '</td><td>' + pcEsc(c.DOT || '—') + '</td><td>' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.FAB) + '</td><td>' + (c.PROF !== '' ? c.PROF + ' mm' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="tdim tc">No hay.</td></tr>') + '</tbody></table></div><div class="tdim" style="font-size:11px;padding:4px 2px 0">' + ayu[ub] + '</div></div></div>'; };
+  var der = 
     lista('📦 En nuestro depósito (del cliente y de Vulcan)', 'DEPOSITO', d.DISP.DEPOSITO) + lista('🏢 Del cliente, en su poder (no montadas)', 'CLIENTE', d.DISP.CLIENTE) + lista('🏭 En el taller (recapado)', 'TALLER', d.DISP.TALLER) +
     '<div class="card"><div class="card-body" style="display:flex;gap:6px;flex-wrap:wrap">' + flBtn('btn-p', '📋 Relevar rueda por rueda', 'flmRelevar()') + flBtn('btn-s', '＋ Alta de cubierta en la rueda elegida', 'flmAlta()') + flBtn('btn-s', '🖨 Imprimir mapa', 'flmImprimir()') + '</div></div>';
   var banO = FLM_.orden ? '<div class="al mb2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fef3c7;border-color:#f59e0b"><b>Trabajando con la orden ' + pcEsc(FLM_.orden.NRO) + '</b><span class="tdim">cada movimiento queda cargado a esta orden y se cobra al cerrarla</span>' + flBtn('btn-s', '← Volver a la orden', 'flpVolverOrden()') + '</div>' : '';
   var banS = FLM_.offline ? '<div class="al mb2" style="background:#fee2e2;border-color:#ef4444"><b>📵 Sin señal</b> · mostrando el mapa guardado ' + (FLM_.offline > 1 ? 'el ' + new Date(FLM_.offline).toLocaleString('es-AR', { hour12: false }) : '') + '. Lo que cargues queda en el celular y se envía solo cuando vuelva la señal.</div>' : '';
-  $id('flm-body').innerHTML = banS + banO + '<div class="flm-g" style="display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:12px;align-items:start"><div>' + izq + '</div><div>' + der + '</div></div>' +
+  $id('flm-body').innerHTML = banS + banO + '<div class="flm-g"><div>' + izq + '</div><div>' + der + '</div></div>' +
     '<div class="tdim" style="font-size:12px;margin-top:6px">Colores: <span style="background:#bbf7d0;padding:0 6px">bien</span> <span style="background:#fde68a;padding:0 6px">observar</span> <span style="background:#fecaca;padding:0 6px">sacar</span> <span style="background:#e0f2fe;padding:0 6px">sin medir</span> · línea punteada = posición vacía · eje punteado = flotante</div>';
-  if (!document.getElementById('flm-css')) { var st = document.createElement('style'); st.id = 'flm-css'; st.textContent = '.flm-g>div{min-width:0}@media(max-width:800px){.flm-g{grid-template-columns:1fr!important}}'; document.head.appendChild(st); }
   flmFicha(); flmArrastre();
   if (FLM_.sel && FLM_.sel.t === 'POS' && window.innerWidth < 800) { var fi = $id('flm-ficha'); if (fi) fi.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
 }
@@ -17757,19 +17752,37 @@ function flmClickPos(eq, pos) {
 }
 function flmClickLista(id, ub) { var s = FLM_.sel; FLM_.sel = s && s.t === 'LISTA' && s.c === id ? null : { t: 'LISTA', c: id, ub: ub }; flmMapa(); if (FLM_.sel) toast('Ahora tocá la rueda donde la montás', 'b'); }
 // Arrastrar con mouse o dedo (se suelta sobre una rueda)
+// Arrastrar con mouse o dedo: de una lista a una rueda (montar), de una rueda a otra (rotar), de una rueda a una lista
+// (sacar al depósito, dejar al cliente o mandar a recapado) y de una lista a otra (enviar al taller, volver del taller, entregar, ingresar)
+var FLM_LL = { 'DEPOSITO>TALLER': 'ENVIO_TALLER', 'TALLER>DEPOSITO': 'RETORNO_TALLER', 'DEPOSITO>CLIENTE': 'ENTREGA', 'CLIENTE>DEPOSITO': 'INGRESO' };
+var FLM_RL = { DEPOSITO: 'DESMONTAJE', CLIENTE: 'DESMONTAJE_CLI', TALLER: 'DESMONTAJE_TALLER' };
 function flmArrastre() {
   var cont = $id('flm-body'); if (!cont || cont._arr) return; cont._arr = 1;
-  var origen = function(t) { var g = t.closest && t.closest('[data-pos],[data-cas]'); return g; };
-  var ini = function(ev) { var o = origen(ev.target); if (!o) return; FLM_.drag = o.hasAttribute('data-pos') ? { t: 'POS', eq: o.getAttribute('data-eq'), pos: o.getAttribute('data-pos') } : { t: 'LISTA', c: Number(o.getAttribute('data-cas')), ub: o.getAttribute('data-ub') }; FLM_.dragXY = ev.touches ? [ev.touches[0].clientX, ev.touches[0].clientY] : [ev.clientX, ev.clientY]; };
-  var fin = function(ev) { var dr = FLM_.drag; FLM_.drag = null; if (!dr) return; var xy = ev.changedTouches ? [ev.changedTouches[0].clientX, ev.changedTouches[0].clientY] : [ev.clientX, ev.clientY];
-    if (Math.abs(xy[0] - FLM_.dragXY[0]) + Math.abs(xy[1] - FLM_.dragXY[1]) < 12) return; // fue un toque, lo maneja el click
-    var el = document.elementFromPoint(xy[0], xy[1]), dest = el && el.closest ? el.closest('[data-pos]') : null; if (!dest) return;
+  var xyDe = function(ev) { var t = ev.touches && ev.touches[0] ? ev.touches[0] : (ev.changedTouches && ev.changedTouches[0] ? ev.changedTouches[0] : ev); return [t.clientX, t.clientY]; };
+  var destDe = function(xy) { var g = $id('flm-ghost'); if (g) g.style.display = 'none'; var el = document.elementFromPoint(xy[0], xy[1]); if (g) g.style.display = ''; return el && el.closest ? el.closest('[data-pos],[data-drop]') : null; };
+  var ini = function(ev) { var o = ev.target.closest && ev.target.closest('[data-pos],[data-cas]'); if (!o) return;
+    FLM_.drag = o.hasAttribute('data-pos') ? { t: 'POS', eq: o.getAttribute('data-eq'), pos: o.getAttribute('data-pos') } : { t: 'LISTA', c: Number(o.getAttribute('data-cas')), ub: o.getAttribute('data-ub') };
+    if (FLM_.drag.t === 'POS' && !flmMontaje(FLM_.drag.eq, FLM_.drag.pos)) { FLM_.drag = null; return; }
+    FLM_.dragXY = xyDe(ev); FLM_.arrastrando = 0; if (!ev.touches) ev.preventDefault(); };
+  var mov = function(ev) { var dr = FLM_.drag; if (!dr) return; var xy = xyDe(ev);
+    if (!FLM_.arrastrando) { if (Math.abs(xy[0] - FLM_.dragXY[0]) + Math.abs(xy[1] - FLM_.dragXY[1]) < 12) return; FLM_.arrastrando = 1; document.body.classList.add('flm-arr');
+      var c = dr.t === 'POS' ? flmMontaje(dr.eq, dr.pos).C : flmCasLista(dr.c), g = document.createElement('div'); g.id = 'flm-ghost'; g.textContent = '🛞 ' + (c ? c.MARCA : ''); document.body.appendChild(g); }
+    if (ev.cancelable && ev.touches) ev.preventDefault();
+    var g2 = $id('flm-ghost'); if (g2) { g2.style.left = (xy[0] + 12) + 'px'; g2.style.top = (xy[1] + 12) + 'px'; }
+    document.querySelectorAll('.flm-sobre').forEach(function(x) { x.classList.remove('flm-sobre'); }); var d0 = destDe(xy); if (d0 && d0.hasAttribute('data-drop')) d0.classList.add('flm-sobre'); };
+  var fin = function(ev) { var dr = FLM_.drag, era = FLM_.arrastrando; FLM_.drag = null; FLM_.arrastrando = 0; document.body.classList.remove('flm-arr'); var g = $id('flm-ghost'); if (g) g.remove(); document.querySelectorAll('.flm-sobre').forEach(function(x) { x.classList.remove('flm-sobre'); });
+    if (!dr || !era) return; var xy = xyDe(ev), dest = destDe(xy); if (!dest) return;
     FLM_.ignorarClick = true; setTimeout(function() { FLM_.ignorarClick = false; }, 400);
+    if (dest.hasAttribute('data-drop')) { var z = dest.getAttribute('data-drop');
+      if (dr.t === 'POS') { var m0 = flmMontaje(dr.eq, dr.pos); if (m0) flmAccion(FLM_RL[z], m0.C.ID, dr.eq, dr.pos); return; }
+      if (dr.ub === z) return; var cod = FLM_LL[dr.ub + '>' + z]; if (!cod) { toast(z === 'TALLER' ? 'Al taller va desde nuestro depósito' : 'Del taller vuelve primero a nuestro depósito', 'r2'); return; }
+      flmAccion(cod, dr.c); return; }
     var eq = dest.getAttribute('data-eq'), pos = dest.getAttribute('data-pos');
     if (dr.t === 'LISTA') { FLM_.sel = dr; FLM_.ignorarClick = false; flmClickPos(eq, pos); FLM_.ignorarClick = true; return; }
-    if (dr.t === 'POS') { var m = flmMontaje(dr.eq, dr.pos); if (!m) return; if (String(dr.eq) === String(eq) && String(dr.pos) === String(pos)) return; flmAccion('ROTACION', m.C.ID, eq, pos); } };
-  window._flmFin = fin; cont.addEventListener('mousedown', ini); cont.addEventListener('touchstart', ini, { passive: true }); cont.addEventListener('touchend', fin);
-  if (!window._flmUp) { window._flmUp = 1; document.addEventListener('mouseup', function(ev) { if (window._flmFin) window._flmFin(ev); }); }
+    var m = flmMontaje(dr.eq, dr.pos); if (!m || (String(dr.eq) === String(eq) && String(dr.pos) === String(pos))) return; flmAccion('ROTACION', m.C.ID, eq, pos); };
+  window._flmFin = fin; window._flmMov = mov;
+  cont.addEventListener('mousedown', ini); cont.addEventListener('touchstart', ini, { passive: true }); cont.addEventListener('touchmove', mov, { passive: false }); cont.addEventListener('touchend', fin);
+  if (!window._flmUp) { window._flmUp = 1; document.addEventListener('mouseup', function(ev) { if (window._flmFin) window._flmFin(ev); }); document.addEventListener('mousemove', function(ev) { if (window._flmMov) window._flmMov(ev); }); }
 }
 function flmFicha() {
   var el = $id('flm-ficha'), s = FLM_.sel; if (!el) return;
@@ -17792,7 +17805,7 @@ function flmAccion(cod, idCasco, eq, pos) {
   var t = flmTipo(cod), d = FLM_.d; if (!t) return;
   var c = flmCasLista(idCasco) || (function() { var r = null; flmTodas().forEach(function(u) { (u.MONT || []).forEach(function(m) { if (m.C && m.C.ID === idCasco) r = m.C; }); }); return r; })();
   var origen = '', mo = null; flmTodas().forEach(function(u) { (u.MONT || []).forEach(function(m) { if (m.C && m.C.ID === idCasco) { mo = m; origen = u.IDENT + ' ' + flmPosCod(u.ID, m.ID_POS); } }); });
-  var destino = (t.HACIA === 'UNIDAD' ? flmUnidad(eq).IDENT + ' ' + flmPosCod(eq, pos) : { DEPOSITO: 'nuestro depósito', CLIENTE: 'queda al cliente', TALLER: 'taller de recapado', BAJA: 'baja definitiva', MISMO: 'donde está' }[t.HACIA]);
+  var destino = (t.HACIA === 'UNIDAD' ? flmUnidad(eq).IDENT + ' ' + flmPosCod(eq, pos) : { DEPOSITO: 'nuestro depósito', CLIENTE: 'el cliente (queda en su poder)', TALLER: 'taller de recapado', BAJA: 'baja definitiva', MISMO: 'donde está' }[t.HACIA]);
   var otro = cod === 'ROTACION' ? flmMontaje(eq, pos) : null;
   var kmEq = t.HACIA === 'UNIDAD' ? eq : (mo ? (flmTodas().filter(function(u) { return (u.MONT || []).indexOf(mo) !== -1; })[0] || {}).ID : eq), km = flmKmDe(kmEq), tocaU = t.HACIA === 'UNIDAD' || t.DESDE === 'UNIDAD' || !!mo;
   FLM_.acc = { COD: cod, ID_CASCO: idCasco, ID_EQUIPO: t.HACIA === 'UNIDAD' && cod !== 'ROTACION' ? eq : (mo ? kmEq : eq), ID_POSICION: pos, ID_EQUIPO_DEST: eq, MED: t.MED, CAU: t.CAU, TOCA: tocaU };
