@@ -17722,8 +17722,8 @@ function flmUnidadBloque(u, esAcop) {
 }
 function flmMapa() {
   var d = FLM_.d, u = d.UNIDAD;
-  var izq = flmUnidadBloque(u, false) + d.ACOPLADOS.map(function(a) { return flmUnidadBloque(a, true); }).join('') +
-    (u.ID_TIPO === 1 ? '<div class="mb2">' + flBtn('btn-s', '⛓ Enganchar acoplado', 'flmEnganchar(' + u.ID + ')') + '</div>' : '') + '<div id="flm-ficha"></div>';
+  var izq = flmUnidadBloque(u, false) + '<div id="flm-ficha"></div>' + d.ACOPLADOS.map(function(a) { return flmUnidadBloque(a, true); }).join('') +
+    (u.ID_TIPO === 1 ? '<div class="mb2">' + flBtn('btn-s', '⛓ Enganchar acoplado', 'flmEnganchar(' + u.ID + ')') + '</div>' : '');
   var ayu = { DEPOSITO: 'Arrastrá una cubierta de la unidad acá para sacarla al depósito', CLIENTE: 'Arrastrá acá la que queda en poder del cliente', TALLER: 'Arrastrá acá la que va a recapado' };
   var lista = function(tit, ub, arr, lug) { return '<div class="card mb2 flm-drop" data-drop="' + ub + '" data-lugar="' + (lug || '') + '"><div class="card-hd"><span class="card-title">' + tit + ' <span class="tdim">(' + arr.length + ')</span></span></div><div class="card-body" style="padding:6px"><div class="tw" data-noimp="1" style="max-height:190px;overflow:auto"><table style="font-size:12px"><thead><tr><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Dibujo</th></tr></thead><tbody>' +
     (arr.length ? arr.map(function(c) { var esSel = FLM_.sel && FLM_.sel.t === 'LISTA' && FLM_.sel.c === c.ID; return '<tr data-cas="' + c.ID + '" data-ub="' + ub + '" data-lug="' + (c.LUGAR || '') + '" style="cursor:pointer;' + (esSel ? 'background:#dbeafe;font-weight:700' : '') + '" onclick="flmClickLista(' + c.ID + ',\'' + ub + '\')"><td class="mono">' + pcEsc(c.MARCA) + '</td><td>' + pcEsc(c.DOT || '—') + '</td><td title="' + pcEsc(c.FAB) + '">' + pcEsc(c.MEDIDA) + '</td><td>' + (c.PROF !== '' ? c.PROF + ' mm' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="4" class="tdim tc">Vacío</td></tr>') + '</tbody></table></div><div class="tdim" style="font-size:11px;padding:4px 2px 0">' + ayu[ub] + '</div></div></div>'; };
