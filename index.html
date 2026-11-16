@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7f9cf425ff4f"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d4878db1a0df"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -293,6 +293,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <nav class="sb-nav">
         <div class="nav-item active" data-page="dashboard"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Cómo va la empresa</div>
         <a class="nav-ext" href="manual/" target="_blank" rel="noopener"><span class="nav-icon"><i class="fas fa-book"></i></span> Manual del sistema</a>
+        <div class="nav-item" data-page="pruebas"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Pruebas y aprobación</div>
       <div class="sb-grp" data-g="prod"><div class="sb-gh" onclick="menuGrupo('prod')"><span class="sb-gi-ic">🏭</span><span class="sb-gt">Producción</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-otrab"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Órdenes de trabajo</div>
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-os"><span class="nav-icon"><i class="fas fa-fire"></i></span> Órdenes de servicio</div>
@@ -487,6 +488,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-rpt-ventas" class="hidden"></div>
     <div id="page-seguridad" class="hidden"></div>
     <div id="page-agenda" class="hidden"></div>
+    <div id="page-pruebas" class="hidden"></div>
     <div id="page-bitacora" class="hidden"></div>
     <div id="page-audios" class="hidden"></div>
     <div id="page-caja" class="hidden"></div>
@@ -823,6 +825,7 @@ function puedeVerPagina(page) {
   if (page === 'inicio-movil') return !!SES;
   if (rolLinea()) return LINEA_PAGINAS.indexOf(page) !== -1 && !(SES && SES.planta === false);
   if (page === 'audios') return !!SES;
+  if (page === 'pruebas') return !!SES;
   if (page === 'avance') { var rA = String((SES && SES.rol) || '').toUpperCase(); return rA === 'SUPER' || rA.indexOf('ADMIN') !== -1; }
   // Recetas: solo administradores (el resto carga a ciegas lo que pesa o mide)
   if (page === 'recetas') { if (rolLinea()) return true; var rR = String((SES && SES.rol) || '').toUpperCase(); return rR === 'SUPER' || rR.indexOf('ADMIN') !== -1; }
@@ -1315,6 +1318,7 @@ function getPage(name) {
     'stock': function(){ if(typeof renderStock!=='undefined') renderStock(); },
     'seguridad': typeof renderSeguridad !== 'undefined' ? renderSeguridad : null,
     'agenda': function(){ if(typeof renderAgenda!=='undefined') renderAgenda(); },
+    'pruebas': function(){ if(typeof renderPruebas!=='undefined') renderPruebas(); },
     'bitacora': function(){ if(typeof renderBitacora!=='undefined') renderBitacora(); },
     'audios': function(){ if(typeof renderAudios!=='undefined') renderAudios(); },
     'configuracion': typeof renderConfiguracion !== 'undefined' ? renderConfiguracion : null,
@@ -1602,7 +1606,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611161725';
+var EMA_BUILD = '202611161810';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -21865,6 +21869,286 @@ async function agEstGuardar(id) {
 async function agSacar(id) {
   var m = $v('ag-n'); if (m.length < 3) { toast('Escribí en «Nota» por qué se saca', 'r2'); $id('ag-n').focus(); return; }
   try { var r = await gsRun('gsAG_Anular', id, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Sacado de la agenda', 'g'); renderAgenda(); } catch (e) { toast(e.message, 'r2'); }
+}
+</script>
+
+<style>
+#page-pruebas .pr-wrap{max-width:1000px;margin:0 auto;padding:4px 0 60px}
+.pr-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}.pr-top h2{margin:0;font-size:20px}.pr-top .acc{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.pr-quien{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 10px;margin:6px 0;font-size:14px}
+.pr-quien b{font-size:15px}.pr-quien button{margin-left:auto}
+.pr-res{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:8px 0}
+.pr-k{border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:var(--surface,#fff)}.pr-k b{display:block;font-size:24px;line-height:1.1}.pr-k span{font-size:12px;color:var(--dim)}
+.pr-tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px}
+.pr-tab{flex:0 0 auto;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);border-radius:18px;padding:8px 14px;font-size:14px;cursor:pointer}.pr-tab.on{background:#14213d;border-color:#14213d;color:#fff}
+.pr-area{border:1px solid var(--border);border-radius:12px;background:var(--surface,#fff);padding:10px 12px;margin:8px 0;cursor:pointer}
+.pr-area h3{margin:0 0 4px;font-size:16px}.pr-area .sub{font-size:12.5px;color:var(--dim)}
+.pr-bar{height:10px;border-radius:6px;background:#e5e7eb;overflow:hidden;display:flex;margin:6px 0 4px}.pr-bar i{display:block;height:100%}
+.pr-b{border-radius:8px;padding:2px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;display:inline-block}
+.pr-OK{background:#dcfce7;color:#166534}.pr-FALLA{background:#fee2e2;color:#b91c1c}.pr-PENDIENTE{background:#f3f4f6;color:#374151}
+.pr-EN_PRUEBA{background:#fef9c3;color:#854d0e}.pr-APROBADA{background:#dcfce7;color:#166534}
+.pr-ABIERTO{background:#fee2e2;color:#b91c1c}.pr-ARREGLADO{background:#dbeafe;color:#1e40af}.pr-CONFORME{background:#dcfce7;color:#166534}.pr-DESCARTADO{background:#f3f4f6;color:#6b7280}
+.pr-it{border:1px solid var(--border);border-radius:12px;background:var(--surface,#fff);padding:10px 12px;margin:8px 0}
+.pr-it .t{display:flex;gap:8px;align-items:flex-start}.pr-it .t b{font-size:15px;flex:1}.pr-it .q{font-size:13.5px;margin:4px 0 6px}.pr-it .u{font-size:12px;color:var(--dim)}
+.pr-it .bt{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}.pr-it .bt button{flex:1 1 120px;min-height:46px;font-size:15px;font-weight:700;border-radius:10px;border:2px solid var(--border);background:var(--surface,#fff);color:var(--text);cursor:pointer}
+.pr-it .bt .ok{border-color:#16a34a;color:#166534}.pr-it .bt .ok.on{background:#16a34a;color:#fff}.pr-it .bt .fa{border-color:#dc2626;color:#b91c1c}.pr-it .bt .fa.on{background:#dc2626;color:#fff}
+.pr-ca{border:1px solid var(--border);border-left:5px solid #dc2626;border-radius:10px;background:var(--surface,#fff);padding:9px 11px;margin:8px 0;font-size:13.5px}
+.pr-ca.e-ARREGLADO{border-left-color:#2563eb}.pr-ca.e-CONFORME{border-left-color:#16a34a}.pr-ca.e-DESCARTADO{border-left-color:#9ca3af}
+.pr-ca .h{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:4px}.pr-ca .h b{font-size:14px}.pr-ca .d{font-size:12px;color:var(--dim)}
+.pr-ca .ac{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}.pr-ca .ac button{min-height:38px}
+.pr-tp button{min-width:44px;min-height:38px;border:1px solid var(--border);border-radius:8px;background:var(--surface,#fff);color:var(--text);font-weight:800;cursor:pointer}.pr-tp button.on{background:#14213d;color:#fff;border-color:#14213d}
+.pr-fir{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:8px 0}
+.pr-f{border:2px dashed var(--border);border-radius:12px;padding:10px;background:var(--surface,#fff);text-align:center;min-height:120px}.pr-f.si{border-style:solid;border-color:#16a34a;background:#f0fdf4}
+.pr-f h4{margin:0 0 6px;font-size:14px}.pr-f img{max-width:100%;max-height:70px;display:block;margin:4px auto}.pr-f .n{font-weight:700}.pr-f .d{font-size:12px;color:var(--dim)}
+.pr-falta{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px 10px;font-size:13px;margin:6px 0}
+.pr-sec{font-size:15px;margin:16px 0 6px;color:#14213d}
+.pr-info{font-size:13px;line-height:1.5}.pr-info li{margin:4px 0}
+</style>
+<script>
+// ── Pruebas y aprobación (16/11/2026, Anibal) ──
+// Cada responsable prueba su área renglón por renglón (OK / Falla). La falla queda como pedido de cambio (E error · C cambio · N nuevo),
+// se clasifica el viernes, se arregla y el que probó da «conforme». El área se firma con el dedo: probó → encargado general → Gustavo.
+// Hoy varios entran con el mismo usuario: por eso cada acción pide el nombre de quien probó (queda guardado en este aparato).
+var PR_ = { d: null, tab: 'areas', area: 0, fArea: '', fEst: 'PEND', firmaHay: false, foto: '', img: {} };
+var PR_TIPOS = { '': 'Sin clasificar', E: 'E · Error', C: 'C · Cambio', N: 'N · Nuevo' };
+var PR_EST = { ABIERTO: 'Abierto', ARREGLADO: 'Arreglado: volver a probar', CONFORME: 'Conforme', DESCARTADO: 'Descartado' };
+var PR_ROL = { PROBO: 'Probó (responsable)', CONTROLO: 'Controló (encargado general)', APROBO: 'Aprobó (Gustavo)' };
+function prEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function prFH(ms) { if (!ms) return ''; var d = new Date(Number(ms)); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+function prF(iso) { var p = String(iso || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] : ''; }
+function prQuien() { try { return localStorage.getItem('pr_probo') || ''; } catch (e) { return PR_.quien || ''; } }
+function prQuienSet(v) { PR_.quien = v; try { localStorage.setItem('pr_probo', v); } catch (e) {} }
+async function prPedirQuien(forzar) {
+  var q = prQuien(); if (q && !forzar) return q;
+  var v = await uiPedir('¿Quién está probando? (nombre y apellido)', { obligatorio: true, valor: q, ayuda: 'Ej.: Juan Pérez' });
+  if (!v) return ''; v = v.trim(); if (v.length < 3) { toast('Escribí nombre y apellido', 'r2'); return ''; }
+  prQuienSet(v); prPintar(); return v;
+}
+async function renderPruebas() {
+  var el = $id('page-pruebas'); if (!el) return;
+  if (!PR_.d) el.innerHTML = '<div class="pr-wrap"><div class="tdim" style="padding:20px">Cargando…</div></div>';
+  try { var r = await gsRun('gsPR_Datos'); if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo cargar'); PR_.d = r; }
+  catch (e) { el.innerHTML = '<div class="pr-wrap"><div class="al al-r">' + prEsc(e.message) + '</div></div>'; return; }
+  prPintar();
+}
+function prItems(idA) { return (PR_.d.ITEMS || []).filter(function(i) { return !idA || i.ID_AREA === idA; }); }
+function prCambios(idA) { return (PR_.d.CAMBIOS || []).filter(function(c) { return !idA || c.ID_AREA === idA; }); }
+function prFirmas(idA) { return (PR_.d.FIRMAS || []).filter(function(f) { return f.ID_AREA === idA && f.ESTADO === 'VIGENTE'; }); }
+function prArea(idA) { return (PR_.d.AREAS || []).filter(function(a) { return a.ID_AREA === idA; })[0]; }
+function prCambioPend(c) { return c.TIPO !== 'N' && (c.ESTADO === 'ABIERTO' || c.ESTADO === 'ARREGLADO'); }
+function prCuenta(idA) {
+  var it = prItems(idA), o = { tot: it.length, ok: 0, fa: 0, pe: 0, ca: 0 };
+  it.forEach(function(i) { if (i.ESTADO === 'OK') o.ok++; else if (i.ESTADO === 'FALLA') o.fa++; else o.pe++; });
+  prCambios(idA).forEach(function(c) { if (prCambioPend(c)) o.ca++; });
+  return o;
+}
+function prBarra(c) { var t = c.tot || 1; return '<div class="pr-bar"><i style="width:' + (c.ok * 100 / t) + '%;background:#16a34a"></i><i style="width:' + (c.fa * 100 / t) + '%;background:#dc2626"></i></div>'; }
+function prPintar() {
+  var el = $id('page-pruebas'); if (!el || !PR_.d) return;
+  var d = PR_.d, c = prCuenta(0), apr = (d.AREAS || []).filter(function(a) { return a.ESTADO === 'APROBADA'; }).length, q = prQuien();
+  var h = '<div class="pr-wrap"><div class="pr-top"><h2>✅ Pruebas y aprobación</h2><div class="acc"><button class="btn btn-sm" onclick="renderPruebas()">↻ Actualizar</button></div></div>';
+  h += '<div class="pr-quien">👤 Prueba: <b>' + (q ? prEsc(q) : '<span style="color:#b91c1c">sin nombre</span>') + '</b><span class="tdim" style="font-size:12px">(queda en este aparato)</span><button class="btn btn-sm" onclick="prPedirQuien(true)">' + (q ? 'Cambiar' : 'Poner mi nombre') + '</button></div>';
+  h += '<div class="pr-quien" style="background:#f8fafc;border-color:var(--border)">🧭 Encargado general de pruebas: <b>' + (d.ENCARGADO ? prEsc(d.ENCARGADO) : '<span style="color:#b91c1c">sin nombrar</span>') + '</b>' + (d.ADMIN ? '<button class="btn btn-sm" onclick="prEncargado()">' + (d.ENCARGADO ? 'Cambiar' : 'Nombrar') + '</button>' : '') + '</div>';
+  h += '<div class="pr-res"><div class="pr-k"><b>' + c.ok + ' / ' + c.tot + '</b><span>renglones OK</span></div><div class="pr-k"><b style="color:#b91c1c">' + c.fa + '</b><span>con falla</span></div><div class="pr-k"><b>' + c.pe + '</b><span>sin probar</span></div><div class="pr-k"><b style="color:#b91c1c">' + c.ca + '</b><span>cambios pendientes</span></div><div class="pr-k"><b style="color:#166534">' + apr + ' / ' + (d.AREAS || []).length + '</b><span>áreas aprobadas</span></div></div>';
+  var nCa = prCambios(0).filter(prCambioPend).length;
+  h += '<div class="pr-tabs">' + [['areas', '📋 Áreas'], ['cambios', '🛠 Cambios pedidos (' + nCa + ')'], ['ayuda', '❓ Cómo funciona']].map(function(t) { return '<button class="pr-tab' + (PR_.tab === t[0] ? ' on' : '') + '" onclick="PR_.tab=\'' + t[0] + '\';PR_.area=0;prPintar()">' + t[1] + '</button>'; }).join('') + '</div>';
+  if (PR_.tab === 'areas') h += PR_.area ? prAreaHtml(PR_.area) : prAreasHtml();
+  else if (PR_.tab === 'cambios') h += prCambiosHtml();
+  else h += prAyudaHtml();
+  el.innerHTML = h + '</div>';
+  if (PR_.tab === 'areas' && PR_.area) prCargarFirmas();
+  var sc = $id('main'); if (sc && PR_.scrollTop) { sc.scrollTop = 0; PR_.scrollTop = false; }
+}
+function prAreasHtml() {
+  var h = '';
+  (PR_.d.AREAS || []).forEach(function(a) {
+    var c = prCuenta(a.ID_AREA), fs = prFirmas(a.ID_AREA).length;
+    h += '<div class="pr-area" onclick="prAbrir(' + a.ID_AREA + ')"><div style="display:flex;gap:8px;align-items:center"><h3 style="flex:1">' + prEsc(a.NUMERO) + '. ' + prEsc(a.NOMBRE) + '</h3><span class="pr-b pr-' + prEsc(a.ESTADO) + '">' + (a.ESTADO === 'APROBADA' ? '✔ APROBADA' : 'EN PRUEBA') + '</span></div>' +
+      '<div class="sub">Menú: ' + prEsc(a.MENU) + '</div><div class="sub">Responsable: <b>' + (a.RESP_NOMBRE ? prEsc(a.RESP_NOMBRE) : '<span style="color:#b91c1c">sin nombre</span>') + '</b> · ' + prEsc(a.RESPONSABLE) + '</div>' +
+      '<div class="sub">📅 ' + prF(a.DESDE) + ' al ' + prF(a.HASTA) + ' · ' + a.DIAS + ' días</div>' + prBarra(c) +
+      '<div class="sub"><b style="color:#166534">' + c.ok + ' OK</b> · <b style="color:#b91c1c">' + c.fa + ' con falla</b> · ' + c.pe + ' sin probar · ' + c.ca + ' cambios pendientes · firmas ' + fs + '/3</div></div>';
+  });
+  return h;
+}
+function prAbrir(id) { PR_.area = id; PR_.scrollTop = true; prPintar(); }
+function prAreaHtml(idA) {
+  var a = prArea(idA); if (!a) return '';
+  var c = prCuenta(idA), d = PR_.d;
+  var h = '<button class="btn btn-sm" onclick="PR_.area=0;prPintar()">← Todas las áreas</button>';
+  h += '<div class="pr-area" style="cursor:default"><div style="display:flex;gap:8px;align-items:center"><h3 style="flex:1">' + prEsc(a.NUMERO) + '. ' + prEsc(a.NOMBRE) + '</h3><span class="pr-b pr-' + prEsc(a.ESTADO) + '">' + (a.ESTADO === 'APROBADA' ? '✔ APROBADA' : 'EN PRUEBA') + '</span></div>' +
+    '<div class="sub">Menú: ' + prEsc(a.MENU) + '</div><div class="sub">Responsable: <b>' + (a.RESP_NOMBRE ? prEsc(a.RESP_NOMBRE) : '<span style="color:#b91c1c">sin nombre</span>') + '</b> · ' + prEsc(a.RESPONSABLE) + '</div>' +
+    '<div class="sub">📅 ' + prF(a.DESDE) + ' al ' + prF(a.HASTA) + ' · ' + a.DIAS + ' días · Ayuda: ' + prEsc(a.AYUDA) + '</div>' + prBarra(c) +
+    '<div class="sub"><b style="color:#166534">' + c.ok + ' OK</b> · <b style="color:#b91c1c">' + c.fa + ' con falla</b> · ' + c.pe + ' sin probar</div>' +
+    (d.ADMIN ? '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm" onclick="prAreaEditar(' + idA + ')">✏ Responsable y fechas</button>' + (prFirmas(idA).length ? '<button class="btn btn-sm" onclick="prReabrir(' + idA + ')">↺ Volver a abrir (anula firmas)</button>' : '') + '</div>' : '') + '</div>';
+  h += '<div class="pr-sec">Qué probar <span class="tdim" style="font-size:12px">· con un caso real del día, también en el sistema viejo</span></div>';
+  prItems(idA).forEach(function(i, n) {
+    var cs = prCambios(idA).filter(function(x) { return x.ID_ITEM === i.ID_ITEM && prCambioPend(x); }).length;
+    h += '<div class="pr-it"><div class="t"><b>' + (n + 1) + '. ' + prEsc(i.PANTALLA) + '</b><span class="pr-b pr-' + prEsc(i.ESTADO) + '">' + (i.ESTADO === 'OK' ? '✔ OK' : i.ESTADO === 'FALLA' ? '✖ FALLA' : 'Sin probar') + '</span></div>' +
+      '<div class="q">' + prEsc(i.QUE_PROBAR) + '</div>' + (i.PROBO ? '<div class="u">Último: ' + prEsc(i.PROBO) + ' · ' + prFH(i.FECHA) + (cs ? ' · <b style="color:#b91c1c">' + cs + ' cambio' + (cs === 1 ? '' : 's') + ' pendiente' + (cs === 1 ? '' : 's') + '</b>' : '') + '</div>' : '') +
+      '<div class="bt"><button class="ok' + (i.ESTADO === 'OK' ? ' on' : '') + '" onclick="prMarcar(' + i.ID_ITEM + ',\'OK\')">✔ Anduvo bien</button><button class="fa' + (i.ESTADO === 'FALLA' ? ' on' : '') + '" onclick="prCambioNuevo(' + idA + ',' + i.ID_ITEM + ')">✖ Falla / cambiar algo</button></div></div>';
+  });
+  h += '<button class="btn" style="width:100%;min-height:46px;margin:6px 0" onclick="prCambioNuevo(' + idA + ',0)">➕ Pedir otro cambio en esta área</button>';
+  var cs2 = prCambios(idA);
+  if (cs2.length) { h += '<div class="pr-sec">Cambios pedidos de esta área</div>'; cs2.slice().reverse().forEach(function(x) { h += prCambioHtml(x); }); }
+  h += '<div class="pr-sec">Firmas del área</div>';
+  var fs = {}; prFirmas(idA).forEach(function(f) { fs[f.ROL] = f; });
+  var falta = prFaltan(idA);
+  if (falta.length) h += '<div class="pr-falta"><b>Para poder firmar falta:</b><br>' + falta.slice(0, 8).map(prEsc).join('<br>') + (falta.length > 8 ? '<br>… y ' + (falta.length - 8) + ' más' : '') + '</div>';
+  h += '<div class="pr-fir">' + ['PROBO', 'CONTROLO', 'APROBO'].map(function(r) {
+    var f = fs[r];
+    if (f) return '<div class="pr-f si"><h4>' + PR_ROL[r] + '</h4><div id="pr-fimg-' + f.FIRMA_ID + '" class="d">cargando firma…</div><div class="n">' + prEsc(f.NOMBRE) + '</div><div class="d">' + prFH(f.FECHA) + '</div></div>';
+    var puede = !falta.length && (r === 'PROBO' || (r === 'CONTROLO' && fs.PROBO) || (r === 'APROBO' && fs.PROBO && fs.CONTROLO && d.ADMIN));
+    return '<div class="pr-f"><h4>' + PR_ROL[r] + '</h4><div class="d" style="margin:10px 0">Falta firmar</div>' + (puede ? '<button class="btn btn-p" onclick="prFirmar(' + idA + ',\'' + r + '\')">✍ Firmar</button>' : '') + '</div>';
+  }).join('') + '</div>';
+  var an = (PR_.d.FIRMAS || []).filter(function(f) { return f.ID_AREA === idA && f.ESTADO === 'ANULADA'; });
+  if (an.length) h += '<div class="tdim" style="font-size:12px">Firmas anuladas: ' + an.map(function(f) { return prEsc(PR_ROL[f.ROL] + ' ' + f.NOMBRE + ' (' + f.MOTIVO + ')'); }).join(' · ') + '</div>';
+  return h;
+}
+function prFaltan(idA) {
+  var f = [];
+  prItems(idA).forEach(function(i) { if (i.ESTADO !== 'OK') f.push('Renglón «' + i.PANTALLA + '» ' + (i.ESTADO === 'FALLA' ? 'con falla' : 'sin probar')); });
+  prCambios(idA).forEach(function(c) { if (prCambioPend(c)) f.push('Pedido N° ' + c.ID_CAMBIO + (c.ESTADO === 'ARREGLADO' ? ' arreglado: falta volver a probar' : (c.TIPO ? ' sin arreglar' : ' sin clasificar'))); });
+  return f;
+}
+async function prCargarFirmas() {
+  var fs = prFirmas(PR_.area);
+  for (var i = 0; i < fs.length; i++) {
+    var id = fs[i].FIRMA_ID, el = $id('pr-fimg-' + id); if (!el) continue;
+    if (!PR_.img[id]) { try { var r = await asImg('vt_as_img_get', { tok: SES.token, nid: Number(id) }); if (r && r.ok) PR_.img[id] = r.data; } catch (e) {} }
+    el.innerHTML = PR_.img[id] ? '<img src="' + PR_.img[id] + '" alt="firma">' : 'sin imagen';
+  }
+}
+function prCambioHtml(x) {
+  var a = prArea(x.ID_AREA), it = (PR_.d.ITEMS || []).filter(function(i) { return i.ID_ITEM === x.ID_ITEM; })[0], adm = PR_.d.ADMIN;
+  var h = '<div class="pr-ca e-' + prEsc(x.ESTADO) + '"><div class="h"><b>N° ' + x.ID_CAMBIO + '</b><span class="pr-b pr-' + prEsc(x.ESTADO) + '">' + prEsc(PR_EST[x.ESTADO] || x.ESTADO) + '</span>' + (x.TIPO ? '<span class="pr-b" style="background:#14213d;color:#fff">' + prEsc(PR_TIPOS[x.TIPO]) + '</span>' : '<span class="pr-b" style="background:#fef9c3;color:#854d0e">Sin clasificar</span>') + (x.PARA_FECHA ? '<span class="d">arreglar para el ' + prF(x.PARA_FECHA) + '</span>' : '') + '</div>' +
+    '<div class="d">' + (a ? prEsc(a.NUMERO + '. ' + a.NOMBRE) : '') + (it ? ' › ' + prEsc(it.PANTALLA) : '') + ' · ' + prEsc(x.PROBO) + ' · ' + prFH(x.FECHA) + '</div>' +
+    '<div style="margin-top:4px"><b>Qué pasó:</b> ' + prEsc(x.QUE_PASO) + '</div>' + (x.QUE_DEBERIA ? '<div><b>Qué tendría que pasar:</b> ' + prEsc(x.QUE_DEBERIA) + '</div>' : '') +
+    (x.NOTA ? '<div class="d" style="margin-top:3px">Nota: ' + prEsc(x.NOTA) + '</div>' : '') + (x.CONFORME_NOMBRE ? '<div class="d" style="color:#166534">✔ Conforme: ' + prEsc(x.CONFORME_NOMBRE) + ' · ' + prFH(x.CONFORME_FECHA) + '</div>' : '') +
+    '<div class="ac">' + (x.FOTO_ID ? '<button class="btn btn-sm" onclick="pcVerImg(' + x.FOTO_ID + ')">📷 Ver foto</button>' : '');
+  if (adm && (x.ESTADO === 'ABIERTO' || x.ESTADO === 'ARREGLADO')) h += '<span class="pr-tp">' + ['E', 'C', 'N'].map(function(t) { return '<button class="' + (x.TIPO === t ? 'on' : '') + '" title="' + prEsc(PR_TIPOS[t]) + '" onclick="prTipo(' + x.ID_CAMBIO + ',\'' + t + '\')">' + t + '</button>'; }).join(' ') + '</span><label class="d">para el <input type="date" value="' + prEsc(x.PARA_FECHA) + '" onchange="prParaFecha(' + x.ID_CAMBIO + ',this.value)" style="font-size:14px"></label>';
+  if (adm && x.ESTADO === 'ABIERTO') h += '<button class="btn btn-sm btn-p" onclick="prEstado(' + x.ID_CAMBIO + ',\'ARREGLADO\')">✔ Arreglado</button><button class="btn btn-sm" onclick="prEstado(' + x.ID_CAMBIO + ',\'DESCARTADO\')">Descartar</button>';
+  if (x.ESTADO === 'ARREGLADO') h += '<button class="btn btn-sm btn-p" onclick="prConforme(' + x.ID_CAMBIO + ')">✔ Lo volví a probar: conforme</button>' + (adm ? '<button class="btn btn-sm" onclick="prEstado(' + x.ID_CAMBIO + ',\'ABIERTO\')">Sigue mal</button>' : '');
+  return h + '</div></div>';
+}
+function prCambiosHtml() {
+  var cs = prCambios(0).filter(function(c) {
+    if (PR_.fArea && String(c.ID_AREA) !== String(PR_.fArea)) return false;
+    if (PR_.fEst === 'PEND') return prCambioPend(c) || (c.TIPO === 'N' && c.ESTADO === 'ABIERTO');
+    return !PR_.fEst || c.ESTADO === PR_.fEst;
+  });
+  var h = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"><select class="fi" onchange="PR_.fArea=this.value;prPintar()"><option value="">Todas las áreas</option>' + (PR_.d.AREAS || []).map(function(a) { return '<option value="' + a.ID_AREA + '"' + (String(PR_.fArea) === String(a.ID_AREA) ? ' selected' : '') + '>' + prEsc(a.NUMERO + '. ' + a.NOMBRE) + '</option>'; }).join('') + '</select>' +
+    '<select class="fi" onchange="PR_.fEst=this.value;prPintar()">' + [['PEND', 'Pendientes'], ['', 'Todos'], ['ABIERTO', 'Abiertos'], ['ARREGLADO', 'Arreglados (volver a probar)'], ['CONFORME', 'Conformes'], ['DESCARTADO', 'Descartados']].map(function(o) { return '<option value="' + o[0] + '"' + (PR_.fEst === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
+  h += '<div class="tdim" style="font-size:12.5px;margin-bottom:4px">Revisión de los viernes: cada pedido se clasifica <b>E</b> error (se arregla en 48 h) · <b>C</b> cambio (lo decide Gustavo) · <b>N</b> nuevo (va después de aprobar el área; no frena la firma).</div>';
+  if (!cs.length) h += '<div class="card"><div class="card-body tdim">No hay pedidos con ese filtro.</div></div>';
+  cs.slice().reverse().forEach(function(x) { h += prCambioHtml(x); });
+  return h;
+}
+function prAyudaHtml() {
+  return '<div class="card"><div class="card-body pr-info"><ol>' +
+    '<li><b>Poné tu nombre</b> arriba («Prueba: …»). Queda en este aparato y va en todo lo que marques.</li>' +
+    '<li>Entrá a <b>tu área</b> y hacé cada renglón con un <b>caso real del día</b> (también en el sistema viejo, como siempre).</li>' +
+    '<li>Si anduvo bien: <b>✔ Anduvo bien</b>. Si no, o querés cambiar algo: <b>✖ Falla / cambiar algo</b>: contá qué hiciste, qué pasó y qué tendría que pasar. Si podés, sacá una <b>foto</b> de la pantalla.</li>' +
+    '<li><b>Viernes, 30 minutos</b>: Gustavo, el encargado general y Anibal clasifican cada pedido: <b>E</b> error · <b>C</b> cambio · <b>N</b> nuevo, y le ponen fecha.</li>' +
+    '<li>Anibal lo arregla y lo marca <b>Arreglado</b>. El que probó lo vuelve a probar y toca <b>Conforme</b> (o avisa que sigue mal).</li>' +
+    '<li>Con todo OK, se firma <b>con el dedo</b> en «Firmas del área»: primero el que probó, después el encargado general y al final Gustavo. Ahí el área queda <b>APROBADA</b> y pasa a uso real.</li>' +
+    '<li>Si algo de un área aprobada vuelve a fallar, sus firmas se anulan solas y vuelve a «en prueba».</li>' +
+    '<li><b>Regla de oro:</b> mientras un área está en prueba no se le agrega nada nuevo: lo nuevo se pide como <b>N</b> y se hace después de firmar.</li></ol></div></div>';
+}
+async function prMarcar(id, res) {
+  var q = await prPedirQuien(); if (!q) return;
+  try { var r = await gsRun('gsPR_Marcar', { ID_ITEM: id, RESULTADO: res, PROBO: q }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast(res === 'OK' ? 'Marcado OK ✓' : 'Marcado', 'g'); if (r.FIRMAS_ANULADAS) toast('Se anularon ' + r.FIRMAS_ANULADAS + ' firma(s) del área', 'r2'); await renderPruebas(); } catch (e) { toast(e.message, 'r2'); }
+}
+async function prCambioNuevo(idA, idIt) {
+  var q = await prPedirQuien(); if (!q) return;
+  var it = (PR_.d.ITEMS || []).filter(function(i) { return i.ID_ITEM === idIt; })[0], a = prArea(idA);
+  PR_.foto = '';
+  showModal('<div class="mh"><span class="mt">✖ Falla o cambio · ' + prEsc(a ? a.NOMBRE : '') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    (it ? '<div style="font-weight:700;margin-bottom:6px">' + prEsc(it.PANTALLA) + '</div>' : '') +
+    '<label class="fl">Qué hiciste y qué pasó *</label><textarea class="fi" id="pr-c-qp" rows="3" style="width:100%;font-size:16px" placeholder="Ej.: cargué la boleta del cliente X y no me dejó elegir la medida 295/80"></textarea>' +
+    '<label class="fl" style="margin-top:6px">Qué tendría que pasar</label><textarea class="fi" id="pr-c-qd" rows="2" style="width:100%;font-size:16px" placeholder="Ej.: que aparezca la medida 295/80 en la lista"></textarea>' +
+    '<div style="margin-top:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label class="btn btn-s" style="cursor:pointer">📷 Foto de la pantalla (opcional)<input type="file" accept="image/*" style="display:none" onchange="prFoto(this)"></label><span id="pr-c-fv" class="tdim" style="font-size:12px"></span></div>' +
+    '<div class="tdim" style="font-size:12px;margin-top:6px">Lo pide: <b>' + prEsc(q) + '</b>' + (it ? ' · el renglón queda en FALLA' : '') + '</div>' +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pr-c-ok" onclick="prCambioGuardar(' + idA + ',' + (idIt || 0) + ')">Guardar pedido</button></div>', 'md-lg');
+  setTimeout(function() { var t = $id('pr-c-qp'); if (t) t.focus(); }, 60);
+}
+function prFoto(inp) {
+  var f = inp.files && inp.files[0]; PR_.foto = ''; if (!f) return;
+  var rd = new FileReader(); rd.onload = function() { var im = new Image(); im.onload = function() { PR_.foto = asComprimir(im, 1400, 0.72); var v = $id('pr-c-fv'); if (v) v.innerHTML = '<img src="' + PR_.foto + '" style="height:60px;border-radius:6px;vertical-align:middle"> ✓ cargada'; }; im.src = rd.result; }; rd.readAsDataURL(f);
+}
+async function prCambioGuardar(idA, idIt) {
+  var qp = ($id('pr-c-qp').value || '').trim(), qd = ($id('pr-c-qd').value || '').trim(), b = $id('pr-c-ok');
+  if (qp.length < 5) { toast('Contá qué hiciste y qué pasó', 'r2'); $id('pr-c-qp').focus(); return; }
+  b.disabled = true; b.textContent = 'Guardando…';
+  try {
+    var fid = '';
+    if (PR_.foto) { var fo = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'PRUEBA', ref: 'area ' + idA, data: PR_.foto }); if (!fo || !fo.ok) { toast((fo && fo.error) || 'No se pudo subir la foto', 'r2'); b.disabled = false; b.textContent = 'Guardar pedido'; return; } fid = String(fo.id); }
+    var r = await gsRun('gsPR_Cambio', { ID_AREA: idA, ID_ITEM: idIt || '', PROBO: prQuien(), QUE_PASO: qp, QUE_DEBERIA: qd, FOTO_ID: fid });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); b.disabled = false; b.textContent = 'Guardar pedido'; return; }
+    closeModal(); toast('Pedido N° ' + r.ID_CAMBIO + ' guardado ✓', 'g'); await renderPruebas();
+  } catch (e) { toast(e.message, 'r2'); b.disabled = false; b.textContent = 'Guardar pedido'; }
+}
+async function prCambioSet(d, msg) { try { var r = await gsRun('gsPR_CambioEstado', d); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast(msg || 'Guardado ✓', 'g'); await renderPruebas(); } catch (e) { toast(e.message, 'r2'); } }
+function prTipo(id, t) { var c = (PR_.d.CAMBIOS || []).filter(function(x) { return x.ID_CAMBIO === id; })[0]; prCambioSet({ ID_CAMBIO: id, TIPO: c && c.TIPO === t ? '' : t }, 'Clasificado ✓'); }
+function prParaFecha(id, v) { prCambioSet({ ID_CAMBIO: id, PARA_FECHA: v }, 'Fecha guardada ✓'); }
+async function prEstado(id, est) {
+  var nota;
+  if (est === 'DESCARTADO') { nota = await uiPedir('¿Por qué se descarta el pedido N° ' + id + '?', { obligatorio: true }); if (!nota) return; }
+  if (est === 'ARREGLADO') { nota = await uiPedir('Qué se arregló (opcional)', {}); if (nota === null) return; }
+  if (est === 'ABIERTO') { nota = await uiPedir('¿Qué sigue mal?', { obligatorio: true }); if (!nota) return; }
+  var d = { ID_CAMBIO: id, ESTADO: est }; if (nota) d.NOTA = nota;
+  prCambioSet(d, est === 'ARREGLADO' ? 'Marcado arreglado ✓' : est === 'ABIERTO' ? 'Vuelve a abierto' : 'Descartado');
+}
+async function prConforme(id) { var q = await prPedirQuien(); if (!q) return; prCambioSet({ ID_CAMBIO: id, ESTADO: 'CONFORME', NOMBRE: q }, 'Conforme ✓'); }
+async function prEncargado() {
+  var v = await uiPedir('Encargado general de pruebas (nombre y apellido)', { obligatorio: true, valor: PR_.d.ENCARGADO || '' }); if (!v) return;
+  try { var r = await gsRun('gsPR_Encargado', v.trim()); if (!r || r.ok === false) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Guardado ✓', 'g'); await renderPruebas(); } catch (e) { toast(e.message, 'r2'); }
+}
+function prAreaEditar(idA) {
+  var a = prArea(idA); if (!a) return;
+  showModal('<div class="mh"><span class="mt">✏ ' + prEsc(a.NUMERO + '. ' + a.NOMBRE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<label class="fl">Responsable (nombre y apellido)</label><input class="fi" id="pr-a-n" style="width:100%;font-size:16px" value="' + prEsc(a.RESP_NOMBRE) + '" placeholder="' + prEsc(a.RESPONSABLE) + '">' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><div><label class="fl">Desde</label><input class="fi" type="date" id="pr-a-d" value="' + prEsc(a.DESDE) + '"></div><div><label class="fl">Hasta</label><input class="fi" type="date" id="pr-a-h" value="' + prEsc(a.HASTA) + '"></div><div><label class="fl">Días</label><input class="fi" type="number" min="0" max="60" id="pr-a-x" value="' + a.DIAS + '" style="width:80px"></div></div>' +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="prAreaGuardar(' + idA + ')">Guardar</button></div>');
+}
+async function prAreaGuardar(idA) {
+  try { var r = await gsRun('gsPR_Area', { ID_AREA: idA, RESP_NOMBRE: $id('pr-a-n').value.trim(), DESDE: $id('pr-a-d').value, HASTA: $id('pr-a-h').value, DIAS: Number($id('pr-a-x').value || 0) });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Guardado ✓', 'g'); await renderPruebas(); } catch (e) { toast(e.message, 'r2'); }
+}
+async function prReabrir(idA) {
+  var m = await uiPedir('¿Por qué se vuelve a abrir el área? (se anulan sus firmas)', { obligatorio: true }); if (!m) return;
+  try { var r = await gsRun('gsPR_Reabrir', idA, m); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Área abierta otra vez', 'g'); await renderPruebas(); } catch (e) { toast(e.message, 'r2'); }
+}
+function prFirmar(idA, rol) {
+  var a = prArea(idA), sug = rol === 'PROBO' ? (a.RESP_NOMBRE || prQuien()) : rol === 'CONTROLO' ? (PR_.d.ENCARGADO || '') : '';
+  showModal('<div class="mh"><span class="mt">✍ ' + prEsc(PR_ROL[rol]) + ' · ' + prEsc(a.NOMBRE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div style="font-size:14px;margin-bottom:6px">' + (rol === 'APROBO' ? 'Con esta firma el área queda <b>APROBADA</b> y pasa a uso real.' : 'Firmo que esta área está probada completa y anda bien.') + ' Firmá con el dedo en el recuadro.</div>' +
+    '<canvas id="pr-fir-c" style="width:100%;height:200px;border:2px dashed var(--border);border-radius:10px;background:#fff;touch-action:none"></canvas>' +
+    '<div class="flex gap2 mt2" style="align-items:flex-end;flex-wrap:wrap"><div style="flex:1 1 220px"><label class="fl">Nombre y apellido de quien firma *</label><input class="fi" id="pr-fir-n" style="width:100%" value="' + prEsc(sug) + '"></div><button class="btn btn-s" onclick="prFirmaBorrar()">Borrar</button></div>' +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pr-fir-ok" onclick="prFirmaGuardar(' + idA + ',\'' + rol + '\')">Guardar firma</button></div>', 'md-lg');
+  setTimeout(function() {
+    var cv = $id('pr-fir-c'); if (!cv) return; var r = cv.getBoundingClientRect(); cv.width = Math.round(r.width); cv.height = Math.round(r.height);
+    var g = cv.getContext('2d'); g.lineWidth = 2.5; g.lineCap = 'round'; g.strokeStyle = '#111'; PR_.firmaHay = false; var on = false;
+    var pt = function(e) { var b = cv.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; };
+    cv.onpointerdown = function(e) { on = true; var p = pt(e); g.beginPath(); g.moveTo(p.x, p.y); cv.setPointerCapture(e.pointerId); };
+    cv.onpointermove = function(e) { if (!on) return; var p = pt(e); g.lineTo(p.x, p.y); g.stroke(); PR_.firmaHay = true; };
+    cv.onpointerup = cv.onpointercancel = function() { on = false; };
+  }, 80);
+}
+function prFirmaBorrar() { var cv = $id('pr-fir-c'); if (!cv) return; cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); PR_.firmaHay = false; }
+async function prFirmaGuardar(idA, rol) {
+  var cv = $id('pr-fir-c'), nm = ($id('pr-fir-n').value || '').trim(), b = $id('pr-fir-ok');
+  if (!PR_.firmaHay) { toast('Falta la firma', 'r2'); return; }
+  if (nm.length < 3) { toast('Escribí el nombre de quien firma', 'r2'); $id('pr-fir-n').focus(); return; }
+  b.disabled = true; b.textContent = 'Guardando…';
+  try {
+    var c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = cv.height; var g2 = c2.getContext('2d'); g2.fillStyle = '#fff'; g2.fillRect(0, 0, c2.width, c2.height); g2.drawImage(cv, 0, 0);
+    var fi = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'FIRMA_PRUEBA', ref: 'area ' + idA + ' ' + rol, data: c2.toDataURL('image/jpeg', 0.8) });
+    if (!fi || !fi.ok) { toast((fi && fi.error) || 'No se pudo guardar la firma', 'r2'); b.disabled = false; b.textContent = 'Guardar firma'; return; }
+    var r = await gsRun('gsPR_Firmar', { ID_AREA: idA, ROL: rol, NOMBRE: nm, FIRMA_ID: String(fi.id) });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); b.disabled = false; b.textContent = 'Guardar firma'; return; }
+    closeModal(); toast(r.APROBADA ? 'Área APROBADA ✓' : 'Firma guardada ✓', 'g'); await renderPruebas();
+  } catch (e) { toast(e.message, 'r2'); b.disabled = false; b.textContent = 'Guardar firma'; }
 }
 </script>
 
