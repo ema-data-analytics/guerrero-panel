@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "52c2d7d1ce2a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7104328f7603"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1599,7 +1599,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611160015';
+var EMA_BUILD = '202611160030';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17706,7 +17706,7 @@ function flmPintar() {
 }
 function flmListaEq() {
   var el = $id('flm-lista'); if (!el) return; var q = String(FLM_.q || '').toUpperCase().trim(), l = flmUnidades().filter(function(u) { return !q || (u.IDENT + ' ' + u.MM + ' ' + u.CLIENTE).toUpperCase().indexOf(q) !== -1; });
-  el.innerHTML = l.length ? l.map(function(u) { return '<div class="' + (String(u.ID) === String(FLM_.eq) ? 'on' : '') + '" onclick="FLM_.sel=null;flmCargar(' + u.ID + ')"><b>' + pcEsc(u.IDENT) + '</b> <span class="tdim">' + pcEsc(u.MM) + '</span>' + (FLM_.cli ? '' : '<div class="tdim" style="padding:0;border:0;font-size:11px">' + pcEsc(u.CLIENTE) + '</div>') + (u.CFG ? '' : ' <span class="tdim" style="font-size:11px">(sin ejes)</span>') + '</div>'; }).join('') : '<div class="tdim">No hay equipos.</div>';
+  el.innerHTML = l.length ? l.map(function(u) { return '<div class="' + (String(u.ID) === String(FLM_.eq) ? 'on' : '') + '" onclick="FLM_.sel=null;flmCargar(' + u.ID + ')"><b>' + pcEsc(u.IDENT) + '</b> <span class="fl-bd" style="background:#e2e8f0;color:#334155;padding:0 6px" title="Cubiertas montadas">' + (u.NCUB || 0) + '</span> <span class="tdim">' + pcEsc(u.MM) + '</span>' + (FLM_.cli ? '' : '<div class="tdim" style="padding:0;border:0;font-size:11px">' + pcEsc(u.CLIENTE) + '</div>') + (u.CFG ? '' : ' <span class="tdim" style="font-size:11px">(sin ejes)</span>') + '</div>'; }).join('') : '<div class="tdim">No hay equipos.</div>';
   var dd = $id('flm-datos'), U = FLM_.d.UNIDAD; if (dd) dd.innerHTML = U ? '<div style="font-size:12.5px;line-height:1.7"><div><span class="tdim">Patente</span> <b>' + pcEsc(U.IDENT) + '</b></div><div><span class="tdim">Marca y modelo</span> ' + pcEsc((U.MARCA + ' ' + U.MODELO).trim()) + '</div><div><span class="tdim">Configuración</span> ' + pcEsc(U.CFG ? U.CFG.NOMBRE : 'sin asignar') + '</div><div><span class="tdim">Km</span> <b>' + Number(U.KM || 0).toLocaleString('es-AR') + '</b></div><div><span class="tdim">Cubiertas montadas</span> ' + flmTodas().reduce(function(a, x) { return a + (x.MONT || []).length; }, 0) + '</div></div>' : '';
 }
 function flmUnidadBloque(u, esAcop) {
