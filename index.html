@@ -1600,7 +1600,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611160045';
+var EMA_BUILD = '202611160055';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17769,7 +17769,7 @@ function flmArrastre() {
     FLM_.dragXY = xyDe(ev); FLM_.arrastrando = 0; if (!ev.touches) ev.preventDefault(); };
   var mov = function(ev) { var dr = FLM_.drag; if (!dr) return; var xy = xyDe(ev);
     if (!FLM_.arrastrando) { if (Math.abs(xy[0] - FLM_.dragXY[0]) + Math.abs(xy[1] - FLM_.dragXY[1]) < 12) return; FLM_.arrastrando = 1; document.body.classList.add('flm-arr');
-      var c = dr.t === 'POS' ? flmMontaje(dr.eq, dr.pos).C : flmCasLista(dr.c), g = document.createElement('div'); g.id = 'flm-ghost'; g.textContent = '🛞 ' + (c ? c.MARCA : ''); document.body.appendChild(g); }
+      var c = dr.t === 'POS' ? flmMontaje(dr.eq, dr.pos).C : flmCasLista(dr.c), g = document.createElement('div'); g.id = 'flm-ghost'; g.textContent = '⚫ ' + (c ? c.MARCA : ''); document.body.appendChild(g); }
     if (ev.cancelable && ev.touches) ev.preventDefault();
     var g2 = $id('flm-ghost'); if (g2) { g2.style.left = (xy[0] + 12) + 'px'; g2.style.top = (xy[1] + 12) + 'px'; }
     document.querySelectorAll('.flm-sobre').forEach(function(x) { x.classList.remove('flm-sobre'); }); var d0 = destDe(xy); if (d0 && d0.hasAttribute('data-drop')) d0.classList.add('flm-sobre'); };
@@ -18346,7 +18346,7 @@ function flvPintar() {
     '<div class="fg" style="align-self:end"><button class="btn btn-s" onclick="FLV_.F={cli:\'\',base:\'\'};renderPreventivo()">Limpiar filtros</button></div></div>' +
     '<div class="mt2" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="tdim" style="font-size:12.5px">Valores de control: ' + Object.keys(d.P_TXT).map(function(k) { return pcEsc(d.P_TXT[k]) + ': <b>' + (P[k] === '' ? 'sin definir' : Number(P[k]).toLocaleString('es-AR')) + '</b>'; }).join(' · ') + '</span>' + (adm ? flBtn('btn-s', '⚙ Cambiar', 'flvParam()') : '') + flBtn('btn-s', '🔧 Planes de service', 'window._menuAcc=\'fl-mt_service_plan\';renderFlota()') + '</div>' +
     (falta.length ? '<div class="al mt2">Faltan definir ' + falta.length + ' valor(es) de control: mientras no estén, esos controles no se hacen (no se inventan). ' + (adm ? 'Tocá ⚙ Cambiar.' : 'Pedíselos a un administrador.') + '</div>' : '') + '</div></div>';
-  var tabs = [['CUB', '🛞 Cubiertas (' + d.CUB.length + ')'], ['UNI', '🚚 Unidades (' + d.UNIDADES.length + ')'], ['SERV', '🔧 Service (' + d.SERV.length + ')']];
+  var tabs = [['CUB', '⚫ Cubiertas (' + d.CUB.length + ')'], ['UNI', '🚚 Unidades (' + d.UNIDADES.length + ')'], ['SERV', '🔧 Service (' + d.SERV.length + ')']];
   h += '<div class="card"><div class="card-hd" style="flex-wrap:wrap;gap:6px"><div style="display:flex;gap:4px;flex-wrap:wrap">' + tabs.map(function(t) { return '<button class="btn btn-sm ' + (FLV_.tab === t[0] ? 'btn-p' : 'btn-s') + '" onclick="FLV_.tab=\'' + t[0] + '\';flvPintar()">' + t[1] + '</button>'; }).join('') + '</div><div style="display:flex;gap:6px;flex-wrap:wrap">' + flBtn('btn-s', '📄 PDF', 'flvPdf()') + (flPuede('AGREGAR') ? flBtn('btn-p', '📅 Planificar visita con lo marcado', 'flvPlanificar()') : '') + '</div></div><div class="card-body" id="flv-t">' + flvTabla(true) + '</div></div>';
   $id('fl-body').innerHTML = h;
   if (typeof gridPonerBotones_ === 'function') setTimeout(gridPonerBotones_, 30);
