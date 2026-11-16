@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9456632d7830"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "75cd7eeff8c5"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -329,6 +329,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="flota" data-acc="fl-preventivo"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Control preventivo</div>
         <div class="nav-item" data-page="flota" data-acc="fl-planes"><span class="nav-icon"><i class="fas fa-truck-pickup"></i></span> Órdenes en campo</div>
         <div class="nav-item" data-page="flota" data-acc="fl-recapado"><span class="nav-icon"><i class="fas fa-recycle"></i></span> Cubiertas para recapar</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-combustible"><span class="nav-icon"><i class="fas fa-gas-pump"></i></span> Combustible de la flota</div>
         <div class="nav-item" data-page="flota" data-acc="fl-importar"><span class="nav-icon"><i class="fas fa-file-excel"></i></span> Importar flota (Excel)</div>
         <div class="nav-item" data-page="flota" data-acc="fl-reportes"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Reportes de flota</div>
         <div class="nav-item" data-page="flota" data-acc="fl-enganches"><span class="nav-icon"><i class="fas fa-link"></i></span> Enganches de acoplados</div>
@@ -1600,7 +1601,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611161000';
+var EMA_BUILD = '202611161100';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16784,7 +16785,7 @@ function mtOpt(l, v) { return l.map(function(x) { return '<option value="' + pcE
 function mtOrdenes() {
   var d = MT_.d, F = MT_.F = MT_.F || { q: '', suc: '', est: 'VIG', desde: '', hasta: '', pag: 0 };
   var sucs = {}; d.ORDENES.forEach(function(o) { if (o.SUCURSAL) sucs[o.SUCURSAL] = 1; });
-  $id('mt-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">Órdenes del taller · ' + pcEsc(d.SUC.NOMBRE) + '</span>' + (mtPuede('AGREGAR') ? '<button class="btn btn-p btn-sm" onclick="MT_.nueva=true;mtPintar()">＋ Nueva orden del taller</button>' : '') + '</div><div class="card-body">' +
+  $id('mt-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">Órdenes del taller · ' + pcEsc(d.SUC.NOMBRE) + '</span>' + '<span class="flex gap2" style="flex-wrap:wrap"><button class="btn btn-s btn-sm" onclick="mtImpChkBlanco()" title="Para marcar a mano cuando no hay batería o señal, y después pasarlo al sistema">🖨 Check list en blanco</button>' + (mtPuede('AGREGAR') ? '<button class="btn btn-p btn-sm" onclick="MT_.nueva=true;mtPintar()">＋ Nueva orden del taller</button>' : '') + '</span></div><div class="card-body">' +
     '<div class="pc-otf"><div class="fg" style="grid-column:span 2"><label class="fl">Buscar</label><input class="fi" placeholder="N° de orden, cliente, dominio, quién la pidió" value="' + pcEsc(F.q) + '" oninput="MT_.F.q=this.value;MT_.F.pag=0;mtOrdGrilla()"></div>' +
     '<div class="fg"><label class="fl">Sucursal</label><select class="fs" onchange="MT_.F.suc=this.value;MT_.F.pag=0;mtOrdGrilla()">' + mtOpt([['', 'Todas']].concat(Object.keys(sucs).sort().map(function(s) { return [s, s]; })), F.suc) + '</select></div>' +
     '<div class="fg"><label class="fl">Estado</label><select class="fs" onchange="MT_.F.est=this.value;MT_.F.pag=0;mtOrdGrilla()">' + mtOpt([['VIG', 'Vigentes'], ['', 'Todas'], ['CHECK_LIST', 'En check list'], ['PRESUPUESTADA', 'Presupuestadas'], ['APROBADA', 'Aprobadas'], ['PLANIFICADA', 'Planificadas (en campo)'], ['EN_TRABAJO', 'En trabajo'], ['TERMINADA', 'Terminadas'], ['ANULADA', 'Anuladas']], F.est) + '</select></div>' +
@@ -17143,27 +17144,61 @@ async function mtChkGuardar() {
   var d = { ID_ORDEN: MT_.ord.ORDEN.ID_ORDEN, ID_OE: x.ID_OE, RESP: ks.filter(function(k) { return k.charAt(0) !== '_'; }).map(function(k) { return { ID: Number(k), R: x.RESP[k].R, OBS: x.RESP[k].OBS || '' }; }) };
   if (ks.indexOf('_km') !== -1) { d.KM_HS = MT_.km; x.KM_HS = MT_.km; }
   if (ks.indexOf('_obs') !== -1) { d.OBS_EQ = MT_.obsEq; x.OBSERVACIONES = MT_.obsEq; }
-  try { var r = await gsRun('gsMT_ChkGuardar', d); var g = $id('mt-gs');
+  // Sin señal: lo marcado queda guardado en el teléfono (misma cola que la flota) y se envía solo cuando vuelve
+  var desc = 'Check list ' + MT_.ord.ORDEN.NRO + ' · ' + mtEqIdent(mtEq(x.ID_EQUIPO)) + ' (' + d.RESP.length + ' respuesta' + (d.RESP.length === 1 ? '' : 's') + ')';
+  try { var r = typeof flEnviar === 'function' ? await flEnviar('gsMT_ChkGuardar', d, desc) : await gsRun('gsMT_ChkGuardar', d); var g = $id('mt-gs');
+    if (r && r.COLA) { MT_.cola = 1; if (g) g.innerHTML = '<b style="color:#b45309">📵 Sin señal: guardado en el teléfono</b>'; return; }
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar el check list', 'r2'); ks.forEach(function(k) { MT_.pend[k] = 1; }); if (g) g.textContent = 'Sin guardar'; return; }
     if (g && !Object.keys(MT_.pend).length) g.textContent = 'Guardado ✓';
   } catch (e) { ks.forEach(function(k) { MT_.pend[k] = 1; }); toast('Sin conexión: se vuelve a intentar', 'r2'); MT_.tmr = setTimeout(mtChkGuardar, 5000); }
 }
+function mtColaListo() { if (!MT_.cola || typeof flqLeer !== 'function') return; if (flqLeer().some(function(q) { return q.FN === 'gsMT_ChkGuardar'; })) return; MT_.cola = 0; var g = $id('mt-gs'); if (g) g.textContent = 'Guardado ✓ (se envió al volver la señal)'; }
+function mtSinSenal() { return typeof navigator !== 'undefined' && navigator.onLine === false; }
 async function mtCheckSalir() {
   if (MT_.tmr) { clearTimeout(MT_.tmr); MT_.tmr = null; }
   await mtChkGuardar(); if (Object.keys(MT_.pend).length) return;
+  if (MT_.cola) {
+    if (mtSinSenal()) { toast('Sin señal: lo marcado quedó guardado en el teléfono y se envía solo cuando vuelva. Podés seguir marcando.', 'w'); return; }
+    if (typeof flqEnviarTodo === 'function') await flqEnviarTodo(true);
+    if (typeof flqLeer === 'function' && flqLeer().some(function(q) { return q.FN === 'gsMT_ChkGuardar'; })) { toast('Todavía hay respuestas del check list sin enviar: esperá la señal', 'w'); return; }
+    MT_.cola = 0;
+  }
   var id = MT_.ord.ORDEN.ID_ORDEN; MT_.oe = null; await mtRecargar(); await mtAbrir(id);
 }
 // ── PDF: orden con el check list (formato OT-TMEC-01) y presupuesto ──
+// Check list en blanco: se imprime antes, el mecánico lo marca a mano (sin batería o sin señal) y después se pasa al sistema en la orden
+function mtChkTablaImp(pl, resp) {
+  resp = resp || {};
+  var c = '<table class="det"><thead><tr><th style="width:55%">Ítem</th><th class="ck">OK/SÍ</th><th class="ck">NO</th><th class="ck">N/A</th><th>Observación</th></tr></thead><tbody>';
+  pl.GRUPOS.forEach(function(g) { c += '<tr><td colspan="5" style="background:#f3f4f6;font-weight:700">' + pcEsc(g.NOMBRE) + '</td></tr>';
+    g.ITEMS.forEach(function(i) { var v = (resp[i.ID] || {}).R || ''; c += '<tr><td>' + pcEsc(i.NOMBRE) + (i.ESENCIAL ? ' <b>*</b>' : '') + '</td><td class="ck">' + (v === 'OK' || v === 'SI' ? '✔' : '☐') + '</td><td class="ck">' + (v === 'NO' ? '✖' : '☐') + '</td><td class="ck">' + (v === 'NA' ? '—' : '☐') + '</td><td>' + pcEsc((resp[i.ID] || {}).OBS || '') + '</td></tr>'; }); });
+  return c + '</tbody></table>';
+}
+function mtTrabManoImp() {
+  var c = '<h2>Trabajos y repuestos para presupuestar</h2><table class="det"><thead><tr><th style="width:55%">Trabajo o repuesto (ej.: desarme y arme de cubierta)</th><th class="n" style="width:12%">Cant.</th><th>Observación</th></tr></thead><tbody>';
+  for (var k = 0; k < 8; k++) c += '<tr><td style="height:26px"></td><td></td><td></td></tr>';
+  return c + '</tbody></table>';
+}
+async function mtImpChkBlanco() {
+  var tip = {}; (MT_.d.TIPOS || []).forEach(function(t) { tip[String(t.ID_TIPO)] = t.NOMBRE; });
+  var ops = MT_.d.PLANTILLAS.slice().sort(function(a, b) { return a.ID_TIPO - b.ID_TIPO || (a.NOMBRE < b.NOMBRE ? -1 : 1); }).map(function(p) { return [p.ID_PLANTILLA, (tip[String(p.ID_TIPO)] || '') + ' · ' + p.NOMBRE]; });
+  var id = await uiElegir('¿Qué check list imprimís en blanco?', ops); if (id === null || id === undefined) return;
+  var pl = mtPl(Number(id)); if (!pl) { toast('No encontré ese check list', 'r2'); return; }
+  var c = pcEncImp('Check list en blanco · para completar a mano', pl.CODIGO, 'Después se carga en el sistema, en la orden del taller') +
+    '<table style="margin:6px 0 10px"><tbody><tr>' + ['Fecha', 'Cliente', 'Patente / interno'].map(function(k) { return '<td style="height:34px;width:33%"><b style="font-size:9px;color:#555;text-transform:uppercase">' + k + '</b></td>'; }).join('') + '</tr><tr>' + ['Km u horas', 'Pidió', 'Mecánico'].map(function(k) { return '<td style="height:34px"><b style="font-size:9px;color:#555;text-transform:uppercase">' + k + '</b></td>'; }).join('') + '</tr></tbody></table>' +
+    '<h2>' + pcEsc(pl.CODIGO + ' · ' + pl.NOMBRE) + '</h2><div class="nota">Marcá una opción por ítem. Los marcados con * son esenciales. Si algo dio NO, anotá qué tiene en Observación.</div>' + mtChkTablaImp(pl) + mtTrabManoImp() +
+    '<div class="firmas"><div>Mecánico</div><div>Cliente / chofer</div><div>Cargado en el sistema (quién y cuándo)</div></div>';
+  pcImprimir('Check list ' + pl.CODIGO, c);
+}
 async function mtImpOrden(id) {
   var r = MT_.ord && MT_.ord.ORDEN.ID_ORDEN === id ? MT_.ord : await gsRun('gsMT_Orden', id); if (!r || !r.ok) { toast('No se pudo', 'r2'); return; }
   var o = mtOrdenRes(id) || {}, c = '';
   c += pcEncImp('Orden del taller · Check list', r.ORDEN.NRO, o.SUCURSAL ? 'Sucursal ' + o.SUCURSAL : '') +
     '<div class="dat"><div><b>Cliente</b>' + pcEsc(o.CLIENTE || 'Interno') + '</div><div><b>Fecha</b>' + fmtD(o.FECHA) + '</div><div><b>Pidió</b>' + pcEsc(o.SOLICITANTE || '—') + '</div><div><b>Estado</b>' + pcEsc((MT_EST[r.ORDEN.ESTADO] || [0, r.ORDEN.ESTADO])[1]) + '</div></div>' + (o.OBSERVACIONES ? '<div class="nota">' + pcEsc(o.OBSERVACIONES) + '</div>' : '');
   r.EQUIPOS.forEach(function(x) { var e = mtEq(x.ID_EQUIPO), pl = mtPl(x.ID_PLANTILLA); if (!pl) return;
-    c += '<h2>' + pcEsc(pl.CODIGO + ' · ' + pl.NOMBRE) + ' — ' + pcEsc(mtEqIdent(e)) + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + (x.KM_HS ? ' · ' + Number(x.KM_HS).toLocaleString('es-AR') + ' km/h' : '') + '</h2>' + mtCubTxt(e, 'p') + '<table class="det"><thead><tr><th style="width:55%">Ítem</th><th class="ck">OK/SÍ</th><th class="ck">NO</th><th class="ck">N/A</th><th>Observación</th></tr></thead><tbody>';
-    pl.GRUPOS.forEach(function(g) { c += '<tr><td colspan="5" style="background:#f3f4f6;font-weight:700">' + pcEsc(g.NOMBRE) + '</td></tr>';
-      g.ITEMS.forEach(function(i) { var v = (x.RESP[i.ID] || {}).R || ''; c += '<tr><td>' + pcEsc(i.NOMBRE) + '</td><td class="ck">' + (v === 'OK' || v === 'SI' ? '✔' : '') + '</td><td class="ck">' + (v === 'NO' ? '✖' : '') + '</td><td class="ck">' + (v === 'NA' ? '—' : '') + '</td><td>' + pcEsc((x.RESP[i.ID] || {}).OBS || '') + '</td></tr>'; }); });
-    c += '</tbody></table>' + (x.OBSERVACIONES ? '<div class="nota">Observaciones: ' + pcEsc(x.OBSERVACIONES) + '</div>' : ''); });
+    c += '<h2>' + pcEsc(pl.CODIGO + ' · ' + pl.NOMBRE) + ' — ' + pcEsc(mtEqIdent(e)) + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + (x.KM_HS ? ' · ' + Number(x.KM_HS).toLocaleString('es-AR') + ' km/h' : '') + '</h2>' + mtCubTxt(e, 'p') + mtChkTablaImp(pl, x.RESP);
+    c += (x.OBSERVACIONES ? '<div class="nota">Observaciones: ' + pcEsc(x.OBSERVACIONES) + '</div>' : ''); });
+  if (r.ORDEN.ESTADO === 'CHECK_LIST') c += mtTrabManoImp();
   if (r.TRAB && r.TRAB.TRABAJOS && r.TRAB.TRABAJOS.length) {
     c += '<h2>Trabajo y control final</h2><table class="det"><thead><tr><th style="width:38%">Tarea</th><th>Equipo</th><th>Mecánico</th><th class="n">Tiempo</th><th>Control final</th></tr></thead><tbody>' +
       r.TRAB.TRABAJOS.map(function(t) { var x = r.EQUIPOS.filter(function(q) { return q.ID_OE === t.ID_OE; })[0];
@@ -17495,7 +17530,7 @@ var FL_ = { t: '', d: null, F: { q: '', p: '', est: 'V' }, cfg: null, ed: null }
 var FL_MENU = { 'fl-mapa': 'mapa', 'fl-planes': 'planes', 'fl-reportes': 'reportes', 'fl-enganches': 'enganches', 'fl-mv_marcas': 'mv_marcas', 'fl-mv_modelos': 'mv_modelos', 'fl-mt_equipo_tipos': 'mt_equipo_tipos', 'fl-mt_equipo_subtipos': 'mt_equipo_subtipos', 'fl-config': 'cb_config',
   'fl-cb_mov_tipos': 'cb_mov_tipos', 'fl-cb_estados_cub': 'cb_estados_cub', 'fl-cb_causas_rotura': 'cb_causas_rotura', 'fl-cli_cargos': 'cli_cargos', 'fl-mt_licencias_cat': 'mt_licencias_cat',
   'fl-cli_bases': 'cli_bases', 'fl-cli_contactos': 'cli_contactos', 'fl-mt_choferes': 'mt_choferes',
-  'fl-importar': 'importar', 'fl-cb_lugares': 'cb_lugares', 'fl-preventivo': 'preventivo', 'fl-recapado': 'recapado', 'fl-mt_service_plan': 'mt_service_plan' };
+  'fl-importar': 'importar', 'fl-cb_lugares': 'cb_lugares', 'fl-preventivo': 'preventivo', 'fl-recapado': 'recapado', 'fl-mt_service_plan': 'mt_service_plan', 'fl-combustible': 'combustible' };
 function flPuede(acc) { return typeof tienePermiso === 'function' ? tienePermiso('VENTAS', acc) : true; }
 function flBtn(cls, txt, js, tit) { return typeof pcBtnAbm === 'function' ? pcBtnAbm(cls, txt, js, tit) : '<button class="btn ' + cls + ' btn-xs" onclick="' + js + '">' + txt + '</button>'; }
 async function renderFlota() {
@@ -17515,6 +17550,7 @@ async function flRecargar() {
     if (FL_.t === 'importar') return renderImportarFlota();
     if (FL_.t === 'preventivo') return renderPreventivo();
     if (FL_.t === 'recapado') return renderRecapado();
+    if (FL_.t === 'combustible') return renderCombustible();
     if (FL_.t === 'cb_config') { var r = await gsRun('gsCB_Configs'); if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo cargar'); FL_.cfg = r; return flCfgPintar(); }
     var r2 = await gsRun('gsCB_Cat', FL_.t); if (!r2 || !r2.ok) throw new Error((r2 && r2.error) || 'No se pudo cargar'); FL_.d = r2; flPintar();
   } catch (e) { $id('fl-body').innerHTML = '<div class="al">' + pcEsc(e.message) + '</div>'; }
@@ -18335,6 +18371,8 @@ async function flqEnviarTodo(callado) {
   flqPintar();
   if (ok) toast('📶 Volvió la señal: se enviaron ' + ok + ' carga(s) hechas sin señal ✓', 'g');
   if (mal) toast('⚠ ' + mal + ' carga(s) hechas sin señal no se pudieron registrar: tocá el aviso de arriba para verlas', 'r2');
+  if ((ok || mal) && typeof mtColaListo === 'function') mtColaListo();
+  if ((ok || mal) && FL_.t === 'combustible' && FLC_.d) renderCombustible();
   if ((ok || mal) && FL_.t === 'mapa' && FLM_.d) { var e2 = FLM_.eq; FLM_.sel = null; flmCargar(e2); }
   else if (!ok && !mal && !callado) toast('Todavía no hay señal', 'w');
 }
@@ -18541,6 +18579,92 @@ async function flxVolverOk(id) {
     closeModal(); toast(r.COLA ? '📵 Sin señal: quedó guardado en el celular' : 'La cubierta volvió al depósito ✓ (ya se puede montar)', r.COLA ? 'w' : 'g'); if (!r.COLA) await renderRecapado();
   } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
 }
+
+// ════════════════════════════════════════════════════════════════
+// COMBUSTIBLE DE LA FLOTA (16/11/2026, Anibal): cada carga con su unidad, litros y km; consumo de cada tramo,
+// promedio de la unidad y de la flota, avisos (si Vulcan definió los %). Se puede cargar sin señal.
+// ════════════════════════════════════════════════════════════════
+var FLC_ = { F: { cli: '', eq: '', desde: '', hasta: '' }, d: null, N: { cli: '', eq: '', lleno: 1 } };
+function flcFecha(v, fin) { if (!v) return ''; var p = v.split('-'); return new Date(+p[0], +p[1] - 1, +p[2], fin ? 23 : 0, fin ? 59 : 0, fin ? 59 : 0).getTime(); }
+function flcN(n, d) { return n === '' || n === null || n === undefined ? '—' : Number(n).toLocaleString('es-AR', { maximumFractionDigits: d === undefined ? 1 : d }); }
+async function renderCombustible() {
+  $id('fl-tit').textContent = '⛽ Combustible de la flota'; $id('fl-sub').textContent = 'Flota y cubiertas · cada carga con litros y km: consumo por tramo, por unidad y de la flota';
+  var F = FLC_.F, r = await gsRun('gsFC_Datos', { ID_CLIENTE: F.cli, ID_EQUIPO: F.eq, DESDE: flcFecha(F.desde), HASTA: flcFecha(F.hasta, true) });
+  if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo cargar'); FLC_.d = r; flcPintar();
+}
+function flcUniOpts(cli, sel, vacio) { var l = FLC_.d.UNIDADES.filter(function(u) { return !cli || String(u.ID_CLIENTE) === String(cli); });
+  return '<option value="">' + pcEsc(vacio) + '</option>' + l.map(function(u) { return '<option value="' + u.ID + '"' + (String(u.ID) === String(sel) ? ' selected' : '') + '>' + pcEsc(u.IDENT + (u.INTERNO ? ' · ' + u.INTERNO : '') + (cli ? '' : ' · ' + u.CLIENTE)) + '</option>'; }).join(''); }
+function flcPintar() {
+  var d = FLC_.d, F = FLC_.F, N = FLC_.N, ue = d.UNIDADES.filter(function(u) { return String(u.ID) === String(N.eq); })[0];
+  var ult = N.eq ? d.CARGAS.filter(function(c) { return String(c.ID_EQUIPO) === String(N.eq) && c.ESTADO === 'VIGENTE'; }).sort(function(a, b) { return b.FECHA - a.FECHA; })[0] : null;
+  var falta = d.P.TRAMO === '' || d.P.UNIDAD === '';
+  var h = flPuede('AGREGAR') ? '<div class="card mb3"><div class="card-hd"><span class="card-title">⛽ Cargar combustible</span><span class="tdim" style="font-size:12px">Sin señal se guarda en el celular y se envía sola</span></div><div class="card-body"><div class="fl-frm">' +
+    '<div><label class="fl">Empresa</label><select class="fs" id="flc-cli" onchange="FLC_.N.cli=this.value;FLC_.N.eq=\'\';flcPintar()">' + flpOpt(d.CLIENTES, N.cli, '— elegí —') + '</select></div>' +
+    '<div><label class="fl">Unidad *</label><select class="fs" id="flc-eq" onchange="FLC_.N.eq=this.value;flcPintar()">' + flcUniOpts(N.cli, N.eq, '— elegí la unidad —') + '</select>' + (ue ? '<div class="fl-ayu">Último km registrado: <b>' + flrN(ue.KM) + '</b>' + (ult ? ' · última carga ' + pcEsc(ult.NRO) + ' el ' + fmtD(ult.FECHA) + ' con ' + flrN(ult.KM) + ' km' : ' · primera carga: queda como punto de partida') + '</div>' : '') + '</div>' +
+    '<div><label class="fl">Litros *</label><input class="fi" id="flc-lt" inputmode="decimal" placeholder="Ej.: 380"></div>' +
+    '<div><label class="fl">Km del camión (tablero) *</label><input class="fi" id="flc-km" inputmode="numeric" placeholder="' + (ue ? flrN(ue.KM) : '') + '"></div>' +
+    '<div><label class="fl">Chofer</label><select class="fs" id="flc-ch"><option value="">— sin chofer —</option>' + d.CHOFERES.filter(function(c) { return ue && String(c.C) === String(ue.ID_CLIENTE); }).map(function(c) { return '<option value="' + c.V + '">' + pcEsc(c.T) + '</option>'; }).join('') + '</select></div>' +
+    '<div><label class="fl">Dónde cargó</label><input class="fi" id="flc-lu" placeholder="Estación o base"></div>' +
+    '<div><label class="fl">N° de ticket o comprobante</label><input class="fi" id="flc-co"></div>' +
+    '<div style="display:flex;align-items:end;gap:8px"><label style="display:flex;gap:8px;align-items:center;font-size:14px;min-height:44px"><input type="checkbox" id="flc-ll" style="width:22px;height:22px"' + (N.lleno ? ' checked' : '') + ' onchange="FLC_.N.lleno=this.checked?1:0"> Llenó el tanque</label></div>' +
+    '<div class="full"><button class="btn btn-p" style="min-height:50px;width:100%;font-size:16px" id="flc-ok" onclick="flcGuardar()">Guardar la carga</button></div></div></div></div>' : '';
+  h += '<div class="card mb3"><div class="card-body"><div class="pc-otf">' +
+    '<div class="fg" style="grid-column:span 2"><label class="fl">Empresa</label><select class="fs" data-filtro onchange="FLC_.F.cli=this.value;FLC_.F.eq=\'\';renderCombustible()">' + flpOpt(d.CLIENTES, F.cli, 'Todas') + '</select></div>' +
+    '<div class="fg" style="grid-column:span 2"><label class="fl">Unidad</label><select class="fs" onchange="FLC_.F.eq=this.value;renderCombustible()">' + flcUniOpts(F.cli, F.eq, 'Todas') + '</select></div>' +
+    '<div class="fg"><label class="fl">Desde</label><input class="fi" type="date" value="' + F.desde + '" onchange="FLC_.F.desde=this.value;renderCombustible()"></div>' +
+    '<div class="fg"><label class="fl">Hasta</label><input class="fi" type="date" value="' + F.hasta + '" onchange="FLC_.F.hasta=this.value;renderCombustible()"></div>' +
+    '<div class="fg" style="align-self:end"><button class="btn btn-s" onclick="FLC_.F={cli:\'\',eq:\'\',desde:\'\',hasta:\'\'};renderCombustible()">Limpiar filtros</button></div></div>' +
+    (falta ? '<div class="al mt2">Los avisos de consumo están apagados hasta que Vulcan defina los % de control (Control preventivo → ⚙ Cambiar). Los consumos se calculan igual.</div>' : '<div class="tdim mt2" style="font-size:12.5px">Avisa si una carga da más de <b>' + d.P.TRAMO + '%</b> sobre el promedio de su unidad, y si una unidad consume más de <b>' + d.P.UNIDAD + '%</b> sobre el promedio de su flota.</div>') + '</div></div>';
+  // resumen por unidad
+  h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Consumo por unidad</span><button class="btn btn-s btn-sm" onclick="flcPdf()">🖨 PDF</button></div><div class="card-body"><div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Empresa</th><th>Unidad</th><th class="tr">Cargas</th><th class="tr">Km medidos</th><th class="tr">Litros</th><th class="tr">L/100 km</th><th class="tr">Promedio de su flota</th><th class="tr">Diferencia</th><th>Aviso</th></tr></thead><tbody>' +
+    (d.RESUMEN.length ? d.RESUMEN.map(function(r) { return '<tr' + (r.AVISO ? ' style="background:#fef2f2"' : '') + '><td>' + pcEsc(r.CLIENTE) + '</td><td><b>' + pcEsc(r.IDENT) + '</b></td><td class="tr">' + r.CARGAS + '</td><td class="tr">' + flcN(r.KM, 0) + '</td><td class="tr">' + flcN(r.LITROS) + '</td><td class="tr"><b>' + flcN(r.L100) + '</b></td><td class="tr">' + flcN(r.FLOTA) + '</td><td class="tr">' + (r.DIF_PCT === '' ? '—' : (r.DIF_PCT > 0 ? '+' : '') + r.DIF_PCT + '%') + '</td><td>' + (r.AVISO ? '<b style="color:#b91c1c">' + pcEsc(r.AVISO) + '</b>' : '') + '</td></tr>'; }).join('')
+      : '<tr><td colspan="9" class="tc tdim" style="padding:14px">Todavía no hay cargas con estos filtros.</td></tr>') + '</tbody></table></div><div class="tdim mt2" style="font-size:12px">El consumo se mide entre dos cargas con tanque lleno: los litros cargados desde la anterior sobre los km recorridos. La primera carga de cada unidad es el punto de partida.</div></div></div>';
+  // grilla de cargas
+  h += '<div class="card"><div class="card-hd"><span class="card-title">' + d.CARGAS.length + ' carga(s)</span></div><div class="card-body"><div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>N°</th><th>Fecha</th><th>Unidad</th><th class="tr">Litros</th><th class="tr">Km</th><th class="tr">Km del tramo</th><th class="tr">L/100 km</th><th>Chofer</th><th>Dónde</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' +
+    (d.CARGAS.length ? d.CARGAS.map(function(c) { var an = c.ESTADO !== 'VIGENTE'; return '<tr' + (an ? ' style="opacity:.55"' : c.AVISO ? ' style="background:#fff7ed"' : '') + '><td class="mono">' + pcEsc(c.NRO) + '</td><td>' + fmtD(c.FECHA) + '</td><td><b>' + pcEsc(c.IDENT) + '</b></td><td class="tr">' + flcN(c.LITROS) + (c.LLENO ? '' : ' <span class="tdim">(parcial)</span>') + '</td><td class="tr">' + flrN(c.KM) + '</td><td class="tr">' + flcN(c.KM_T, 0) + '</td><td class="tr">' + (c.AVISO ? '<b style="color:#b45309">' + flcN(c.L100) + ' ⚠</b>' : flcN(c.L100)) + '</td><td>' + pcEsc(c.CHOFER || '—') + '</td><td>' + pcEsc(c.LUGAR || '—') + '</td><td>' + (an ? '<span class="fl-bd fl-a">Anulada</span>' : '<span class="fl-bd fl-v">Vigente</span>') + '</td>' +
+      '<td><div class="pc-acc">' + flBtn('btn-s', '👁 Ver', 'flcVer(' + c.ID_CARGA + ')') + flBtn('btn-s', '🖨 PDF', 'flcPdfCarga(' + c.ID_CARGA + ')') + (!an && flPuede('EDITAR') ? flBtn('btn-s', '✏ Modificar', 'flcEditar(' + c.ID_CARGA + ')') : '') + (!an && flPuede('ANULAR') ? flBtn('btn-d', '⊘ Anular', 'flcAnular(' + c.ID_CARGA + ')') : '') + '</div></td></tr>'; }).join('')
+      : '<tr><td colspan="11" class="tc tdim" style="padding:14px">No hay cargas.</td></tr>') + '</tbody></table></div></div></div>';
+  $id('fl-body').innerHTML = h;
+  if (typeof gridPonerBotones_ === 'function') setTimeout(gridPonerBotones_, 30);
+}
+function flcCarga(id) { return FLC_.d.CARGAS.filter(function(c) { return c.ID_CARGA === id; })[0]; }
+async function flcGuardar() {
+  var o = { ID_EQUIPO: $v('flc-eq'), LITROS: $v('flc-lt'), KM: $v('flc-km'), LLENO: FLC_.N.lleno ? 1 : 0, ID_CHOFER: $v('flc-ch'), LUGAR: $v('flc-lu'), COMPROBANTE: $v('flc-co'), FECHA: Date.now() };
+  if (!o.ID_EQUIPO) { toast('Elegí la unidad', 'r2'); return; } if (!String(o.LITROS).trim()) { toast('Cargá los litros', 'r2'); return; } if (!String(o.KM).trim()) { toast('Cargá los km del camión', 'r2'); return; }
+  var u = FLC_.d.UNIDADES.filter(function(x) { return String(x.ID) === String(o.ID_EQUIPO); })[0], b = $id('flc-ok'); b.disabled = true;
+  try { var r = await flEnviar('gsFC_Cargar', o, 'Combustible ' + (u ? u.IDENT : '') + ': ' + o.LITROS + ' L con ' + o.KM + ' km');
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    if (r.COLA) { toast('📵 Sin señal: la carga quedó guardada en el celular y se envía sola', 'w'); ['flc-lt', 'flc-km', 'flc-lu', 'flc-co'].forEach(function(k) { $id(k).value = ''; }); return; }
+    toast('Carga ' + r.NRO + ' guardada ✓' + (r.L100 !== '' ? ' · ' + flcN(r.L100) + ' L/100 km en ' + flcN(r.KM_T, 0) + ' km' : ' · punto de partida de la unidad'), 'g');
+    if (r.AVISO) toast('⚠ ' + r.AVISO, 'r2');
+    await renderCombustible();
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
+}
+function flcVer(id) { var c = flcCarga(id); if (!c) return;
+  showModal('<div class="mh"><span class="mt">⛽ ' + pcEsc(c.NRO) + ' · ' + pcEsc(c.IDENT) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><table style="font-size:13.5px;width:100%">' +
+    [['Empresa', c.CLIENTE], ['Fecha', new Date(c.FECHA).toLocaleString('es-AR', { hour12: false })], ['Litros', flcN(c.LITROS) + (c.LLENO ? ' (tanque lleno)' : ' (carga parcial)')], ['Km del camión', flrN(c.KM)], ['Km del tramo', flcN(c.KM_T, 0)], ['Consumo del tramo', c.L100 === '' ? 'punto de partida' : flcN(c.L100) + ' L/100 km'], ['Chofer', c.CHOFER || '—'], ['Dónde cargó', c.LUGAR || '—'], ['Comprobante', c.COMPROBANTE || '—'], ['Cargó', c.USUARIO || '—'], ['Estado', c.ESTADO === 'VIGENTE' ? 'Vigente' : 'Anulada: ' + c.MOTIVO]].map(function(x) { return '<tr><td class="tdim" style="padding:4px 8px">' + x[0] + '</td><td style="padding:4px 8px"><b>' + pcEsc(String(x[1])) + '</b></td></tr>'; }).join('') +
+    '</table>' + (c.AVISO ? '<div class="al mt2">' + pcEsc(c.AVISO) + '</div>' : '') + '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>'); }
+function flcPdfCarga(id) { var c = flcCarga(id); if (!c) return;
+  pcImprimir(c.NRO, pcEncImp('Carga de combustible', c.NRO, c.CLIENTE) + '<div class="dat"><div><b>Unidad</b>' + pcEsc(c.IDENT) + '</div><div><b>Fecha</b>' + fmtD(c.FECHA) + '</div><div><b>Litros</b>' + flcN(c.LITROS) + '</div><div><b>Km</b>' + flrN(c.KM) + '</div><div><b>Km del tramo</b>' + flcN(c.KM_T, 0) + '</div><div><b>L/100 km</b>' + flcN(c.L100) + '</div><div><b>Chofer</b>' + pcEsc(c.CHOFER || '—') + '</div><div><b>Comprobante</b>' + pcEsc(c.COMPROBANTE || '—') + '</div></div>' + (c.AVISO ? '<div class="nota">' + pcEsc(c.AVISO) + '</div>' : '') + '<div class="firmas"><div>Chofer</div><div>Control</div></div>'); }
+function flcPdf() { var d = FLC_.d, F = FLC_.F;
+  var c = pcEncImp('Combustible de la flota', '', (F.desde ? 'Desde ' + F.desde : '') + (F.hasta ? ' hasta ' + F.hasta : '')) + '<h2>Consumo por unidad</h2><table class="det"><thead><tr><th>Empresa</th><th>Unidad</th><th class="n">Cargas</th><th class="n">Km</th><th class="n">Litros</th><th class="n">L/100 km</th><th class="n">Flota</th><th class="n">Dif.</th><th>Aviso</th></tr></thead><tbody>' +
+    d.RESUMEN.map(function(r) { return '<tr><td>' + pcEsc(r.CLIENTE) + '</td><td>' + pcEsc(r.IDENT) + '</td><td class="n">' + r.CARGAS + '</td><td class="n">' + flcN(r.KM, 0) + '</td><td class="n">' + flcN(r.LITROS) + '</td><td class="n">' + flcN(r.L100) + '</td><td class="n">' + flcN(r.FLOTA) + '</td><td class="n">' + (r.DIF_PCT === '' ? '' : r.DIF_PCT + '%') + '</td><td>' + pcEsc(r.AVISO) + '</td></tr>'; }).join('') + '</tbody></table>' +
+    '<h2>Cargas</h2><table class="det"><thead><tr><th>N°</th><th>Fecha</th><th>Unidad</th><th class="n">Litros</th><th class="n">Km</th><th class="n">Tramo</th><th class="n">L/100</th><th>Chofer</th><th>Aviso</th></tr></thead><tbody>' +
+    d.CARGAS.filter(function(x) { return x.ESTADO === 'VIGENTE'; }).map(function(x) { return '<tr><td>' + pcEsc(x.NRO) + '</td><td>' + fmtD(x.FECHA) + '</td><td>' + pcEsc(x.IDENT) + '</td><td class="n">' + flcN(x.LITROS) + '</td><td class="n">' + flrN(x.KM) + '</td><td class="n">' + flcN(x.KM_T, 0) + '</td><td class="n">' + flcN(x.L100) + '</td><td>' + pcEsc(x.CHOFER) + '</td><td>' + pcEsc(x.AVISO) + '</td></tr>'; }).join('') + '</tbody></table>';
+  pcImprimir('Combustible de la flota', c, true); }
+function flcEditar(id) { var c = flcCarga(id); if (!c) return; var d = FLC_.d;
+  showModal('<div class="mh"><span class="mt">✏ Modificar ' + pcEsc(c.NRO) + ' · ' + pcEsc(c.IDENT) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="fl-frm">' +
+    '<div><label class="fl">Litros *</label><input class="fi" id="flce-lt" inputmode="decimal" value="' + c.LITROS + '"></div><div><label class="fl">Km del camión *</label><input class="fi" id="flce-km" inputmode="numeric" value="' + c.KM + '"></div>' +
+    '<div><label class="fl">Chofer</label><select class="fs" id="flce-ch"><option value="">— sin chofer —</option>' + d.CHOFERES.filter(function(x) { var u = d.UNIDADES.filter(function(q) { return q.ID === c.ID_EQUIPO; })[0]; return u && x.C === u.ID_CLIENTE; }).map(function(x) { return '<option value="' + x.V + '"' + (x.V === c.ID_CHOFER ? ' selected' : '') + '>' + pcEsc(x.T) + '</option>'; }).join('') + '</select></div>' +
+    '<div><label class="fl">Dónde cargó</label><input class="fi" id="flce-lu" value="' + pcEsc(c.LUGAR) + '"></div><div><label class="fl">Comprobante</label><input class="fi" id="flce-co" value="' + pcEsc(c.COMPROBANTE) + '"></div>' +
+    '<div style="display:flex;align-items:end"><label style="display:flex;gap:8px;align-items:center;min-height:44px"><input type="checkbox" id="flce-ll" style="width:22px;height:22px"' + (c.LLENO ? ' checked' : '') + '> Llenó el tanque</label></div></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="flce-ok" onclick="flcEditarOk(' + id + ')">Guardar</button></div>'); }
+async function flcEditarOk(id) { var c = flcCarga(id), b = $id('flce-ok'); b.disabled = true;
+  try { var r = await gsRun('gsFC_Cargar', { ID_CARGA: id, ID_EQUIPO: c.ID_EQUIPO, FECHA: c.FECHA, LITROS: $v('flce-lt'), KM: $v('flce-km'), LLENO: $id('flce-ll').checked ? 1 : 0, ID_CHOFER: $v('flce-ch'), LUGAR: $v('flce-lu'), COMPROBANTE: $v('flce-co') });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Carga ' + r.NRO + ' corregida ✓', 'g'); await renderCombustible();
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; } }
+async function flcAnular(id) { var c = flcCarga(id); var m = await uiPedir('¿Por qué se anula la carga ' + c.NRO + '?', { obligatorio: true }); if (m === null) return;
+  try { var r = await gsRun('gsFC_Anular', { ID_CARGA: id, MOTIVO: m }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Carga anulada', 'g'); await renderCombustible(); } catch (e) { toast(e.message, 'r2'); } }
 </script>
 
 <script>
