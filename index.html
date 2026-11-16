@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d744c1283795"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7fae5ffb70b5"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1602,7 +1602,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611161200';
+var EMA_BUILD = '202611161300';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17057,22 +17057,25 @@ function mtPresEditorHtml() {
     '<div class="tw pc-abm mt-lin" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Clase</th><th>Descripción</th><th class="tr">Stock</th><th>Cant.</th><th class="tr">Precio s/IVA</th><th>Desc. %</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody>' + (rows || '<tr><td colspan="8" class="tc tdim" style="padding:14px">Sin renglones: agregá un servicio o un repuesto.</td></tr>') +
     mtPresPie(tot, MT_.dg, 6, '<td></td>') + '<td></td></tr></tbody></table></div>' +
     '<div class="fg mt2" style="max-width:260px"><label class="fl">Descuento general sobre el total (%)</label><input class="fi tr" id="mt-p-dg" inputmode="decimal" value="' + (Number(MT_.dg) || 0) + '" onchange="MT_.dg=parseFloat(this.value.replace(\',\',\'.\'))||0;mtOrdenVer()"></div>' +
+    (MT_.ord.EQUIPOS.length > 1 ? '<div class="fg mt2" style="max-width:320px"><label class="fl">Lo que agregues a mano va al equipo</label><select class="fs" id="mt-p-eq">' + MT_.ord.EQUIPOS.map(function(x) { return '<option value="' + x.ID_OE + '">' + pcEsc(mtEqIdent(mtEq(x.ID_EQUIPO))) + '</option>'; }).join('') + '</select></div>' : '') +
     '<div class="pc-fila3 mt2" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">' +
     '<div class="fg"><label class="fl">＋ Agregar servicio (con su receta)</label><select class="fs" onchange="mtPresAddServ(this.value);this.value=\'\'"><option value="">— elegí —</option>' + d.SERVICIOS.map(function(s) { return '<option value="' + s.ID_SERVICIO + '">' + pcEsc(s.SISTEMA + ' · ' + s.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
     '<div class="fg"><label class="fl">＋ Agregar repuesto, insumo o cubierta</label><input class="fi" list="mt-arts" placeholder="Escribí código o nombre" onchange="mtPresAddArt(this.value);this.value=\'\'"><datalist id="mt-arts">' + d.ARTS.filter(function(a) { return a.T !== 'SERVICIO'; }).map(function(a) { return '<option value="' + pcEsc(a.C + ' · ' + a.N) + '">' + pcEsc(mtPlata(a.P) + ' · stock ' + a.S) + '</option>'; }).join('') + '</datalist></div>' +
-    '<div class="fg"><button class="btn btn-s" onclick="MT_.lin.push({CLASE:\'TERCERO\',DESCRIPCION:\'Trabajo de tercero: \',CANTIDAD:1,PRECIO_LISTA:0,COSTO_UNIT:0,DESCUENTO_PCT:0});mtOrdenVer()">＋ Trabajo de tercero</button></div></div>' +
+    '<div class="fg"><button class="btn btn-s" onclick="MT_.lin.push({CLASE:\'TERCERO\',ID_OE:mtPresOe(),DESCRIPCION:\'Trabajo de tercero: \',CANTIDAD:1,PRECIO_LISTA:0,COSTO_UNIT:0,DESCUENTO_PCT:0});mtOrdenVer()">＋ Trabajo de tercero</button></div></div>' +
     '<div class="flex gap2 mt3"><button class="btn btn-s" onclick="MT_.lin=null;mtOrdenVer()">Cancelar</button><button class="btn btn-p" style="flex:1;min-height:48px" id="mt-p-ok" onclick="mtPresGuardar()">Guardar presupuesto</button></div>';
 }
+function mtPresOe() { var el = $id('mt-p-eq'); if (el) return Number(el.value) || ''; return MT_.ord.EQUIPOS.length === 1 ? MT_.ord.EQUIPOS[0].ID_OE : ''; }
+function mtPresEqTxt(oe) { var x = MT_.ord.EQUIPOS.filter(function(q) { return String(q.ID_OE) === String(oe); })[0]; return x ? ' — ' + mtEqIdent(mtEq(x.ID_EQUIPO)) : ''; }
 function mtPresAddServ(id) {
   var s = MT_.d.SERVICIOS.filter(function(x) { return String(x.ID_SERVICIO) === String(id); })[0]; if (!s) return;
-  if (s.CODIGO === 'TLR-TERCERO') { MT_.lin.push({ CLASE: 'TERCERO', ID_SERVICIO: s.ID_SERVICIO, DESCRIPCION: 'Trabajo de tercero: ', CANTIDAD: 1, PRECIO_LISTA: 0, COSTO_UNIT: 0, DESCUENTO_PCT: 0 }); mtOrdenVer(); return; }
-  MT_.lin.push({ CLASE: 'SERVICIO', ID_SERVICIO: s.ID_SERVICIO, ID_ARTICULO: s.ID_ARTICULO, DESCRIPCION: s.NOMBRE, CANTIDAD: 1, PRECIO_LISTA: s.PRECIO, DESCUENTO_PCT: 0, COSTO_UNIT: Math.round(s.HORAS * MT_.d.COSTO_HORA * 100) / 100 });
-  s.RECETA.forEach(function(r) { MT_.lin.push({ CLASE: 'REPUESTO', ID_SERVICIO: s.ID_SERVICIO, ID_ARTICULO: r.ID_ARTICULO, DESCRIPCION: r.NOMBRE, CANTIDAD: r.CANT, PRECIO_LISTA: r.PRECIO, DESCUENTO_PCT: 0, COSTO_UNIT: r.COSTO }); });
+  if (s.CODIGO === 'TLR-TERCERO') { MT_.lin.push({ CLASE: 'TERCERO', ID_OE: mtPresOe(), ID_SERVICIO: s.ID_SERVICIO, DESCRIPCION: 'Trabajo de tercero: ', CANTIDAD: 1, PRECIO_LISTA: 0, COSTO_UNIT: 0, DESCUENTO_PCT: 0 }); mtOrdenVer(); return; }
+  var oe = mtPresOe(); MT_.lin.push({ CLASE: 'SERVICIO', ID_OE: oe, ID_SERVICIO: s.ID_SERVICIO, ID_ARTICULO: s.ID_ARTICULO, DESCRIPCION: s.NOMBRE + mtPresEqTxt(oe), CANTIDAD: 1, PRECIO_LISTA: s.PRECIO, DESCUENTO_PCT: 0, COSTO_UNIT: Math.round(s.HORAS * MT_.d.COSTO_HORA * 100) / 100 });
+  s.RECETA.forEach(function(r) { MT_.lin.push({ CLASE: 'REPUESTO', ID_OE: oe, ID_SERVICIO: s.ID_SERVICIO, ID_ARTICULO: r.ID_ARTICULO, DESCRIPCION: r.NOMBRE, CANTIDAD: r.CANT, PRECIO_LISTA: r.PRECIO, DESCUENTO_PCT: 0, COSTO_UNIT: r.COSTO }); });
   mtOrdenVer();
 }
 function mtPresAddArt(v) {
   var c = String(v || '').split(' · ')[0], a = MT_.d.ARTS.filter(function(x) { return x.C === c; })[0]; if (!a) { if (v) toast('No encontré ese artículo en la lista vigente', 'r2'); return; }
-  MT_.lin.push({ CLASE: /QUIMICOS/.test(a.R) ? 'INSUMO' : 'REPUESTO', ID_ARTICULO: a.I, DESCRIPCION: a.N, CANTIDAD: 1, PRECIO_LISTA: a.P, DESCUENTO_PCT: 0 }); mtOrdenVer();
+  MT_.lin.push({ CLASE: /QUIMICOS/.test(a.R) ? 'INSUMO' : 'REPUESTO', ID_OE: mtPresOe(), ID_ARTICULO: a.I, DESCRIPCION: a.N, CANTIDAD: 1, PRECIO_LISTA: a.P, DESCUENTO_PCT: 0 }); mtOrdenVer();
 }
 async function mtPresGuardar() {
   var b = $id('mt-p-ok'); b.disabled = true;
