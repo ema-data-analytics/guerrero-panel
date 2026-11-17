@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611171700';
+var EMA_BUILD = '202611171712';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -18032,7 +18032,9 @@ function flmMapa() {
     ventana('Cubiertas en taller (recapado)', selTal, 'TALLER', enTal(FLM_.vTal), FLM_.vTal, 'Arrastrá acá la que va a recapar. Cuando vuelve, arrastrala al depósito.') +
     '<div class="card"><div class="card-body" style="display:flex;gap:6px;flex-wrap:wrap">' + flBtn('btn-s', '📋 Relevar rueda por rueda', 'flmRelevar()') + flBtn('btn-s', '🖨 Imprimir', 'flmImprimir()') + '</div></div></div>';
   var banO = FLM_.orden ? '<div class="al mb2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fef3c7;border-color:#f59e0b"><b>Trabajando con la orden ' + pcEsc(FLM_.orden.NRO) + '</b><span class="tdim">cada movimiento queda cargado a esta orden y se cobra al cerrarla</span>' + flBtn('btn-s', '← Volver a la orden', 'flpVolverOrden()') + '</div>' :
-    (FLM_.d && FLM_.d.UNIDAD ? '<div class="al mb2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#f1f5f9;border-color:#94a3b8"><b>Sin orden</b><span class="tdim">lo que cargues queda en la unidad, pero no en un trabajo ni se cobra. Para un trabajo nuevo (montaje, rotación, alineado, balanceo) abrí primero la orden.</span>' + flBtn('btn-p', '＋ Abrir orden en campo para ' + pcEsc(FLM_.d.UNIDAD.IDENT), 'flmAbrirOrden()') + '</div>' : '');
+    (FLM_.d && FLM_.d.UNIDAD ? '<div class="al mb2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#f1f5f9;border-color:#94a3b8">' + ((FLM_.d.UNIDAD.MONT || []).length ?
+      '<b>Mapa de la unidad (sin orden)</b><span class="tdim">Esta unidad ya tiene su mapa. Cada trabajo nuevo (montaje, rotación, alineado, balanceo, reparación) va con su orden: abrila acá y desde la orden se vuelve a este mapa. Lo que cargues sin orden no queda en ningún trabajo ni se cobra.</span>' :
+      '<b>Primera carga de la unidad</b><span class="tdim">Tocá cada rueda y dá de alta la cubierta que tiene (o «📋 Relevar rueda por rueda»). Para registrar lo que ya tenía no hace falta orden. Si esas cubiertas las pusieron ustedes, es un trabajo: abrí primero la orden.</span>') + flBtn('btn-p', '＋ Abrir orden en campo para ' + pcEsc(FLM_.d.UNIDAD.IDENT), 'flmAbrirOrden()') + '</div>' : '');
   var banS = FLM_.offline ? '<div class="al mb2" style="background:#fee2e2;border-color:#ef4444"><b>📵 Sin señal</b> · mostrando el mapa guardado ' + (FLM_.offline > 1 ? 'el ' + new Date(FLM_.offline).toLocaleString('es-AR', { hour12: false }) : '') + '. Lo que cargues queda en el celular y se envía solo cuando vuelva la señal.</div>' : '';
   $id('flm-body').innerHTML = banS + banO + '<div class="flm-g"><div>' + izq + '</div>' + der + '</div>' +
     '<div class="tdim" style="font-size:12px;margin-top:6px">Colores: <span style="background:#bbf7d0;padding:0 6px">bien</span> <span style="background:#fde68a;padding:0 6px">observar</span> <span style="background:#fecaca;padding:0 6px">sacar</span> <span style="background:#e0f2fe;padding:0 6px">sin medir</span> · línea punteada = posición vacía · eje punteado = flotante</div>';
@@ -18254,7 +18256,8 @@ async function flmDeshacer(idMov) { var m = await uiPedir('Deshacer este movimie
 // Abrir una orden en campo para la unidad del mapa: cliente y unidad ya elegidos
 async function flmAbrirOrden() {
   var u = FLM_.d && FLM_.d.UNIDAD; if (!u) return; var cli = String(u.ID_CLIENTE || ''), eq = String(u.ID);
-  FL_.t = 'planes'; await renderFlota(); await flpNuevo(); if (!cli) return; await flpNuevoCli(cli);
+  if (FLM_._abriendo) return; FLM_._abriendo = 1; toast('Abriendo la orden…', 'g');
+  try { FL_.t = 'planes'; await renderFlota(); flpSinModales(); await flpNuevo(); if (!cli) return; await flpNuevoCli(cli); } finally { FLM_._abriendo = 0; }
   var s = $id('flp-l-eq'); if (s) { s.value = eq; flpLineaCambio(); }
 }
 async function flmImprimir() {
