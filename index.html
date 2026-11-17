@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a6dfcd4d458c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "233e8ae555a7"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611171830';
+var EMA_BUILD = '202611171900';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -18952,7 +18952,7 @@ function fprBloque(o, ps, vuelta, opt) {
     var tot = p.TOTAL, f = p.FACTURA;
     h += '<div class="card mt2" style="border:1.5px solid ' + (p.ESTADO === 'APROBADO' ? '#86efac' : '#cbd5e1') + '"><div class="card-body" style="padding:10px">' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><b>' + fprTit(p) + '</b><span class="mono tdim">' + pcEsc(p.NRO) + '</span>' + fprBd(p.ESTADO) + '<b style="margin-left:auto">' + fprPlata(tot) + ' <span class="tdim" style="font-weight:400;font-size:11px">sin IVA</span></b></div>' +
-      '<div class="tw mt2"><table style="font-size:12.5px"><thead><tr><th>Qué</th><th class="tr">Cant.</th><th class="tr">Precio</th><th class="tr">Subtotal</th></tr></thead><tbody>' +
+      '<div class="tw mt2" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Qué</th><th class="tr">Cant.</th><th class="tr">Precio</th><th class="tr">Subtotal</th></tr></thead><tbody>' +
       p.DET.map(function(d) { return '<tr><td>' + pcEsc(d.DESCRIPCION) + (d.CLASE === 'MANUAL' ? ' <span class="tdim" style="font-size:11px">(a mano)</span>' : '') + (d.CLASE === 'CLIENTE' ? ' <span class="tdim" style="font-size:11px">(lo trae el cliente)</span>' : '') + '</td><td class="tr">' + String(d.CANTIDAD).replace('.', ',') + '</td><td class="tr">' + fprPlata(d.PRECIO_UNIT) + '</td><td class="tr">' + fprPlata(d.SUBTOTAL) + '</td></tr>'; }).join('') +
       (p.DESCUENTO_PCT ? '<tr><td colspan="3" class="tr">Descuento general ' + String(p.DESCUENTO_PCT).replace('.', ',') + '%</td><td></td></tr>' : '') + '</tbody></table></div>' +
       '<div class="tdim" style="font-size:12px;margin-top:4px">' + fmtD(p.FECHA) + ' · versión ' + p.VERSION + (p.APROBADO_POR ? ' · aprobó <b>' + pcEsc(p.APROBADO_POR) + '</b> (' + pcEsc(p.MEDIO) + ') ' + fmtD(p.FECHA_APROB) : '') + (p.MOTIVO ? ' · ' + pcEsc(p.MOTIVO) : '') + (f ? ' · <b style="color:#166534">' + pcEsc(f.TXT) + '</b>' : '') + '</div>';
@@ -19014,13 +19014,13 @@ async function fprAddManual() {
 }
 function fprTabla() {
   var c = FPR_.cat, multi = c.EQUIPOS.length > 1, tot = 0;
-  var h = '<div class="tw"><table style="font-size:13px"><thead><tr><th>Qué</th>' + (multi ? '<th>Unidad</th>' : '') + '<th style="width:80px">Cant.</th><th style="width:120px">Precio s/IVA</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody>' +
+  var h = '<div class="tw" data-noimp="1"><table style="font-size:13px"><thead><tr><th style="min-width:180px">Qué</th>' + (multi ? '<th>Unidad</th>' : '') + '<th style="width:80px">Cant.</th><th style="width:120px">Precio s/IVA</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody>' +
     (FPR_.lin.length ? FPR_.lin.map(function(l, i) { var sub = Math.round(fprNum(l.CANTIDAD) * fprNum(l.PRECIO_UNIT) * 100) / 100; tot += sub;
-      return '<tr><td>' + (l.CLASE === 'MANUAL' ? '<input class="fi" value="' + pcEsc(l.DESCRIPCION) + '" oninput="FPR_.lin[' + i + '].DESCRIPCION=this.value">' : pcEsc(l.DESCRIPCION)) + '</td>' +
+      return '<tr><td>' + (l.CLASE === 'MANUAL' ? '<textarea class="fi" rows="2" style="width:100%;min-width:170px" oninput="FPR_.lin[' + i + '].DESCRIPCION=this.value">' + pcEsc(l.DESCRIPCION) + '</textarea>' : pcEsc(l.DESCRIPCION)) + '</td>' +
         (multi ? '<td><select class="fs" onchange="FPR_.lin[' + i + '].ID_OE=this.value">' + c.EQUIPOS.map(function(e) { return '<option value="' + e.ID_OE + '"' + (String(e.ID_OE) === String(l.ID_OE) ? ' selected' : '') + '>' + pcEsc(e.IDENT) + '</option>'; }).join('') + '</select></td>' : '') +
         '<td><input class="fi" inputmode="decimal" value="' + String(l.CANTIDAD).replace('.', ',') + '" onchange="FPR_.lin[' + i + '].CANTIDAD=fprNum(this.value);fprTabla()"></td>' +
         '<td><input class="fi" inputmode="decimal" value="' + String(l.PRECIO_UNIT).replace('.', ',') + '" onchange="FPR_.lin[' + i + '].PRECIO_UNIT=fprNum(this.value);fprTabla()"' + (fprNum(l.PRECIO_UNIT) <= 0 && l.CLASE !== 'CLIENTE' ? ' style="border-color:#dc2626;background:#fef2f2" placeholder="poné el precio"' : '') + '></td>' +
-        '<td class="tr">' + fprPlata(sub) + '</td><td>' + flBtn('btn-d', '✖', 'FPR_.lin.splice(' + i + ',1);fprTabla()', 'Sacar') + '</td></tr>'; }).join('') : '<tr><td colspan="6" class="tdim tc" style="padding:12px">Todavía no hay renglones: agregá servicios, repuestos o un renglón a mano.</td></tr>') +
+        '<td class="tr">' + fprPlata(sub) + '</td><td><button class="btn btn-d btn-xs" title="Sacar este renglón" onclick="FPR_.lin.splice(' + i + ',1);fprTabla()">✖</button></td></tr>'; }).join('') : '<tr><td colspan="6" class="tdim tc" style="padding:12px">Todavía no hay renglones: agregá servicios, repuestos o un renglón a mano.</td></tr>') +
     '</tbody></table></div>' +
     '<div style="display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:8px"><label class="fl" style="margin:0">Descuento general %</label><input class="fi" inputmode="decimal" style="width:90px" value="' + String(FPR_.dg || 0).replace('.', ',') + '" onchange="FPR_.dg=fprNum(this.value);fprTabla()">' +
     '<b style="font-size:16px">Total ' + fprPlata(Math.round(tot * (1 - (FPR_.dg || 0) / 100) * 100) / 100) + '</b> <span class="tdim" style="font-size:12px">sin IVA</span></div>';
