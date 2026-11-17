@@ -317,12 +317,11 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-herramental"><span class="nav-icon"><i class="fas fa-life-ring"></i></span> Herramental del autoclave</div>
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-equipos"><span class="nav-icon"><i class="fas fa-tools"></i></span> Herramientas de las estaciones</div>
       </div></div>
-      <div class="sb-grp" data-g="tll"><div class="sb-gh" onclick="menuGrupo('tll')"><span class="sb-gi-ic">🔧</span><span class="sb-gt">Taller mecánico</span><span class="sb-car">›</span></div><div class="sb-gl">
-        <div class="nav-item" data-page="taller" data-acc="mt-ord"><span class="nav-icon"><i class="fas fa-wrench"></i></span> Órdenes del taller (clientes)</div>
-        <div class="nav-item" data-page="taller" data-acc="mt-cat"><span class="nav-icon"><i class="fas fa-list-ul"></i></span> Servicios y recetas del taller</div>
-      </div></div>
-      <div class="sb-grp" data-g="flo"><div class="sb-gh" onclick="menuGrupo('flo')"><span class="sb-gi-ic">🚛</span><span class="sb-gt">Servicios a empresas y flota</span><span class="sb-car">›</span></div><div class="sb-gl">
-        <div class="sb-group">Día a día</div>
+      <div class="sb-grp" data-g="flo"><div class="sb-gh" onclick="menuGrupo('flo')"><span class="sb-gi-ic">🚛</span><span class="sb-gt">Servicios a empresas: taller y flota</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="sb-group">Taller</div>
+        <div class="nav-item" data-page="taller" data-acc="mt-ord"><span class="nav-icon"><i class="fas fa-wrench"></i></span> Órdenes del taller (mecánica, electricidad, electrónica)</div>
+        <div class="nav-item" data-page="taller" data-acc="mt-cat"><span class="nav-icon"><i class="fas fa-list-ul"></i></span> Catálogo de servicios del taller</div>
+        <div class="sb-group">Flota y cubiertas</div>
         <div class="nav-item" data-page="flota" data-acc="fl-mapa"><span class="nav-icon"><i class="fas fa-dharmachakra"></i></span> Mapa de cubiertas</div>
         <div class="nav-item" data-page="flota" data-acc="fl-preventivo"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Control preventivo</div>
         <div class="nav-item" data-page="flota" data-acc="fl-planes"><span class="nav-icon"><i class="fas fa-truck-pickup"></i></span> Órdenes en campo</div>
@@ -1688,7 +1687,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611171452';
+var EMA_BUILD = '202611171515';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16918,8 +16917,8 @@ function mtBadge(e) { var x = MT_EST[e] || ['mt-b-x', e || '—']; return '<span
 function mtPlata(n) { return '$ ' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function mtBtn(cls, txt, js, tit) { return typeof pcBtnAbm === 'function' ? pcBtnAbm(cls, txt, js, tit) : '<button class="btn ' + cls + ' btn-xs" onclick="' + js + '">' + txt + '</button>'; }
 function mtPuede(acc) { return typeof tienePermiso === 'function' ? tienePermiso('VENTAS', acc) : true; }
-function mtTit() { return { ord: MT_.amb === 'planta' ? 'Órdenes de reparación de máquinas propias' : 'Órdenes del taller (clientes)', eq: 'Unidades y máquinas', cat: 'Servicios y recetas del taller', mp: 'Mantenimiento de máquinas de planta' }[MT_.vista] || 'Taller'; }
-function mtGrupo() { return MT_.vista === 'mp' || MT_.amb === 'planta' && MT_.vista === 'ord' ? 'Planta' : (MT_.vista === 'eq' ? 'Servicios a empresas y flota' : 'Taller mecánico'); }
+function mtTit() { return { ord: MT_.amb === 'planta' ? 'Órdenes de reparación de máquinas propias' : 'Órdenes del taller (clientes)', eq: 'Unidades y máquinas', cat: 'Catálogo de servicios del taller', mp: 'Mantenimiento de máquinas de planta' }[MT_.vista] || 'Taller'; }
+function mtGrupo() { return MT_.vista === 'mp' || MT_.amb === 'planta' && MT_.vista === 'ord' ? 'Planta' : 'Servicios a empresas: taller y flota'; }
 async function renderTaller() {
   var el = $id('page-taller'); if (!el) return;
   if (window._menuAcc && String(window._menuAcc).indexOf('mt-') === 0) { MT_.vista = String(window._menuAcc).substring(3); MT_.amb = MT_.vista === 'mp' ? 'planta' : (MT_.vista === 'ord' ? 'cli' : (MT_.amb || 'cli')); MT_.nueva = false; MT_.ord = null; MT_.oe = null; MT_.eqNuevo = false; window._menuAcc = ''; }
@@ -17222,7 +17221,7 @@ function mtPresEditorHtml() {
     '<div class="fg mt2" style="max-width:260px"><label class="fl">Descuento general sobre el total (%)</label><input class="fi tr" id="mt-p-dg" inputmode="decimal" value="' + (Number(MT_.dg) || 0) + '" onchange="MT_.dg=parseFloat(this.value.replace(\',\',\'.\'))||0;mtOrdenVer()"></div>' +
     (MT_.ord.EQUIPOS.length > 1 ? '<div class="fg mt2" style="max-width:320px"><label class="fl">Lo que agregues a mano va al equipo</label><select class="fs" id="mt-p-eq">' + MT_.ord.EQUIPOS.map(function(x) { return '<option value="' + x.ID_OE + '">' + pcEsc(mtEqIdent(mtEq(x.ID_EQUIPO))) + '</option>'; }).join('') + '</select></div>' : '') +
     '<div class="pc-fila3 mt2" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">' +
-    '<div class="fg"><label class="fl">＋ Agregar servicio (con su receta)</label><select class="fs" onchange="mtPresAddServ(this.value);this.value=\'\'"><option value="">— elegí —</option>' + d.SERVICIOS.map(function(s) { return '<option value="' + s.ID_SERVICIO + '">' + pcEsc(s.SISTEMA + ' · ' + s.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">＋ Agregar servicio (con sus repuestos)</label><select class="fs" onchange="mtPresAddServ(this.value);this.value=\'\'"><option value="">— elegí —</option>' + d.SERVICIOS.map(function(s) { return '<option value="' + s.ID_SERVICIO + '">' + pcEsc(s.SISTEMA + ' · ' + s.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
     '<div class="fg"><label class="fl">＋ Agregar repuesto, insumo o cubierta</label><input class="fi" list="mt-arts" placeholder="Escribí código o nombre" onchange="mtPresAddArt(this.value);this.value=\'\'"><datalist id="mt-arts">' + d.ARTS.filter(function(a) { return a.T !== 'SERVICIO'; }).map(function(a) { return '<option value="' + pcEsc(a.C + ' · ' + a.N) + '">' + pcEsc(mtPlata(a.P) + ' · stock ' + a.S) + '</option>'; }).join('') + '</datalist></div>' +
     '<div class="fg"><button class="btn btn-s" onclick="MT_.lin.push({CLASE:\'TERCERO\',ID_OE:mtPresOe(),DESCRIPCION:\'Trabajo de tercero: \',CANTIDAD:1,PRECIO_LISTA:0,COSTO_UNIT:0,DESCUENTO_PCT:0});mtOrdenVer()">＋ Trabajo de tercero</button></div></div>' +
     '<div class="flex gap2 mt3"><button class="btn btn-s" onclick="MT_.lin=null;mtOrdenVer()">Cancelar</button><button class="btn btn-p" style="flex:1;min-height:48px" id="mt-p-ok" onclick="mtPresGuardar()">Guardar presupuesto</button></div>';
@@ -17498,8 +17497,8 @@ function mtEqFormPagina() { MT_.eqNuevo = false; mtEquipos(); }
 function mtCatalogo() {
   var d = MT_.d, F = MT_.FC = MT_.FC || { q: '', sis: '' };
   var sis = {}; d.SERVICIOS.forEach(function(s) { sis[s.SISTEMA] = 1; });
-  $id('mt-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">Servicios del taller y su receta</span></div><div class="card-body">' +
-    '<div class="tdim mb2" style="font-size:12.5px">Tarifa de venta: <b>' + mtPlata(d.TARIFA) + '</b> la hora (sin IVA)' + (d.VE_COSTO ? ' · costo hora del mecánico: <b>' + mtPlata(d.COSTO_HORA) + '</b> (' + pcEsc(d.COSTO_HORA_TXT) + ')' : '') + ' · precios de la lista ' + pcEsc(d.LISTA) + '. Los precios se cambian en «Lista de precios»; las recetas, en la configuración del taller.</div>' +
+  $id('mt-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">Catálogo de servicios del taller</span></div><div class="card-body">' +
+    '<div class="tdim mb2" style="font-size:12.5px">Tarifa de venta: <b>' + mtPlata(d.TARIFA) + '</b> la hora (sin IVA)' + (d.VE_COSTO ? ' · costo hora del mecánico: <b>' + mtPlata(d.COSTO_HORA) + '</b> (' + pcEsc(d.COSTO_HORA_TXT) + ')' : '') + ' · precios de la lista ' + pcEsc(d.LISTA) + '. Los precios se cambian en «Lista de precios»; los repuestos e insumos de cada servicio, en la configuración del taller.</div>' +
     '<div class="pc-otf"><div class="fg" style="grid-column:span 4"><label class="fl">Buscar</label><input class="fi" placeholder="Servicio o repuesto" value="' + pcEsc(F.q) + '" oninput="MT_.FC.q=this.value;mtCatGrilla()"></div>' +
     '<div class="fg" style="grid-column:span 2"><label class="fl">Sistema</label><select class="fs" onchange="MT_.FC.sis=this.value;mtCatGrilla()">' + mtOpt([['', 'Todos']].concat(Object.keys(sis).sort().map(function(s) { return [s, s]; })), F.sis) + '</select></div></div><div id="mt-cg" class="mt2"></div></div></div>';
   mtCatGrilla();
@@ -17508,7 +17507,7 @@ function mtCatGrilla() {
   var d = MT_.d, F = MT_.FC, el = $id('mt-cg'); if (!el) return;
   var q = String(F.q || '').toUpperCase().trim();
   var l = d.SERVICIOS.filter(function(s) { if (F.sis && s.SISTEMA !== F.sis) return false; if (q && (s.NOMBRE + ' ' + s.CODIGO + ' ' + s.RECETA.map(function(r) { return r.NOMBRE; }).join(' ')).toUpperCase().indexOf(q) === -1) return false; return true; });
-  el.innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> servicios</div><div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Código</th><th>Sistema</th><th>Servicio</th><th class="tr">Horas</th><th class="tr">Mano de obra</th><th>Repuestos de la receta</th><th class="tr">Total sugerido</th></tr></thead><tbody>' +
+  el.innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> servicios</div><div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Código</th><th>Sistema</th><th>Servicio</th><th class="tr">Horas</th><th class="tr">Mano de obra</th><th>Repuestos e insumos que usa</th><th class="tr">Total sugerido</th></tr></thead><tbody>' +
     l.map(function(s) { var rt = 0; s.RECETA.forEach(function(r) { rt += r.PRECIO * r.CANT; });
       return '<tr><td class="mono">' + pcEsc(s.CODIGO) + '</td><td>' + pcEsc(s.SISTEMA) + '</td><td class="pc-wr"><b>' + pcEsc(s.NOMBRE) + '</b></td><td class="tr">' + s.HORAS + '</td><td class="tr">' + mtPlata(s.PRECIO) + '</td><td class="pc-wr">' + (s.RECETA.length ? s.RECETA.map(function(r) { return r.CANT + ' × ' + pcEsc(r.NOMBRE) + ' <span class="tdim">' + mtPlata(r.PRECIO) + (r.STOCK > 0 ? '' : ' · sin stock') + '</span>'; }).join('<br>') : '<span class="tdim">—</span>') + '</td><td class="tr"><b>' + mtPlata(s.PRECIO + rt) + '</b></td></tr>'; }).join('') + '</tbody></table></div>';
 }
