@@ -317,10 +317,13 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-herramental"><span class="nav-icon"><i class="fas fa-life-ring"></i></span> Herramental del autoclave</div>
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-equipos"><span class="nav-icon"><i class="fas fa-tools"></i></span> Herramientas de las estaciones</div>
       </div></div>
-      <div class="sb-grp" data-g="flo"><div class="sb-gh" onclick="menuGrupo('flo')"><span class="sb-gi-ic">🚛</span><span class="sb-gt">Servicios a empresas: taller y flota</span><span class="sb-car">›</span></div><div class="sb-gl">
-        <div class="sb-group">Taller</div>
-        <div class="nav-item" data-page="taller" data-acc="mt-ord"><span class="nav-icon"><i class="fas fa-wrench"></i></span> Órdenes del taller (mecánica, electricidad, electrónica)</div>
+      <div class="sb-grp" data-g="tll"><div class="sb-gh" onclick="menuGrupo('tll')"><span class="sb-gi-ic">🔧</span><span class="sb-gt">Taller</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="taller" data-acc="mt-ord"><span class="nav-icon"><i class="fas fa-wrench"></i></span> Órdenes de trabajo del taller</div>
         <div class="nav-item" data-page="taller" data-acc="mt-cat"><span class="nav-icon"><i class="fas fa-list-ul"></i></span> Catálogo de servicios del taller</div>
+      </div></div>
+      <div class="sb-grp" data-g="flo"><div class="sb-gh" onclick="menuGrupo('flo')"><span class="sb-gi-ic">🚛</span><span class="sb-gt">Servicios a empresas</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="sb-group">Taller</div>
+        <div class="nav-item" data-page="taller" data-acc="mt-ord"><span class="nav-icon"><i class="fas fa-wrench"></i></span> Órdenes de trabajo del taller</div>
         <div class="sb-group">Flota y cubiertas</div>
         <div class="nav-item" data-page="flota" data-acc="fl-mapa"><span class="nav-icon"><i class="fas fa-dharmachakra"></i></span> Mapa de cubiertas</div>
         <div class="nav-item" data-page="flota" data-acc="fl-preventivo"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Control preventivo</div>
@@ -1687,7 +1690,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611171515';
+var EMA_BUILD = '202611171517';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -16918,7 +16921,7 @@ function mtPlata(n) { return '$ ' + Number(n || 0).toLocaleString('es-AR', { min
 function mtBtn(cls, txt, js, tit) { return typeof pcBtnAbm === 'function' ? pcBtnAbm(cls, txt, js, tit) : '<button class="btn ' + cls + ' btn-xs" onclick="' + js + '">' + txt + '</button>'; }
 function mtPuede(acc) { return typeof tienePermiso === 'function' ? tienePermiso('VENTAS', acc) : true; }
 function mtTit() { return { ord: MT_.amb === 'planta' ? 'Órdenes de reparación de máquinas propias' : 'Órdenes del taller (clientes)', eq: 'Unidades y máquinas', cat: 'Catálogo de servicios del taller', mp: 'Mantenimiento de máquinas de planta' }[MT_.vista] || 'Taller'; }
-function mtGrupo() { return MT_.vista === 'mp' || MT_.amb === 'planta' && MT_.vista === 'ord' ? 'Planta' : 'Servicios a empresas: taller y flota'; }
+function mtGrupo() { return MT_.vista === 'mp' || MT_.amb === 'planta' && MT_.vista === 'ord' ? 'Planta' : (MT_.vista === 'eq' ? 'Servicios a empresas' : 'Taller'); }
 async function renderTaller() {
   var el = $id('page-taller'); if (!el) return;
   if (window._menuAcc && String(window._menuAcc).indexOf('mt-') === 0) { MT_.vista = String(window._menuAcc).substring(3); MT_.amb = MT_.vista === 'mp' ? 'planta' : (MT_.vista === 'ord' ? 'cli' : (MT_.amb || 'cli')); MT_.nueva = false; MT_.ord = null; MT_.oe = null; MT_.eqNuevo = false; window._menuAcc = ''; }
