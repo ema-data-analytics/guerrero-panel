@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611171519';
+var EMA_BUILD = '202611171700';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -18031,7 +18031,8 @@ function flmMapa() {
       selL && deps.length > 1 ? '<div class="mt2">' + flBtn('btn-s', '⇄ Pasar ' + pcEsc(selL.MARCA) + ' a otro depósito', 'flmAccion(\'TRANSFERENCIA\',' + selL.ID + ')') + '</div>' : '') +
     ventana('Cubiertas en taller (recapado)', selTal, 'TALLER', enTal(FLM_.vTal), FLM_.vTal, 'Arrastrá acá la que va a recapar. Cuando vuelve, arrastrala al depósito.') +
     '<div class="card"><div class="card-body" style="display:flex;gap:6px;flex-wrap:wrap">' + flBtn('btn-s', '📋 Relevar rueda por rueda', 'flmRelevar()') + flBtn('btn-s', '🖨 Imprimir', 'flmImprimir()') + '</div></div></div>';
-  var banO = FLM_.orden ? '<div class="al mb2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fef3c7;border-color:#f59e0b"><b>Trabajando con la orden ' + pcEsc(FLM_.orden.NRO) + '</b><span class="tdim">cada movimiento queda cargado a esta orden y se cobra al cerrarla</span>' + flBtn('btn-s', '← Volver a la orden', 'flpVolverOrden()') + '</div>' : '';
+  var banO = FLM_.orden ? '<div class="al mb2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fef3c7;border-color:#f59e0b"><b>Trabajando con la orden ' + pcEsc(FLM_.orden.NRO) + '</b><span class="tdim">cada movimiento queda cargado a esta orden y se cobra al cerrarla</span>' + flBtn('btn-s', '← Volver a la orden', 'flpVolverOrden()') + '</div>' :
+    (FLM_.d && FLM_.d.UNIDAD ? '<div class="al mb2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#f1f5f9;border-color:#94a3b8"><b>Sin orden</b><span class="tdim">lo que cargues queda en la unidad, pero no en un trabajo ni se cobra. Para un trabajo nuevo (montaje, rotación, alineado, balanceo) abrí primero la orden.</span>' + flBtn('btn-p', '＋ Abrir orden en campo para ' + pcEsc(FLM_.d.UNIDAD.IDENT), 'flmAbrirOrden()') + '</div>' : '');
   var banS = FLM_.offline ? '<div class="al mb2" style="background:#fee2e2;border-color:#ef4444"><b>📵 Sin señal</b> · mostrando el mapa guardado ' + (FLM_.offline > 1 ? 'el ' + new Date(FLM_.offline).toLocaleString('es-AR', { hour12: false }) : '') + '. Lo que cargues queda en el celular y se envía solo cuando vuelva la señal.</div>' : '';
   $id('flm-body').innerHTML = banS + banO + '<div class="flm-g"><div>' + izq + '</div>' + der + '</div>' +
     '<div class="tdim" style="font-size:12px;margin-top:6px">Colores: <span style="background:#bbf7d0;padding:0 6px">bien</span> <span style="background:#fde68a;padding:0 6px">observar</span> <span style="background:#fecaca;padding:0 6px">sacar</span> <span style="background:#e0f2fe;padding:0 6px">sin medir</span> · línea punteada = posición vacía · eje punteado = flotante</div>';
@@ -18250,8 +18251,25 @@ function flmVidaHtml(r, conBoton) {
 function flmVidaPdf() { var r = FLM_.vida; pcImprimir('Vida ' + r.C.MARCA, (typeof pcEncImp === 'function' ? pcEncImp('Vida de la cubierta', r.C.MARCA, 'DOT ' + (r.C.DOT || '—')) : '') + flmVidaHtml(r, false)); }
 async function flmDeshacer(idMov) { var m = await uiPedir('Deshacer este movimiento. ¿Por qué?', { obligatorio: true }); if (m === null) return;
   var r = await gsRun('gsCB_MovAnular', { ID_MOV: idMov, MOTIVO: m }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Deshecho ✓', 'g'); FLM_.sel = null; await flmCargar(FLM_.eq); }
-function flmImprimir() {
-  var d = FLM_.d, c = (typeof pcEncImp === 'function' ? pcEncImp('Mapa de cubiertas', d.UNIDAD.IDENT, (d.UNIDAD.MARCA + ' ' + d.UNIDAD.MODELO).trim()) : '');
+// Abrir una orden en campo para la unidad del mapa: cliente y unidad ya elegidos
+async function flmAbrirOrden() {
+  var u = FLM_.d && FLM_.d.UNIDAD; if (!u) return; var cli = String(u.ID_CLIENTE || ''), eq = String(u.ID);
+  FL_.t = 'planes'; await renderFlota(); await flpNuevo(); if (!cli) return; await flpNuevoCli(cli);
+  var s = $id('flp-l-eq'); if (s) { s.value = eq; flpLineaCambio(); }
+}
+async function flmImprimir() {
+  var d = FLM_.d, o = FLM_.orden, P = null;
+  if (o) { try { P = await gsRun('gsMT_Plan', o.ID); } catch (e) { P = null; } if (P && !P.ok) P = null; }
+  var hoy = new Date().toLocaleDateString('es-AR');
+  var c = (typeof pcEncImp === 'function' ? pcEncImp(o ? 'Mapa de cubiertas · Orden ' + o.NRO : 'Mapa de cubiertas', d.UNIDAD.IDENT, (d.UNIDAD.MARCA + ' ' + d.UNIDAD.MODELO).trim()) : '');
+  if (P) { var O = P.O, S = P.SALIDA;
+    c += '<div style="border:2px solid #14213d;border-radius:8px;padding:8px 10px;margin:6px 0 10px"><b style="font-size:15px">Trabajo: orden ' + pcEsc(O.NRO) + '</b> · ' + pcEsc(O.ESTADO.replace('_', ' ').toLowerCase()) +
+      '<div style="font-size:12.5px;margin-top:3px">Cliente: <b>' + pcEsc(O.CLIENTE) + '</b>' + (O.BASE ? ' · Base: ' + pcEsc(O.BASE) : '') + (O.CONTACTO ? ' · Pidió: ' + pcEsc(O.CONTACTO) : '') + ' · Fecha programada: ' + (O.FECHA_PROG ? new Date(O.FECHA_PROG).toLocaleDateString('es-AR') : '—') +
+      (S ? '<br>Salida ' + pcEsc(S.NRO) + ': ' + (S.FECHA ? new Date(S.FECHA).toLocaleString('es-AR', { hour12: false }) : '') + (S.REGRESO ? ' · regreso ' + new Date(S.REGRESO).toLocaleString('es-AR', { hour12: false }) : '') + (S.RESP ? ' · responsable ' + pcEsc(S.RESP) : '') + (S.VEH ? ' · vehículo ' + pcEsc(S.VEH) : '') : '') + '</div>' +
+      '<table class="det" style="margin-top:6px"><thead><tr><th>Unidad</th><th>Tarea</th><th>Rueda</th><th>Cubierta</th><th>Estado</th><th>Obs.</th></tr></thead><tbody>' +
+      ((P.PLAN || []).length ? P.PLAN.map(function(x) { return '<tr><td>' + pcEsc(x.UNIDAD) + '</td><td>' + pcEsc(x.TAREA) + '</td><td>' + pcEsc(x.POS || '') + '</td><td>' + pcEsc(x.C ? x.C.MARCA + (x.C.DOT ? ' · DOT ' + x.C.DOT : '') : '') + '</td><td>' + pcEsc((x.ESTADO || '').replace('_', ' ').toLowerCase()) + '</td><td>' + pcEsc(x.OBS || '') + '</td></tr>'; }).join('') : '<tr><td colspan="6">Sin tareas cargadas</td></tr>') +
+      '</tbody></table><div style="font-size:12px;margin-top:4px">Movimientos de cubiertas cargados a esta orden: <b>' + (P.MOVS || 0) + '</b></div></div>';
+  } else c += '<div style="font-size:13px;margin:4px 0 8px"><b>Estado de la unidad al ' + hoy + '</b>' + (o ? ' · orden ' + pcEsc(o.NRO) + ' (no se pudo leer el detalle)' : ' · sin orden de trabajo') + '</div>';
   flmTodas().forEach(function(u) { var monta = {}; (u.MONT || []).forEach(function(m) { monta[m.ID_POS] = m; });
     c += '<h2>' + pcEsc(u.IDENT + ' · ' + (u.CFG ? u.CFG.NOMBRE : '')) + '</h2>' + (u.CFG ? '<div style="text-align:center">' + flDibujo(u.CFG.EJES, u.CFG.POS, { ancho: 320, fn: function(p) { var m = monta[p.ID]; return { fill: '#fff', txt: m ? m.C.MARCA : '', txt2: m && m.C.PROF !== '' ? m.C.PROF + ' mm' : '', vacia: !m }; } }) + '</div>' : '') +
       '<table class="det"><thead><tr><th>Rueda</th><th>Marca grabada</th><th>DOT</th><th>Medida</th><th>Fabricante</th><th>Dibujo</th><th>Estado</th></tr></thead><tbody>' + (u.CFG ? u.CFG.POS.map(function(p) { var m = monta[p.ID], x = m && m.C; return '<tr><td>' + pcEsc(p.COD) + '</td><td>' + pcEsc(x ? x.MARCA : '') + '</td><td>' + pcEsc(x ? x.DOT : '') + '</td><td>' + pcEsc(x ? x.MEDIDA : '') + '</td><td>' + pcEsc(x ? x.FAB : '') + '</td><td>' + (x && x.PROF !== '' ? x.PROF + ' mm' : '') + '</td><td>' + pcEsc(x ? x.EST : '') + '</td></tr>'; }).join('') : '') + '</tbody></table>'; });
