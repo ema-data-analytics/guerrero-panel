@@ -100,7 +100,7 @@ body.modo-cascos #page-produccion-cubiertas .tabs,body.modo-cascos #page-producc
 .nav-item.active{color:#fff;background:rgba(37,99,235,.25);border-left-color:#2563eb;}
 .sb-grp{margin:1px 0}.sb-gh{display:flex;align-items:center;gap:9px;padding:10px 14px;cursor:pointer;color:#cbd5e1;font-size:13.5px;font-weight:700;user-select:none;border-left:3px solid transparent}.sb-gh:hover{background:rgba(255,255,255,.06);color:#fff}
 .sb-gi-ic{width:20px;text-align:center;font-size:15px}.sb-gt{flex:1}.sb-car{font-size:16px;color:#64748b;transition:transform .15s}.sb-grp.abierto>.sb-gh{color:#fff;background:rgba(255,255,255,.04)}.sb-grp.abierto>.sb-gh .sb-car{transform:rotate(90deg);color:#93c5fd}
-.sb-gl{display:none;padding:2px 0 6px}.sb-grp.abierto>.sb-gl{display:block}.sb-gl .nav-item{padding:8px 16px 8px 30px;font-size:12.5px}.sb-grp.tiene-activo>.sb-gh{border-left-color:#2563eb}
+.sb-gl .sb-group{padding:10px 16px 2px 30px}.sb-gl{display:none;padding:2px 0 6px}.sb-grp.abierto>.sb-gl{display:block}.sb-gl .nav-item{padding:8px 16px 8px 30px;font-size:12.5px}.sb-grp.tiene-activo>.sb-gh{border-left-color:#2563eb}
 .nav-icon{font-size:15px;width:18px;text-align:center;}
 .sb-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.06);font-family:var(--mono);font-size:9px;color:#475569;}
 .page-hdr{padding:20px 28px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:var(--shadow);}
@@ -295,22 +295,46 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <a class="nav-ext" href="manual/" target="_blank" rel="noopener"><span class="nav-icon"><i class="fas fa-book"></i></span> Manual del sistema</a>
         <div class="nav-item" data-page="pruebas"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Pruebas y aprobación</div>
       <div class="sb-grp" data-g="prod"><div class="sb-gh" onclick="menuGrupo('prod')"><span class="sb-gi-ic">🏭</span><span class="sb-gt">Producción</span><span class="sb-car">›</span></div><div class="sb-gl">
-        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-otrab"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Órdenes de trabajo</div>
-        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-os"><span class="nav-icon"><i class="fas fa-fire"></i></span> Órdenes de servicio</div>
+        <div class="sb-group">Día a día</div>
+        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-otrab"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Órdenes de trabajo (recepción)</div>
+        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-os"><span class="nav-icon"><i class="fas fa-fire"></i></span> Órdenes de servicio (cargas)</div>
+        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-plan"><span class="nav-icon"><i class="fas fa-calendar-day"></i></span> Plan de mañana</div>
+        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-pesaje"><span class="nav-icon"><i class="fas fa-balance-scale"></i></span> Pesaje y medición</div>
+        <div class="nav-item" data-page="puesto-estacion"><span class="nav-icon"><i class="fas fa-tablet-alt"></i></span> Puesto de estación</div>
+        <div class="nav-item" data-page="tablero-linea"><span class="nav-icon"><i class="fas fa-tv"></i></span> Tablero de la línea</div>
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-entregas"><span class="nav-icon"><i class="fas fa-truck"></i></span> Entregas (remitos)</div>
+        <div class="sb-group">Control</div>
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-rech"><span class="nav-icon"><i class="fas fa-undo"></i></span> Rechazadas</div>
-        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-costos"><span class="nav-icon"><i class="fas fa-dollar-sign"></i></span> Costos de producción</div>
-        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-herramental"><span class="nav-icon"><i class="fas fa-life-ring"></i></span> Herramental del autoclave</div>
-        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-equipos"><span class="nav-icon"><i class="fas fa-tools"></i></span> Herramientas de las estaciones</div>
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-alarmas"><span class="nav-icon"><i class="fas fa-exclamation-triangle"></i></span> Alarmas de producción</div>
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-hist"><span class="nav-icon"><i class="fas fa-history"></i></span> Historial de producción</div>
-        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-pesaje"><span class="nav-icon"><i class="fas fa-balance-scale"></i></span> Pesaje y medición</div>
-        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-plan"><span class="nav-icon"><i class="fas fa-calendar-day"></i></span> Plan de mañana</div>
-        <div class="nav-item" data-page="tablero-linea"><span class="nav-icon"><i class="fas fa-tv"></i></span> Tablero de la línea</div>
-        <div class="nav-item" data-page="puesto-estacion"><span class="nav-icon"><i class="fas fa-tablet-alt"></i></span> Puesto de estación</div>
-        <div class="nav-item" data-page="recetas"><span class="nav-icon"><i class="fas fa-flask"></i></span> Recetas</div>
-        <div class="nav-item" data-page="stock-insumos"><span class="nav-icon"><i class="fas fa-box-open"></i></span> Stock de insumos</div>
+        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-costos"><span class="nav-icon"><i class="fas fa-dollar-sign"></i></span> Costos de producción</div>
+        <div class="sb-group">Cómo se trabaja</div>
+        <div class="nav-item" data-page="recetas"><span class="nav-icon"><i class="fas fa-flask"></i></span> Recetas de producción</div>
         <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-config"><span class="nav-icon"><i class="fas fa-sliders-h"></i></span> Configuración de producción</div>
+      </div></div>
+      <div class="sb-grp" data-g="pla"><div class="sb-gh" onclick="menuGrupo('pla')"><span class="sb-gi-ic">🏗</span><span class="sb-gt">Planta</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="taller" data-acc="mt-mp"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Mantenimiento de máquinas</div>
+        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-herramental"><span class="nav-icon"><i class="fas fa-life-ring"></i></span> Herramental del autoclave</div>
+        <div class="nav-item" data-page="produccion-cubiertas" data-acc="pc-equipos"><span class="nav-icon"><i class="fas fa-tools"></i></span> Herramientas de las estaciones</div>
+      </div></div>
+      <div class="sb-grp" data-g="tll"><div class="sb-gh" onclick="menuGrupo('tll')"><span class="sb-gi-ic">🔧</span><span class="sb-gt">Taller mecánico</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="nav-item" data-page="taller" data-acc="mt-ord"><span class="nav-icon"><i class="fas fa-wrench"></i></span> Órdenes del taller (clientes)</div>
+        <div class="nav-item" data-page="taller" data-acc="mt-cat"><span class="nav-icon"><i class="fas fa-list-ul"></i></span> Servicios y recetas del taller</div>
+      </div></div>
+      <div class="sb-grp" data-g="flo"><div class="sb-gh" onclick="menuGrupo('flo')"><span class="sb-gi-ic">🚛</span><span class="sb-gt">Servicios a empresas y flota</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="sb-group">Día a día</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mapa"><span class="nav-icon"><i class="fas fa-dharmachakra"></i></span> Mapa de cubiertas</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-preventivo"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Control preventivo</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-planes"><span class="nav-icon"><i class="fas fa-truck-pickup"></i></span> Órdenes en campo</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-recapado"><span class="nav-icon"><i class="fas fa-recycle"></i></span> Cubiertas para recapar</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-enganches"><span class="nav-icon"><i class="fas fa-link"></i></span> Enganches de acoplados</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-combustible"><span class="nav-icon"><i class="fas fa-gas-pump"></i></span> Combustible de la flota</div>
+        <div class="sb-group">Informes</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-informe"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Informe de flota</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-reportes"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Reportes de flota</div>
+        <div class="sb-group">Carga</div>
+        <div class="nav-item" data-page="taller" data-acc="mt-eq"><span class="nav-icon"><i class="fas fa-truck-moving"></i></span> Unidades y máquinas</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-importar"><span class="nav-icon"><i class="fas fa-file-excel"></i></span> Importar flota (Excel)</div>
       </div></div>
       <div class="sb-grp" data-g="vta"><div class="sb-gh" onclick="menuGrupo('vta')"><span class="sb-gi-ic">🧾</span><span class="sb-gt">Ventas</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="ventas"><span class="nav-icon"><i class="fas fa-shopping-cart"></i></span> Ventas y facturas</div>
@@ -319,110 +343,100 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="documentos"><span class="nav-icon"><i class="fas fa-file-pdf"></i></span> Documentos para el cliente</div>
         <div class="nav-item" data-page="pedidos-web"><span class="nav-icon"><i class="fas fa-store"></i></span> Pedidos web</div>
       </div></div>
-      <div class="sb-grp" data-g="tll"><div class="sb-gh" onclick="menuGrupo('tll')"><span class="sb-gi-ic">🔧</span><span class="sb-gt">Taller y servicios a empresas</span><span class="sb-car">›</span></div><div class="sb-gl">
-        <div class="nav-item" data-page="taller" data-acc="mt-ord"><span class="nav-icon"><i class="fas fa-wrench"></i></span> Órdenes del taller (check list)</div>
-        <div class="nav-item" data-page="taller" data-acc="mt-mp"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Mantenimiento de planta</div>
-        <div class="nav-item" data-page="taller" data-acc="mt-eq"><span class="nav-icon"><i class="fas fa-truck-moving"></i></span> Equipos (camiones y máquinas)</div>
-        <div class="nav-item" data-page="taller" data-acc="mt-cat"><span class="nav-icon"><i class="fas fa-list-ul"></i></span> Servicios y recetas</div>
-      </div></div>
-      <div class="sb-grp" data-g="flo"><div class="sb-gh" onclick="menuGrupo('flo')"><span class="sb-gi-ic">🚛</span><span class="sb-gt">Flota y cubiertas</span><span class="sb-car">›</span></div><div class="sb-gl">
-        <div class="nav-item" data-page="flota" data-acc="fl-mapa"><span class="nav-icon"><i class="fas fa-dharmachakra"></i></span> Mapa de cubiertas</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-preventivo"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Control preventivo</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-planes"><span class="nav-icon"><i class="fas fa-truck-pickup"></i></span> Órdenes en campo</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-recapado"><span class="nav-icon"><i class="fas fa-recycle"></i></span> Cubiertas para recapar</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-combustible"><span class="nav-icon"><i class="fas fa-gas-pump"></i></span> Combustible de la flota</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-informe"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Informe de flota</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-importar"><span class="nav-icon"><i class="fas fa-file-excel"></i></span> Importar flota (Excel)</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-reportes"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Reportes de flota</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-enganches"><span class="nav-icon"><i class="fas fa-link"></i></span> Enganches de acoplados</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-cli_bases"><span class="nav-icon"><i class="fas fa-map-marker-alt"></i></span> Bases de clientes</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-cli_contactos"><span class="nav-icon"><i class="fas fa-address-book"></i></span> Contactos de clientes</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-mt_choferes"><span class="nav-icon"><i class="fas fa-id-card"></i></span> Choferes</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-config"><span class="nav-icon"><i class="fas fa-th"></i></span> Configuraciones de ejes</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-mt_service_plan"><span class="nav-icon"><i class="fas fa-calendar-check"></i></span> Planes de service</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-cb_lugares"><span class="nav-icon"><i class="fas fa-warehouse"></i></span> Depósitos y talleres</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-mv_marcas"><span class="nav-icon"><i class="fas fa-copyright"></i></span> Marcas de vehículos</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-mv_modelos"><span class="nav-icon"><i class="fas fa-truck"></i></span> Modelos de vehículos</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-mt_equipo_tipos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Tipos de unidad</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-mt_equipo_subtipos"><span class="nav-icon"><i class="fas fa-tag"></i></span> Subtipos de unidad</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-cb_mov_tipos"><span class="nav-icon"><i class="fas fa-exchange-alt"></i></span> Tipos de movimiento de cubiertas</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-cb_estados_cub"><span class="nav-icon"><i class="fas fa-heartbeat"></i></span> Estados de la cubierta</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-cb_causas_rotura"><span class="nav-icon"><i class="fas fa-bolt"></i></span> Causas de rotura y baja</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-cli_cargos"><span class="nav-icon"><i class="fas fa-user-tie"></i></span> Cargos de contactos</div>
-        <div class="nav-item" data-page="flota" data-acc="fl-mt_licencias_cat"><span class="nav-icon"><i class="fas fa-id-badge"></i></span> Categorías de licencia</div>
-      </div></div>
       <div class="sb-grp" data-g="pre"><div class="sb-gh" onclick="menuGrupo('pre')"><span class="sb-gi-ic">💲</span><span class="sb-gt">Precios</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="precios-nuevos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Lista de precios</div>
-        <div class="nav-item" data-page="margen"><span class="nav-icon"><i class="fas fa-traffic-light"></i></span> Margen con descuento</div>
         <div class="nav-item" data-page="armado"><span class="nav-icon"><i class="fas fa-calculator"></i></span> Armado de precios</div>
+        <div class="nav-item" data-page="margen"><span class="nav-icon"><i class="fas fa-traffic-light"></i></span> Margen con descuento</div>
         <div class="nav-item" data-page="catalogo-tienda"><span class="nav-icon"><i class="fas fa-shopping-bag"></i></span> Catálogo (tienda)</div>
       </div></div>
       <div class="sb-grp" data-g="cmp"><div class="sb-gh" onclick="menuGrupo('cmp')"><span class="sb-gi-ic">🛒</span><span class="sb-gt">Compras</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="carga-compras"><span class="nav-icon"><i class="fas fa-cart-plus"></i></span> Compras</div>
         <div class="nav-item" data-page="stock-insumos" data-acc="ped-prov"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Pedidos a proveedores</div>
-        <div class="nav-item" data-page="ordenes-pago"><span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Órdenes de Pago</div>
-        <div class="nav-item" data-page="cta-cte-proveedores"><span class="nav-icon"><i class="fas fa-truck"></i></span> Cta Cte Proveedores</div>
+        <div class="nav-item" data-page="ordenes-pago"><span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Órdenes de pago</div>
+        <div class="nav-item" data-page="cta-cte-proveedores"><span class="nav-icon"><i class="fas fa-truck"></i></span> Cuenta corriente de proveedores</div>
       </div></div>
       <div class="sb-grp" data-g="stk"><div class="sb-gh" onclick="menuGrupo('stk')"><span class="sb-gi-ic">📦</span><span class="sb-gt">Stock</span><span class="sb-car">›</span></div><div class="sb-gl">
-        <div class="nav-item" data-page="stock"><span class="nav-icon"><i class="fas fa-boxes"></i></span> Control de Stock</div>
+        <div class="nav-item" data-page="stock-insumos"><span class="nav-icon"><i class="fas fa-box-open"></i></span> Stock de insumos (planta)</div>
+        <div class="nav-item" data-page="stock"><span class="nav-icon"><i class="fas fa-boxes"></i></span> Control de stock</div>
         <div class="nav-item" data-page="stock" data-acc="rem-int"><span class="nav-icon"><i class="fas fa-exchange-alt"></i></span> Remito interno (ajuste de stock)</div>
       </div></div>
       <div class="sb-grp" data-g="tes"><div class="sb-gh" onclick="menuGrupo('tes')"><span class="sb-gi-ic">💰</span><span class="sb-gt">Cobranzas y tesorería</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="cobranzas"><span class="nav-icon"><i class="fas fa-hand-holding-usd"></i></span> Cobranzas</div>
-        <div class="nav-item" data-page="cta-cte-clientes"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> Cta Cte Clientes</div>
+        <div class="nav-item" data-page="cta-cte-clientes"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> Cuenta corriente de clientes</div>
         <div class="nav-item" data-page="cheques"><span class="nav-icon"><i class="fas fa-money-check-alt"></i></span> Cheques</div>
-        <div class="nav-item" data-page="caja"><span class="nav-icon"><i class="fas fa-cash-register"></i></span> Libro de Caja</div>
+        <div class="nav-item" data-page="caja"><span class="nav-icon"><i class="fas fa-cash-register"></i></span> Libro de caja</div>
         <div class="nav-item" data-page="carga-financiero"><span class="nav-icon"><i class="fas fa-university"></i></span> Financiero</div>
       </div></div>
       <div class="sb-grp" data-g="gas"><div class="sb-gh" onclick="menuGrupo('gas')"><span class="sb-gi-ic">📤</span><span class="sb-gt">Gastos</span><span class="sb-car">›</span></div><div class="sb-gl">
-        <div class="nav-item" data-page="carga-gastos"><span class="nav-icon"><i class="fas fa-receipt"></i></span> Gastos Varios</div>
+        <div class="nav-item" data-page="carga-gastos"><span class="nav-icon"><i class="fas fa-receipt"></i></span> Gastos varios</div>
         <div class="nav-item" data-page="carga-combustible"><span class="nav-icon"><i class="fas fa-gas-pump"></i></span> Combustible</div>
         <div class="nav-item" data-page="carga-transporte"><span class="nav-icon"><i class="fas fa-truck-moving"></i></span> Transporte</div>
         <div class="nav-item" data-page="carga-impositivo"><span class="nav-icon"><i class="fas fa-file-invoice"></i></span> Impositivo</div>
         <div class="nav-item" data-page="carga-sueldos"><span class="nav-icon"><i class="fas fa-users"></i></span> Sueldos</div>
       </div></div>
       <div class="sb-grp" data-g="per"><div class="sb-gh" onclick="menuGrupo('per')"><span class="sb-gi-ic">👥</span><span class="sb-gt">Personal</span><span class="sb-car">›</span></div><div class="sb-gl">
-        <div class="nav-item" data-page="asistencia"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> Asistencia</div>
         <div class="nav-item" data-page="abm-empleados"><span class="nav-icon"><i class="fas fa-id-badge"></i></span> Empleados</div>
+        <div class="nav-item" data-page="asistencia"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> Asistencia</div>
       </div></div>
       <div class="sb-grp" data-g="inf"><div class="sb-gh" onclick="menuGrupo('inf')"><span class="sb-gi-ic">📊</span><span class="sb-gt">Informes</span><span class="sb-car">›</span></div><div class="sb-gl">
-        <div class="nav-item" data-page="estado-resultados"><span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Estado de Resultados</div>
-        <div class="nav-item" data-page="inteligencia"><span class="nav-icon"><i class="fas fa-brain"></i></span> Panel Gerencial</div>
-        <div class="nav-item" data-page="objetivo"><span class="nav-icon"><i class="fas fa-bullseye"></i></span> Objetivo Mensual</div>
-        <div class="nav-item" data-page="rpt-ventas"><span class="nav-icon"><i class="fas fa-chart-line"></i></span> Ventas por Tipo</div>
+        <div class="nav-item" data-page="estado-resultados"><span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Estado de resultados</div>
+        <div class="nav-item" data-page="inteligencia"><span class="nav-icon"><i class="fas fa-brain"></i></span> Panel gerencial</div>
+        <div class="nav-item" data-page="objetivo"><span class="nav-icon"><i class="fas fa-bullseye"></i></span> Objetivo mensual</div>
+        <div class="nav-item" data-page="rpt-ventas"><span class="nav-icon"><i class="fas fa-chart-line"></i></span> Ventas por tipo</div>
         <div class="nav-item" data-page="rpt-dibujos"><span class="nav-icon"><i class="fas fa-pen-nib"></i></span> Ventas con dibujo</div>
-        <div class="nav-item" data-page="rpt-produccion"><span class="nav-icon"><i class="fas fa-industry"></i></span> Producción / Insumos</div>
-        <div class="nav-item" data-page="rpt-gastos"><span class="nav-icon"><i class="fas fa-chart-pie"></i></span> Resumen de Gastos</div>
-        <div class="nav-item" data-page="rpt-costo-cubiertas"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Costo por Cubierta</div>
-        <div class="nav-item" data-page="rpt-diferencias-precios"><span class="nav-icon"><i class="fas fa-not-equal"></i></span> Dif. de Precios</div>
+        <div class="nav-item" data-page="rpt-produccion"><span class="nav-icon"><i class="fas fa-industry"></i></span> Producción / insumos</div>
+        <div class="nav-item" data-page="rpt-costo-cubiertas"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Costo por cubierta</div>
+        <div class="nav-item" data-page="rpt-gastos"><span class="nav-icon"><i class="fas fa-chart-pie"></i></span> Resumen de gastos</div>
+        <div class="nav-item" data-page="rpt-diferencias-precios"><span class="nav-icon"><i class="fas fa-not-equal"></i></span> Diferencias de precios</div>
       </div></div>
       <div class="sb-grp" data-g="mae"><div class="sb-gh" onclick="menuGrupo('mae')"><span class="sb-gi-ic">🗂</span><span class="sb-gt">Datos maestros</span><span class="sb-car">›</span></div><div class="sb-gl">
+        <div class="sb-group">Clientes y proveedores</div>
         <div class="nav-item" data-page="abm-clientes"><span class="nav-icon"><i class="fas fa-users"></i></span> Clientes</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cli_bases"><span class="nav-icon"><i class="fas fa-map-marker-alt"></i></span> Bases de clientes</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cli_contactos"><span class="nav-icon"><i class="fas fa-address-book"></i></span> Contactos de clientes</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cli_cargos"><span class="nav-icon"><i class="fas fa-user-tie"></i></span> Cargos de contactos</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mt_choferes"><span class="nav-icon"><i class="fas fa-id-card"></i></span> Choferes</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mt_licencias_cat"><span class="nav-icon"><i class="fas fa-id-badge"></i></span> Categorías de licencia</div>
         <div class="nav-item" data-page="abm-proveedores"><span class="nav-icon"><i class="fas fa-truck"></i></span> Proveedores</div>
+        <div class="sb-group">Productos y precios</div>
         <div class="nav-item" data-page="abm-articulos"><span class="nav-icon"><i class="fas fa-boxes"></i></span> Artículos</div>
         <div class="nav-item" data-page="abm-insumos"><span class="nav-icon"><i class="fas fa-layer-group"></i></span> Insumos</div>
         <div class="nav-item" data-page="abm-servicios"><span class="nav-icon"><i class="fas fa-tools"></i></span> Servicios</div>
-        <div class="nav-item" data-page="abm-vehiculos"><span class="nav-icon"><i class="fas fa-car"></i></span> Vehículos</div>
-        <div class="nav-item" data-page="abm-financieras"><span class="nav-icon"><i class="fas fa-university"></i></span> Financieras</div>
-        <div class="nav-item" data-page="abm-bancos"><span class="nav-icon"><i class="fas fa-landmark"></i></span> Bancos</div>
-        <div class="nav-item" data-page="abm-cajas"><span class="nav-icon"><i class="fas fa-cash-register"></i></span> Cajas</div>
-        <div class="nav-item" data-page="abm-listas-precios"><span class="nav-icon"><i class="fas fa-tags"></i></span> Listas de Precios</div>
         <div class="nav-item" data-page="abm-marcas"><span class="nav-icon"><i class="fas fa-copyright"></i></span> Marcas</div>
         <div class="nav-item" data-page="abm-medidas"><span class="nav-icon"><i class="fas fa-ruler"></i></span> Medidas</div>
-        <div class="nav-item" data-page="abm-tipos-gasto"><span class="nav-icon"><i class="fas fa-sitemap"></i></span> Tipos de Gasto</div>
-        <div class="nav-item" data-page="abm-conceptos"><span class="nav-icon"><i class="fas fa-folder-open"></i></span> Conceptos de Gasto</div>
-        <div class="nav-item" data-page="abm-metodo-pago"><span class="nav-icon"><i class="fas fa-credit-card"></i></span> Métodos de Pago</div>
+        <div class="nav-item" data-page="abm-listas-precios"><span class="nav-icon"><i class="fas fa-tags"></i></span> Listas de precios (nombres)</div>
+        <div class="sb-group">Flota y cubiertas</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mv_marcas"><span class="nav-icon"><i class="fas fa-copyright"></i></span> Marcas de vehículos</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mv_modelos"><span class="nav-icon"><i class="fas fa-truck"></i></span> Modelos de vehículos</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mt_equipo_tipos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Tipos de unidad</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mt_equipo_subtipos"><span class="nav-icon"><i class="fas fa-tag"></i></span> Subtipos de unidad</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-config"><span class="nav-icon"><i class="fas fa-th"></i></span> Configuraciones de ejes</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-mt_service_plan"><span class="nav-icon"><i class="fas fa-calendar-check"></i></span> Planes de service</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cb_lugares"><span class="nav-icon"><i class="fas fa-warehouse"></i></span> Depósitos y talleres</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cb_estados_cub"><span class="nav-icon"><i class="fas fa-heartbeat"></i></span> Estados de la cubierta</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cb_mov_tipos"><span class="nav-icon"><i class="fas fa-exchange-alt"></i></span> Tipos de movimiento de cubiertas</div>
+        <div class="nav-item" data-page="flota" data-acc="fl-cb_causas_rotura"><span class="nav-icon"><i class="fas fa-bolt"></i></span> Causas de rotura y baja</div>
+        <div class="sb-group">Finanzas y gastos</div>
+        <div class="nav-item" data-page="abm-bancos"><span class="nav-icon"><i class="fas fa-landmark"></i></span> Bancos</div>
+        <div class="nav-item" data-page="abm-cajas"><span class="nav-icon"><i class="fas fa-cash-register"></i></span> Cajas</div>
+        <div class="nav-item" data-page="abm-financieras"><span class="nav-icon"><i class="fas fa-university"></i></span> Financieras</div>
+        <div class="nav-item" data-page="abm-metodo-pago"><span class="nav-icon"><i class="fas fa-credit-card"></i></span> Medios de pago</div>
+        <div class="nav-item" data-page="abm-tipos-gasto"><span class="nav-icon"><i class="fas fa-sitemap"></i></span> Tipos de gasto</div>
+        <div class="nav-item" data-page="abm-conceptos"><span class="nav-icon"><i class="fas fa-folder-open"></i></span> Conceptos de gasto</div>
+        <div class="nav-item" data-page="abm-vehiculos"><span class="nav-icon"><i class="fas fa-car"></i></span> Vehículos de la empresa (combustible)</div>
+        <div class="sb-group">Otros</div>
         <div class="nav-item" data-page="abm-localidades"><span class="nav-icon"><i class="fas fa-map-marker-alt"></i></span> Localidades</div>
       </div></div>
       <div class="sb-grp" data-g="sis"><div class="sb-gh" onclick="menuGrupo('sis')"><span class="sb-gi-ic">⚙️</span><span class="sb-gt">Sistema</span><span class="sb-car">›</span></div><div class="sb-gl">
-        <div class="nav-item" data-page="audios"><span class="nav-icon"><i class="fas fa-microphone"></i></span> Audios a texto</div>
+        <div class="nav-item" data-page="seguridad"><span class="nav-icon"><i class="fas fa-shield-alt"></i></span> Seguridad</div>
+        <div class="nav-item" data-page="configuracion"><span class="nav-icon"><i class="fas fa-cog"></i></span> Configuración</div>
+        <div class="nav-item" data-page="backup-page"><span class="nav-icon"><i class="fas fa-save"></i></span> Backup / Restore</div>
+        <div class="nav-item" data-page="gsheets"><span class="nav-icon"><i class="fas fa-table"></i></span> Google Sheets</div>
+        <div class="sb-group">Proyecto (EMA)</div>
         <div class="nav-item" data-page="agenda"><span class="nav-icon"><i class="fas fa-clipboard-list"></i></span> Agenda del proyecto</div>
         <div class="nav-item" data-page="bitacora"><span class="nav-icon"><i class="fas fa-scroll"></i></span> Bitácora (todo lo que se hizo)</div>
         <div class="nav-item" data-page="avance"><span class="nav-icon"><i class="fas fa-chart-line"></i></span> Avance del sistema</div>
-        <div class="nav-item" data-page="seguridad"><span class="nav-icon"><i class="fas fa-shield-alt"></i></span> Seguridad</div>
-        <div class="nav-item" data-page="configuracion"><span class="nav-icon"><i class="fas fa-cog"></i></span> Configuración</div>
-        <div class="nav-item" data-page="gsheets"><span class="nav-icon"><i class="fas fa-table"></i></span> Google Sheets</div>
-        <div class="nav-item" data-page="backup-page"><span class="nav-icon"><i class="fas fa-save"></i></span> Backup / Restore</div>
+        <div class="nav-item" data-page="audios"><span class="nav-icon"><i class="fas fa-microphone"></i></span> Audios a texto</div>
       </div></div>
     </nav>
     <div class="sb-footer">v1.0 · EMA Analytics · IndexedDB</div>
@@ -859,7 +873,7 @@ function menuClick(el) {
   if (acc === 'rem-int') window._stAccion = 'rem-int';
   if (acc.indexOf('pc-') === 0 && typeof PC_ !== 'undefined') { PC_.tab = acc.substring(3); PC_.otNueva = false; PC_.osNueva = false; }
   // Taller: órdenes, equipos, servicios o mantenimiento de planta (navTo borra _menuAcc antes de abrir la pantalla, por eso se pasa acá)
-  if (acc.indexOf('mt-') === 0 && typeof MT_ !== 'undefined') { MT_.vista = acc.substring(3); MT_.nueva = false; MT_.ord = null; MT_.oe = null; MT_.eqNuevo = false; }
+  if (acc.indexOf('mt-') === 0 && typeof MT_ !== 'undefined') { MT_.vista = acc.substring(3); MT_.amb = MT_.vista === 'mp' ? 'planta' : (MT_.vista === 'ord' ? 'cli' : (MT_.amb || 'cli')); MT_.F = null; MT_.nueva = false; MT_.ord = null; MT_.oe = null; MT_.eqNuevo = false; }
   // Flota y cubiertas: cada catálogo es una entrada del menú
   if (acc.indexOf('fl-') === 0 && typeof FL_ !== 'undefined' && FL_MENU[acc]) { if (FL_MENU[acc] !== FL_.t) FL_.F = { q: '', p: '', est: 'V' }; FL_.t = FL_MENU[acc]; }
   window._menuAcc = acc;
@@ -1119,6 +1133,71 @@ function showModal(html, cls) {
 function closeModal(){const m=document.querySelector('.mo');if(m)m.remove();}
 // Pregunta y confirmación con ventana propia (no se usan las del navegador: en la tablet traban la pantalla)
 // uiPedir(titulo, opciones) → promesa con el texto escrito, o null si cancela. opciones: { obligatorio, ayuda, valor }
+// ══ Campo con búsqueda (17/11/2026, Anibal: «la mejor forma es tener el campo y la búsqueda, por si hay muchas opciones») ══
+// Un solo componente para todo el sistema. Con pocas opciones fijas (hasta cfg.max, 8 por defecto) muestra botones; con más, campo con búsqueda.
+// uiBusca(id, { opciones: ['texto'] o [{ v, t, sub }], sel: [v…], multi: true/false, otro: true (deja agregar lo que se escribe),
+//               ph: 'texto del campo', max: 8, onchange: 'nombreFuncion' (recibe (sel, id)) })  → devuelve el HTML
+var UIB_ = {};
+(function() { var st = document.createElement('style'); st.textContent =
+  '.uib{position:relative;margin:4px 0 10px}.uib-sel{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.uib-tag{display:inline-flex;align-items:center;gap:6px;background:#1d4ed8;color:#fff;border-radius:18px;padding:6px 6px 6px 12px;font-weight:700;font-size:14px}' +
+  '.uib-tag button{background:rgba(255,255,255,.25);border:0;color:#fff;border-radius:50%;width:24px;height:24px;font-size:15px;line-height:1;cursor:pointer}' +
+  '.uib-q{width:100%;min-height:44px;font-size:16px}.uib-res{position:absolute;left:0;right:0;z-index:60;background:var(--surface,#fff);border:1px solid var(--border,#cbd5e1);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);max-height:280px;overflow:auto;margin-top:4px}' +
+  '.uib-op{padding:11px 12px;cursor:pointer;border-bottom:1px solid var(--border,#eee);font-size:15px}.uib-op:hover,.uib-op.on{background:var(--accent-light,#e8f0fe)}.uib-op small{display:block;color:var(--dim,#64748b);font-size:12px}.uib-op.nuevo{color:#1d4ed8;font-weight:700}.uib-vacio{padding:11px 12px;color:var(--dim,#64748b);font-size:14px}' +
+  '.uib-chips{display:flex;flex-wrap:wrap;gap:8px}.uib-chip{min-height:42px;padding:6px 14px;border-radius:22px;border:2px solid #cbd5e1;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#334155}.uib-chip.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}';
+  document.head.appendChild(st); })();
+function uibEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function uibNorm(s) { return String(s == null ? '' : s).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function uibOps(c) { return (c.opciones || []).map(function(o) { return typeof o === 'object' ? { v: String(o.v != null ? o.v : o.t), t: String(o.t != null ? o.t : o.v), sub: o.sub || '' } : { v: String(o), t: String(o), sub: '' }; }); }
+function uiBusca(id, cfg) {
+  cfg = cfg || {}; cfg.sel = (cfg.sel || []).filter(function(x) { return x !== '' && x != null; }).map(String); UIB_[id] = cfg;
+  return '<div class="uib" id="uib-' + id + '">' + uibCuerpo(id) + '</div>';
+}
+function uibCuerpo(id) {
+  var c = UIB_[id], ops = uibOps(c), max = c.max == null ? 8 : c.max;
+  var nom = function(v) { var o = ops.filter(function(x) { return x.v === v; })[0]; return o ? o.t : v; };
+  if (ops.length <= max && !c.forzar) {
+    return '<div class="uib-chips">' + ops.map(function(o) { var on = c.sel.indexOf(o.v) !== -1; return '<button type="button" class="uib-chip' + (on ? ' on' : '') + '" data-v="' + uibEsc(o.v) + '" onclick="uibToca(\'' + id + '\',this.dataset.v)">' + (on ? '✔ ' : '') + uibEsc(o.t) + '</button>'; }).join('') +
+      c.sel.filter(function(v) { return !ops.some(function(o) { return o.v === v; }); }).map(function(v) { return '<button type="button" class="uib-chip on" data-v="' + uibEsc(v) + '" onclick="uibQuitar(\'' + id + '\',this.dataset.v)">✔ ' + uibEsc(v) + ' ✕</button>'; }).join('') +
+      (c.otro ? '<button type="button" class="uib-chip" onclick="uibOtro(\'' + id + '\')">Otro…</button>' : '') + '</div>';
+  }
+  var tags = c.sel.length ? '<div class="uib-sel">' + c.sel.map(function(v) { return '<span class="uib-tag">' + uibEsc(nom(v)) + '<button type="button" title="Sacar" data-v="' + uibEsc(v) + '" onclick="uibQuitar(\'' + id + '\',this.dataset.v)">✕</button></span>'; }).join('') + '</div>' : '';
+  var verCampo = c.multi || !c.sel.length;
+  return tags + (verCampo ? '<input class="fi uib-q" id="uib-q-' + id + '" autocomplete="off" placeholder="' + uibEsc(c.ph || ('Buscá: escribí parte del nombre (' + ops.length + ' opciones)')) + '" oninput="uibBuscar(\'' + id + '\')" onfocus="uibBuscar(\'' + id + '\')" onkeydown="uibTecla(event,\'' + id + '\')" onblur="setTimeout(function(){var r=document.getElementById(\'uib-r-' + id + '\');if(r)r.style.display=\'none\';},200)"><div class="uib-res" id="uib-r-' + id + '" style="display:none"></div>' : '') + (c.otro && verCampo ? '<button type="button" class="btn btn-s btn-sm" style="margin-top:6px" onclick="uibOtro(\'' + id + '\')">＋ Otro (escribir a mano)</button>' : '');
+}
+function uibBuscar(id) {
+  var c = UIB_[id], q = $id('uib-q-' + id), r = $id('uib-r-' + id); if (!c || !q || !r) return;
+  var t = uibNorm(q.value).trim(), w = t.split(/\s+/).filter(Boolean);
+  var l = uibOps(c).filter(function(o) { if (c.multi && c.sel.indexOf(o.v) !== -1) return false; var x = uibNorm(o.t + ' ' + o.sub + ' ' + o.v); return w.every(function(k) { return x.indexOf(k) !== -1; }); });
+  var n = l.length; l = l.slice(0, 60); c._lista = l; c._i = -1;
+  var h = l.map(function(o, i) { return '<div class="uib-op" data-i="' + i + '" onmousedown="event.preventDefault();uibElegir(\'' + id + '\',' + i + ')">' + uibEsc(o.t) + (o.sub ? '<small>' + uibEsc(o.sub) + '</small>' : '') + '</div>'; }).join('');
+  if (n > 60) h += '<div class="uib-vacio">Hay ' + n + ': escribí más para achicar la lista.</div>';
+  var exacto = uibOps(c).some(function(o) { return uibNorm(o.t) === t; });
+  if (c.otro && t && !exacto) h += '<div class="uib-op nuevo" onmousedown="event.preventDefault();uibAgregar(\'' + id + '\')">＋ Agregar «' + uibEsc(q.value.trim()) + '»</div>';
+  if (c.otro && !t) h += '<div class="uib-vacio">✎ ¿No está? Escribilo arriba y tocá «＋ Agregar».</div>';
+  if (!h) h = '<div class="uib-vacio">No hay nada con «' + uibEsc(q.value) + '».</div>';
+  r.innerHTML = h; r.style.display = 'block';
+}
+function uibTecla(e, id) {
+  var c = UIB_[id], r = $id('uib-r-' + id); if (!c || !r) return;
+  var ops = r.querySelectorAll('.uib-op[data-i]');
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); c._i = Math.max(0, Math.min(ops.length - 1, (c._i == null ? -1 : c._i) + (e.key === 'ArrowDown' ? 1 : -1))); ops.forEach(function(o, i) { o.classList.toggle('on', i === c._i); }); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (c._i >= 0 && c._lista && c._lista[c._i]) uibElegir(id, c._i); else if (c._lista && c._lista.length) uibElegir(id, 0); else if (c.otro && $id('uib-q-' + id).value.trim()) uibAgregar(id); }
+  else if (e.key === 'Escape') r.style.display = 'none';
+}
+function uibPoner(id, v) {
+  var c = UIB_[id]; v = String(v);
+  if (c.multi) { if (c.sel.indexOf(v) === -1) c.sel.push(v); } else c.sel = [v];
+  var el = $id('uib-' + id); if (el) el.innerHTML = uibCuerpo(id);
+  if (c.multi) { var q = $id('uib-q-' + id); if (q) { q.focus(); } }
+  if (c.onchange && typeof window[c.onchange] === 'function') window[c.onchange](c.sel.slice(), id);
+}
+function uibElegir(id, i) { var c = UIB_[id]; if (c && c._lista && c._lista[i]) uibPoner(id, c._lista[i].v); }
+function uibAgregar(id) { var q = $id('uib-q-' + id); if (!q || !q.value.trim()) return; uibPoner(id, q.value.trim()); }
+function uibToca(id, v) { var c = UIB_[id]; v = String(v); var k = c.sel.indexOf(v); if (k !== -1) { if (!c.multi && c.obligatorio) return; c.sel.splice(k, 1); var el = $id('uib-' + id); if (el) el.innerHTML = uibCuerpo(id); if (c.onchange && typeof window[c.onchange] === 'function') window[c.onchange](c.sel.slice(), id); } else uibPoner(id, v); }
+function uibQuitar(id, v) { var c = UIB_[id]; c.sel = c.sel.filter(function(x) { return x !== String(v); }); var el = $id('uib-' + id); if (el) el.innerHTML = uibCuerpo(id); if (c.onchange && typeof window[c.onchange] === 'function') window[c.onchange](c.sel.slice(), id); }
+async function uibOtro(id) { var v = await uiPedir('Escribí la otra opción', { obligatorio: true }); if (v === null || !String(v).trim()) return; uibPoner(id, String(v).trim()); }
+function uibVal(id) { var c = UIB_[id]; return c ? c.sel.slice() : []; }
+
 function uiPedir(titulo, o) {
   o = o || {};
   return new Promise(function(res) {
@@ -1609,7 +1688,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611170931';
+var EMA_BUILD = '202611171452';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13261,9 +13340,8 @@ function puAcLectura(momento) {
     '<div class="pu-qty"><b style="font-size:15px;min-width:110px">Temperatura</b><input inputmode="decimal" id="pu-acl-t" placeholder="°C" aria-label="Temperatura"><span>°C</span></div>' +
     '<div class="pu-qty"><b style="font-size:15px;min-width:110px">Presión</b><input inputmode="decimal" id="pu-acl-p" placeholder="Presión" aria-label="Presión"><span>' + puEsc((r.espec && r.espec.PUNI) || '') + '</span></div>' +
     '<div><b style="font-size:15px">Foto del termómetro y el manómetro</b> <span class="tdim" style="font-size:13px">(es la prueba de la lectura' + (r.fotoObligatoria ? ', obligatoria' : '') + ')</span><br><input type="file" accept="image/*" capture="environment" id="pu-acl-f" style="font-size:15px;margin-top:4px"><div id="pu-acl-prev"></div></div>' +
-    (emps.length ? '<div><div style="font-weight:700;font-size:15px">¿Quién leyó?</div><div style="display:flex;flex-wrap:wrap;gap:6px">' + emps.map(function(n) { return '<button class="pu-chip pu-acl-op' + (PU_.acL.oper === n ? ' sel' : '') + '" data-n="' + puEsc(n) + '">' + puEsc(n) + '</button>'; }).join('') + '</div></div>' : '') +
+    (emps.length ? '<div><div style="font-weight:700;font-size:15px">¿Quién leyó?</div>' + uiBusca('pu-acl-op', { opciones: emps, otro: true, sel: PU_.acL.oper ? [PU_.acL.oper] : [], ph: 'Buscá tu nombre', onchange: 'puAclOpSet' }) + '</div>' : '') +
     '<div id="pu-acl-just"></div></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pu-acl-ok" style="min-height:48px;font-size:17px">' + (fin ? 'Guardar y terminar la cocción' : 'Guardar lectura') + '</button></div>', 'md-lg');
-  document.querySelectorAll('.mo .pu-acl-op').forEach(function(b) { b.onclick = function() { PU_.acL.oper = b.dataset.n; document.querySelectorAll('.mo .pu-acl-op').forEach(function(x) { x.classList.toggle('sel', x === b); }); }; });
   $id('pu-acl-f').onchange = function() { var f = this.files && this.files[0]; if (!f) return; var rd = new FileReader(); rd.onload = function() { var im = new Image(); im.onload = function() { PU_.acL.foto = asComprimir(im, 1400, 0.72); $id('pu-acl-prev').innerHTML = '<img src="' + PU_.acL.foto + '" style="max-width:220px;border-radius:8px;margin-top:6px">'; }; im.src = rd.result; }; rd.readAsDataURL(f); };
   $id('pu-acl-ok').onclick = async function() {
     var b = this, t = $v('pu-acl-t').trim(), p = $v('pu-acl-p').trim(), j = $id('pu-acl-jtx');
@@ -13633,14 +13711,14 @@ function puCambioTrabajo() {
   var mot = ['El casco no da para recapar', 'El casco da para recapar', 'Lo pidió el cliente', 'Otro'];
   var h = '<div class="mh"><span class="mt">Cambiar el trabajo de ' + puEsc(puIdTxt(PU_.f.cub.MARCA, PU_.f.cub.DOT)) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
     '<div style="font-size:16px">Ahora: <b>' + puEsc(X.trabajo) + '</b>. Lo decide el encargado de línea y queda registrado. Cambia la receta y las estaciones por las que pasa.</div>' +
-    '<div style="font-weight:700">Trabajo nuevo</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + ops.map(function(t, i) { return '<button class="pu-chip pu-ct-t' + (i < 2 && pri.indexOf(t) !== -1 ? '" style="font-size:18px;font-weight:700' : '') + '" data-v="' + puEsc(t) + '">' + puEsc(t) + '</button>'; }).join('') + '</div>' +
+    '<div style="font-weight:700">Trabajo nuevo</div>' + uiBusca('pu-ct-t', { opciones: ops, sel: [], ph: 'Buscá el trabajo nuevo (' + ops.length + ')', onchange: 'puCtSet' }) +
     '<div style="font-weight:700">¿Por qué?</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + mot.map(function(m) { return '<button class="pu-chip pu-ct-m" data-v="' + puEsc(m) + '">' + puEsc(m) + '</button>'; }).join('') + '</div>' +
     '<input class="pu-q" id="pu-ct-txt" style="font-size:16px;text-transform:none" placeholder="Detalle (opcional)" autocomplete="off">' +
     (X.soyEncargado ? '' : '<div class="pu-aut"><div style="font-weight:700;color:var(--warn)">Lo confirma el encargado de línea con su usuario y clave</div><div class="fr2"><input id="pu-ct-u" placeholder="Usuario del encargado" autocomplete="off"><input id="pu-ct-c" type="password" placeholder="Clave" autocomplete="new-password"></div></div>') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="pu-ct-ok" style="min-height:48px;font-size:17px">Cambiar trabajo</button></div>';
   showModal(h, 'md-lg');
   var sel = function(cls, key) { document.querySelectorAll('.mo .' + cls).forEach(function(b) { b.onclick = function() { C[key] = b.dataset.v; document.querySelectorAll('.mo .' + cls).forEach(function(x) { x.classList.toggle('sel', x === b); }); }; }); };
-  sel('pu-ct-t', 't'); sel('pu-ct-m', 'm');
+  sel('pu-ct-m', 'm');
   $id('pu-ct-ok').onclick = async function() {
     var motivo = [C.m, $v('pu-ct-txt').trim()].filter(function(x) { return x; }).join(' · ');
     if (!C.t) return toast('Elegí el trabajo nuevo', 'r2');
@@ -13735,7 +13813,7 @@ async function puPesaje(dia) {
   var h = '<div class="mh"><span class="mt">⚖ Pesaje ' + (p.ES_HOY ? 'de hoy' : 'para preparar') + ' · ' + puEsc(p.HOY.split('-').reverse().join('/')) + '</span><button class="mc" onclick="puPesCerrar()">×</button></div><div class="mb2 pu-vent">' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pu-chip' + (p.ES_HOY ? ' sel' : '') + '" onclick="puPesaje(\'\')">Hoy ' + puEsc(puFechaTxt(p.DIA_HOY)) + '</button><button class="pu-chip' + (!p.ES_HOY ? ' sel' : '') + '" onclick="puPesaje(\'' + puEsc(p.MANANA) + '\')">Preparar para el ' + puEsc(puFechaTxt(p.MANANA)) + '</button></div>' +
     (!p.ES_HOY ? '<div style="font-size:15px;background:var(--accent-light,#e0ecff);border-radius:8px;padding:8px">Dejá pesado lo que va a usar cada estación el <b>' + puEsc(puFechaTxt(p.HOY)) + '</b>. Ese día ya se arranca a trabajar sin pesar.</div>' : '') +
-    (emps.length ? '<div><div style="font-weight:700;font-size:15px">¿Quién pesa?</div><div style="display:flex;flex-wrap:wrap;gap:6px">' + emps.map(function(n) { return '<button class="pu-chip' + (PU_.pesOper === n ? ' sel' : '') + '" data-n="' + puEsc(n) + '" onclick="PU_.pesOper=this.dataset.n;document.querySelectorAll(\'.pu-pes-op\').forEach(function(b){b.classList.toggle(\'sel\',b.dataset.n===PU_.pesOper)})" >' + puEsc(n) + '</button>'; }).join('').replace(/class="pu-chip/g, 'class="pu-pes-op pu-chip') + '</div></div>' : '');
+    (emps.length ? '<div><div style="font-weight:700;font-size:15px">¿Quién pesa?</div>' + uiBusca('pu-pes-op', { opciones: emps, otro: true, sel: PU_.pesOper ? [PU_.pesOper] : [], ph: 'Buscá quién pesa', onchange: 'puPesOpSet' }) + '</div>' : '');
   if (!p.ITEMS.length) h += '<div class="tdim">En esta estación no se usa ningún insumo que se pese.</div>';
   p.ITEMS.forEach(function(i, k) {
     var P = i.PES, u = puEsc(i.UNIDAD);
@@ -13894,10 +13972,20 @@ async function puPedRechazar(id) {
   } catch (e) { toast(e.message, 'r2'); }
 }
 function puElegir(tit, ops, fn) {
+  if (ops.length > 8) {
+    PU_.elFn = fn;
+    showModal('<div class="mh"><span class="mt">' + puEsc(tit) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="min-height:340px">' + uiBusca('pu-elegir', { opciones: ops, otro: true, sel: [], max: 0, ph: 'Buscá: escribí parte del nombre (' + ops.length + ')', onchange: 'puElegirSel' }) + '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button></div>');
+    setTimeout(function() { var q = $id('uib-q-pu-elegir'); if (q) q.focus(); }, 80);
+    return;
+  }
   showModal('<div class="mh"><span class="mt">' + puEsc(tit) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="display:flex;flex-wrap:wrap;gap:8px">' +
     ops.map(function(o) { return '<button class="pu-chip" data-v="' + puEsc(o) + '">' + puEsc(o) + '</button>'; }).join('') + '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button></div>');
   document.querySelectorAll('.mo .pu-chip').forEach(function(b) { b.onclick = function() { closeModal(); fn(b.dataset.v); }; });
 }
+function puElegirSel(sel) { var fn = PU_.elFn; PU_.elFn = null; closeModal(); if (fn && sel[0]) fn(sel[0]); }
+function puAclOpSet(sel) { PU_.acL.oper = sel[0] || ''; }
+function puPesOpSet(sel) { PU_.pesOper = sel[0] || ''; }
+function puCtSet(sel) { if (PU_.ct) PU_.ct.t = sel[0] || ''; }
 function puNoAplica() {
   puElegir('¿Por qué esta cubierta no pasa por ' + puNomEst(puE()) + '?', ['No necesita', 'No corresponde a este trabajo', 'Lo decidió el encargado', 'Otro'], function(m) { puPararReloj(); PU_.res = 'NO_APLICA'; PU_.obs = m; puFicha(); });
 }
@@ -16830,11 +16918,12 @@ function mtBadge(e) { var x = MT_EST[e] || ['mt-b-x', e || '—']; return '<span
 function mtPlata(n) { return '$ ' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function mtBtn(cls, txt, js, tit) { return typeof pcBtnAbm === 'function' ? pcBtnAbm(cls, txt, js, tit) : '<button class="btn ' + cls + ' btn-xs" onclick="' + js + '">' + txt + '</button>'; }
 function mtPuede(acc) { return typeof tienePermiso === 'function' ? tienePermiso('VENTAS', acc) : true; }
-function mtTit() { return { ord: 'Órdenes del taller', eq: 'Equipos (camiones y máquinas)', cat: 'Servicios y recetas del taller', mp: 'Mantenimiento de máquinas de planta' }[MT_.vista] || 'Taller'; }
+function mtTit() { return { ord: MT_.amb === 'planta' ? 'Órdenes de reparación de máquinas propias' : 'Órdenes del taller (clientes)', eq: 'Unidades y máquinas', cat: 'Servicios y recetas del taller', mp: 'Mantenimiento de máquinas de planta' }[MT_.vista] || 'Taller'; }
+function mtGrupo() { return MT_.vista === 'mp' || MT_.amb === 'planta' && MT_.vista === 'ord' ? 'Planta' : (MT_.vista === 'eq' ? 'Servicios a empresas y flota' : 'Taller mecánico'); }
 async function renderTaller() {
   var el = $id('page-taller'); if (!el) return;
-  if (window._menuAcc && String(window._menuAcc).indexOf('mt-') === 0) { MT_.vista = String(window._menuAcc).substring(3); MT_.nueva = false; MT_.ord = null; MT_.oe = null; MT_.eqNuevo = false; window._menuAcc = ''; }
-  el.innerHTML = '<div class="mb3" style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span id="mt-tit" style="font-size:20px;font-weight:800">🔧 ' + mtTit() + '</span><span class="tdim" style="font-size:13px">Taller y servicios a empresas</span></div><div id="mt-body"><div class="tdim" style="padding:20px">Cargando…</div></div>';
+  if (window._menuAcc && String(window._menuAcc).indexOf('mt-') === 0) { MT_.vista = String(window._menuAcc).substring(3); MT_.amb = MT_.vista === 'mp' ? 'planta' : (MT_.vista === 'ord' ? 'cli' : (MT_.amb || 'cli')); MT_.nueva = false; MT_.ord = null; MT_.oe = null; MT_.eqNuevo = false; window._menuAcc = ''; }
+  el.innerHTML = '<div class="mb3" style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span id="mt-tit" style="font-size:20px;font-weight:800">🔧 ' + mtTit() + '</span><span class="tdim" style="font-size:13px">' + mtGrupo() + '</span></div><div id="mt-body"><div class="tdim" style="padding:20px">Cargando…</div></div>';
   await mtRecargar();
 }
 async function mtRecargar() {
@@ -16843,7 +16932,7 @@ async function mtRecargar() {
   mtPintar();
 }
 function mtPintar() {
-  var pt = $id('mt-tit'); if (pt) pt.textContent = '🔧 ' + mtTit();
+  var pt = $id('mt-tit'); if (pt) pt.textContent = '🔧 ' + mtTit(); var pg = pt && pt.nextElementSibling; if (pg) pg.textContent = mtGrupo();
   if (MT_.vista === 'eq') return mtEquipos();
   if (MT_.vista === 'cat') return mtCatalogo();
   if (MT_.vista === 'mp') return mpPintar();
@@ -16857,7 +16946,7 @@ function mtOpt(l, v) { return l.map(function(x) { return '<option value="' + pcE
 function mtOrdenes() {
   var d = MT_.d, F = MT_.F = MT_.F || { q: '', suc: '', est: 'VIG', desde: '', hasta: '', pag: 0 };
   var sucs = {}; d.ORDENES.forEach(function(o) { if (o.SUCURSAL) sucs[o.SUCURSAL] = 1; });
-  $id('mt-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">Órdenes del taller · ' + pcEsc(d.SUC.NOMBRE) + '</span>' + '<span class="flex gap2" style="flex-wrap:wrap"><button class="btn btn-s btn-sm" onclick="mtImpChkBlanco()" title="Para marcar a mano cuando no hay batería o señal, y después pasarlo al sistema">🖨 Check list en blanco</button>' + (mtPuede('AGREGAR') ? '<button class="btn btn-p btn-sm" onclick="MT_.nueva=true;mtPintar()">＋ Nueva orden del taller</button>' : '') + '</span></div><div class="card-body">' +
+  $id('mt-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">' + (MT_.amb === 'planta' ? '<button class="btn btn-s btn-sm" onclick="MT_.vista=\'mp\';MT_.F=null;mtPintar()">← Mantenimiento de planta</button> 🔧 Órdenes de reparación de máquinas propias' : 'Órdenes del taller (clientes)') + ' · ' + pcEsc(d.SUC.NOMBRE) + '</span>' + '<span class="flex gap2" style="flex-wrap:wrap"><button class="btn btn-s btn-sm" onclick="mtImpChkBlanco()" title="Para marcar a mano cuando no hay batería o señal, y después pasarlo al sistema">🖨 Check list en blanco</button>' + (mtPuede('AGREGAR') ? '<button class="btn btn-p btn-sm" onclick="MT_.nueva=true;MT_.N=null;mtPintar()">＋ Nueva orden del taller</button>' : '') + '</span></div><div class="card-body">' +
     '<div class="pc-otf"><div class="fg" style="grid-column:span 2"><label class="fl">Buscar</label><input class="fi" placeholder="N° de orden, cliente, dominio, quién la pidió" value="' + pcEsc(F.q) + '" oninput="MT_.F.q=this.value;MT_.F.pag=0;mtOrdGrilla()"></div>' +
     '<div class="fg"><label class="fl">Sucursal</label><select class="fs" onchange="MT_.F.suc=this.value;MT_.F.pag=0;mtOrdGrilla()">' + mtOpt([['', 'Todas']].concat(Object.keys(sucs).sort().map(function(s) { return [s, s]; })), F.suc) + '</select></div>' +
     '<div class="fg"><label class="fl">Estado</label><select class="fs" onchange="MT_.F.est=this.value;MT_.F.pag=0;mtOrdGrilla()">' + mtOpt([['VIG', 'Vigentes'], ['', 'Todas'], ['CHECK_LIST', 'En check list'], ['PRESUPUESTADA', 'Presupuestadas'], ['APROBADA', 'Aprobadas'], ['PLANIFICADA', 'Planificadas (en campo)'], ['EN_TRABAJO', 'En trabajo'], ['TERMINADA', 'Terminadas'], ['ANULADA', 'Anuladas']], F.est) + '</select></div>' +
@@ -16871,7 +16960,9 @@ function mtOrdGrilla() {
   var d = MT_.d, F = MT_.F, el = $id('mt-og'); if (!el) return;
   var q = String(F.q || '').toUpperCase().trim().split(/\s+/).filter(Boolean);
   var dd = F.desde ? new Date(F.desde + 'T00:00:00').getTime() : 0, dh = F.hasta ? new Date(F.hasta + 'T23:59:59').getTime() : 0;
+  var pl = MT_.amb === 'planta';
   var l = d.ORDENES.filter(function(o) {
+    if (pl ? (!o.TIPO || o.TIPO === 'SERVICIO_CLIENTE') : (o.TIPO && o.TIPO !== 'SERVICIO_CLIENTE')) return false;
     if (F.est === 'VIG' && o.ESTADO === 'ANULADA') return false;
     if (F.est && F.est !== 'VIG' && o.ESTADO !== F.est) return false;
     if (F.suc && o.SUCURSAL !== F.suc) return false;
@@ -16922,38 +17013,47 @@ function mtChips(lista, sel, js) { return '<div class="mt-chips">' + lista.map(f
 (function() { var st = document.createElement('style'); st.textContent = '.mt-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}.mt-chip{min-height:42px;padding:6px 14px;border-radius:22px;border:2px solid #cbd5e1;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#334155}.mt-chip.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}.mt-cli{display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #16a34a;border-radius:12px;background:#f0fdf4;margin-bottom:10px}.mt-res{max-height:260px;overflow:auto;margin-bottom:10px}.mt-bar.pegada{box-shadow:0 -60px 0 0 var(--card,#fff)}'; document.head.appendChild(st); })();
 function mtTop() { var m = document.querySelector('main'); if (m) m.scrollTop = 0; window.scrollTo(0, 0); }
 function mtNueva() {
-  var d = MT_.d, N = MT_.N = MT_.N || { tipo: 'SERVICIO_CLIENTE', cli: '', eqs: {}, km: {}, q: '', pide: [], sol: '', tel: '' };
+  var d = MT_.d, pl = MT_.amb === 'planta';
+  var N = MT_.N = MT_.N || { tipo: pl ? '' : 'SERVICIO_CLIENTE', cli: '', eqs: {}, km: {}, q: '', pide: [], sol: '', tel: '' };
+  if (!pl) N.tipo = 'SERVICIO_CLIENTE'; else if (N.tipo === 'SERVICIO_CLIENTE') N.tipo = '';
   var c = N.cli ? d.CLIENTES.filter(function(x) { return String(x.ID) === String(N.cli); })[0] : null;
-  var eqs = d.EQUIPOS.filter(function(e) { return e.ESTADO !== 'BAJA' && (N.tipo !== 'SERVICIO_CLIENTE' ? !e.ID_CLIENTE : String(e.ID_CLIENTE) === String(N.cli)); });
+  var eqs = d.EQUIPOS.filter(function(e) { return e.ESTADO !== 'BAJA' && (pl ? !e.ID_CLIENTE : String(e.ID_CLIENTE) === String(N.cli)); });
   var tipoN = {}; d.TIPOS.forEach(function(t) { tipoN[t.ID_TIPO] = t.NOMBRE; });
   var h = '<div class="mb3"><button class="btn btn-s" onclick="MT_.nueva=false;MT_.N=null;mtPintar()">← Volver a la lista de órdenes</button></div>' +
-    '<div class="card mb3"><div class="card-hd"><span class="card-title">＋ Nueva orden del taller · ' + pcEsc(d.SUC.NOMBRE) + '</span></div><div class="card-body">' +
-    '<label class="fl">1. Para quién es</label>' + mtChips(['Cliente (empresa)', 'Máquina propia: preventivo', 'Máquina propia: correctivo', 'Máquina propia: rotura'], [{ SERVICIO_CLIENTE: 'Cliente (empresa)', PREVENTIVO: 'Máquina propia: preventivo', CORRECTIVO: 'Máquina propia: correctivo', ROTURA: 'Máquina propia: rotura' }[N.tipo]], 'mtNTipo');
-  if (N.tipo === 'SERVICIO_CLIENTE') {
-    h += '<label class="fl">2. Cliente</label>';
+    '<div class="card mb3"><div class="card-hd"><span class="card-title">' + (pl ? '＋ Nueva orden de reparación · máquina propia' : '＋ Nueva orden del taller · cliente') + ' · ' + pcEsc(d.SUC.NOMBRE) + '</span></div><div class="card-body">';
+  var n = 1;
+  if (pl) {
+    h += '<label class="fl">' + (n++) + '. Tipo de trabajo</label>' + uiBusca('mt-n-tipo', { opciones: [{ v: 'PREVENTIVO', t: 'Preventivo' }, { v: 'CORRECTIVO', t: 'Correctivo' }, { v: 'ROTURA', t: 'Rotura' }], sel: N.tipo ? [N.tipo] : [], obligatorio: true, onchange: 'mtNTipoSet' });
+  } else {
+    h += '<label class="fl">' + (n++) + '. Cliente</label>';
     if (c) h += '<div class="mt-cli"><div style="flex:1"><b>' + pcEsc(c.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc([c.CUIT, c.LOCALIDAD].filter(Boolean).join(' · ')) + '</div></div><button class="btn btn-s btn-sm" onclick="MT_.N.cli=\'\';MT_.N.eqs={};mtNueva()">Cambiar</button></div>';
     else {
       var q = String(N.q || '').toUpperCase().trim(), res = q.length < 2 ? [] : d.CLIENTES.filter(function(x) { return (x.NOMBRE + ' ' + x.CUIT).toUpperCase().indexOf(q) !== -1; }).slice(0, 30);
       h += '<input class="fi mb2" id="mt-n-q" placeholder="Buscá el cliente: escribí 2 letras del nombre o el CUIT" value="' + pcEsc(N.q || '') + '" oninput="MT_.N.q=this.value;mtNBuscar()" autocomplete="off"><div class="mt-res" id="mt-n-res">' + mtNRes(res, q) + '</div>';
     }
   }
-  if (N.tipo !== 'SERVICIO_CLIENTE' || c) {
-    h += '<label class="fl">' + (N.tipo === 'SERVICIO_CLIENTE' ? '3' : '2') + '. Equipos que entran <span class="tdim">(cada uno con su check list; los km vienen del último registro)</span></label>' +
-      (eqs.length ? eqs.map(function(e) { var ck = !!N.eqs[e.ID_EQUIPO];
-        return '<label class="mt-pick"><input type="checkbox"' + (ck ? ' checked' : '') + ' onchange="MT_.N.eqs[' + e.ID_EQUIPO + ']=this.checked;if(this.checked&&!MT_.N.km[' + e.ID_EQUIPO + '])MT_.N.km[' + e.ID_EQUIPO + ']=' + (e.KM_HS || 0) + ';mtNueva()"><div style="flex:1"><b>' + pcEsc(mtEqIdent(e)) + '</b> · ' + pcEsc(tipoN[e.ID_TIPO] || '') + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + '</div>' +
-          (ck ? '<input class="fi" style="width:120px;flex:0 0 120px" inputmode="numeric" title="Km / horas de hoy (precargado con el último)" value="' + pcEsc(N.km[e.ID_EQUIPO] || '') + '" onclick="event.preventDefault()" oninput="MT_.N.km[' + e.ID_EQUIPO + ']=this.value">' : (e.KM_HS ? '<span class="tdim" style="font-size:12px">' + Number(e.KM_HS).toLocaleString('es-AR') + ' km</span>' : '')) + '</label>'; }).join('') : '<div class="al mb2">No tiene equipos cargados. Cargalo con «＋ Equipo nuevo».</div>') +
+  if (pl || c) {
+    h += '<label class="fl">' + (n++) + '. ' + (pl ? 'Máquinas que entran' : 'Equipos que entran') + ' <span class="tdim">(cada uno con su check list; los km vienen del último registro)</span></label>';
+    if (eqs.length > 6) h += '<input class="fi mb2" id="mt-n-eqq" autocomplete="off" placeholder="Buscá el equipo: dominio, marca, modelo o tipo (' + eqs.length + ')" value="' + pcEsc(N.eqq || '') + '" oninput="MT_.N.eqq=this.value;mtNEqFiltro(this.value)">';
+    h += '<div id="mt-n-eqs">' + (eqs.length ? eqs.map(function(e) { var ck = !!N.eqs[e.ID_EQUIPO];
+        return '<label class="mt-pick" data-t="' + pcEsc((mtEqIdent(e) + ' ' + (tipoN[e.ID_TIPO] || '') + ' ' + e.MARCA + ' ' + e.MODELO).toUpperCase()) + '"' + (ck ? ' data-ck="1"' : '') + '><input type="checkbox"' + (ck ? ' checked' : '') + ' onchange="MT_.N.eqs[' + e.ID_EQUIPO + ']=this.checked;if(this.checked&&!MT_.N.km[' + e.ID_EQUIPO + '])MT_.N.km[' + e.ID_EQUIPO + ']=' + (e.KM_HS || 0) + ';mtNueva()"><div style="flex:1"><b>' + pcEsc(mtEqIdent(e)) + '</b> · ' + pcEsc(tipoN[e.ID_TIPO] || '') + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + '</div>' +
+          (ck ? '<input class="fi" style="width:120px;flex:0 0 120px" inputmode="numeric" title="Km / horas de hoy (precargado con el último)" value="' + pcEsc(N.km[e.ID_EQUIPO] || '') + '" onclick="event.preventDefault()" oninput="MT_.N.km[' + e.ID_EQUIPO + ']=this.value">' : (e.KM_HS ? '<span class="tdim" style="font-size:12px">' + Number(e.KM_HS).toLocaleString('es-AR') + ' km</span>' : '')) + '</label>'; }).join('') : '<div class="tdim mb2">' + (pl ? 'No hay máquinas propias cargadas.' : 'Este cliente no tiene equipos cargados.') + '</div>') + '</div>' +
       '<button class="btn btn-s btn-sm mb3" onclick="mtEqForm(null,true)">＋ Equipo nuevo</button>';
-    var sols = []; if (c && c.CONTACTO) sols.push(c.CONTACTO); sols.push('Chofer'); sols.push('Encargado de flota'); if (N.sol && sols.indexOf(N.sol) === -1) sols.push(N.sol);
-    if (!N.sol && c && c.CONTACTO) { N.sol = c.CONTACTO; }
-    if (!N.tel && c && c.TEL) { N.tel = c.TEL; }
-    var nn = N.tipo === 'SERVICIO_CLIENTE' ? 4 : 3;
-    h += '<label class="fl">' + nn + '. Quién la pide</label>' + mtChips(sols.concat(['Otro…']), [N.sol], 'mtNSol') +
-      '<div class="tdim mb2" style="font-size:13px">Teléfono: <b>' + pcEsc(N.tel || '—') + '</b> <button class="btn btn-s btn-xs" onclick="mtNTel()">Cambiar</button></div>' +
-      '<label class="fl">' + (nn + 1) + '. Qué pide <span class="tdim">(tocá todos los que correspondan)</span></label>' + mtChips(MT_PIDE.concat(['Otro…']), N.pide, 'mtNPide') +
+    if (!pl) {
+      var sols = []; if (c && c.CONTACTO) sols.push(c.CONTACTO); sols.push('Chofer'); sols.push('Encargado de flota');
+      if (!N.sol && c && c.CONTACTO) { N.sol = c.CONTACTO; }
+      if (!N.tel && c && c.TEL) { N.tel = c.TEL; }
+      h += '<label class="fl">' + (n++) + '. Quién la pide</label>' + uiBusca('mt-n-sol', { opciones: sols, sel: N.sol ? [N.sol] : [], otro: true, ph: 'Buscá o escribí quién la pide', onchange: 'mtNSolSet' }) +
+        '<div class="tdim mb2" style="font-size:13px">Teléfono: <b>' + pcEsc(N.tel || '—') + '</b> <button class="btn btn-s btn-xs" onclick="mtNTel()">Cambiar</button></div>';
+    }
+    var pide = MT_PIDE.slice(); (d.SERVICIOS || []).forEach(function(sv) { if (sv.NOMBRE && pide.indexOf(sv.NOMBRE) === -1) pide.push(sv.NOMBRE); });
+    h += '<label class="fl">' + (n++) + '. Qué ' + (pl ? 'hay que hacer' : 'pide') + ' <span class="tdim">(elegí todos los que correspondan; si no está, escribilo y tocá «Agregar»)</span></label>' +
+      uiBusca('mt-n-pide', { opciones: pide, sel: N.pide, multi: true, otro: true, max: 0, ph: 'Buscá el trabajo: frenos, service, luces… (' + pide.length + ' opciones)', onchange: 'mtNPideSet' }) +
       '<button class="btn btn-p mt2" style="min-height:52px;width:100%;font-size:16px" id="mt-n-ok" onclick="mtNuevaOk()">Crear la orden y empezar el check list</button>';
   }
   h += '</div></div>';
   $id('mt-body').innerHTML = h;
+  if (N.eqq) mtNEqFiltro(N.eqq);
 }
 function mtNRes(res, q) {
   if (q.length < 2) return '<div class="tdim" style="font-size:13px">Escribí al menos 2 letras.</div>';
@@ -16961,22 +17061,14 @@ function mtNRes(res, q) {
   return res.map(function(x) { return '<div class="mt-pick" onclick="MT_.N.cli=' + x.ID + ';MT_.N.q=\'\';MT_.N.eqs={};MT_.N.sol=\'\';MT_.N.tel=\'\';mtNueva()"><div style="flex:1"><b>' + pcEsc(x.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc([x.CUIT, x.LOCALIDAD].filter(Boolean).join(' · ')) + '</div></div><span>›</span></div>'; }).join('');
 }
 function mtNBuscar() { var q = String(MT_.N.q || '').toUpperCase().trim(); var res = q.length < 2 ? [] : MT_.d.CLIENTES.filter(function(x) { return (x.NOMBRE + ' ' + x.CUIT).toUpperCase().indexOf(q) !== -1; }).slice(0, 30); $id('mt-n-res').innerHTML = mtNRes(res, q); }
-function mtNTipo(i) { MT_.N.tipo = ['SERVICIO_CLIENTE', 'PREVENTIVO', 'CORRECTIVO', 'ROTURA'][i]; MT_.N.eqs = {}; if (i) { MT_.N.cli = ''; MT_.N.sol = ''; MT_.N.tel = ''; } mtNueva(); }
-async function mtNSol(i) {
-  var c = MT_.N.cli ? MT_.d.CLIENTES.filter(function(x) { return String(x.ID) === String(MT_.N.cli); })[0] : null;
-  var sols = []; if (c && c.CONTACTO) sols.push(c.CONTACTO); sols.push('Chofer'); sols.push('Encargado de flota'); if (MT_.N.sol && sols.indexOf(MT_.N.sol) === -1) sols.push(MT_.N.sol);
-  if (i >= sols.length) { var v = await uiPedir('Nombre de quien pide el trabajo', { obligatorio: true }); if (v === null) return; MT_.N.sol = v.trim(); } else MT_.N.sol = sols[i];
-  mtNueva();
-}
+function mtNEqFiltro(v) { var w = String(v || '').toUpperCase().trim().split(/\s+/).filter(Boolean); document.querySelectorAll('#mt-n-eqs .mt-pick').forEach(function(el) { var t = el.getAttribute('data-t') || ''; el.style.display = (el.getAttribute('data-ck') || w.every(function(k) { return t.indexOf(k) !== -1; })) ? '' : 'none'; }); }
+function mtNTipoSet(sel) { MT_.N.tipo = sel[0] || ''; }
+function mtNSolSet(sel) { MT_.N.sol = sel[0] || ''; }
+function mtNPideSet(sel) { MT_.N.pide = sel; }
 async function mtNTel() { var v = await uiPedir('Teléfono de contacto', { obligatorio: true }); if (v === null) return; MT_.N.tel = v.trim(); mtNueva(); }
-async function mtNPide(i) {
-  var P = MT_.N.pide;
-  if (i >= MT_PIDE.length) { var v = await uiPedir('¿Qué pide? (otro trabajo)', { obligatorio: true }); if (v === null) return; MT_PIDE.push(v.trim()); P.push(v.trim()); }
-  else { var x = MT_PIDE[i], k = P.indexOf(x); if (k === -1) P.push(x); else P.splice(k, 1); }
-  mtNueva();
-}
 async function mtNuevaOk() {
   var N = MT_.N, eqs = Object.keys(N.eqs).filter(function(k) { return N.eqs[k]; }).map(Number);
+  if (!N.tipo) { toast('Elegí el tipo de trabajo', 'r2'); return; }
   if (N.tipo === 'SERVICIO_CLIENTE' && !N.cli) { toast('Elegí el cliente', 'r2'); return; }
   if (!eqs.length) { toast('Tildá al menos un equipo', 'r2'); return; }
   if (!N.pide.length) { toast('Elegí qué pide', 'r2'); return; }
@@ -17447,8 +17539,8 @@ function mpIndice() {
 async function mpPintar() {
   var M = MT_.mp = MT_.mp || { tab: 'hoy', eq: null, todo: false, mias: false, planEq: 0, hist: null };
   if (!M.d) { $id('mt-body').innerHTML = '<div class="tdim">Cargando las máquinas…</div>'; if (!(await mpCargar())) return; }
-  var tabs = '<div class="mp-tabs">' + [['hoy', '🗓 Controles de hoy'], ['plan', '📋 Plan de cada máquina'], ['cum', '📊 Cumplimiento']].map(function(t) {
-    return '<button class="btn ' + (M.tab === t[0] ? 'btn-p' : 'btn-s') + '" onclick="MT_.mp.tab=\'' + t[0] + '\';MT_.mp.eq=null;mpPintar()">' + t[1] + '</button>'; }).join('') +
+  var tabs = '<div class="mp-tabs">' + [['hoy', '🗓 Controles de hoy'], ['plan', '📋 Plan de cada máquina'], ['cum', '📊 Cumplimiento'], ['ord', '🔧 Órdenes de reparación']].map(function(t) {
+    return '<button class="btn ' + (M.tab === t[0] ? 'btn-p' : 'btn-s') + '" onclick="' + (t[0] === 'ord' ? 'MT_.amb=\'planta\';MT_.vista=\'ord\';MT_.F=null;MT_.nueva=false;MT_.ord=null;mtPintar()' : 'MT_.mp.tab=\'' + t[0] + '\';MT_.mp.eq=null;mpPintar()') + '">' + t[1] + '</button>'; }).join('') +
     '<button class="btn btn-s" title="Volver a leer" onclick="MT_.mp.d=null;mpPintar()">↻</button></div>';
   if (M.tab === 'plan') return mpPlan(tabs);
   if (M.tab === 'cum') return mpCum(tabs);
@@ -17518,7 +17610,7 @@ async function mpTodoOk() {
 // Un control que dio mal abre una orden de taller (correctivo) para esa máquina
 function mpOrden(idCtrl) {
   var c = MT_.mp.d.CTRLS.filter(function(x) { return x.ID_CTRL === idCtrl; })[0]; if (!c) return;
-  MT_.vista = 'ord'; MT_.ord = null; MT_.oe = null; MT_.nueva = true;
+  MT_.vista = 'ord'; MT_.amb = 'planta'; MT_.ord = null; MT_.oe = null; MT_.nueva = true;
   MT_.N = { tipo: 'CORRECTIVO', cli: '', eqs: {}, km: {}, q: '', pide: ['Falla en control: ' + c.NOMBRE + (c.ULT_OBS ? ' (' + c.ULT_OBS + ')' : '')], sol: mpUsr(), tel: '' };
   MT_.N.eqs[c.ID_EQUIPO] = true; MT_.N.km[c.ID_EQUIPO] = 0; mtPintar(); mtTop();
 }
