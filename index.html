@@ -878,7 +878,7 @@ function menuClick(el) {
   if (acc.indexOf('mt-') === 0 && typeof MT_ !== 'undefined') { MT_.vista = acc.substring(3); MT_.amb = MT_.vista === 'mp' ? 'planta' : (MT_.vista === 'ord' ? 'cli' : (MT_.amb || 'cli')); MT_.F = null; MT_.nueva = false; MT_.ord = null; MT_.oe = null; MT_.eqNuevo = false; }
   // Flota y cubiertas: cada catálogo es una entrada del menú
   if (acc.indexOf('fl-') === 0 && typeof FL_ !== 'undefined' && FL_MENU[acc]) { if (FL_MENU[acc] !== FL_.t) FL_.F = { q: '', p: '', est: 'V' }; FL_.t = FL_MENU[acc]; }
-  window._menuAcc = acc;
+  window._menuAcc = acc; window._menuEl = el;
   navTo(pg);
 }
 function aplicarPermisosMenu() {
@@ -1452,8 +1452,10 @@ function navTo(page) {
   document.body.classList.toggle('en-inicio-movil', page === 'inicio-movil');
   if (pageEl) pageEl.classList.remove('hidden');
   var accAct = window._menuAcc || ''; window._menuAcc = '';
+  // Si la misma pantalla está en dos grupos del menú (órdenes del taller: Taller y Servicios a empresas), queda marcada la que se tocó
+  var elT = window._menuEl, pref = elT && elT.dataset.page === page && (elT.dataset.acc || '') === accAct ? elT : null; window._menuEl = null;
   document.querySelectorAll('.nav-item').forEach(function(el) {
-    el.classList.toggle('active', el.dataset.page === page && (el.dataset.acc || '') === accAct);
+    el.classList.toggle('active', pref ? el === pref : (el.dataset.page === page && (el.dataset.acc || '') === accAct));
   });
   menuMarcarActivo();
   if (page !== 'fichaje' && typeof fkSalirPagina === 'function') fkSalirPagina();
@@ -1690,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611171517';
+var EMA_BUILD = '202611171519';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
