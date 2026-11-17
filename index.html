@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "aead95fbeeea"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "a6dfcd4d458c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611171712';
+var EMA_BUILD = '202611171830';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17115,6 +17115,9 @@ function mtOrdenVer() {
       (P.ESTADO === 'APROBADO' ? '<div class="al" style="flex:1">Aprobado. Abajo, en <b>Trabajo y control final</b>, se reparten las tareas a los mecánicos; con todas controladas se cierra la orden y se hace el remito.</div>' : '') + '</div>';
   }
   h += '</div></div>';
+  // Adicionales (lo que apareció de más, que el cliente aprueba aparte) y factura desde los presupuestos aprobados (17/11/2026)
+  if (P && P.ESTADO === 'APROBADO' && typeof fprBloque === 'function') { var adh = fprBloque({ ID: O.ORDEN.ID_ORDEN, ESTADO: O.ORDEN.ESTADO, NRO: O.ORDEN.NRO, CLIENTE: o.CLIENTE || '', AMBITO: 'TALLER' }, O.PRESUPS || [], function() { var idO = O.ORDEN.ID_ORDEN; return mtRecargar().then(function() { return mtAbrir(idO); }); }, { soloAdic: true });
+    if (adh) h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Adicionales y factura</span></div><div class="card-body">' + adh + '</div></div>'; }
   if (P && P.ESTADO === 'APROBADO' && O.TRAB) h += mtTrabHtml(O, an);
   $id('mt-body').innerHTML = h;
 }
@@ -17143,7 +17146,7 @@ function mtTrabHtml(O, an) {
   });
   if (ed) h += '<div class="flex gap2 mt2" style="flex-wrap:wrap;align-items:center"><select class="fs" id="mt-tr-eq" style="max-width:220px">' + O.EQUIPOS.map(function(x) { return '<option value="' + x.ID_OE + '">' + pcEsc(mtEqIdent(mtEq(x.ID_EQUIPO))) + '</option>'; }).join('') + '</select><button class="btn btn-s" onclick="mtTrabAgregar()">＋ Agregar una tarea que apareció</button></div>';
   if (est === 'EN_TRABAJO' && !an) {
-    if (nok === tr.length) h += '<div class="al mt3" style="background:#f0fdf4;border-color:#86efac">Todas las tareas tienen control OK. Al cerrar se hace el remito con lo aprobado (los repuestos descuentan stock) y se factura desde Ventas → Facturar remitos pendientes.</div>' + (typeof flpCerrarDesde === 'function' && mtPuede('AGREGAR') ? '<button class="btn btn-p mt2" style="min-height:52px;width:100%;font-size:16px" onclick="flpCerrarDesde(' + O.ORDEN.ID_ORDEN + ')">✅ Cerrar la orden y hacer el remito</button>' : '');
+    if (nok === tr.length) h += '<div class="al mt3" style="background:#f0fdf4;border-color:#86efac">Todas las tareas tienen control OK. Al cerrar se hace el remito con lo aprobado (los repuestos descuentan stock) y después se factura desde el presupuesto (botón Facturar).</div>' + (typeof flpCerrarDesde === 'function' && mtPuede('AGREGAR') ? '<button class="btn btn-p mt2" style="min-height:52px;width:100%;font-size:16px" onclick="flpCerrarDesde(' + O.ORDEN.ID_ORDEN + ')">✅ Cerrar la orden y hacer el remito</button>' : '');
     else h += '<div class="tdim mt3" style="font-size:13px">La orden se cierra cuando todas las tareas tengan control OK (faltan ' + (tr.length - nok) + ').</div>';
   }
   return h + '</div></div>';
@@ -18310,14 +18313,14 @@ async function renderPlanes() {
   $id('fl-body').innerHTML = '<div class="card mb3"><div class="card-hd"><span class="card-title">Órdenes en campo</span>' + (flPuede('AGREGAR') ? '<button class="btn btn-p btn-sm" onclick="flpNuevo()">＋ Planificar servicio en campo</button>' : '') + '</div><div class="card-body"><div class="pc-otf">' +
     '<div class="fg" style="grid-column:span 2"><label class="fl">Buscar</label><input class="fi" id="flp-q" placeholder="N°, cliente, base, unidad, remito" value="' + pcEsc(F.q) + '" oninput="FLP_.F.q=this.value;flpGrilla()"></div>' +
     '<div class="fg"><label class="fl">Cliente</label><select class="fs" data-filtro onchange="FLP_.F.cli=this.value;flpGrilla()"><option value="">Todos</option>' + Object.keys(clis).sort(function(a, b) { return clis[a] < clis[b] ? -1 : 1; }).map(function(k) { return '<option value="' + k + '"' + (String(F.cli) === String(k) ? ' selected' : '') + '>' + pcEsc(clis[k]) + '</option>'; }).join('') + '</select></div>' +
-    '<div class="fg"><label class="fl">Estado</label><select class="fs" id="flp-est" onchange="FLP_.F.est=this.value;flpGrilla()">' + [['VIG', 'Abiertas (planificada / en trabajo)'], ['', 'Todas'], ['PLANIFICADA', 'Planificadas'], ['EN_TRABAJO', 'En trabajo'], ['TERMINADA', 'Terminadas'], ['FACTURADA', 'Facturadas'], ['ANULADA', 'Anuladas']].map(function(x) { return '<option value="' + x[0] + '"' + (F.est === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fg"><label class="fl">Estado</label><select class="fs" id="flp-est" onchange="FLP_.F.est=this.value;flpGrilla()">' + [['VIG', 'Abiertas (sin facturar)'], ['', 'Todas'], ['PLANIFICADA', 'Planificadas'], ['PRESUPUESTADA', 'Presupuestadas'], ['APROBADA', 'Aprobadas (listas para salir)'], ['EN_TRABAJO', 'En trabajo'], ['TERMINADA', 'Terminadas'], ['FACTURADA', 'Facturadas'], ['ANULADA', 'Anuladas']].map(function(x) { return '<option value="' + x[0] + '"' + (F.est === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></div>' +
     '<div class="fg"><label class="fl">Fecha desde</label><input class="fi" type="date" value="' + F.desde + '" onchange="FLP_.F.desde=this.value;flpGrilla()"></div><div class="fg"><label class="fl">Fecha hasta</label><input class="fi" type="date" value="' + F.hasta + '" onchange="FLP_.F.hasta=this.value;flpGrilla()"></div>' +
     '<div class="fg" style="align-self:end"><button class="btn btn-s" onclick="FLP_.F={q:\'\',est:\'VIG\',cli:\'\',desde:\'\',hasta:\'\'};renderPlanes()">Limpiar filtros</button></div></div><div id="flp-g" class="mt2"></div></div></div>';
   flpGrilla();
 }
 function flpGrilla() {
   var F = FLP_.F, q = String(F.q || '').toUpperCase().trim(), dd = F.desde ? new Date(F.desde + 'T00:00:00').getTime() : 0, dh = F.hasta ? new Date(F.hasta + 'T23:59:59').getTime() : 0;
-  var l = FLP_.l.filter(function(o) { if (F.est === 'VIG' && ['PLANIFICADA', 'EN_TRABAJO'].indexOf(o.ESTADO) === -1) return false; if (F.est && F.est !== 'VIG' && o.ESTADO !== F.est) return false; if (F.cli && String(o.ID_CLIENTE) !== String(F.cli)) return false;
+  var l = FLP_.l.filter(function(o) { if (F.est === 'VIG' && ['PLANIFICADA', 'PRESUPUESTADA', 'APROBADA', 'EN_TRABAJO', 'TERMINADA'].indexOf(o.ESTADO) === -1) return false; if (F.est && F.est !== 'VIG' && o.ESTADO !== F.est) return false; if (F.cli && String(o.ID_CLIENTE) !== String(F.cli)) return false;
     var f = o.FECHA_PROG || o.FECHA; if (dd && f < dd) return false; if (dh && f > dh) return false; return !q || [o.NRO, o.CLIENTE, o.BASE, o.UNIDADES, o.REMITO, o.SALIDA ? o.SALIDA.NRO : ''].join(' ').toUpperCase().indexOf(q) !== -1; }).sort(function(a, b) { return (b.FECHA_PROG || b.FECHA) - (a.FECHA_PROG || a.FECHA) || b.ID - a.ID; });
   $id('flp-g').innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> orden(es)</div><div class="tw pc-abm"><table style="font-size:12.5px"><thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Base</th><th>Unidades</th><th class="tr">Tareas</th><th>Salida</th><th>Remito</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' +
     (l.length ? l.map(function(o) { var ab = ['PLANIFICADA', 'EN_TRABAJO'].indexOf(o.ESTADO) !== -1;
@@ -18397,9 +18400,10 @@ async function flpGuardar() {
 // ── Ver la orden: plan con su avance y el paso que sigue ──
 async function flpVer(id) {
   var r = await gsRun('gsMT_Plan', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } FLP_.v = r;
-  var O = r.O, S = r.SALIDA, ab = ['PLANIFICADA', 'EN_TRABAJO'].indexOf(O.ESTADO) !== -1, pend = r.PLAN.filter(function(p) { return p.ESTADO === 'PREVISTO'; }).length;
+  var O = r.O, S = r.SALIDA, ab = ['PLANIFICADA', 'PRESUPUESTADA', 'APROBADA', 'EN_TRABAJO'].indexOf(O.ESTADO) !== -1, pend = r.PLAN.filter(function(p) { return p.ESTADO === 'PREVISTO'; }).length;
   var paso = '';
-  if (O.ESTADO === 'PLANIFICADA') paso = (flPuede('AGREGAR') ? flBtn('btn-p', '🚚 Registrar la salida', 'flpSalida()') : '') + flBtn('btn-s', '＋ Agregar tarea', 'flpAgregarVer()');
+  if (O.ESTADO === 'PLANIFICADA' || O.ESTADO === 'PRESUPUESTADA') paso = flBtn('btn-s', '＋ Agregar tarea', 'flpAgregarVer()') + '<span class="tdim" style="font-size:12.5px;align-self:center">Paso siguiente: el presupuesto (abajo). Con el presupuesto aprobado se registra la salida.</span>';
+  else if (O.ESTADO === 'APROBADA') paso = (flPuede('AGREGAR') ? flBtn('btn-p', '🚚 Registrar la salida', 'flpSalida()') : '') + flBtn('btn-s', '＋ Agregar tarea', 'flpAgregarVer()');
   else if (O.ESTADO === 'EN_TRABAJO') paso = r.EQUIPOS.map(function(e) { return flBtn('btn-p', '🗺 Trabajar en ' + pcEsc(e.IDENT), 'flpMapa(' + O.ID + ',' + e.ID + ')'); }).join('') + (S && S.ESTADO === 'EN_CURSO' ? flBtn('btn-s', '↩ Registrar el regreso', 'flpRegreso()') : flBtn('btn-p', '✅ Cerrar y hacer el remito', 'flpCerrar()'));
   var h = '<div class="mh"><span class="mt">' + pcEsc(O.NRO) + ' · ' + pcEsc(O.CLIENTE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" style="font-size:13.5px">' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' + flpBd(FLP_EST, O.ESTADO) + '<span>Fecha <b>' + fmtD(O.FECHA_PROG) + '</b></span>' + (O.BASE ? '<span>Base <b>' + pcEsc(O.BASE) + '</b></span>' : '') + (O.CONTACTO ? '<span>Pidió <b>' + pcEsc(O.CONTACTO) + '</b></span>' : '') + '</div>' + (O.OBS ? '<div class="tdim mt2">' + pcEsc(O.OBS) + '</div>' : '') +
@@ -18408,10 +18412,20 @@ async function flpVer(id) {
     '<div id="flp-agr"></div>' +
     (S ? '<div class="mt3"><b>Salida ' + pcEsc(S.NRO) + '</b> · ' + fmtD(S.FECHA) + (S.REGRESO ? ' · volvió ' + fmtD(S.REGRESO) : ' · <b>afuera</b>') + '<div class="tdim">Vehículo <b>' + pcEsc(S.VEH) + '</b> · ' + S.PERS.map(function(p) { return pcEsc(p.N) + (p.ROL === 'RESPONSABLE' ? ' (responsable)' : ''); }).join(', ') + '</div><div class="tdim" style="font-size:12px">' + S.ITEMS.map(function(i) { return pcEsc(i.NOMBRE) + (i.TIPO === 'INSUMO' ? ' ×' + i.SALE : '') + (i.EST && i.EST !== 'OK' ? ' [' + pcEsc(i.EST) + ']' : ''); }).join(' · ') + '</div></div>' : '') +
     (r.MOVS ? '<div class="mt2 tdim">' + r.MOVS + ' movimiento(s) de cubiertas cargados con esta orden</div>' : '') +
-    (r.REMITO ? '<div class="mt2">Remito <b class="mono">' + pcEsc(r.REMITO.NRO) + '</b> · se factura desde Ventas → Facturar remitos pendientes</div>' : '') +
-    (ab && paso ? '<div class="mt3" style="display:flex;gap:6px;flex-wrap:wrap">' + paso + '</div>' : '') + '</div>' +
+    (r.REMITO ? '<div class="mt2">Remito <b class="mono">' + pcEsc(r.REMITO.NRO) + '</b>' + ((r.PRESUPS || []).some(function(p) { return p.ESTADO === 'APROBADO'; }) ? ' · se factura desde el presupuesto (abajo)' : ' · se factura desde Ventas → Facturar remitos pendientes') + '</div>' : '') +
+    (ab && paso ? '<div class="mt3" style="display:flex;gap:6px;flex-wrap:wrap">' + paso + '</div>' : '') +
+    fprBloque({ ID: O.ID, ESTADO: O.ESTADO, NRO: O.NRO, CLIENTE: O.CLIENTE, AMBITO: O.AMBITO || 'CAMPO' }, r.PRESUPS || [], function() { return flpVer(O.ID); }) + flpCostoHtml(r.COSTO) + '</div>' +
     '<div class="mf">' + (ab && flPuede('ANULAR') ? '<button class="btn btn-d" onclick="flpAnular(' + O.ID + ')">✖ Anular</button>' : '') + '<button class="btn btn-s" onclick="flpHoja(' + O.ID + ')">📄 Hoja de la orden</button><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>';
   flpSinModales(); showModal(h);
+}
+// Costo interno de la salida (no lo ve el cliente)
+function flpCostoHtml(C) {
+  if (!C) return '';
+  var f = function(v, suf) { return v === null || v === undefined ? '<span class="tdim">—</span>' : String(v).replace('.', ',') + (suf || ''); };
+  return '<details class="mt3" style="border:1px dashed #94a3b8;border-radius:8px;padding:8px 10px"><summary style="cursor:pointer"><b>🔒 Costo interno de la salida</b> <span class="tdim" style="font-size:12px">(no lo ve el cliente) · ' + (C.TOTAL ? fprPlata(C.TOTAL) : 'falta cargar') + '</span></summary><div style="font-size:13px;margin-top:6px;line-height:1.7">' +
+    'Km del vehículo: salió con ' + f(C.KM_SALIDA) + ', volvió con ' + f(C.KM_REGRESO) + ' → <b>' + f(C.KM, ' km') + '</b>' + (C.COSTO_KM ? ' × ' + fprPlata(C.COSTO_KM) + ' = ' + (C.COSTO_KMS !== null ? fprPlata(C.COSTO_KMS) : '—') : ' <span class="tdim">(sin costo por km configurado)</span>') + '<br>' +
+    'Horas fuera: <b>' + f(C.HORAS, ' h') + '</b> × ' + C.PERSONAS + ' persona(s) × ' + fprPlata(C.COSTO_HORA) + ' la hora = ' + (C.MANO_OBRA !== null ? fprPlata(C.MANO_OBRA) : '—') + (C.COSTO_HORA_TXT ? ' <span class="tdim" style="font-size:11.5px">(' + pcEsc(C.COSTO_HORA_TXT) + ')</span>' : '') + '<br>' +
+    'Combustible: ' + f(C.COMB_LITROS, ' l') + ' · ' + (C.COMB_IMPORTE !== null ? fprPlata(C.COMB_IMPORTE) : '—') + '<br><b>Total costo: ' + fprPlata(C.TOTAL) + '</b></div></details>';
 }
 async function flpAgregarVer() { var pd = await flpDatos(FLP_.v.O.ID_CLIENTE); if (!pd) return; FLP_.pd = pd; $id('flp-agr').innerHTML = flpLineaEditor('flpAgregarOk()'); }
 async function flpAgregarOk() { var x = flpLineaLeer(); if (!x) return; x.ID_ORDEN = FLP_.v.O.ID; var r = await gsRun('gsMT_PlanLinea', x); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Tarea agregada ✓', 'g'); flpVer(FLP_.v.O.ID); }
@@ -18439,6 +18453,7 @@ async function flpSalida() {
   flpSinModales(); showModal('<div class="mh"><span class="mt">🚚 Salida · ' + pcEsc(O.NRO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="fl-frm">' +
     '<div class="fg"><label class="fl">Responsable *</label><select class="fs" id="flp-s-r">' + flpOpt(pd.EMPLEADOS, '', '— elegí —') + '</select></div>' +
     '<div class="fg"><label class="fl">Vehículo *</label><select class="fs" id="flp-s-v">' + flpOpt(pd.VEHICULOS, '', '— elegí —') + '</select></div>' +
+    '<div class="fg"><label class="fl">Km del vehículo al salir</label><input class="fi" id="flp-s-km" inputmode="numeric" placeholder="lo que marca el tablero"></div>' +
     '<div class="fg full"><label class="fl">Acompañantes</label><div style="display:flex;flex-wrap:wrap;gap:4px 14px;max-height:120px;overflow:auto">' + pd.EMPLEADOS.map(function(e) { return '<label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" class="flp-s-a" value="' + e.V + '"> ' + pcEsc(e.T) + '</label>'; }).join('') + '</div></div>' +
     '<div class="fg full"><label class="fl">Herramientas que salen *</label><div style="display:flex;flex-wrap:wrap;gap:4px 14px;max-height:160px;overflow:auto">' + (pd.HERRAMIENTAS.length ? pd.HERRAMIENTAS.map(function(h) { return '<label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" class="flp-s-h" value="' + pcEsc(h.V) + '"> ' + pcEsc(h.T) + '</label>'; }).join('') : '<span class="tdim">No hay herramientas disponibles</span>') + '</div></div>' +
     '<div class="fg full"><label class="fl">Insumos que salen</label><div style="display:flex;gap:6px"><input class="fi" id="flp-s-i" list="flp-s-il" placeholder="Buscá el insumo" style="flex:1"><input class="fi" id="flp-s-c" inputmode="decimal" placeholder="Cant." style="width:90px">' + flBtn('btn-s', '＋', 'flpSalIns()') + '</div><datalist id="flp-s-il">' + pd.INSUMOS.map(function(i) { return '<option value="' + pcEsc(i.T) + '">'; }).join('') + '</datalist><div id="flp-s-il2" class="mt2"></div></div>' +
@@ -18450,7 +18465,7 @@ function flpSalIns() { var t = $v('flp-s-i'), x = FLP_.pd.INSUMOS.filter(functio
   $id('flp-s-il2').innerHTML = FLP_.ins.map(function(i, k) { return '<div style="display:flex;gap:6px;align-items:center;font-size:13px">' + pcEsc(i.T) + ' × <b>' + i.CANTIDAD + '</b> ' + flBtn('btn-d', '✖', 'FLP_.ins.splice(' + k + ',1);flpSalIns2()') + '</div>'; }).join(''); }
 function flpSalIns2() { $id('flp-s-il2').innerHTML = FLP_.ins.map(function(i, k) { return '<div style="display:flex;gap:6px;align-items:center;font-size:13px">' + pcEsc(i.T) + ' × <b>' + i.CANTIDAD + '</b> ' + flBtn('btn-d', '✖', 'FLP_.ins.splice(' + k + ',1);flpSalIns2()') + '</div>'; }).join(''); }
 async function flpSalidaOk() {
-  var b = $id('flp-s-ok'), o = { ID_ORDEN: FLP_.v.O.ID, ID_RESPONSABLE: $v('flp-s-r'), ID_VEHICULO: $v('flp-s-v'), OBSERVACIONES: $v('flp-s-o'),
+  var b = $id('flp-s-ok'), o = { ID_ORDEN: FLP_.v.O.ID, ID_RESPONSABLE: $v('flp-s-r'), ID_VEHICULO: $v('flp-s-v'), OBSERVACIONES: $v('flp-s-o'), KM_SALIDA: String($v('flp-s-km')).replace(/\./g, '').replace(',', '.'),
     ACOMP: Array.prototype.map.call(document.querySelectorAll('.flp-s-a:checked'), function(x) { return x.value; }), HERR: Array.prototype.map.call(document.querySelectorAll('.flp-s-h:checked'), function(x) { return x.value; }), INSUMOS: FLP_.ins.map(function(i) { return { ID_INSUMO: i.ID_INSUMO, CANTIDAD: i.CANTIDAD }; }) };
   b.disabled = true; b.textContent = 'Guardando…';
   try { var r = await gsRun('gsMT_PlanSalida', o); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
@@ -18464,11 +18479,14 @@ function flpVolverOrden() { var id = FLM_.orden.ID; FLM_.orden = null; FL_.t = '
 function flpRegreso() {
   var S = FLP_.v.SALIDA;
   flpSinModales(); showModal('<div class="mh"><span class="mt">↩ Regreso · ' + pcEsc(S.NRO) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="tw"><table style="font-size:13px"><thead><tr><th>Ítem</th><th>Salió</th><th>Vuelve</th><th>Motivo (si falta o está rota)</th></tr></thead><tbody>' +
-    S.ITEMS.map(function(i) { return '<tr data-it="' + i.ID_ITEM + '" data-t="' + i.TIPO + '" data-h="' + pcEsc(i.ID_HERR) + '"><td>' + pcEsc(i.NOMBRE) + '</td><td>' + i.SALE + '</td><td>' + (i.TIPO === 'HERRAMIENTA' ? '<select class="fs flp-r-e"><option value="OK">Volvió bien</option><option value="FALTA">Falta</option><option value="ROTA">Volvió rota</option></select>' : '<input class="fi flp-r-v" inputmode="decimal" style="width:90px" placeholder="cant.">') + '</td><td><input class="fi flp-r-m"></td></tr>'; }).join('') + '</tbody></table></div></div>' +
+    S.ITEMS.map(function(i) { return '<tr data-it="' + i.ID_ITEM + '" data-t="' + i.TIPO + '" data-h="' + pcEsc(i.ID_HERR) + '"><td>' + pcEsc(i.NOMBRE) + '</td><td>' + i.SALE + '</td><td>' + (i.TIPO === 'HERRAMIENTA' ? '<select class="fs flp-r-e"><option value="OK">Volvió bien</option><option value="FALTA">Falta</option><option value="ROTA">Volvió rota</option></select>' : '<input class="fi flp-r-v" inputmode="decimal" style="width:90px" placeholder="cant.">') + '</td><td><input class="fi flp-r-m"></td></tr>'; }).join('') + '</tbody></table></div>' +
+    '<div class="fl-frm mt3"><div class="fg"><label class="fl">Km del vehículo al volver</label><input class="fi" id="flp-r-km" inputmode="numeric" placeholder="' + (FLP_.v.COSTO && FLP_.v.COSTO.KM_SALIDA !== null ? 'salió con ' + FLP_.v.COSTO.KM_SALIDA : 'lo que marca el tablero') + '"></div>' +
+    '<div class="fg"><label class="fl">Combustible cargado (litros)</label><input class="fi" id="flp-r-lt" inputmode="decimal"></div><div class="fg"><label class="fl">Combustible ($ pagado)</label><input class="fi" id="flp-r-ci" inputmode="decimal"></div></div>' +
+    '<div class="tdim" style="font-size:12px">Km y combustible son para el costo interno: el cliente no los ve.</div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="flp-r-ok" onclick="flpRegresoOk()">Registrar regreso</button></div>');
 }
 async function flpRegresoOk() {
-  var b = $id('flp-r-ok'), o = { ID_SERV: FLP_.v.SALIDA.ID, HERR: [], INSUMOS: [] };
+  var b = $id('flp-r-ok'), o = { ID_SERV: FLP_.v.SALIDA.ID, HERR: [], INSUMOS: [], KM_REGRESO: String($v('flp-r-km')).replace(/\./g, ''), COMB_LITROS: $v('flp-r-lt'), COMB_IMPORTE: String($v('flp-r-ci')).replace(/\./g, '') };
   Array.prototype.forEach.call(document.querySelectorAll('.mo tr[data-it]'), function(tr) { var m = tr.querySelector('.flp-r-m').value;
     if (tr.getAttribute('data-t') === 'HERRAMIENTA') o.HERR.push({ ID_HERR: tr.getAttribute('data-h'), ESTADO: tr.querySelector('.flp-r-e').value, MOTIVO: m }); else o.INSUMOS.push({ ID_ITEM: tr.getAttribute('data-it'), VUELVE: String(tr.querySelector('.flp-r-v').value).replace(',', '.'), MOTIVO: m }); });
   b.disabled = true; b.textContent = 'Guardando…';
@@ -18485,6 +18503,8 @@ function flpCerrar() {
     (L.length ? L.map(function(l) { return '<tr><td>' + pcEsc(l.NOMBRE) + (l.TIPO !== 'SERVICIO' ? ' <span class="tdim">(descuenta stock)</span>' : '') + '</td><td>' + pcEsc(l.ORIGEN) + '</td><td class="tr">' + l.CANT + '</td><td class="tr">' + (l.PRECIO ? flpPlata(l.PRECIO) + (l.DTO ? '<div class="tdim" style="font-size:10.5px">lista ' + flpPlata(l.PRECIO_LISTA) + ' − ' + String(l.DTO).replace('.', ',') + '%</div>' : '') : '<b style="color:#b91c1c">sin precio</b>') + '</td><td class="tr">' + flpPlata(l.CANT * l.PRECIO) + '</td></tr>'; }).join('') + '<tr><td colspan="4" class="tr"><b>Total sin IVA</b></td><td class="tr"><b>' + flpPlata(tot) + '</b></td></tr>'
       : '<tr><td colspan="5" class="tdim tc" style="padding:10px">No hay nada para cobrar: se cierra sin remito.</td></tr>') + '</tbody></table></div>' +
     (r.COBRAR.SIN_ARTICULO.length ? '<div class="al mt2">Sin artículo de venta (no van al remito): ' + pcEsc(r.COBRAR.SIN_ARTICULO.join(', ')) + '</div>' : '') +
+    ((r.COBRAR.MANUAL || []).length ? '<div class="tdim mt2" style="font-size:12.5px">Renglones cargados a mano en el presupuesto (no van al remito, sí a la factura): ' + pcEsc(r.COBRAR.MANUAL.map(function(m) { return m.NOMBRE; }).join(', ')) + '</div>' : '') +
+    (r.COBRAR.CON_PRESUP ? '<div class="tdim mt2" style="font-size:12.5px">Se cobra lo aprobado en los presupuestos. Después de cerrar, se factura desde el presupuesto.</div>' : '') +
     (pend.length ? '<div class="mt3"><b>Tareas sin hacer</b> <span class="tdim" style="font-size:12px">(las de cubiertas pendientes piden el motivo; en los servicios, escribí el motivo solo si no se hizo)</span></div>' + pend.map(function(p) { return '<div class="fg mt2"><label class="fl">' + pcEsc(p.UNIDAD + ' · ' + p.TAREA + (p.C ? ' · ' + p.C.MARCA : '')) + (p.COD !== 'SERVICIO' ? ' *' : '') + '</label><input class="fi flp-c-m" data-p="' + p.ID + '" placeholder="' + (p.COD === 'SERVICIO' ? 'vacío = se hizo' : '¿por qué no se hizo?') + '"></div>'; }).join('') : '') +
     '<div class="fg mt3"><label class="fl">Observaciones del remito</label><input class="fi" id="flp-c-o"></div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="flp-c-ok" onclick="flpCerrarOk()">Cerrar orden' + (L.length ? ' y hacer el remito' : '') + '</button></div>');
@@ -18911,6 +18931,158 @@ function fli2Pdf() {
     ev.map(function(x) { return '<tr><td>' + new Date(x.F).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) + '</td><td>' + pcEsc(x.RUBRO) + (x.SIS && x.SIS !== x.RUBRO ? ' · ' + pcEsc(x.SIS) : '') + '</td><td>' + pcEsc(x.UNIDAD) + '</td><td>' + pcEsc(x.QUE) + '</td><td>' + pcEsc(x.DET) + '</td><td class="n">' + (x.KM === '' ? '' : flrN(x.KM)) + '</td><td>' + pcEsc(x.QUIEN) + '</td><td>' + pcEsc(x.CONTROL) + '</td><td>' + pcEsc(x.DOC) + '</td></tr>'; }).join('') + '</tbody></table>';
   pcImprimir('Informe de flota ' + d.EMPRESA, c, true);
 }
+// ══ PRESUPUESTOS DE LA ORDEN (taller y campo) · 17/11/2026 ══
+// Orden de servicio → presupuesto (servicios del catálogo con su precio, o cargados a mano con su precio) → el cliente aprueba →
+// trabajo (lo que aparezca de más va en un presupuesto ADICIONAL que el cliente aprueba aparte) → se cierra la orden (remito, descuenta stock) →
+// la FACTURA sale de los presupuestos aprobados. Componente común: lo usan la orden en campo (Flota) y la orden del taller.
+var FPR_ = { id: null, adic: '', lin: [], dg: 0, cat: null, nro: '', vuelta: null, reabrir: 0 };
+function fprPlata(n) { return '$ ' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fprNum(v) { var x = parseFloat(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')); return isNaN(x) ? 0 : x; }
+var FPR_EST = { BORRADOR: ['#fef3c7', '#92400e', 'Borrador'], ENVIADO: ['#dbeafe', '#1e40af', 'Enviado al cliente'], APROBADO: ['#dcfce7', '#166534', 'Aprobado'], RECHAZADO: ['#fee2e2', '#991b1b', 'No lo aprobó'], VENCIDO: ['#e5e7eb', '#374151', 'Vencido'] };
+function fprBd(e) { var x = FPR_EST[e] || ['#e5e7eb', '#374151', e]; return '<span class="fl-bd" style="background:' + x[0] + ';color:' + x[1] + '">' + pcEsc(x[2]) + '</span>'; }
+function fprTit(p) { return p.NRO_ADIC ? 'Adicional ' + p.NRO_ADIC : 'Presupuesto'; }
+// Bloque con los presupuestos de una orden. o: { ID, ESTADO, NRO }, ps: lista (mtPresupsOrden_), vuelta: función que recarga la pantalla
+function fprBloque(o, ps, vuelta, opt) {
+  opt = opt || {}; FPR_.vuelta = vuelta; window._fprOrden = o; window._fprPs = ps;
+  var cerr = ['ANULADA', 'TERMINADA', 'FACTURADA'].indexOf(o.ESTADO) !== -1, orig = ps.filter(function(p) { return !p.NRO_ADIC; })[0];
+  var h = opt.soloAdic ? '' : '<div class="mt3" style="border-top:2px solid #e2e8f0;padding-top:10px"><b style="font-size:15px">💲 Presupuestos</b> <span class="tdim" style="font-size:12px">(la factura sale de los presupuestos aprobados)</span></div>';
+  if (!ps.length && !opt.soloAdic) h += '<div class="tdim mt2" style="font-size:13px">Todavía no hay presupuesto.' + (o.AMBITO === 'CAMPO' ? ' Sin presupuesto aprobado no se registra la salida.' : '') + '</div>';
+  ps.forEach(function(p) {
+    if (opt.soloAdic && !p.NRO_ADIC) return;
+    var tot = p.TOTAL, f = p.FACTURA;
+    h += '<div class="card mt2" style="border:1.5px solid ' + (p.ESTADO === 'APROBADO' ? '#86efac' : '#cbd5e1') + '"><div class="card-body" style="padding:10px">' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><b>' + fprTit(p) + '</b><span class="mono tdim">' + pcEsc(p.NRO) + '</span>' + fprBd(p.ESTADO) + '<b style="margin-left:auto">' + fprPlata(tot) + ' <span class="tdim" style="font-weight:400;font-size:11px">sin IVA</span></b></div>' +
+      '<div class="tw mt2"><table style="font-size:12.5px"><thead><tr><th>Qué</th><th class="tr">Cant.</th><th class="tr">Precio</th><th class="tr">Subtotal</th></tr></thead><tbody>' +
+      p.DET.map(function(d) { return '<tr><td>' + pcEsc(d.DESCRIPCION) + (d.CLASE === 'MANUAL' ? ' <span class="tdim" style="font-size:11px">(a mano)</span>' : '') + (d.CLASE === 'CLIENTE' ? ' <span class="tdim" style="font-size:11px">(lo trae el cliente)</span>' : '') + '</td><td class="tr">' + String(d.CANTIDAD).replace('.', ',') + '</td><td class="tr">' + fprPlata(d.PRECIO_UNIT) + '</td><td class="tr">' + fprPlata(d.SUBTOTAL) + '</td></tr>'; }).join('') +
+      (p.DESCUENTO_PCT ? '<tr><td colspan="3" class="tr">Descuento general ' + String(p.DESCUENTO_PCT).replace('.', ',') + '%</td><td></td></tr>' : '') + '</tbody></table></div>' +
+      '<div class="tdim" style="font-size:12px;margin-top:4px">' + fmtD(p.FECHA) + ' · versión ' + p.VERSION + (p.APROBADO_POR ? ' · aprobó <b>' + pcEsc(p.APROBADO_POR) + '</b> (' + pcEsc(p.MEDIO) + ') ' + fmtD(p.FECHA_APROB) : '') + (p.MOTIVO ? ' · ' + pcEsc(p.MOTIVO) : '') + (f ? ' · <b style="color:#166534">' + pcEsc(f.TXT) + '</b>' : '') + '</div>';
+    var b = '';
+    if (!cerr && !f) {
+      if (p.ESTADO === 'BORRADOR') b += flBtn('btn-s', '📤 Ya se lo mandé', 'fprEstado(' + p.ID_PRESUP + ',\'ENVIADO\')');
+      if (p.ESTADO === 'BORRADOR' || p.ESTADO === 'ENVIADO') b += flBtn('btn-p', '✅ El cliente lo aprobó', 'fprEstado(' + p.ID_PRESUP + ',\'APROBADO\')') + flBtn('btn-d', '✖ No lo aprobó', 'fprEstado(' + p.ID_PRESUP + ',\'RECHAZADO\')');
+      if (p.ESTADO !== 'APROBADO' && (p.NRO_ADIC || ['EN_TRABAJO'].indexOf(o.ESTADO) === -1)) b += flBtn('btn-s', '✏ Corregir (versión nueva)', 'fprEditar(' + p.ID_PRESUP + ')');
+    }
+    b += flBtn('btn-s', '💬 Texto para el cliente', 'fprTexto(' + p.ID_PRESUP + ')') + flBtn('btn-s', '🖨 Imprimir', 'fprImprimir(' + p.ID_PRESUP + ')');
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' + b + '</div></div></div>';
+  });
+  var acc = '';
+  if (!opt.soloAdic && !orig && ['PLANIFICADA', 'CHECK_LIST', 'PRESUPUESTADA'].indexOf(o.ESTADO) !== -1) acc += flBtn('btn-p', '📝 Armar el presupuesto', 'fprNuevo(\'\')');
+  if (orig && orig.ESTADO === 'APROBADO' && ['APROBADA', 'EN_TRABAJO'].indexOf(o.ESTADO) !== -1) acc += flBtn('btn-s', '＋ Presupuesto adicional (algo más que hay que hacer)', 'fprNuevo(\'NUEVO\')');
+  var aFact = ps.filter(function(p) { return p.ESTADO === 'APROBADO' && !p.FACTURA; });
+  if (['TERMINADA', 'FACTURADA'].indexOf(o.ESTADO) !== -1 && aFact.length) acc += flBtn('btn-p', '🧾 Facturar (' + aFact.length + ' presupuesto' + (aFact.length > 1 ? 's' : '') + ')', 'fprFacturar()');
+  if (acc) h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' + acc + '</div>';
+  return h;
+}
+function fprPs(id) { return (window._fprPs || []).filter(function(p) { return p.ID_PRESUP === id; })[0]; }
+async function fprCat() { var r = await gsRun('gsMT_PresupCat', window._fprOrden.ID); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return null; } FPR_.cat = r; return r; }
+async function fprNuevo(adic) {
+  var c = await fprCat(); if (!c) return; FPR_.id = window._fprOrden.ID; FPR_.adic = adic; FPR_.dg = 0; FPR_.reabrir = 0;
+  FPR_.lin = adic ? [] : c.SUGERIDO.map(function(l) { return { CLASE: l.CLASE, ID_SERVICIO: l.ID_SERVICIO, ID_ARTICULO: l.ID_ARTICULO, DESCRIPCION: l.DESCRIPCION, CANTIDAD: l.CANTIDAD, PRECIO_UNIT: l.PRECIO_UNIT, ID_OE: l.ID_OE }; });
+  FPR_.nro = adic ? 'Presupuesto adicional' : 'Presupuesto'; fprEditor();
+}
+async function fprEditar(idP) {
+  var p = fprPs(idP); if (!p) return; var c = await fprCat(); if (!c) return;
+  FPR_.id = window._fprOrden.ID; FPR_.adic = p.NRO_ADIC ? String(p.NRO_ADIC) : ''; FPR_.dg = p.DESCUENTO_PCT || 0; FPR_.reabrir = p.ESTADO === 'APROBADO' ? 1 : 0;
+  FPR_.lin = p.DET.map(function(d) { return { CLASE: d.CLASE, ID_SERVICIO: d.ID_SERVICIO, ID_ARTICULO: d.ID_ARTICULO, DESCRIPCION: d.DESCRIPCION, CANTIDAD: d.CANTIDAD, PRECIO_UNIT: d.PRECIO_UNIT, ID_OE: d.ID_OE, COSTO_UNIT: d.COSTO_UNIT, PRECIO_LISTA: d.PRECIO_LISTA }; });
+  FPR_.nro = fprTit(p) + ' ' + p.NRO + ' → versión nueva'; fprEditor();
+}
+function fprEditor() {
+  var c = FPR_.cat;
+  var sv = c.SERVICIOS.map(function(s) { return { v: 'S' + s.ID, t: s.N, sub: (s.P ? fprPlata(s.P) + ' + IVA' : 'sin precio de lista: se escribe') + (s.S ? ' · ' + s.S : '') }; });
+  var ar = c.ARTICULOS.map(function(a) { return { v: 'A' + a.I, t: a.N, sub: (a.C ? a.C + ' · ' : '') + fprPlata(a.P) + ' + IVA · stock ' + a.S }; });
+  flpSinModales(); showModal('<div class="mh"><span class="mt">💲 ' + pcEsc(FPR_.nro) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<div class="fg"><label class="fl">Agregar un servicio del catálogo (trae su precio)</label>' + uiBusca('fpr-sv', { opciones: sv, max: 0, onchange: 'fprAddSel', placeholder: 'Escribí: montaje, alineado, balanceo, asistencia…' }) + '</div>' +
+    '<div class="fg mt2"><label class="fl">Agregar un repuesto o insumo (trae su precio)</label>' + uiBusca('fpr-ar', { opciones: ar, max: 0, onchange: 'fprAddSel', placeholder: 'Escribí el nombre o el código' }) + '</div>' +
+    '<div class="mt2">' + flBtn('btn-s', '＋ Renglón a mano (algo que no está en el catálogo)', 'fprAddManual()') + '</div>' +
+    '<div id="fpr-tab" class="mt3"></div>' +
+    '<div class="tdim mt2" style="font-size:12px">Los precios son sin IVA. El que trae el catálogo se puede cambiar: queda el precio que escribas. Lista vigente: ' + pcEsc(c.LISTA) + '.</div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="fpr-ok" onclick="fprGuardar()">Guardar presupuesto</button></div>');
+  fprTabla();
+}
+function fprAddSel(sel, idU) {
+  var v = sel[0]; UIB_[idU].sel = []; var el = $id('uib-' + idU); if (el) el.innerHTML = uibCuerpo(idU); if (!v) return;
+  var c = FPR_.cat, oe = c.EQUIPOS.length === 1 ? c.EQUIPOS[0].ID_OE : '';
+  if (v.charAt(0) === 'S') { var s = c.SERVICIOS.filter(function(x) { return 'S' + x.ID === v; })[0]; if (!s) return;
+    FPR_.lin.push(s.A ? { CLASE: 'SERVICIO', ID_SERVICIO: s.ID, ID_ARTICULO: s.A, DESCRIPCION: s.N, CANTIDAD: 1, PRECIO_UNIT: s.P, ID_OE: oe } : { CLASE: 'MANUAL', ID_SERVICIO: s.ID, ID_ARTICULO: '', DESCRIPCION: s.N, CANTIDAD: 1, PRECIO_UNIT: 0, ID_OE: oe }); }
+  else { var a = c.ARTICULOS.filter(function(x) { return 'A' + x.I === v; })[0]; if (!a) return; FPR_.lin.push({ CLASE: 'REPUESTO', ID_SERVICIO: '', ID_ARTICULO: a.I, DESCRIPCION: a.N, CANTIDAD: 1, PRECIO_UNIT: a.P, ID_OE: oe }); }
+  fprTabla();
+}
+async function fprAddManual() {
+  var d = await uiPedir('¿Qué es? (así lo va a leer el cliente)', { obligatorio: true }); if (d === null) return;
+  var p = await uiPedir('Precio sin IVA de ' + d, { obligatorio: true, ayuda: 'Ej.: 25000' }); if (p === null) return;
+  var c = FPR_.cat; FPR_.lin.push({ CLASE: 'MANUAL', ID_SERVICIO: '', ID_ARTICULO: '', DESCRIPCION: d, CANTIDAD: 1, PRECIO_UNIT: fprNum(p), ID_OE: c.EQUIPOS.length === 1 ? c.EQUIPOS[0].ID_OE : '' }); fprTabla();
+}
+function fprTabla() {
+  var c = FPR_.cat, multi = c.EQUIPOS.length > 1, tot = 0;
+  var h = '<div class="tw"><table style="font-size:13px"><thead><tr><th>Qué</th>' + (multi ? '<th>Unidad</th>' : '') + '<th style="width:80px">Cant.</th><th style="width:120px">Precio s/IVA</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody>' +
+    (FPR_.lin.length ? FPR_.lin.map(function(l, i) { var sub = Math.round(fprNum(l.CANTIDAD) * fprNum(l.PRECIO_UNIT) * 100) / 100; tot += sub;
+      return '<tr><td>' + (l.CLASE === 'MANUAL' ? '<input class="fi" value="' + pcEsc(l.DESCRIPCION) + '" oninput="FPR_.lin[' + i + '].DESCRIPCION=this.value">' : pcEsc(l.DESCRIPCION)) + '</td>' +
+        (multi ? '<td><select class="fs" onchange="FPR_.lin[' + i + '].ID_OE=this.value">' + c.EQUIPOS.map(function(e) { return '<option value="' + e.ID_OE + '"' + (String(e.ID_OE) === String(l.ID_OE) ? ' selected' : '') + '>' + pcEsc(e.IDENT) + '</option>'; }).join('') + '</select></td>' : '') +
+        '<td><input class="fi" inputmode="decimal" value="' + String(l.CANTIDAD).replace('.', ',') + '" onchange="FPR_.lin[' + i + '].CANTIDAD=fprNum(this.value);fprTabla()"></td>' +
+        '<td><input class="fi" inputmode="decimal" value="' + String(l.PRECIO_UNIT).replace('.', ',') + '" onchange="FPR_.lin[' + i + '].PRECIO_UNIT=fprNum(this.value);fprTabla()"' + (fprNum(l.PRECIO_UNIT) <= 0 && l.CLASE !== 'CLIENTE' ? ' style="border-color:#dc2626;background:#fef2f2" placeholder="poné el precio"' : '') + '></td>' +
+        '<td class="tr">' + fprPlata(sub) + '</td><td>' + flBtn('btn-d', '✖', 'FPR_.lin.splice(' + i + ',1);fprTabla()', 'Sacar') + '</td></tr>'; }).join('') : '<tr><td colspan="6" class="tdim tc" style="padding:12px">Todavía no hay renglones: agregá servicios, repuestos o un renglón a mano.</td></tr>') +
+    '</tbody></table></div>' +
+    '<div style="display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:8px"><label class="fl" style="margin:0">Descuento general %</label><input class="fi" inputmode="decimal" style="width:90px" value="' + String(FPR_.dg || 0).replace('.', ',') + '" onchange="FPR_.dg=fprNum(this.value);fprTabla()">' +
+    '<b style="font-size:16px">Total ' + fprPlata(Math.round(tot * (1 - (FPR_.dg || 0) / 100) * 100) / 100) + '</b> <span class="tdim" style="font-size:12px">sin IVA</span></div>';
+  $id('fpr-tab').innerHTML = h;
+}
+async function fprGuardar() {
+  if (!FPR_.lin.length) { toast('Agregá al menos un renglón', 'r2'); return; }
+  var malo = FPR_.lin.filter(function(l) { return l.CLASE === 'MANUAL' && String(l.DESCRIPCION || '').trim().length < 2; })[0]; if (malo) { toast('Escribí qué es cada renglón a mano', 'r2'); return; }
+  var b = $id('fpr-ok'); b.disabled = true; b.textContent = 'Guardando…';
+  try { var r = await gsRun('gsMT_PresupGuardar', { ID_ORDEN: FPR_.id, ADIC: FPR_.adic, LINEAS: FPR_.lin, DESCUENTO_PCT: FPR_.dg || 0, REABRIR: FPR_.reabrir });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast('Presupuesto ' + r.NRO + ' guardado ✓ · ' + fprPlata(r.TOTAL), 'g'); closeModal(); if (FPR_.vuelta) await FPR_.vuelta();
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Guardar presupuesto'; } }
+}
+async function fprEstado(idP, est) {
+  var d = { ID_PRESUP: idP, ESTADO: est };
+  if (est === 'APROBADO') { var q = await uiPedir('¿Quién lo aprobó en el cliente?', { obligatorio: true }); if (q === null) return; d.APROBADO_POR = q;
+    var m = await uiElegir('¿Por dónde lo aprobó?', [['WHATSAPP', '💬 WhatsApp'], ['TELEFONO', '📞 Teléfono'], ['MAIL', '✉ Mail'], ['PERSONA', '🤝 En persona'], ['FIRMA', '✍ Firmado']]); if (m === null) return; d.MEDIO = m; }
+  if (est === 'RECHAZADO') { var mo = await uiPedir('¿Por qué no lo aprobó?', { obligatorio: true }); if (mo === null) return; d.MOTIVO = mo; }
+  try { var r = await gsRun('gsMT_PresupEstado', d); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast({ ENVIADO: 'Marcado como enviado ✓', APROBADO: 'Aprobado ✓', RECHAZADO: 'Anotado: no lo aprobó' }[est], est === 'RECHAZADO' ? 'r2' : 'g'); if (FPR_.vuelta) await FPR_.vuelta();
+  } catch (e) { toast(e.message, 'r2'); }
+}
+function fprTextoDe(p) {
+  var o = window._fprOrden || {}, t = (p.NRO_ADIC ? '*Presupuesto adicional* ' : '*Presupuesto* ') + p.NRO + '\nOrden ' + (o.NRO || '') + (o.CLIENTE ? ' · ' + o.CLIENTE : '') + '\n\n';
+  p.DET.filter(function(d) { return d.CLASE !== 'CLIENTE'; }).forEach(function(d) { t += '• ' + d.DESCRIPCION + (d.CANTIDAD !== 1 ? ' × ' + String(d.CANTIDAD).replace('.', ',') : '') + ': ' + fprPlata(d.SUBTOTAL) + '\n'; });
+  if (p.DESCUENTO_PCT) t += 'Descuento ' + String(p.DESCUENTO_PCT).replace('.', ',') + '%\n';
+  t += '\n*Total ' + fprPlata(p.TOTAL) + ' + IVA*\nVálido ' + (p.VALIDEZ || 10) + ' días.' + (p.NRO_ADIC ? '\nEs aparte de lo ya aprobado. ' : '\n') + '¿Nos confirmás para avanzar?\nVulcan Tread Neumáticos';
+  return t;
+}
+function fprTexto(idP) {
+  var p = fprPs(idP); if (!p) return; var t = fprTextoDe(p);
+  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'fpr-txt-mo';
+  mo.innerHTML = '<div class="md"><div class="mh"><span class="mt">💬 Texto para mandarle al cliente</span><button class="mc" onclick="document.getElementById(\'fpr-txt-mo\').remove()">×</button></div><div class="mb2"><textarea class="fi" id="fpr-txt" rows="12" style="width:100%;font-size:14px"></textarea><div class="tdim mt2" style="font-size:12px">Copialo y pegalo en el WhatsApp del cliente. Cuando conteste, volvé y tocá «El cliente lo aprobó».</div></div><div class="mf"><button class="btn btn-p" onclick="fprCopiar()">📋 Copiar</button></div></div>';
+  document.body.appendChild(mo); $id('fpr-txt').value = t;
+}
+function fprCopiar() { var t = $id('fpr-txt'); t.select(); try { navigator.clipboard.writeText(t.value).then(function() { toast('Copiado ✓', 'g'); }, function() { document.execCommand('copy'); toast('Copiado ✓', 'g'); }); } catch (e) { document.execCommand('copy'); toast('Copiado ✓', 'g'); } }
+function fprImprimir(idP) {
+  var p = fprPs(idP); if (!p) return; var o = window._fprOrden || {};
+  var c = (typeof pcEncImp === 'function' ? pcEncImp(p.NRO_ADIC ? 'Presupuesto adicional' : 'Presupuesto', p.NRO, (o.CLIENTE || '') + (o.NRO ? ' · orden ' + o.NRO : '')) : '<h1>' + pcEsc(p.NRO) + '</h1>');
+  c += '<table class="det"><thead><tr><th>Detalle</th><th>Cant.</th><th>Precio s/IVA</th><th>Subtotal</th></tr></thead><tbody>' + p.DET.filter(function(d) { return d.CLASE !== 'CLIENTE'; }).map(function(d) { return '<tr><td>' + pcEsc(d.DESCRIPCION) + '</td><td>' + String(d.CANTIDAD).replace('.', ',') + '</td><td>' + fprPlata(d.PRECIO_UNIT) + '</td><td>' + fprPlata(d.SUBTOTAL) + '</td></tr>'; }).join('') + '</tbody></table>' +
+    (p.DESCUENTO_PCT ? '<p>Descuento general ' + String(p.DESCUENTO_PCT).replace('.', ',') + '%</p>' : '') + '<p style="font-size:16px"><b>Total ' + fprPlata(p.TOTAL) + ' + IVA</b></p><p>Válido ' + (p.VALIDEZ || 10) + ' días desde el ' + fmtD(p.FECHA) + '.' + (p.NRO_ADIC ? ' Es aparte de lo ya aprobado.' : '') + '</p>' +
+    '<div style="margin-top:40px;display:flex;gap:40px"><div style="flex:1;border-top:1px solid #000;padding-top:4px">Aprobó (nombre y firma)</div><div style="flex:1;border-top:1px solid #000;padding-top:4px">Fecha</div></div>';
+  pcImprimir(p.NRO, c);
+}
+async function fprFacturar() {
+  var o = window._fprOrden, ps = (window._fprPs || []).filter(function(p) { return p.ESTADO === 'APROBADO' && !p.FACTURA; }), sel = ps.map(function(p) { return p.ID_PRESUP; });
+  if (ps.length > 1) { var q = await uiElegir('¿Qué se factura?', [['TODO', 'Todo junto en una factura (' + ps.map(function(p) { return p.NRO; }).join(' + ') + ')']].concat(ps.map(function(p) { return [String(p.ID_PRESUP), 'Solo ' + fprTit(p).toLowerCase() + ' ' + p.NRO + ' · ' + fprPlata(p.TOTAL)]; }))); if (q === null) return; if (q !== 'TODO') sel = [Number(q)]; }
+  try { var r = await gsRun('gsMT_FacturarArmar', { ID_ORDEN: o.ID, PRESUPS: sel }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast('Factura armada con ' + r.PRESUPS.join(' + ') + ': revisala y confirmala ✓', 'g'); closeModal();
+    await fprAbrirFactura(r.ID_BOR);
+  } catch (e) { toast(e.message, 'r2'); }
+}
+// Abre la factura en carga en Ventas para revisarla y confirmarla
+async function fprAbrirFactura(idBor) {
+  if (typeof navTo === 'function') navTo('ventas');
+  for (var i = 0; i < 40; i++) { await new Promise(function(r) { setTimeout(r, 250); }); if (typeof vbAbrir === 'function' && $id('page-ventas') && $id('page-ventas').innerHTML.length > 50) break; }
+  await new Promise(function(r) { setTimeout(r, 600); });
+  if (typeof vbBorrarCache === 'function') vbBorrarCache();
+  if (typeof vbAbrir === 'function') await vbAbrir(idBor);
+}
+
 </script>
 
 <script>
