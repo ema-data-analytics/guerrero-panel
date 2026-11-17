@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d4878db1a0df"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "243a77821a98"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -354,6 +354,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
       <div class="sb-grp" data-g="pre"><div class="sb-gh" onclick="menuGrupo('pre')"><span class="sb-gi-ic">💲</span><span class="sb-gt">Precios</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="precios-nuevos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Lista de precios</div>
         <div class="nav-item" data-page="margen"><span class="nav-icon"><i class="fas fa-traffic-light"></i></span> Margen con descuento</div>
+        <div class="nav-item" data-page="armado"><span class="nav-icon"><i class="fas fa-calculator"></i></span> Armado de precios</div>
         <div class="nav-item" data-page="catalogo-tienda"><span class="nav-icon"><i class="fas fa-shopping-bag"></i></span> Catálogo (tienda)</div>
       </div></div>
       <div class="sb-grp" data-g="cmp"><div class="sb-gh" onclick="menuGrupo('cmp')"><span class="sb-gi-ic">🛒</span><span class="sb-gt">Compras</span><span class="sb-car">›</span></div><div class="sb-gl">
@@ -489,6 +490,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-seguridad" class="hidden"></div>
     <div id="page-agenda" class="hidden"></div>
     <div id="page-pruebas" class="hidden"></div>
+    <div id="page-armado" class="hidden"></div>
     <div id="page-bitacora" class="hidden"></div>
     <div id="page-audios" class="hidden"></div>
     <div id="page-caja" class="hidden"></div>
@@ -765,7 +767,7 @@ function _mcDelAll(){ _MC={}; }
 // El servidor devuelve un "pase" (token) que acompaña cada llamada.
 // ══════════════════════════════════════════════════════════════════
 var PAGINA_MODULO = {
-  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'tablero-linea':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'taller':'VENTAS', 'flota':'VENTAS', 'precios-nuevos':'VENTAS', 'catalogo-tienda':'VENTAS', 'margen':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
+  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'tablero-linea':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'taller':'VENTAS', 'flota':'VENTAS', 'precios-nuevos':'VENTAS', 'catalogo-tienda':'VENTAS', 'margen':'VENTAS', 'armado':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
   'carga-gastos':'GASTOS', 'carga-financiero':'ADMINISTRACION', 'carga-transporte':'ADMINISTRACION',
   'carga-impositivo':'ADMINISTRACION', 'carga-sueldos':'ADMINISTRACION', 'asistencia':'ADMINISTRACION', 'fichaje':'PRODUCCION', 'carga-combustible':'COMBUSTIBLE',
   'cheques':'COBRANZAS', 'cobranzas':'COBRANZAS', 'caja':'COBRANZAS', 'cta-cte-clientes':'COBRANZAS',
@@ -1319,6 +1321,7 @@ function getPage(name) {
     'seguridad': typeof renderSeguridad !== 'undefined' ? renderSeguridad : null,
     'agenda': function(){ if(typeof renderAgenda!=='undefined') renderAgenda(); },
     'pruebas': function(){ if(typeof renderPruebas!=='undefined') renderPruebas(); },
+    'armado': function(){ if(typeof renderArmado!=='undefined') renderArmado(); },
     'bitacora': function(){ if(typeof renderBitacora!=='undefined') renderBitacora(); },
     'audios': function(){ if(typeof renderAudios!=='undefined') renderAudios(); },
     'configuracion': typeof renderConfiguracion !== 'undefined' ? renderConfiguracion : null,
@@ -1606,7 +1609,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611161810';
+var EMA_BUILD = '202611170927';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -22149,6 +22152,158 @@ async function prFirmaGuardar(idA, rol) {
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); b.disabled = false; b.textContent = 'Guardar firma'; return; }
     closeModal(); toast(r.APROBADA ? 'Área APROBADA ✓' : 'Firma guardada ✓', 'g'); await renderPruebas();
   } catch (e) { toast(e.message, 'r2'); b.disabled = false; b.textContent = 'Guardar firma'; }
+}
+</script>
+
+<style>
+#page-armado .ap-wrap{max-width:1150px;margin:0 auto;padding:4px 0 60px}
+.ap-pasos{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px}
+.ap-paso{flex:0 0 auto;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);border-radius:18px;padding:8px 14px;font-size:14px;cursor:pointer}.ap-paso.on{background:#14213d;border-color:#14213d;color:#fff}
+.ap-res{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0}
+.ap-k{border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:var(--surface,#fff)}.ap-k b{display:block;font-size:22px;line-height:1.1}.ap-k span{font-size:12px;color:var(--dim)}
+.ap-ex{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 11px;font-size:13.5px;line-height:1.5;margin:6px 0 10px}
+.ap-tw{overflow:auto;max-height:520px;border:1px solid var(--border);border-radius:10px}
+.ap-tw table{width:100%;border-collapse:collapse;font-size:12.5px}.ap-tw th{position:sticky;top:0;background:#14213d;color:#fff;padding:6px;text-align:left;white-space:nowrap}.ap-tw td{padding:5px 6px;border-bottom:1px solid var(--border);vertical-align:top}
+.ap-tw td.n{text-align:right;white-space:nowrap;font-family:monospace}
+.ap-up{color:#b91c1c;font-weight:700}.ap-dn{color:#15803d;font-weight:700}
+.ap-b{border-radius:7px;padding:2px 7px;font-size:11.5px;font-weight:700;white-space:nowrap}.ap-si{background:#dcfce7;color:#166534}.ap-no{background:#f3f4f6;color:#6b7280}.ap-wa{background:#fef3c7;color:#92400e}
+.ap-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin:6px 0}
+.ap-form label{font-size:12.5px;color:var(--dim);display:block;margin-bottom:2px}
+.ap-form input,.ap-form select{width:100%;font-size:15px}
+#ap-pegar{width:100%;min-height:150px;font-family:monospace;font-size:13px}
+</style>
+<script>
+// ── Precios → Armado de precios (17/11/2026, Anibal) ──
+// 1) Listas de proveedores (subir pegando desde Excel o CSV) · 2) Parámetros (descuento, flete, ganancia por marca o por lista)
+// 3) Costos y precios calculados contra la lista vigente · 4) Armar el borrador de la lista de venta (se aprueba en Lista de precios → Versiones).
+var AP_ = { d: null, paso: 'listas', soloCambios: true, q: '', prev: null, filas: null };
+function apEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function apP(n) { return '$ ' + Math.round(Number(n) || 0).toLocaleString('es-AR'); }
+function apPct(x) { return (Math.round((Number(x) || 0) * 1000) / 10).toLocaleString('es-AR') + '%'; }
+// Número escrito a la argentina o como sale de Excel: «1.234.567,89», «1234567,89», «1234567.89», «$ 280.462»
+function apNum(t) {
+  var s = String(t == null ? '' : t).replace(/\$/g, '').replace(/\s/g, ''); if (!s) return 0;
+  if (s.indexOf(',') !== -1) s = s.replace(/\./g, '').replace(',', '.');
+  else if ((s.match(/\./g) || []).length > 1 || /\.\d{3}$/.test(s)) s = s.replace(/\./g, '');
+  var n = parseFloat(s); return isNaN(n) ? 0 : n;
+}
+async function renderArmado() {
+  var el = $id('page-armado'); if (!el) return;
+  if (!AP_.d) el.innerHTML = '<div class="ap-wrap"><div class="tdim" style="padding:20px">Cargando y calculando…</div></div>';
+  try { var r = await gsRun('gsAP_Datos'); if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo cargar'); AP_.d = r; }
+  catch (e) { el.innerHTML = '<div class="ap-wrap"><div class="al al-r">' + apEsc(e.message) + '</div></div>'; return; }
+  apPintar();
+}
+function apPintar() {
+  var el = $id('page-armado'), d = AP_.d; if (!el || !d) return;
+  var h = '<div class="ap-wrap"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h2 style="margin:0;font-size:20px">🧮 Armado de precios</h2><span class="tdim" style="font-size:12.5px">Lista vigente: <b>' + apEsc(d.VIGENTE) + '</b></span><button class="btn btn-sm" style="margin-left:auto" onclick="AP_.d=null;renderArmado()">↻ Recalcular</button></div>';
+  h += '<div class="ap-ex"><b>Cómo funciona:</b> los precios salen de las <b>listas de los proveedores</b>. A cada lista se le aplica su <b>parámetro</b> (descuento del proveedor, flete y ganancia) → <b>costo</b> = lista − descuento + flete → <b>precio</b> = costo + ganancia, redondeado a $100, + IVA. Recapados, servicios, taller y gomería no se tocan acá. Nada cambia en ventas hasta que un administrador <b>aprueba</b> la lista nueva.</div>';
+  if (d.BORRADOR) h += '<div class="al mb2">Hay una lista de venta en <b>borrador</b> (N° ' + d.BORRADOR.ID_LV + '): revisala y aprobala o anulala en <b>Lista de precios → Versiones</b>. <button class="btn btn-sm btn-p" onclick="navTo(\'precios-nuevos\');setTimeout(function(){if(typeof lvAbrir===\'function\')lvAbrir();},900)">Ir a Versiones</button></div>';
+  h += '<div class="ap-pasos">' + [['listas', '1 · Listas de proveedores'], ['params', '2 · Parámetros'], ['calc', '3 · Costos y precios (' + d.CALC.CAMBIAN + ' cambian)'], ['insumos', '4 · Insumos Briomaq']].map(function(t) { return '<button class="ap-paso' + (AP_.paso === t[0] ? ' on' : '') + '" onclick="AP_.paso=\'' + t[0] + '\';apPintar()">' + t[1] + '</button>'; }).join('') + '</div>';
+  if (AP_.paso === 'listas') h += apListasHtml(); else if (AP_.paso === 'params') h += apParamsHtml(); else if (AP_.paso === 'calc') h += apCalcHtml(); else h += apInsHtml();
+  el.innerHTML = h + '</div>';
+}
+function apListasHtml() {
+  var d = AP_.d, h = '<div class="ap-tw"><table><thead><tr><th>Lista del proveedor</th><th>Proveedor</th><th>Vigencia</th><th class="n">Renglones</th><th class="n">Con artículo</th><th>Parámetro</th><th>Entra al cálculo</th></tr></thead><tbody>';
+  d.LISTAS.forEach(function(l) { h += '<tr><td><b>' + apEsc(l.LISTA) + '</b></td><td>' + apEsc(l.PROVEEDOR) + '</td><td>' + apEsc(l.VIGENCIA) + '</td><td class="n">' + l.ACTIVOS + (l.N !== l.ACTIVOS ? ' <span class="tdim">(' + (l.N - l.ACTIVOS) + ' vencidos)</span>' : '') + '</td><td class="n">' + l.CON_ARTICULO + '</td><td>' + apEsc(l.PARAM || '—') + '</td><td>' + (l.EN_CALCULO ? '<span class="ap-b ap-si">Sí</span>' : '<span class="ap-b ' + (l.ACTIVOS ? 'ap-wa' : 'ap-no') + '">No' + (l.MOTIVO ? ': ' + apEsc(l.MOTIVO) : '') + '</span>') + '</td></tr>'; });
+  h += '</tbody></table></div>';
+  if (!d.PUEDE) return h + '<div class="tdim mt2">Las listas nuevas las carga un administrador.</div>';
+  var act = d.LISTAS.filter(function(l) { return l.ACTIVOS > 0; });
+  h += '<div class="card mt3"><div class="card-hd"><span class="card-title">⬆ Subir una lista nueva de proveedor</span></div><div class="card-body">' +
+    '<div class="ap-ex" style="margin-top:0">Abrí el Excel del proveedor, seleccioná las columnas <b>Código · Descripción · Precio</b> (en ese orden) y pegalas abajo. También sirve un archivo <b>CSV</b>. El sistema busca cada código en los artículos y te muestra qué encontró, qué no y cuánto sube o baja antes de grabar.</div>' +
+    '<div class="ap-form"><div><label>Proveedor *</label><select id="ap-prov"><option value="">— elegí —</option>' + d.PROVEEDORES.map(function(p) { return '<option value="' + p.ID + '">' + apEsc(p.NOMBRE) + '</option>'; }).join('') + '</select></div>' +
+    '<div><label>Nombre de la lista nueva *</label><input id="ap-nom" placeholder="SAN JUAN Y SOLIS Nº11 WANLI-SUNNY"></div>' +
+    '<div><label>Vigente desde *</label><input id="ap-vig" type="date"></div>' +
+    '<div><label>Reemplaza a (vence la anterior)</label><select id="ap-rem"><option value="">— ninguna —</option>' + act.map(function(l) { return '<option value="' + apEsc(l.LISTA) + '">' + apEsc(l.LISTA) + '</option>'; }).join('') + '</select></div></div>' +
+    '<label style="display:flex;gap:8px;align-items:center;font-size:14px;margin:6px 0"><input type="checkbox" id="ap-iva"> Los precios de la lista <b>traen IVA</b> (si no, son sin IVA)</label>' +
+    '<textarea id="ap-pegar" class="fi" placeholder="Código	Descripción	Precio&#10;GTR27545R20	275/45R20 SPACTIVE 2 SUV	495867,77"></textarea>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><label class="btn btn-s" style="cursor:pointer">📄 Cargar CSV<input type="file" accept=".csv,.txt" style="display:none" onchange="apCsv(this)"></label><button class="btn btn-p" onclick="apPrevia()">Ver qué cambia</button></div>' +
+    '<div id="ap-prev"></div></div></div>';
+  return h;
+}
+function apCsv(inp) { var f = inp.files && inp.files[0]; if (!f) return; var rd = new FileReader(); rd.onload = function() { $id('ap-pegar').value = String(rd.result || ''); toast('Archivo cargado: tocá «Ver qué cambia»', 'g'); }; rd.readAsText(f, 'utf-8'); }
+function apLeerFilas() {
+  var t = String($id('ap-pegar').value || '').replace(/\r/g, ''), out = [];
+  t.split('\n').forEach(function(l) {
+    if (!l.trim()) return;
+    var c = l.indexOf('\t') !== -1 ? l.split('\t') : l.split(';').length >= 3 ? l.split(';') : l.split(',');
+    c = c.map(function(x) { return x.replace(/^"|"$/g, '').trim(); });
+    if (c.length < 2) return;
+    var precio = c.length >= 3 ? c[c.length - 1] : c[1], desc = c.length >= 3 ? c.slice(1, c.length - 1).join(' ') : '';
+    var n = apNum(precio); if (!(n > 0)) return;
+    out.push({ COD: c[0], DESC: desc, PRECIO: n });
+  });
+  return out;
+}
+function apFormLista() { return { ID_PROVEEDOR: $v('ap-prov'), NOMBRE: String($v('ap-nom') || '').trim(), VIGENCIA: $v('ap-vig'), IVA_INCLUIDO: $id('ap-iva').checked ? 1 : 0, REEMPLAZA: $v('ap-rem'), FILAS: apLeerFilas() }; }
+async function apPrevia() {
+  var o = apFormLista(), b = $id('ap-prev');
+  if (!o.FILAS.length) { toast('No encontré renglones con precio: pegá Código, Descripción y Precio', 'r2'); return; }
+  b.innerHTML = '<div class="tdim mt2">Comparando ' + o.FILAS.length + ' renglones…</div>';
+  var r; try { r = await gsRun('gsAP_ListaPrevia', o); } catch (e) { r = { ok: false, error: e.message }; }
+  if (!r.ok) { b.innerHTML = '<div class="al al-r mt2">' + apEsc(r.error) + '</div>'; return; }
+  var h = '<div class="ap-res"><div class="ap-k"><b>' + r.N + '</b><span>renglones leídos</span></div><div class="ap-k"><b style="color:#166534">' + r.ENCONTRADOS + '</b><span>con artículo del sistema</span></div><div class="ap-k"><b style="color:#92400e">' + r.SIN_ARTICULO + '</b><span>sin artículo (se guardan igual)</span></div><div class="ap-k"><b class="ap-up">' + r.SUBEN + '</b><span>suben</span></div><div class="ap-k"><b class="ap-dn">' + r.BAJAN + '</b><span>bajan</span></div></div>';
+  h += '<div class="ap-tw" style="max-height:340px"><table><thead><tr><th>Código</th><th>Descripción de la lista</th><th>Artículo del sistema</th><th class="n">Antes s/IVA</th><th class="n">Ahora s/IVA</th><th class="n">%</th></tr></thead><tbody>' +
+    r.FILAS.map(function(f) { return '<tr><td>' + apEsc(f.COD) + '</td><td>' + apEsc(f.DESC) + '</td><td>' + (f.ARTICULO ? apEsc(f.ARTICULO) : '<span class="ap-b ap-wa">no encontrado</span>') + '</td><td class="n">' + (f.ANTES ? apP(f.ANTES) : '—') + '</td><td class="n">' + apP(f.SIN) + '</td><td class="n ' + (f.DIF > 0 ? 'ap-up' : f.DIF < 0 ? 'ap-dn' : '') + '">' + (f.DIF === null ? '' : (f.DIF > 0 ? '+' : '') + f.DIF.toLocaleString('es-AR') + '%') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  h += '<button class="btn btn-p mt2" style="min-height:44px" onclick="apGrabar()">✔ Grabar la lista' + (apFormLista().REEMPLAZA ? ' y vencer la anterior' : '') + '</button>';
+  b.innerHTML = h;
+}
+async function apGrabar() {
+  var o = apFormLista(); if (!(await uiConfirmar('¿Grabar la lista «' + o.NOMBRE + '» con ' + o.FILAS.length + ' renglones?' + (o.REEMPLAZA ? ' La lista «' + o.REEMPLAZA + '» queda vencida (guardada).' : '') + ' Los precios de venta no cambian hasta armar y aprobar la lista de venta.'))) return;
+  var r; try { r = await gsRun('gsAP_ListaGrabar', o); } catch (e) { r = { ok: false, error: e.message }; }
+  if (!r.ok) { toast(r.error, 'r2'); return; }
+  toast('Lista grabada: ' + r.GRABADOS + ' renglones (' + r.CON_ARTICULO + ' con artículo)' + (r.VENCIDOS ? ', ' + r.VENCIDOS + ' vencidos' : ''), 'g');
+  AP_.d = null; AP_.paso = 'calc'; renderArmado();
+}
+function apParamsHtml() {
+  var d = AP_.d, h = '<div class="ap-ex" style="margin-top:0">El parámetro se elige así: primero el de la <b>marca</b> (ej. Sunny); si la marca no tiene, el de la <b>lista</b> cuyo nombre empieza igual (ej. «SAN JUAN»). Si la ganancia es 0, esa lista <b>no entra</b> al cálculo y sus cubiertas quedan con el precio actual.</div>';
+  h += '<div class="ap-tw"><table><thead><tr><th>Marca</th><th>Lista (empieza con)</th><th class="n">Descuento proveedor</th><th class="n">Flete</th><th class="n">Ganancia s/ costo</th><th>Notas / historial</th>' + (d.PUEDE ? '<th></th>' : '') + '</tr></thead><tbody>';
+  d.PARAMS.forEach(function(p) { h += '<tr><td><b>' + apEsc(p.MARCA || '—') + '</b></td><td>' + apEsc(p.PATRON || '—') + '</td><td class="n">' + apPct(p.DESC) + '</td><td class="n">' + apPct(p.FLETE) + '</td><td class="n"><b>' + apPct(p.MARGEN) + '</b></td><td style="font-size:11.5px;max-width:380px">' + apEsc(p.NOTAS) + '</td>' + (d.PUEDE ? '<td><button class="btn btn-xs" onclick="apParamEditar(' + p.ID + ')">✏ Cambiar</button></td>' : '') + '</tr>'; });
+  h += '</tbody></table></div>';
+  if (d.PUEDE) h += '<button class="btn btn-s mt2" onclick="apParamEditar(0)">＋ Parámetro nuevo (marca o lista)</button>';
+  return h;
+}
+function apParamEditar(id) {
+  var p = AP_.d.PARAMS.filter(function(x) { return x.ID === id; })[0] || { MARCA: '', PATRON: '', DESC: 0, FLETE: 0.03, MARGEN: 0.3 };
+  var pc = function(x) { return Math.round(x * 10000) / 100; };
+  showModal('<div class="mh"><span class="mt">' + (id ? '✏ Parámetro ' + apEsc(p.MARCA || p.PATRON) : '＋ Parámetro nuevo') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="ap-form">' +
+    (id ? '' : '<div><label>Marca (si es por marca)</label><input id="ap-pm" placeholder="SUNNY"></div><div><label>o lista que empieza con</label><input id="ap-pp" placeholder="SAN JUAN"></div>') +
+    '<div><label>Descuento del proveedor %</label><input id="ap-pd" inputmode="decimal" value="' + pc(p.DESC) + '"></div><div><label>Flete %</label><input id="ap-pf" inputmode="decimal" value="' + pc(p.FLETE) + '"></div><div><label>Ganancia sobre el costo %</label><input id="ap-pg" inputmode="decimal" value="' + pc(p.MARGEN) + '"></div></div>' +
+    '<label class="fl mt2">Motivo del cambio *</label><input class="fi" id="ap-pmot" style="width:100%" placeholder="Ej.: San Juan pasa a 35% de descuento desde noviembre">' +
+    '<div class="tdim mt2" style="font-size:12.5px">El cambio no toca los precios hasta armar y aprobar la lista de venta nueva (paso 3).</div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="apParamGuardar(' + id + ')">Guardar</button></div>');
+}
+async function apParamGuardar(id) {
+  var o = { ID: id || '', DESC_PCT: apNum($v('ap-pd')), FLETE_PCT: apNum($v('ap-pf')), MARGEN_PCT: apNum($v('ap-pg')), MOTIVO: String($v('ap-pmot') || '').trim() };
+  if (!id) { o.MARCA = String($v('ap-pm') || '').trim(); o.LISTA_PATRON = String($v('ap-pp') || '').trim(); }
+  var r; try { r = await gsRun('gsAP_Param', o); } catch (e) { r = { ok: false, error: e.message }; }
+  if (!r.ok) { toast(r.error, 'r2'); return; }
+  closeModal(); toast('Parámetro guardado ✓', 'g'); AP_.d = null; renderArmado();
+}
+function apCalcHtml() {
+  var c = AP_.d.CALC, d = AP_.d, q = String(AP_.q || '').toUpperCase().trim();
+  var h = '<div class="ap-res"><div class="ap-k"><b>' + c.N + '</b><span>cubiertas calculadas desde listas de proveedor</span></div><div class="ap-k"><b>' + c.CAMBIAN + '</b><span>cambian contra la vigente</span></div><div class="ap-k"><b class="ap-up">' + c.SUBEN + '</b><span>suben</span></div><div class="ap-k"><b class="ap-dn">' + c.BAJAN + '</b><span>bajan</span></div><div class="ap-k"><b>' + c.NUEVOS + '</b><span>sin precio hoy (entran nuevas)</span></div></div>';
+  var af = c.AFUERA; h += '<div class="tdim" style="font-size:12.5px">No entran: ' + af.MARCA + ' de marcas que no se venden · ' + af.MARGEN_CERO + ' de listas con ganancia 0 (ej. Grillas) · ' + af.SIN_PARAMETRO + ' sin parámetro · ' + af.SIN_ARTICULO + ' renglones de lista sin artículo. Esas cubiertas quedan con el precio actual.</div>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0"><input class="fi" style="flex:1;min-width:200px" placeholder="Buscar: 295 80 mirage" value="' + apEsc(AP_.q) + '" oninput="AP_.q=this.value;clearTimeout(AP_.t);AP_.t=setTimeout(apPintar,300)"><label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox"' + (AP_.soloCambios ? ' checked' : '') + ' onchange="AP_.soloCambios=this.checked;apPintar()"> Solo los que cambian</label></div>';
+  var toks = q.split(/\s+/).filter(function(t) { return t; });
+  var fs = c.FILAS.filter(function(f) { if (AP_.soloCambios && f.ACTUAL && Math.abs(f.CON - f.ACTUAL) <= 0.5) return false; var t = (f.NOMBRE + ' ' + f.CODIGO + ' ' + f.MARCA + ' ' + f.LISTA).toUpperCase().replace(/[\/\-.]/g, ' '); return toks.every(function(k) { return t.indexOf(k.replace(/[\/\-.]/g, ' ')) !== -1; }); }).slice(0, 400);
+  h += '<div class="ap-tw"><table><thead><tr><th>Cubierta</th><th>Lista del proveedor</th><th class="n">Lista s/IVA</th><th>Parámetro</th><th class="n">Costo</th><th class="n">Precio hoy</th><th class="n">Precio nuevo</th><th class="n">%</th></tr></thead><tbody>' +
+    (fs.length ? fs.map(function(f) { return '<tr><td><b>' + apEsc(f.NOMBRE) + '</b><div class="tdim" style="font-size:11px">' + apEsc(f.CODIGO) + '</div></td><td style="font-size:11.5px">' + apEsc(f.LISTA) + '<div class="tdim">' + apEsc(f.VIGENCIA) + '</div></td><td class="n">' + apP(f.LISTA_SIN) + '</td><td style="font-size:11.5px">−' + apPct(f.DESC) + ' +' + apPct(f.FLETE) + ' flete · +' + apPct(f.MARGEN) + '</td><td class="n">' + apP(f.COSTO) + '</td><td class="n">' + (f.ACTUAL ? apP(f.ACTUAL) : '—') + '</td><td class="n"><b>' + apP(f.CON) + '</b></td><td class="n ' + (f.DIF > 0 ? 'ap-up' : f.DIF < 0 ? 'ap-dn' : '') + '">' + (f.DIF === null ? 'nuevo' : (f.DIF > 0 ? '+' : '') + f.DIF.toLocaleString('es-AR') + '%') + '</td></tr>'; }).join('') : '<tr><td colspan="8" class="tdim" style="padding:14px;text-align:center">' + (c.CAMBIAN || c.NUEVOS ? 'Nada con ese filtro.' : '✔ Todos los precios calculados coinciden con la lista vigente.') + '</td></tr>') + '</tbody></table></div>';
+  if (d.PUEDE && !d.BORRADOR) h += '<div class="card mt3"><div class="card-body"><b>Armar el borrador de la lista de venta</b> con estos precios de cubiertas + los insumos Briomaq recalculados con su lista. Lo demás se copia de la vigente.<div class="fr mt2"><input class="fi" id="ap-obs" style="flex:1" placeholder="Motivo: ej. lista nueva San Juan noviembre"><button class="btn btn-p" onclick="apBorrador()"' + (c.CAMBIAN || c.NUEVOS ? '' : ' title="No hay cambios en cubiertas: igual recalcula los insumos"') + '>Armar borrador</button></div><div class="tdim mt2" style="font-size:12px">El borrador no cambia nada en ventas: después lo comparás y lo aprobás en Lista de precios → Versiones.</div></div></div>';
+  return h;
+}
+async function apBorrador() {
+  var obs = String($v('ap-obs') || '').trim(); if (obs.length < 4) { toast('Escribí el motivo', 'r2'); return; }
+  var r; try { r = await gsRun('gsAP_Borrador', obs); } catch (e) { r = { ok: false, error: e.message }; }
+  if (!r.ok) { toast(r.error, 'r2'); return; }
+  toast('Borrador N° ' + r.ID_LV + ' armado (' + r.CUBIERTAS + ' cubiertas cambian). Revisalo y aprobalo en Versiones.', 'g');
+  AP_.d = null; await renderArmado(); navTo('precios-nuevos'); setTimeout(function() { if (typeof lvAbrir === 'function') lvAbrir(); }, 900);
+}
+function apInsHtml() {
+  var b = AP_.d.BRIOMAQ, p = AP_.d.PARAMS.filter(function(x) { return x.MARCA === 'BRIOMAQ'; })[0];
+  return '<div class="ap-ex" style="margin-top:0">Los insumos y accesorios usan la lista de <b>Briomaq</b>. Se carga en <b>Compras → Listas de precios de proveedores</b> (ya existe esa pantalla) y el precio se recalcula solo al armar el borrador: lista − ' + (p ? apPct(p.DESC) : '50%') + ' + ' + (p ? apPct(p.FLETE) : '3%') + ' flete + ' + (p ? apPct(p.MARGEN) : '30%') + ' + IVA.</div>' +
+    (b ? '<div class="card"><div class="card-body">Lista vigente: <b>' + apEsc(b.NOMBRE) + '</b> · ' + b.ITEMS + ' insumos · descuento ' + b.DESCUENTO + '% · desde ' + apEsc(b.FECHA) + '</div></div>' : '<div class="al">No hay lista de Briomaq vigente.</div>') +
+    '<button class="btn btn-s mt2" onclick="navTo(\'compras\');setTimeout(function(){if(typeof lppAbrir===\'function\')lppAbrir();},900)">Ir a Listas de precios de proveedores</button>';
 }
 </script>
 
