@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "8d2240765e6e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "cc869971de58"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611181315';
+var EMA_BUILD = '202611181535';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12162,8 +12162,13 @@ function pcPsPre(cant, ya) { var n = Math.round(Math.max(0, (+cant || 0) - (+ya 
 async function pcPsCalc() {
   var ids = Object.keys(PC_.psSel || {}).filter(function(k) { return PC_.psSel[k]; }), box = $id('pc-ps-res'); if (!box) return;
   if (!ids.length) { box.innerHTML = '<div class="tdim">Tildá las cubiertas que se van a hacer.</div>'; return; }
-  box.innerHTML = '<div class="tdim">Calculando…</div>';
-  var r; try { r = await gsRun('gsPC_PesajeSel', ids, PC_.psDia || ''); } catch (e) { box.innerHTML = '<div class="al al-r">' + pcEsc(e.message) + '</div>'; return; }
+  // 18/11/2026 (Anibal): al tildar de a una, llegaban varias respuestas y la última en llegar volvía a armar la tabla pisando lo escrito; ahora vale solo la última pedida y lo escrito se recuerda
+  var seq = PC_.psSeq = (PC_.psSeq || 0) + 1;
+  document.querySelectorAll('.pc-ps-in').forEach(function(el) { var kk = el.getAttribute('data-k'); if (kk && el.value !== el.getAttribute('data-pre')) { PC_.psEd = PC_.psEd || {}; PC_.psEd[kk] = el.value; } });
+  if (!$id('pc-tbl-ps')) box.innerHTML = '<div class="tdim">Calculando…</div>';
+  var r; try { r = await gsRun('gsPC_PesajeSel', ids, PC_.psDia || ''); } catch (e) { if (seq !== PC_.psSeq) return; box.innerHTML = '<div class="al al-r">' + pcEsc(e.message) + '</div>'; return; }
+  if (seq !== PC_.psSeq) return;
+  document.querySelectorAll('.pc-ps-in').forEach(function(el) { var kk = el.getAttribute('data-k'); if (kk && el.value !== el.getAttribute('data-pre')) { PC_.psEd = PC_.psEd || {}; PC_.psEd[kk] = el.value; } });
   if (!r || !r.ok) { box.innerHTML = '<div class="al al-r">' + pcEsc((r && r.error) || 'No se pudo') + '</div>'; return; }
   PC_.psR = r;
   var f3 = function(n) { return n === null || n === undefined ? '—' : n === true ? 'falta' : (Math.round((+n || 0) * 1000) / 1000).toLocaleString('es-AR'); };
@@ -12175,7 +12180,7 @@ async function pcPsCalc() {
         '<td class="tr mono">' + f3(x.CANT) + ' ' + u + '</td><td class="tr mono"><b>' + f3(x.RETIRAR) + ' ' + u + '</b></td>' +
         '<td class="tr mono">' + (ya ? f3(ya) + ' ' + u : '—') + (x.MOVS.length ? '<div class="tdim" style="font-size:10px">' + x.MOVS.map(function(m) { return f3(m.CANT) + ' · ' + pcEsc(m.OPERARIO); }).join('<br>') + '</div>' : '') + '</td>' +
         '<td class="tr mono" style="color:' + (falta > 0 ? 'var(--danger)' : 'var(--success)') + '">' + (falta > 0 ? f3(falta) + ' ' + u : '✓') + '</td>' +
-        '<td>' + (cerr ? '<span class="badge b-gray">día cerrado</span>' : '<div class="flex gap2" style="align-items:center"><input class="fi pc-ps-in" id="pc-ps-in-' + k + '" inputmode="decimal" style="width:90px" onfocus="this.select()" value="' + pcPsPre(x.CANT, ya) + '" placeholder="' + (x.VERBO === 'PESAR' ? 'Peso' : 'Medida') + '"> ' + u + ' <button class="btn btn-p btn-sm" onclick="pcPsGuardar(' + k + ')">Sumar</button></div>') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+        '<td>' + (cerr ? '<span class="badge b-gray">día cerrado</span>' : '<div class="flex gap2" style="align-items:center"><input class="fi pc-ps-in" id="pc-ps-in-' + k + '" data-k="' + pcEsc(x.ID_ESTACION + '|' + x.ID_INSUMO) + '" data-pre="' + pcPsPre(x.CANT, ya) + '" inputmode="decimal" style="width:90px" onfocus="this.select()" value="' + pcEsc((PC_.psEd && PC_.psEd[x.ID_ESTACION + '|' + x.ID_INSUMO] !== undefined) ? PC_.psEd[x.ID_ESTACION + '|' + x.ID_INSUMO] : pcPsPre(x.CANT, ya)) + '" placeholder="' + (x.VERBO === 'PESAR' ? 'Peso' : 'Medida') + '"> ' + u + ' <button class="btn btn-p btn-sm" onclick="pcPsGuardar(' + k + ')">Sumar</button></div>') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
     (r.LINEAS.some(function(x) { return !(x.PES && x.PES.ESTADO === 'CERRADO'); }) ? '<div class="flex gap2 mt2" style="justify-content:flex-end;flex-wrap:wrap"><span class="tdim" style="font-size:12px;align-self:center">Si todo se pesó como la receta (o ya cambiaste lo distinto):</span><button class="btn btn-g" id="pc-ps-todo" onclick="pcPsSumarTodo()">✓ Sumar todo</button></div>' : '');
   if (r.SIN_ESTACION.length) h += '<div class="al al-y mt2" style="font-size:12px">Sin estación en la receta (no se puede asignar el pesaje): ' + pcEsc(r.SIN_ESTACION.join(', ')) + '. Hay que ponerle la estación en la receta.</div>';
   box.innerHTML = h;
@@ -12204,6 +12209,7 @@ async function pcPsGuardar(k, silencio) {
   var marcas = PC_.d.cubiertas.filter(function(c) { return PC_.psSel[c.ID_CUB]; }).map(function(c) { return c.MARCA; }).join(', ');
   try { var r = await gsRun('gsPC_PesajeSumar', { FECHA: PC_.psR.DIA, ID_ESTACION: x.ID_ESTACION, ID_INSUMO: x.ID_INSUMO, CANTIDAD: v, OPERARIO: op, CUBIERTAS: marcas });
     if (!r || !r.ok) { if (silencio) return (r && r.error) || 'No se pudo'; return toast((r && r.error) || 'No se pudo', 'r2'); }
+    if (PC_.psEd) delete PC_.psEd[x.ID_ESTACION + '|' + x.ID_INSUMO]; var elS = $id('pc-ps-in-' + k); if (elS) elS.setAttribute('data-pre', elS.value);
     if (silencio) return true; toast(x.NOMBRE + ': sumado ✓', 'g'); pcPsCalc(); } catch (e) { if (silencio) return e.message; toast(e.message, 'r2'); }
 }
 function pcPsHTML() {
