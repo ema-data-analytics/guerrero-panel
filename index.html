@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611181650';
+var EMA_BUILD = '202611181715';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12715,7 +12715,7 @@ function pcprPie() {
 .pu-ficha{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
 .pu-ficha .m{font:700 30px/1 var(--mono)}
 .pu-ficha .d{color:var(--dim);font-size:15px}
-.pu-timer{display:flex;align-items:center;gap:12px}
+.pu-timer{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .pu-clock{font:700 30px/1 var(--mono);min-width:96px;text-align:right}
 .pu-go{background:var(--accent);color:#fff;font-size:20px;min-width:170px}
 .pu-stop{background:#111827;color:#fff;font-size:20px;min-width:170px}
