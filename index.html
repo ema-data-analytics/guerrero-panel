@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611181150';
+var EMA_BUILD = '202611181220';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13216,7 +13216,7 @@ function puFicha() {
     var listos = PU_.rows.filter(puResuelta).length;
     h += '<div class="card pu-grilla"><div class="card-hd"><span class="card-title">Insumos de esta estación</span>' +
       '<span style="display:flex;gap:8px;align-items:center"><span class="badge ' + (listos === PU_.rows.length ? 'b-green' : 'b-red') + '">' + listos + ' de ' + PU_.rows.length + ' insumos listos</span>' +
-      (PU_.rows.some(function(r) { return !r.no && !r.ok && (!r.reemp || r.plan) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && (r.plan || !puSinStock(r.l)); }) ? '<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="puTodoReceta()">✓ Todo como la receta</button>' : '') +
+      (PU_.rows.some(function(r) { return !r.no && !r.ok && (!r.reemp || r.plan) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && (r.plan || !puSinStock(r.l)); }) ? '<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="puTodoReceta()">' + (PU_.rows.some(function(r) { return !r.no && !r.ok && !puPesarCub(r) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC; }) ? '✓ Todo como la receta' : '⚖ Pesar antes / después') + '</button>' : '') +
       (PU_.pend.length ? '<button class="btn btn-p btn-sm" onclick="PU_.verOtros=true;puFicha()"><i class="fas fa-plus"></i> Agregar</button>' : '') + '</span></div>' +
       '<div class="tw"><table><thead><tr><th>#</th><th>Insumo</th><th class="tr">' + (puCiego() ? 'Cargar' : 'Receta') + '</th><th class="tr">Usado</th><th>Estado</th><th></th></tr></thead><tbody>' +
       PU_.rows.map(puLinHTML).join('') + '</tbody></table></div></div>';
@@ -13479,7 +13479,7 @@ function puAbrirFila(k) {
   showModal('<div class="mh"><span class="mt">' + puEsc(r.reemp && r.idReal ? puNomIns(r.idReal) : r.l.NOMBRE) + '</span><button class="mc" onclick="closeModal();puFicha()">×</button></div>' +
     '<div class="mb2" id="pu-mfila"></div><div class="mf"><button class="btn btn-p" id="pu-mfila-ok" style="min-width:140px;min-height:48px;font-size:17px">Listo</button></div>', 'md-lg');
   var o = document.querySelector('.mo'); if (o) o.addEventListener('click', function(e) { if (e.target === o) puFicha(); });
-  $id('pu-mfila-ok').onclick = function() { closeModal(); puFicha(); };
+  $id('pu-mfila-ok').onclick = function() { closeModal(); puFicha(); var rr = PU_.rows[k], sg = rr && rr.ok && puPesarCub(rr) ? puPesaPend(k) : -1; if (sg !== -1) puAbrirFila(sg); };
   puPintarFila(k);
 }
 function puCerrarFila() { closeModal(); puFicha(); }
@@ -13520,6 +13520,14 @@ function puPintarFila(k) {
 function puTodoReceta() {
   PU_.rows.forEach(function(r) { if (!r.no && !r.ok && (!r.reemp || r.plan) && !puPesarCub(r) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && (r.plan || !puSinStock(r.l))) { r.real = puExacto(r.l.CANTIDAD); r.ok = true; if (!r.plan) r.motivo = ''; } });
   puFicha();
+  // 18/11/2026 (Anibal): lo que se pesa por cubierta no se puede dar «como la receta»: se abre para poner antes y después
+  var kp = puPesaPend(-1);
+  if (kp !== -1) { toast(PU_.rows[kp].l.NOMBRE + ' se pesa: poné cuánto pesa antes y después', 'b'); puAbrirFila(kp); }
+}
+// Siguiente renglón que se pesa por cubierta y todavía no está cargado (después del k)
+function puPesaPend(k) {
+  for (var i = k + 1; i < PU_.rows.length; i++) { var r = PU_.rows[i]; if (r && !r.no && !r.ok && puPesarCub(r) && r.l.TIPO_LINEA !== 'HERRAMENTAL') return i; }
+  return -1;
 }
 // Insumo que no está en la receta: se elige de los que hay en stock y se pone cuánto se usó (no pide clave; queda registrado)
 var puAdicN = 0;
