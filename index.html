@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e3b59a31c456"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "37708af6efe1"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611181715';
+var EMA_BUILD = '202611181730';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13668,7 +13668,9 @@ function puFaltantes() {
     if (I.apta === true && I.niv === 2 && !I.banda && !PU_.f.sinBanda && !PU_.f.bandaOpcional) f.push('elegir la banda');
     if (I.apta === true && !I.garantia) f.push('decir si va CON o SIN garantía');
     if (I.apta === true && I.niv === 1 && !I.proceso) f.push('decir si está para PRECURAR o VULCANIZAR');
-    if (I.apta === true && I.niv === 1 && I.proceso === 'VULCANIZAR') f.push('cambiar el trabajo para vulcanizar (Cambiar trabajo)');
+    var esVulcF = String((PU_.f.inspeccion && PU_.f.inspeccion.trabajo) || '').toUpperCase() === 'VULCANIZADO';
+    if (I.apta === true && I.niv === 1 && I.proceso === 'VULCANIZAR' && !esVulcF) f.push('cambiar el trabajo para vulcanizar (Cambiar trabajo)');
+    if (I.apta === true && I.niv === 1 && I.proceso === 'PRECURAR' && esVulcF) f.push('el trabajo es VULCANIZADO: para precurar, cambiá el trabajo');
     if (I.apta === true && I.parches.some(function(p) { return !p.id || !(puN(p.cant) > 0); })) f.push('completar los parches');
     if (I.apta === false) {
       if (!I.motivo) f.push('elegir por qué no es apta');
@@ -13819,7 +13821,8 @@ function puInspHTML() {
       '<div class="tdim" style="font-size:14px">Sin garantía: el casco está dudoso, se hace igual pero no se responde si el recapado falla. Sale así en el remito.</div>';
     if (I.niv === 1) {
       h += '<div style="font-weight:700">¿Para precurar o para vulcanizar? *</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + ch(I.proceso === 'PRECURAR', 'var(--accent)', 'Precurar', "PU_.insp.proceso='PRECURAR';puFicha()") + ch(I.proceso === 'VULCANIZAR', 'var(--warn)', 'Vulcanizar', "PU_.insp.proceso='VULCANIZAR';puFicha()") + '</div>';
-      if (I.proceso === 'VULCANIZAR') h += '<div style="font-size:16px;background:var(--warn-light,#fff7e0);border-radius:8px;padding:8px">Para vulcanizar hay que cambiarle el trabajo. ' + (!PU_.f.registro ? '<button class="pu-btn pu-min" onclick="puCambioTrabajo()">⇄ Cambiar trabajo (encargado)</button>' : '') + '</div>';
+      var esVulcH = String(X.trabajo || '').toUpperCase() === 'VULCANIZADO';
+      if ((I.proceso === 'VULCANIZAR' && !esVulcH) || (I.proceso === 'PRECURAR' && esVulcH)) h += '<div style="font-size:16px;background:var(--warn-light,#fff7e0);border-radius:8px;padding:8px">' + (esVulcH ? 'El trabajo es VULCANIZADO: para precurar hay que cambiarle el trabajo. ' : 'Para vulcanizar hay que cambiarle el trabajo. ') + (!PU_.f.registro ? '<button class="pu-btn pu-min" onclick="puCambioTrabajo()">⇄ Cambiar trabajo (encargado)</button>' : '') + '</div>';
     }
     if ((X.parchesAntes || []).length) h += '<div class="tdim" style="font-size:15px">Parches de estaciones anteriores: ' + X.parchesAntes.map(function(p) { return puEsc(p.NOMBRE) + ' × ' + puF(p.CANTIDAD) + ' (est. ' + p.NIV + ')'; }).join(' · ') + '</div>';
   }
