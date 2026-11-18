@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "cc869971de58"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "65039b9c8fc5"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611181535';
+var EMA_BUILD = '202611181600';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -11426,22 +11426,43 @@ async function pcMateriales() {
   var tit = Object.keys(PC_.sel).filter(function(i) { return PC_.sel[i] === 'TITULAR'; });
   if (!tit.length) { toast('Marcá las cubiertas titulares', 'r2'); return; }
   var b = $id('pc-mat'); if (b) b.disabled = true;
-  try { var r = await gsRun('gsPC_MaterialesCarga', tit, PC_.alts || {}); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } pcMatPintar(r); }
+  try { var r = await gsRun('gsPC_MaterialesCarga', tit, PC_.alts || {}); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } PC_.matKey = tit.slice().sort().join(',') + '|' + JSON.stringify(PC_.alts || {}); pcMatPintar(r); }
   catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
 }
 function pcMatPintar(r) {
   var el = $id('pc-mat-res'); if (!el) return;
+  // 18/11/2026 (Anibal): el encargado confirma cada material mirando el estante: «✓ Hay» o «↺ Reemplazar por…» (con motivo). Sin eso no se crea la orden.
+  PC_.matRes = r; PC_.matDec = PC_.matDec || {}; PC_.alts = PC_.alts || {}; PC_.altsMot = PC_.altsMot || {};
   var f = function(n) { return n === null || n === undefined ? '—' : n === true ? 'falta' : String(Math.round(n * 1000) / 1000).replace('.', ','); };
-  el.innerHTML = '<div class="al ' + (r.FALTAN ? 'al-r' : 'al-g') + ' mt3"><b>' + (r.FALTAN ? '⛔ Faltan ' + r.FALTAN + (r.FALTAN === 1 ? ' material' : ' materiales') + ' para esta carga: elegí la alternativa de cada uno o conseguilo. Sin eso no se arma.' : '✓ Alcanzan los materiales para esta carga' + ((r.USADAS || []).length ? ' (con las alternativas elegidas)' : '')) + '</b> <span class="tdim" style="font-size:12px">(receta de cada cubierta contra el stock de hoy)</span></div>' +
-    '<div class="tw"><table style="font-size:12px"><thead><tr><th>Material</th><th class="tr">Hace falta</th><th class="tr">Hay</th><th class="tr">Falta</th><th>Alternativa</th></tr></thead><tbody>' +
+  var porDe = {}; (r.USADAS || []).forEach(function(u) { porDe[u.POR] = u; });
+  var pend = pcMatPend(r);
+  el.innerHTML = '<div class="al ' + (r.FALTAN || pend ? 'al-r' : 'al-g') + ' mt3"><b>' + (r.FALTAN ? '⛔ Faltan ' + r.FALTAN + (r.FALTAN === 1 ? ' material' : ' materiales') + ' en el stock: elegí con qué reemplazarlo o conseguilo. Sin eso no se arma.' : pend ? 'Mirá el estante y confirmá cada material: «✓ Hay» o «↺ Reemplazar por…». Faltan ' + pend + '.' : '✓ Materiales confirmados para esta carga') + '</b></div>' +
+    '<div class="tw"><table style="font-size:12px"><thead><tr><th>Material</th><th class="tr">Hace falta</th><th class="tr">Stock en sistema</th><th>¿Hay en la planta?</th></tr></thead><tbody>' +
     r.LINEAS.map(function(x) {
-      var alt = '';
-      if (x.FALTA) alt = x.TIPO === 'HERRAMENTAL' ? '<span style="color:#b91c1c">Faltan piezas: dalas de alta en Herramental o sacá cubiertas de la carga</span>' :
-        ((x.ALTERNATIVAS || []).length ? '<select class="fi pc-alt" data-de="' + pcEsc(x.ID_INSUMO) + '" style="min-width:220px"><option value="">— usar en su lugar —</option>' + x.ALTERNATIVAS.map(function(a) { return '<option value="' + pcEsc(a.ID_INSUMO) + '">' + pcEsc(a.NOMBRE) + ' · hay ' + f(a.HAY) + ' ' + pcEsc(a.UNIDAD) + '</option>'; }).join('') + '</select>' : '<span style="color:#b91c1c">Sin alternativa con stock: hay que comprarlo</span>');
-      return '<tr' + (x.FALTA ? ' style="background:#fee2e2"' : '') + '><td>' + pcEsc(x.NOMBRE) + (x.TIPO === 'HERRAMENTAL' ? ' <span class="tdim">(piezas)</span>' : '') + '</td><td class="tr">' + f(x.NECESITA) + ' ' + pcEsc(x.UNIDAD) + '</td><td class="tr">' + f(x.HAY) + '</td><td class="tr">' + (x.FALTA ? '<b style="color:#b91c1c">' + f(x.FALTA) + '</b>' : '—') + '</td><td>' + alt + '</td></tr>'; }).join('') + '</tbody></table></div>' +
-    ((r.USADAS || []).length ? '<div class="al al-b mt3" style="font-size:12px"><b>Alternativas previstas para esta carga</b> (el operario las va a ver ya puestas): ' + r.USADAS.map(function(u) { return pcEsc(u.DE_NOMBRE) + ' → <b>' + pcEsc(u.POR_NOMBRE) + '</b> <a href="#" onclick="delete PC_.alts[\'' + pcEsc(u.DE) + '\'];pcMateriales();return false">quitar</a>'; }).join(' · ') + '</div>' : '');
-  el.querySelectorAll('.pc-alt').forEach(function(sel) { sel.onchange = function() { PC_.alts = PC_.alts || {}; if (this.value) PC_.alts[this.dataset.de] = this.value; else delete PC_.alts[this.dataset.de]; pcMateriales(); }; });
+      var c = '', u = porDe[x.ID_INSUMO];
+      if (x.TIPO === 'HERRAMENTAL') c = x.FALTA ? '<span style="color:#b91c1c">Faltan piezas: dalas de alta en Herramental o sacá cubiertas de la carga</span>' : '<span class="tdim">piezas disponibles</span>';
+      else if (x.TIPO === 'RECETA') c = '<span style="color:#b91c1c">Corregir la receta</span>';
+      else if (u) c = '<span class="badge b-blue">↺ en lugar de ' + pcEsc(u.DE_NOMBRE) + '</span>' + (PC_.altsMot[u.DE] ? ' <span class="tdim">' + pcEsc(PC_.altsMot[u.DE]) + '</span>' : '') + ' <a href="#" onclick="delete PC_.alts[\'' + pcEsc(u.DE) + '\'];delete PC_.altsMot[\'' + pcEsc(u.DE) + '\'];pcMateriales();return false">quitar</a>';
+      else {
+        var ok = PC_.matDec[x.ID_INSUMO] === 'HAY' && !x.FALTA;
+        c = '<div class="flex gap2" style="align-items:center;flex-wrap:wrap">' + (x.FALTA ? '' : '<button class="btn btn-xs ' + (ok ? 'btn-g' : 'btn-s') + '" onclick="PC_.matDec[\'' + pcEsc(x.ID_INSUMO) + '\']=' + (ok ? "''" : "'HAY'") + ';pcMatPintar(PC_.matRes)">✓ Hay</button>') +
+          ((x.ALTERNATIVAS || []).length ? '<select class="fi pc-alt" data-de="' + pcEsc(x.ID_INSUMO) + '" style="min-width:200px;max-width:260px"><option value="">↺ Reemplazar por…</option>' + x.ALTERNATIVAS.map(function(a) { return '<option value="' + pcEsc(a.ID_INSUMO) + '">' + pcEsc(a.NOMBRE) + ' · stock ' + f(a.HAY) + ' ' + pcEsc(a.UNIDAD) + '</option>'; }).join('') + '</select>' : (x.FALTA ? '<span style="color:#b91c1c">Sin reemplazo posible: hay que comprarlo</span>' : '')) + '</div>';
+      }
+      var hecho = x.TIPO === 'INSUMO' && (u || (PC_.matDec[x.ID_INSUMO] === 'HAY' && !x.FALTA));
+      return '<tr' + (x.FALTA ? ' style="background:#fee2e2"' : hecho ? ' style="background:#f0fdf4"' : '') + '><td>' + pcEsc(x.NOMBRE) + (x.TIPO === 'HERRAMENTAL' ? ' <span class="tdim">(piezas)</span>' : '') + '</td><td class="tr">' + f(x.NECESITA) + ' ' + pcEsc(x.UNIDAD) + '</td><td class="tr">' + f(x.HAY) + (x.FALTA ? ' <b style="color:#b91c1c">(faltan ' + f(x.FALTA) + ')</b>' : '') + '</td><td>' + c + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  el.querySelectorAll('.pc-alt').forEach(function(sel) { sel.onchange = async function() {
+    var de = this.dataset.de, por = this.value; if (!por) return;
+    var m = await uiPedir('¿Por qué se reemplaza?', { obligatorio: true, ayuda: 'Ej.: en la planta no hay cordón' });
+    if (!m) { this.value = ''; return; }
+    PC_.alts[de] = por; PC_.altsMot[de] = m; delete PC_.matDec[de]; pcMateriales();
+  }; });
   el.scrollIntoView({ block: 'nearest' });
+}
+// Cuántos materiales faltan confirmar (los insumos sin «Hay» y sin reemplazo)
+function pcMatPend(r) {
+  if (!r) return 1;
+  var por = {}; (r.USADAS || []).forEach(function(u) { por[u.POR] = 1; });
+  return r.LINEAS.filter(function(x) { return x.TIPO === 'INSUMO' && !por[x.ID_INSUMO] && !(PC_.matDec && PC_.matDec[x.ID_INSUMO] === 'HAY' && !x.FALTA); }).length;
 }
 // ── Preparación de la carga: por estación, lo que la receta prevé (con las alternativas de la carga). Lo que se pesa, con cuánto retirar. ──
 async function pcPrep(id) {
@@ -11477,17 +11498,20 @@ async function pcCrearOT() {
   if (!tit.length) { toast('Marcá las cubiertas titulares', 'r2'); return; }
   if (!$v('pc-resp')) { toast('Elegí el responsable de la carga', 'r2'); $id('pc-resp').focus(); return; }
   if (PC_.mezcla) { toast('No se pueden mezclar ' + PC_.mezcla.join(' y ') + ' en la misma carga: armá una carga por línea', 'r2'); return; }
+  var kMat = tit.slice().sort().join(',') + '|' + JSON.stringify(PC_.alts || {});
+  if (PC_.matKey !== kMat || !PC_.matRes) { toast('Primero confirmá los materiales: tocá «¿Alcanzan los materiales?» y marcá cada uno', 'r2'); pcMateriales(); return; }
+  var pendM = pcMatPend(PC_.matRes); if (pendM || PC_.matRes.FALTAN) { toast(PC_.matRes.FALTAN ? 'Faltan materiales en el stock: reemplazalos o conseguilos' : 'Falta confirmar ' + pendM + (pendM === 1 ? ' material' : ' materiales') + ': «✓ Hay» o «↺ Reemplazar por…»', 'r2'); $id('pc-mat-res').scrollIntoView({ block: 'center' }); return; }
   var mezcla = false;
   var linea = '';
   var l = mezcla ? PC_.d.lineas.filter(function(x) { return x.LINEA === linea; })[0] : null;
   var b = $id('pc-crear'); b.disabled = true;
   try {
     var marcas = {}; tit.concat(sup).forEach(function(i) { if (PC_.mk[i]) marcas[i] = PC_.mk[i]; });
-    var dat = { TITULARES: tit, SUPLENTES: sup, LINEA: linea, TOPE: l ? l.CAPACIDAD : '', RESPONSABLE: $v('pc-resp'), OBSERVACIONES: $v('pc-obs'), MARCAS: marcas, ALTERNATIVAS: PC_.alts || {} };
+    var dat = { TITULARES: tit, SUPLENTES: sup, LINEA: linea, TOPE: l ? l.CAPACIDAD : '', RESPONSABLE: $v('pc-resp'), OBSERVACIONES: $v('pc-obs'), MARCAS: marcas, ALTERNATIVAS: PC_.alts || {}, MOTIVOS_ALT: PC_.altsMot || {}, MATERIALES_OK: true };
     var r = await gsRun('gsPC_CrearOT', dat);
     if (r && !r.ok && r.FALTAN_MATERIALES) { pcMatPintar(r.FALTAN_MATERIALES); toast(r.error, 'r2'); return; }
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
-    PC_.alts = {};
+    PC_.alts = {}; PC_.altsMot = {}; PC_.matDec = {}; PC_.matRes = null; PC_.matKey = '';
     PC_.mk = {};
     toast('Orden de servicio ' + r.NRO_OT + ' creada (' + r.LINEA + ', tope ' + r.TOPE + ') ✓', 'g');
     PC_.sel = {}; PC_.armAuto = 0; PC_.tab = 'os'; PC_.osNueva = false; await pcRecargar(); await pcAbrirOT(r.ID_OT); pcPrep(r.ID_OT);
