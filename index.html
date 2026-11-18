@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611181130';
+var EMA_BUILD = '202611181150';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12157,6 +12157,8 @@ function pcPsSelHTML() {
       '<div style="display:flex;flex-wrap:wrap;gap:4px 14px;padding:6px 10px">' + cs.map(function(c) { return '<label style="display:flex;gap:6px;align-items:center;font-size:12px;cursor:pointer"><input type="checkbox" class="pc-ps-c" data-g="' + gi + '" value="' + c.ID_CUB + '"' + (sel[c.ID_CUB] ? ' checked' : '') + ' onchange="PC_.psSel[this.value]=this.checked;pcPsCalc()"><b class="mono">' + pcEsc(c.MARCA || c.ID_CUB) + '</b> ' + pcEsc((c.CLIENTE || '') + ' · ' + (c.MEDIDA || '') + ' · ' + (c.TRABAJO || '')) + '</label>'; }).join('') + '</div></div>'; }).join('');
 }
 function pcPsGrupo(gi, v) { document.querySelectorAll('.pc-ps-c[data-g="' + gi + '"]').forEach(function(x) { x.checked = v; PC_.psSel[x.value] = v; }); pcPsCalc(); }
+// 18/11/2026 (Anibal): el campo trae escrito lo que pide la receta (lo que falta de la receta, sin el margen); si se pesó otra cosa se cambia
+function pcPsPre(cant, ya) { var n = Math.round(Math.max(0, (+cant || 0) - (+ya || 0)) * 1000) / 1000; return n > 0 ? String(n).replace('.', ',') : ''; }
 async function pcPsCalc() {
   var ids = Object.keys(PC_.psSel || {}).filter(function(k) { return PC_.psSel[k]; }), box = $id('pc-ps-res'); if (!box) return;
   if (!ids.length) { box.innerHTML = '<div class="tdim">Tildá las cubiertas que se van a hacer.</div>'; return; }
@@ -12173,17 +12175,36 @@ async function pcPsCalc() {
         '<td class="tr mono">' + f3(x.CANT) + ' ' + u + '</td><td class="tr mono"><b>' + f3(x.RETIRAR) + ' ' + u + '</b></td>' +
         '<td class="tr mono">' + (ya ? f3(ya) + ' ' + u : '—') + (x.MOVS.length ? '<div class="tdim" style="font-size:10px">' + x.MOVS.map(function(m) { return f3(m.CANT) + ' · ' + pcEsc(m.OPERARIO); }).join('<br>') + '</div>' : '') + '</td>' +
         '<td class="tr mono" style="color:' + (falta > 0 ? 'var(--danger)' : 'var(--success)') + '">' + (falta > 0 ? f3(falta) + ' ' + u : '✓') + '</td>' +
-        '<td>' + (cerr ? '<span class="badge b-gray">día cerrado</span>' : '<div class="flex gap2" style="align-items:center"><input class="fi pc-ps-in" id="pc-ps-in-' + k + '" inputmode="decimal" style="width:90px" placeholder="' + (x.VERBO === 'PESAR' ? 'Peso' : 'Medida') + '"> ' + u + ' <button class="btn btn-p btn-sm" onclick="pcPsGuardar(' + k + ')">Sumar</button></div>') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+        '<td>' + (cerr ? '<span class="badge b-gray">día cerrado</span>' : '<div class="flex gap2" style="align-items:center"><input class="fi pc-ps-in" id="pc-ps-in-' + k + '" inputmode="decimal" style="width:90px" onfocus="this.select()" value="' + pcPsPre(x.CANT, ya) + '" placeholder="' + (x.VERBO === 'PESAR' ? 'Peso' : 'Medida') + '"> ' + u + ' <button class="btn btn-p btn-sm" onclick="pcPsGuardar(' + k + ')">Sumar</button></div>') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+    (r.LINEAS.some(function(x) { return !(x.PES && x.PES.ESTADO === 'CERRADO'); }) ? '<div class="flex gap2 mt2" style="justify-content:flex-end;flex-wrap:wrap"><span class="tdim" style="font-size:12px;align-self:center">Si todo se pesó como la receta (o ya cambiaste lo distinto):</span><button class="btn btn-g" id="pc-ps-todo" onclick="pcPsSumarTodo()">✓ Sumar todo</button></div>' : '');
   if (r.SIN_ESTACION.length) h += '<div class="al al-y mt2" style="font-size:12px">Sin estación en la receta (no se puede asignar el pesaje): ' + pcEsc(r.SIN_ESTACION.join(', ')) + '. Hay que ponerle la estación en la receta.</div>';
   box.innerHTML = h;
 }
-async function pcPsGuardar(k) {
+// 18/11/2026 (Anibal): «Sumar todo» = suma de una todos los renglones que tienen número escrito (de a uno, en orden)
+async function pcPsSumarTodo() {
+  var L = (PC_.psR && PC_.psR.LINEAS) || [], op = $v('pc-ps-op');
+  if (!op) { toast('Elegí quién pesa', 'r2'); $id('pc-ps-op').focus(); return; }
+  var ks = L.map(function(x, k) { return k; }).filter(function(k) { var el = $id('pc-ps-in-' + k); return el && String(el.value).trim(); });
+  if (!ks.length) { toast('No hay nada escrito para sumar', 'r2'); return; }
+  var b = $id('pc-ps-todo'); if (b) b.disabled = true;
+  var ok = 0, mal = [];
+  for (var i = 0; i < ks.length; i++) {
+    if (b) b.textContent = 'Sumando ' + (i + 1) + ' de ' + ks.length + '…';
+    var r = await pcPsGuardar(ks[i], true);
+    if (r === true) ok++; else mal.push(L[ks[i]].NOMBRE + (r ? ': ' + r : ''));
+  }
+  if (mal.length) toast('Sumados ' + ok + '. No se pudo: ' + mal.join(' · '), 'r2'); else toast('Sumado todo ✓ (' + ok + ')', 'g');
+  pcPsCalc();
+}
+async function pcPsGuardar(k, silencio) {
   var x = PC_.psR && PC_.psR.LINEAS[k]; if (!x) return;
   var v = $v('pc-ps-in-' + k), op = $v('pc-ps-op');
   if (!op) { toast('Elegí quién pesa', 'r2'); $id('pc-ps-op').focus(); return; }
   if (!String(v).trim()) { toast('Poné lo ' + (x.VERBO === 'PESAR' ? 'pesado' : 'medido'), 'r2'); $id('pc-ps-in-' + k).focus(); return; }
   var marcas = PC_.d.cubiertas.filter(function(c) { return PC_.psSel[c.ID_CUB]; }).map(function(c) { return c.MARCA; }).join(', ');
-  try { var r = await gsRun('gsPC_PesajeSumar', { FECHA: PC_.psR.DIA, ID_ESTACION: x.ID_ESTACION, ID_INSUMO: x.ID_INSUMO, CANTIDAD: v, OPERARIO: op, CUBIERTAS: marcas }); if (!r || !r.ok) return toast((r && r.error) || 'No se pudo', 'r2'); toast(x.NOMBRE + ': sumado ✓', 'g'); pcPsCalc(); } catch (e) { toast(e.message, 'r2'); }
+  try { var r = await gsRun('gsPC_PesajeSumar', { FECHA: PC_.psR.DIA, ID_ESTACION: x.ID_ESTACION, ID_INSUMO: x.ID_INSUMO, CANTIDAD: v, OPERARIO: op, CUBIERTAS: marcas });
+    if (!r || !r.ok) { if (silencio) return (r && r.error) || 'No se pudo'; return toast((r && r.error) || 'No se pudo', 'r2'); }
+    if (silencio) return true; toast(x.NOMBRE + ': sumado ✓', 'g'); pcPsCalc(); } catch (e) { if (silencio) return e.message; toast(e.message, 'r2'); }
 }
 function pcPsHTML() {
   var hoy = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10), emps = (PC_.d.empleados || []).map(function(e) { return typeof e === 'string' ? e : e.NOMBRE; });
