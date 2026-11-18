@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "65039b9c8fc5"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e3b59a31c456"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611181600';
+var EMA_BUILD = '202611181650';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -11979,7 +11979,7 @@ async function pcImpRemito(i) {
 // Renglón de una cubierta en el remito (producción y venta usan este mismo): 2 líneas, marca grabada y DOT con su título
 function remFilaCub(t, nInt, parche) {
   var ok = t.RESULTADO === 'TERMINADA';
-  return '<tr><td class="rk">' + (ok ? 'Casco' : 'Rechaz.') + '</td><td><b>' + pcEsc(t.MEDIDA) + ' ' + pcEsc(t.FABRICANTE) + '</b> · ' + pcEsc(ok ? t.TRABAJO : 'Sin trabajo') + (t.REPROCESO ? ' (con corrección)' : '') + (ok && t.BANDA ? ' · ' + pcEsc(t.BANDA) : '') +
+  return '<tr><td class="rk">' + (ok ? 'Casco' : 'Rechaz.') + '</td><td><b>' + pcEsc(t.MEDIDA) + ' ' + pcEsc(t.FABRICANTE) + '</b> · ' + pcEsc(ok ? t.TRABAJO : 'Sin trabajo') + (t.REPROCESO ? ' (con corrección)' : '') + (ok && t.BANDA ? ' · ' + pcEsc(t.BANDA) : '') + (ok && t.GARANTIA === 'SIN' ? ' · <b>SIN GARANTÍA</b>' : '') +
     '<div class="rs">Marca grabada: <b>' + pcEsc(t.MARCA) + '</b> · DOT: ' + pcDotTxt(t.DOT) + (nInt ? ' · N° int. ' + pcEsc(nInt) : '') + (t.BOLETA ? ' · Boleta ' + pcEsc(t.BOLETA) : '') + (t.OTRAB ? ' · ' + pcEsc(t.OTRAB) : '') + (ok ? '' : ' · Motivo: ' + pcEsc(t.MOTIVO || '')) + (parche ? ' · ' + parche : '') + (ok && pcVentaRem(t) ? ' · <b>' + pcEsc(pcVentaRem(t)) + '</b>' : '') + '</div></td><td class="rn">1 c/u</td></tr>';
 }
 // Renglones por hoja (medidos en A4 impreso con la letra nueva): cubiertas ocupan 2 líneas, artículos 1
@@ -13039,7 +13039,8 @@ async function puAbrir(idOt, idCub, estF) {
   PU_.ctrl = f.control && !f.registro ? { dec: '', ests: [], motivo: '', txt: '' } : null;
   PU_.f = f; PU_.vista = 'ficha'; PU_.t0 = null; PU_.seg = 0; PU_.res = 'OK'; PU_.obs = ''; PU_.aut = { u: '', c: '' }; PU_.verOtros = false;
   puRelAplicar();
-  PU_.insp = f.inspeccion ? { apta: null, banda: f.inspeccion.bandaReceta || '', parches: [], extras: (f.inspeccion.extrasCub || []).slice(), motivo: '', reemplazo: null } : null;
+  // 18/11/2026 (Anibal): inspección en las estaciones 1, 2 y 3 (nivel). La banda se elige en la 2. Garantía en las 3 (en la 2 y la 3 viene marcada la anterior). En la 1: precurar o vulcanizar.
+  PU_.insp = f.inspeccion ? { apta: null, niv: f.inspeccion.nivel || 1, banda: (f.inspeccion.nivel || 1) === 2 ? (f.inspeccion.bandaReceta || '') : '', parches: [], extras: (f.inspeccion.extrasCub || []).slice(), motivo: '', reemplazo: null, garantia: (f.inspeccion.nivel || 1) > 1 ? (f.inspeccion.garantia || '') : '', proceso: '' } : null;
   var abiertas = f.lineas.filter(function(l) { return !l.HECHO; });
   var aca = function(l) { return l.ID_ESTACION ? l.ID_ESTACION === puE() : l.SUGERIDA === puE(); };
   PU_.rows = abiertas.filter(aca).map(puNuevaFila);
@@ -13239,7 +13240,7 @@ function puFicha() {
     '<div style="font-size:15px">' + puEsc(f.cub.MOTIVO_REPROCESO) + '</div><div class="tdim" style="font-size:14px">Cuando termine la corrección, espera la próxima carga del autoclave (entra ocupando un lugar).</div></div>';
   if (f.cub.REPROCESO_DE) h += '<div><span class="pu-tag sup">Viene de reproceso de ' + puEsc(f.cub.REPROCESO_DE) + '</span>' + (f.cub.MOTIVO_ORIGEN ? '<div style="font-size:15px;margin-top:4px"><b>Qué se corrigió:</b> ' + puEsc(f.cub.MOTIVO_ORIGEN) + '</div>' : '') + '</div>';
   if (PU_.ctrl) h += puControlHTML();
-  if (PU_.insp) { h += puTrabajoHTML(); h += puInspHTML(); if (PU_.insp.apta === false) { $id('pu-body').innerHTML = h; puPieFicha(); return; } }
+  if (PU_.insp) { if (PU_.insp.niv === 1) h += puTrabajoHTML(); h += puInspHTML(); if (PU_.insp.apta === false) { $id('pu-body').innerHTML = h; puPieFicha(); return; } }
   h += puRetiroHTML();
   if (!PU_.rows.length) h += '<div class="pu-h">En esta estación la receta no lleva insumos</div>';
   if (!PU_.rows.length) h += '<div class="pu-otros" style="font-size:17px"><div>✓ Acá solo se hace el trabajo: tocá <b>EMPEZAR</b>, hacé el trabajo y tocá <b>TERMINÉ</b>.</div></div>';
@@ -13663,8 +13664,11 @@ function puFaltantes() {
   }
   if (PU_.insp) {
     var I = PU_.insp;
-    if (I.apta === null && PU_.f.inspeccion.obligatoria) f.push('decir si es APTA o NO APTA');
-    if (I.apta === true && !I.banda && !PU_.f.sinBanda && !PU_.f.bandaOpcional) f.push('elegir la banda');
+    if (I.apta === null && PU_.f.inspeccion.obligatoria) f.push(I.niv === 1 ? 'decir si es APTA o NO APTA' : 'decir si sigue APTA o NO APTA');
+    if (I.apta === true && I.niv === 2 && !I.banda && !PU_.f.sinBanda && !PU_.f.bandaOpcional) f.push('elegir la banda');
+    if (I.apta === true && !I.garantia) f.push('decir si va CON o SIN garantía');
+    if (I.apta === true && I.niv === 1 && !I.proceso) f.push('decir si está para PRECURAR o VULCANIZAR');
+    if (I.apta === true && I.niv === 1 && I.proceso === 'VULCANIZAR') f.push('cambiar el trabajo para vulcanizar (Cambiar trabajo)');
     if (I.apta === true && I.parches.some(function(p) { return !p.id || !(puN(p.cant) > 0); })) f.push('completar los parches');
     if (I.apta === false) {
       if (!I.motivo) f.push('elegir por qué no es apta');
@@ -13702,7 +13706,7 @@ async function puConfirmar() {
   var aut = !noAp && puHayReemplazo() ? { USUARIO: PU_.aut.u, CLAVE: $v('pu-aut-c') } : null;
   var I = PU_.insp, insp = null;
   if (I && !noAp && I.apta !== null) {
-    if (I.apta) insp = { APTA: true, ID_BANDA: I.banda, PARCHES: I.parches.map(function(p) { return { ID_INSUMO: p.id, CANTIDAD: p.cant }; }), EXTRAS: I.extras || [] };
+    if (I.apta) insp = { APTA: true, ID_BANDA: I.niv === 2 ? I.banda : '', PARCHES: I.parches.map(function(p) { return { ID_INSUMO: p.id, CANTIDAD: p.cant }; }), EXTRAS: I.niv === 1 ? (I.extras || []) : [], GARANTIA: I.garantia, PROCESO: I.niv === 1 ? I.proceso : '' };
     else { insp = { APTA: false, ID_MOTIVO: I.motivo, REEMPLAZO: I.reemplazo || '' }; cons = []; aut = null; }
   }
   b.disabled = true; b.textContent = 'Guardando…';
@@ -13807,9 +13811,19 @@ function puCambioTrabajo() {
 function puInspHTML() {
   var I = PU_.insp, X = PU_.f.inspeccion;
   var b = function(v, txt, col) { var on = I.apta === v; return '<button class="pu-btn" style="flex:1;min-height:70px;font-size:22px;' + (on ? 'background:' + col + ';color:#fff' : 'background:var(--surface2);color:var(--text);border:2px solid ' + col) + '" onclick="puInspApta(' + v + ')">' + txt + '</button>'; };
-  var h = '<div class="pu-reg" id="pu-insp" style="border-color:var(--accent)"><div style="font-size:20px;font-weight:700">Resultado de la inspección</div>' +
+  var ch = function(on, col, txt, js) { return '<button class="pu-chip" style="font-size:17px;padding:10px 16px;' + (on ? 'background:' + col + ';color:#fff;border-color:' + col : '') + '" onclick="' + js + '">' + txt + '</button>'; };
+  var h = '<div class="pu-reg" id="pu-insp" style="border-color:var(--accent)"><div style="font-size:20px;font-weight:700">' + (I.niv === 1 ? 'Resultado de la inspección' : '¿Sigue apta?') + '</div>' +
     '<div style="display:flex;gap:12px">' + b(true, '✓ APTA', 'var(--success)') + b(false, '✗ NO APTA', 'var(--danger)') + '</div>';
   if (I.apta === true) {
+    h += '<div style="font-weight:700">¿Garantía? *</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + ch(I.garantia === 'CON', 'var(--success)', '✓ CON garantía', "PU_.insp.garantia='CON';puFicha()") + ch(I.garantia === 'SIN', 'var(--danger)', '⚠ SIN garantía', "PU_.insp.garantia='SIN';puFicha()") + '</div>' +
+      '<div class="tdim" style="font-size:14px">Sin garantía: el casco está dudoso, se hace igual pero no se responde si el recapado falla. Sale así en el remito.</div>';
+    if (I.niv === 1) {
+      h += '<div style="font-weight:700">¿Para precurar o para vulcanizar? *</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + ch(I.proceso === 'PRECURAR', 'var(--accent)', 'Precurar', "PU_.insp.proceso='PRECURAR';puFicha()") + ch(I.proceso === 'VULCANIZAR', 'var(--warn)', 'Vulcanizar', "PU_.insp.proceso='VULCANIZAR';puFicha()") + '</div>';
+      if (I.proceso === 'VULCANIZAR') h += '<div style="font-size:16px;background:var(--warn-light,#fff7e0);border-radius:8px;padding:8px">Para vulcanizar hay que cambiarle el trabajo. ' + (!PU_.f.registro ? '<button class="pu-btn pu-min" onclick="puCambioTrabajo()">⇄ Cambiar trabajo (encargado)</button>' : '') + '</div>';
+    }
+    if ((X.parchesAntes || []).length) h += '<div class="tdim" style="font-size:15px">Parches de estaciones anteriores: ' + X.parchesAntes.map(function(p) { return puEsc(p.NOMBRE) + ' × ' + puF(p.CANTIDAD) + ' (est. ' + p.NIV + ')'; }).join(' · ') + '</div>';
+  }
+  if (I.apta === true && I.niv === 2) {
     var reu = I.reut === undefined ? /^RU-/.test(I.banda || '') : I.reut;
     var bl = X.bandas.filter(function(x) { return !!x.REUT === reu && (x.STOCK > 0 || x.ID_INSUMO === I.banda || x.ID_INSUMO === X.bandaReceta); });
     if (PU_.f && PU_.f.sinBanda) h += '<div class="tdim" style="font-size:16px"><b>Este trabajo no lleva banda</b> (' + puEsc(PU_.f.cub.TRABAJO || '') + ').</div>';
@@ -13819,12 +13833,14 @@ function puInspHTML() {
       '<select class="pu-q" id="pu-insp-banda" style="font-size:18px;text-transform:none" onchange="PU_.insp.banda=this.value;puPieFicha()"><option value="">' + (PU_.f && PU_.f.bandaOpcional ? 'No lleva banda' : '— elegí la banda —') + '</option>' +
       bl.map(function(x) { return '<option value="' + puEsc(x.ID_INSUMO) + '"' + (x.ID_INSUMO === I.banda ? ' selected' : '') + '>' + puEsc(x.NOMBRE) + ' · hay ' + puF(x.STOCK) + (x.ID_INSUMO === X.bandaReceta ? ' · de la receta' : '') + '</option>'; }).join('') + '</select>' +
       (reu && !bl.length ? '<div class="tdim">No hay bandas reutilizadas en stock. Cuando saquen una de una cubierta, cargala con "♻ Saqué banda para reutilizar".</div>' : '');
-    h += '<div style="font-weight:700">Parches que lleva</div>' + (I.parches.length ? '' : '<div class="tdim">Sin parches. Si lleva, tocá "+ Parche".</div>') +
+  }
+  if (I.apta === true) {
+    h += '<div style="font-weight:700">' + (I.niv === 1 ? 'Parches que lleva' : 'Parches que se agregan acá') + '</div>' + (I.parches.length ? '' : '<div class="tdim">Sin parches. Si lleva, tocá "+ Parche".</div>') +
       I.parches.map(function(p, i) { return '<div style="display:flex;gap:8px;align-items:center"><select class="pu-q pu-insp-p" data-i="' + i + '" style="font-size:16px;flex:1;text-transform:none"><option value="">— elegí el parche —</option>' +
         X.parches.map(function(x) { return '<option value="' + puEsc(x.ID_INSUMO) + '"' + (x.ID_INSUMO === p.id ? ' selected' : '') + '>' + puEsc(x.NOMBRE) + '</option>'; }).join('') + '</select>' +
         '<input class="pu-q pu-insp-c" data-i="' + i + '" type="number" min="0" step="1" value="' + puEsc(p.cant) + '" placeholder="Cant." style="width:110px;font-size:18px"/><button class="pu-btn pu-min" onclick="PU_.insp.parches.splice(' + i + ',1);puFicha()">✕</button></div>'; }).join('') +
       '<button class="pu-btn pu-min" style="width:max-content" onclick="PU_.insp.parches.push({id:\'\',cant:1});puFicha()">+ Parche</button>' +
-      ((X.extras || []).length ? '<div style="font-weight:700">Trabajos extra que lleva</div><div class="tdim" style="font-size:14px">Tocá los que hacen falta. Sus insumos aparecen en la estación ' + puEsc(X.estExtras || '5') + '.</div>' +
+      (I.niv === 1 && (X.extras || []).length ? '<div style="font-weight:700">Trabajos extra que lleva</div><div class="tdim" style="font-size:14px">Tocá los que hacen falta. Sus insumos aparecen en la estación ' + puEsc(X.estExtras || '5') + '.</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:8px">' + X.extras.map(function(t, i) { var on = I.extras.indexOf(t) !== -1; return '<button class="pu-chip" style="' + (on ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : '') + '" onclick="puInspExtra(' + i + ')">' + (on ? '✓ ' : '') + puEsc(t) + '</button>'; }).join('') + '</div>' : '');
   } else if (I.apta === false) {
     h += '<div style="font-weight:700">¿Por qué no es apta? *</div><div style="display:flex;flex-wrap:wrap;gap:8px">' + X.motivos.map(function(m) { var on = String(I.motivo) === String(m.ID_MOT); return '<button class="pu-chip" style="' + (on ? 'background:var(--danger);color:#fff;border-color:var(--danger)' : '') + '" onclick="PU_.insp.motivo=\'' + m.ID_MOT + '\';puFicha()">' + puEsc(m.DESCRIPCION) + '</button>'; }).join('') + '</div>';
