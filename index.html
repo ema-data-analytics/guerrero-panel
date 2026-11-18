@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611181250';
+var EMA_BUILD = '202611181315';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -11886,7 +11886,7 @@ function pcRemitosLista(rs) {
     '<div class="tdim" style="font-size:12px;margin-top:8px">Imprimí el remito: el cliente firma y el chofer escanea el QR con el celular y saca la foto. Ahí queda "Entregado".</div></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
 }
 // Rechazadas del cliente que todavía no se devolvieron (para sumarlas al remito)
-function pcRechSinDev(idCli) { return (PC_.d.cubiertas || []).filter(function(c) { return c.ESTADO === 'RECHAZADA' && !c.FECHA_DEVOLUCION && String(c.ID_CLIENTE) === String(idCli); }); }
+function pcRechSinDev(idCli) { return ((PC_.d && PC_.d.cubiertas) || []).filter(function(c) { return c.ESTADO === 'RECHAZADA' && !c.FECHA_DEVOLUCION && String(c.ID_CLIENTE) === String(idCli); }); }
 function pcRemEstado(x) {
   return x.ESTADO === 'ENTREGADO' ? '<span class="badge b-green">✓ Entregado ' + fmtD(x.FECHA_ENTREGA) + '</span>' : '<span class="badge b-orange">Falta la foto firmada</span>';
 }
@@ -11944,7 +11944,7 @@ async function pcImpRemito(i) {
   var x = window.PC_REM[i]; if (!x) return;
   var qr = ''; try { if (x.TOKEN_FIRMA) { await asLibQR(); qr = asQRsvg(pcRemUrl(x), 90); } } catch (eq) { qr = ''; }
   var em = x.EMISOR || {}, logo = (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://sistema.vulcantreadsrl.com.ar/logo_vulcan.jpg?v=4';
-  var nInt = {}; (PC_.d.cubiertas || []).forEach(function(c) { nInt[String(c.ID_CUB)] = c.ID_CASCO; });
+  var nInt = {}; ((PC_.d && PC_.d.cubiertas) || []).forEach(function(c) { nInt[String(c.ID_CUB)] = c.ID_CASCO; });
   var cuitF = function(c) { c = String(c || '').replace(/\D/g, ''); return c.length === 11 ? c.slice(0, 2) + '-' + c.slice(2, 10) + '-' + c.slice(10) : c; };
   var ini = /^\d{4}-\d{2}-\d{2}/.test(em.INICIO_ACT || '') ? fmtD(em.INICIO_ACT) : (em.INICIO_ACT || '');
   var hora = ''; try { var dd = new Date(Number(x.FECHA)); hora = ('0' + dd.getHours()).slice(-2) + ':' + ('0' + dd.getMinutes()).slice(-2); } catch (eh) {}
