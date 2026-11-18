@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ced5dc16c4b3"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "156e5cef7ccd"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611181230';
+var EMA_BUILD = '202611181240';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13828,7 +13828,7 @@ function puListoRechazo() {
 // Del día (obligatorio): a la mañana se pesa lo que se retira; a la tarde, lo que sobra. Por cubierta (si la estación lo tiene): peso antes y después
 function puPesarIns(id) { var p = PU_.f && PU_.f.pesar; return !!(p && id && p.ins.indexOf(String(id).toUpperCase()) !== -1); }
 function puPesarCub(r) { return !!(PU_.f && PU_.f.pesar && PU_.f.pesar.cub && r.l.TIPO_LINEA !== 'HERRAMENTAL' && puPesarIns(r.reemp && r.idReal ? r.idReal : r.l.ID_INSUMO)); }
-function puSinPeso(r) { return (r.pa === '' || r.pa === undefined) && (r.pz === '' || r.pz === undefined) && puN(r.real) > 0; }
+function puSinPeso(r) { return (r.pa === '' || r.pa === undefined) && (r.pz === '' || r.pz === undefined) && !(r.reemp && r.idReal) && Math.abs(puN(r.real) - (+r.l.CANTIDAD || 0)) < 1e-9 && puN(r.real) > 0; }
 function puPesoOk(r) { var a = puN(r.pa), z = puN(r.pz); return r.pa !== '' && r.pz !== '' && r.pa !== undefined && r.pz !== undefined && !isNaN(a) && !isNaN(z) && z <= a + 1e-9; }
 function puPesajeBanner() {
   var p = PU_.pes; if (!p || !p.ITEMS || !p.ITEMS.length) return '';
