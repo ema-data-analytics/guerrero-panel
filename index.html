@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611171900';
+var EMA_BUILD = '202611180900';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17204,7 +17204,7 @@ function mtPresTabla(det, soloVer, dg) {
   var tot = 0, ve = MT_.d.VE_COSTO, cos = 0;
   var cls = { SERVICIO: 'mt-b-b', REPUESTO: 'mt-b-g', INSUMO: 'mt-b-v', TERCERO: 'mt-b-o', CLIENTE: 'mt-b-x' };
   var rows = det.map(function(l) { tot += l.SUBTOTAL; cos += (l.COSTO_UNIT || 0) * l.CANTIDAD;
-    return '<tr><td><span class="mt-bd ' + (cls[l.CLASE] || 'mt-b-x') + '">' + pcEsc(l.CLASE) + '</span></td><td class="pc-wr">' + pcEsc(l.DESCRIPCION) + '</td>' + mtStockTd(l) + '<td class="tr">' + l.CANTIDAD + '</td><td class="tr">' + mtPlata(l.PRECIO_LISTA) + '</td><td class="tr">' + (l.DESCUENTO_PCT ? l.DESCUENTO_PCT + '%' : '') + '</td><td class="tr"><b>' + mtPlata(l.SUBTOTAL) + '</b></td>' + (ve ? '<td class="tr tdim">' + mtPlata((l.COSTO_UNIT || 0) * l.CANTIDAD) + '</td>' : '') + '</tr>'; }).join('');
+    return '<tr><td><span class="mt-bd ' + (cls[l.CLASE] || 'mt-b-x') + '">' + pcEsc(l.CLASE) + '</span></td><td class="pc-wr">' + pcEsc(l.DESCRIPCION) + '</td>' + mtStockTd(l) + '<td class="tr">' + l.CANTIDAD + '</td><td class="tr">' + mtPlata(mtPresPuDe(l)) + (Math.abs(mtPresPuDe(l) - (Number(l.PRECIO_LISTA) || 0)) >= 0.005 && l.PRECIO_LISTA ? '<div class="tdim" style="font-size:11px">lista ' + mtPlata(l.PRECIO_LISTA) + '</div>' : '') + '</td><td class="tr">' + (l.DESCUENTO_PCT ? String(l.DESCUENTO_PCT).replace('.', ',') + '%' : '') + '</td><td class="tr"><b>' + mtPlata(l.SUBTOTAL) + '</b></td>' + (ve ? '<td class="tr tdim">' + mtPlata((l.COSTO_UNIT || 0) * l.CANTIDAD) + '</td>' : '') + '</tr>'; }).join('');
   return '<div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Clase</th><th>Descripción</th><th class="tr">Stock</th><th class="tr">Cant.</th><th class="tr">Precio s/IVA</th><th class="tr">Desc.</th><th class="tr">Subtotal</th>' + (ve ? '<th class="tr">Costo</th>' : '') + '</tr></thead><tbody>' + rows +
     mtPresPie(tot, dg, 6, ve ? '<td></td>' : '') + (ve ? (function() { var fin = Math.round(tot * (1 - (Number(dg) || 0) / 100) * 100) / 100; return '<td class="tr tdim">' + mtPlata(cos) + (fin ? ' · margen ' + Math.round((fin - cos) / fin * 100) + '%' : '') + '</td>'; })() : '') + '</tr></tbody></table></div>';
 }
@@ -17215,17 +17215,30 @@ async function mtPresArmar() {
   } catch (e) { toast(e.message, 'r2'); }
 }
 function mtPresCorregir() { MT_.lin = MT_.ord.PRESUP.DET.map(function(l) { var c = {}; Object.keys(l).forEach(function(k) { c[k] = l[k]; }); return c; }); MT_.dg = Number(MT_.ord.PRESUP.DESCUENTO_PCT) || 0; mtOrdenVer(); }
+function mtNum(v) { var t = String(v == null ? '' : v).replace(/[\s$]/g, ''); if (t.indexOf(',') > -1) t = t.replace(/\./g, '').replace(',', '.'); else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, ''); var x = parseFloat(t); return isNaN(x) ? 0 : x; }
+function mtPresPuDe(l) { var pl = Number(l.PRECIO_LISTA) || 0; return l.PRECIO_UNIT !== undefined && l.PRECIO_UNIT !== null && l.PRECIO_UNIT !== '' ? Number(l.PRECIO_UNIT) || 0 : Math.round(pl * (1 - (Number(l.DESCUENTO_PCT) || 0) / 100) * 100) / 100; }
+// Cambia el precio de un renglón: q = 'SIN' (precio s/IVA), 'CON' (final c/IVA 21%), 'DTO' (descuento %), 'LISTA' (precio de un tercero). Precio y descuento quedan siempre de acuerdo.
+function mtPresPrecio(i, q, v) {
+  var l = MT_.lin[i], x = mtNum(v), pl = Number(l.PRECIO_LISTA) || 0, pu;
+  if (q === 'DTO') { l.DESCUENTO_PCT = x; l.PRECIO_UNIT = Math.round(pl * (1 - x / 100) * 100) / 100; }
+  else if (q === 'LISTA') { l.PRECIO_LISTA = x; l.PRECIO_UNIT = Math.round(x * (1 - (Number(l.DESCUENTO_PCT) || 0) / 100) * 100) / 100; }
+  else { pu = q === 'CON' ? Math.round(x / 1.21 * 100) / 100 : x; l.PRECIO_UNIT = pu; if (pl > 0) l.DESCUENTO_PCT = Math.round((1 - pu / pl) * 10000) / 100; else { l.PRECIO_LISTA = pu; l.DESCUENTO_PCT = 0; } }
+  mtOrdenVer();
+}
 function mtPresEditorHtml() {
   var L = MT_.lin, tot = 0, d = MT_.d;
-  var rows = L.map(function(l, i) { var pu = Math.round(l.PRECIO_LISTA * (1 - (l.DESCUENTO_PCT || 0) / 100) * 100) / 100, sub = Math.round(pu * l.CANTIDAD * 100) / 100; tot += sub; var te = l.CLASE === 'TERCERO';
+  var rows = L.map(function(l, i) { var pl = Number(l.PRECIO_LISTA) || 0, pu = mtPresPuDe(l), sub = Math.round(pu * l.CANTIDAD * 100) / 100; tot += sub; var te = l.CLASE === 'TERCERO';
+    var st = pu <= 0 && l.CLASE !== 'CLIENTE' ? ' style="width:110px;border-color:#dc2626;background:#fef2f2" placeholder="poné el precio"' : (pl > 0 && pu < pl - 0.005 ? ' style="width:110px;border-color:#d97706;background:#fffbeb" title="Por debajo de la lista"' : ' style="width:110px"');
     return '<tr><td>' + pcEsc(l.CLASE) + '</td><td class="pc-wr">' + (te ? '<input class="fi" value="' + pcEsc(l.DESCRIPCION) + '" onchange="MT_.lin[' + i + '].DESCRIPCION=this.value">' : pcEsc(l.DESCRIPCION)) + '</td>' + mtStockTd(l) +
-      '<td><input class="fi tr" style="width:70px" inputmode="decimal" value="' + l.CANTIDAD + '" onchange="MT_.lin[' + i + '].CANTIDAD=parseFloat(this.value.replace(\',\',\'.\'))||0;mtOrdenVer()"></td>' +
-      '<td class="tr">' + (te ? '<input class="fi tr" style="width:110px" inputmode="decimal" placeholder="Precio" value="' + (l.PRECIO_LISTA || '') + '" onchange="MT_.lin[' + i + '].PRECIO_LISTA=parseFloat(this.value.replace(\',\',\'.\'))||0;mtOrdenVer()"><input class="fi tr mt2" style="width:110px" inputmode="decimal" placeholder="Costo del tercero" value="' + (l.COSTO_UNIT || '') + '" onchange="MT_.lin[' + i + '].COSTO_UNIT=parseFloat(this.value.replace(\',\',\'.\'))||0;MT_.lin[' + i + '].PRECIO_LISTA=Math.round(MT_.lin[' + i + '].COSTO_UNIT*(1+' + (d.MARGEN_TERC || 30) + '/100)*100)/100;mtOrdenVer()">' : mtPlata(l.PRECIO_LISTA)) + '</td>' +
-      '<td><input class="fi tr" style="width:64px" inputmode="decimal" value="' + (l.DESCUENTO_PCT || 0) + '" onchange="MT_.lin[' + i + '].DESCUENTO_PCT=parseFloat(this.value.replace(\',\',\'.\'))||0;mtOrdenVer()"></td>' +
+      '<td><input class="fi tr" style="width:70px" inputmode="decimal" value="' + l.CANTIDAD + '" onchange="MT_.lin[' + i + '].CANTIDAD=mtNum(this.value);mtOrdenVer()"></td>' +
+      '<td class="tr">' + (te ? '<input class="fi tr" style="width:110px" inputmode="decimal" placeholder="Precio" value="' + (pl || '') + '" onchange="mtPresPrecio(' + i + ',\'LISTA\',this.value)"><input class="fi tr mt2" style="width:110px" inputmode="decimal" placeholder="Costo del tercero" value="' + (l.COSTO_UNIT || '') + '" onchange="MT_.lin[' + i + '].COSTO_UNIT=mtNum(this.value);mtPresPrecio(' + i + ',\'LISTA\',Math.round(MT_.lin[' + i + '].COSTO_UNIT*(1+' + (d.MARGEN_TERC || 30) + '/100)*100)/100)">' : (pl ? mtPlata(pl) : '<span class="tdim">sin lista</span>')) + '</td>' +
+      '<td><input class="fi tr" inputmode="decimal"' + st + ' value="' + (pu ? String(pu).replace('.', ',') : '') + '" onchange="mtPresPrecio(' + i + ',\'SIN\',this.value)"></td>' +
+      '<td><input class="fi tr" inputmode="decimal"' + st + ' value="' + (pu ? String(Math.round(pu * 121) / 100).replace('.', ',') : '') + '" onchange="mtPresPrecio(' + i + ',\'CON\',this.value)"></td>' +
+      '<td><input class="fi tr" style="width:64px" inputmode="decimal" value="' + String(Number(l.DESCUENTO_PCT) || 0).replace('.', ',') + '" onchange="mtPresPrecio(' + i + ',\'DTO\',this.value)"></td>' +
       '<td class="tr"><b>' + mtPlata(sub) + '</b></td><td><button class="btn btn-d btn-xs" title="Sacar el renglón" onclick="MT_.lin.splice(' + i + ',1);mtOrdenVer()">✖</button></td></tr>'; }).join('');
-  return '<div class="tdim mb2" style="font-size:12.5px">Precios sin IVA de la lista vigente (' + pcEsc(d.LISTA) + '). Se cambia la cantidad o el descuento; el precio sale de la lista. Los trabajos de tercero llevan el costo y el precio se sugiere con +' + (d.MARGEN_TERC || 30) + '%.</div>' +
-    '<div class="tw pc-abm mt-lin" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Clase</th><th>Descripción</th><th class="tr">Stock</th><th>Cant.</th><th class="tr">Precio s/IVA</th><th>Desc. %</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody>' + (rows || '<tr><td colspan="8" class="tc tdim" style="padding:14px">Sin renglones: agregá un servicio o un repuesto.</td></tr>') +
-    mtPresPie(tot, MT_.dg, 6, '<td></td>') + '<td></td></tr></tbody></table></div>' +
+  return '<div class="tdim mb2" style="font-size:12.5px">Precios sin IVA de la lista vigente (' + pcEsc(d.LISTA) + '). Si el precio de lista no sirve, escribí el precio sin IVA o el final con IVA (21%) de cada renglón: el descuento se calcula solo (en amarillo, por debajo de la lista; si queda arriba, el descuento sale negativo). Los trabajos de tercero llevan el costo y el precio se sugiere con +' + (d.MARGEN_TERC || 30) + '%.</div>' +
+    '<div class="tw pc-abm mt-lin" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Clase</th><th>Descripción</th><th class="tr">Stock</th><th>Cant.</th><th class="tr">Lista s/IVA</th><th>Precio s/IVA</th><th>Final c/IVA</th><th>Desc. %</th><th class="tr">Subtotal s/IVA</th><th></th></tr></thead><tbody>' + (rows || '<tr><td colspan="10" class="tc tdim" style="padding:14px">Sin renglones: agregá un servicio o un repuesto.</td></tr>') +
+    mtPresPie(tot, MT_.dg, 8, '<td></td>') + '</tr><tr><td colspan="8" class="tr tdim">Total con IVA</td><td class="tr">' + mtPlata(Math.round(tot * (1 - (Number(MT_.dg) || 0) / 100) * 121) / 100) + '</td><td></td></tr></tbody></table></div>' +
     '<div class="fg mt2" style="max-width:260px"><label class="fl">Descuento general sobre el total (%)</label><input class="fi tr" id="mt-p-dg" inputmode="decimal" value="' + (Number(MT_.dg) || 0) + '" onchange="MT_.dg=parseFloat(this.value.replace(\',\',\'.\'))||0;mtOrdenVer()"></div>' +
     (MT_.ord.EQUIPOS.length > 1 ? '<div class="fg mt2" style="max-width:320px"><label class="fl">Lo que agregues a mano va al equipo</label><select class="fs" id="mt-p-eq">' + MT_.ord.EQUIPOS.map(function(x) { return '<option value="' + x.ID_OE + '">' + pcEsc(mtEqIdent(mtEq(x.ID_EQUIPO))) + '</option>'; }).join('') + '</select></div>' : '') +
     '<div class="pc-fila3 mt2" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">' +
@@ -18937,7 +18950,7 @@ function fli2Pdf() {
 // la FACTURA sale de los presupuestos aprobados. Componente común: lo usan la orden en campo (Flota) y la orden del taller.
 var FPR_ = { id: null, adic: '', lin: [], dg: 0, cat: null, nro: '', vuelta: null, reabrir: 0 };
 function fprPlata(n) { return '$ ' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-function fprNum(v) { var x = parseFloat(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')); return isNaN(x) ? 0 : x; }
+function fprNum(v) { var t = String(v == null ? '' : v).replace(/[\s$]/g, ''); if (t.indexOf(',') > -1) t = t.replace(/\./g, '').replace(',', '.'); else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, ''); var x = parseFloat(t); return isNaN(x) ? 0 : x; }
 var FPR_EST = { BORRADOR: ['#fef3c7', '#92400e', 'Borrador'], ENVIADO: ['#dbeafe', '#1e40af', 'Enviado al cliente'], APROBADO: ['#dcfce7', '#166534', 'Aprobado'], RECHAZADO: ['#fee2e2', '#991b1b', 'No lo aprobó'], VENCIDO: ['#e5e7eb', '#374151', 'Vencido'] };
 function fprBd(e) { var x = FPR_EST[e] || ['#e5e7eb', '#374151', e]; return '<span class="fl-bd" style="background:' + x[0] + ';color:' + x[1] + '">' + pcEsc(x[2]) + '</span>'; }
 function fprTit(p) { return p.NRO_ADIC ? 'Adicional ' + p.NRO_ADIC : 'Presupuesto'; }
@@ -18977,7 +18990,7 @@ function fprPs(id) { return (window._fprPs || []).filter(function(p) { return p.
 async function fprCat() { var r = await gsRun('gsMT_PresupCat', window._fprOrden.ID); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return null; } FPR_.cat = r; return r; }
 async function fprNuevo(adic) {
   var c = await fprCat(); if (!c) return; FPR_.id = window._fprOrden.ID; FPR_.adic = adic; FPR_.dg = 0; FPR_.reabrir = 0;
-  FPR_.lin = adic ? [] : c.SUGERIDO.map(function(l) { return { CLASE: l.CLASE, ID_SERVICIO: l.ID_SERVICIO, ID_ARTICULO: l.ID_ARTICULO, DESCRIPCION: l.DESCRIPCION, CANTIDAD: l.CANTIDAD, PRECIO_UNIT: l.PRECIO_UNIT, ID_OE: l.ID_OE }; });
+  FPR_.lin = adic ? [] : c.SUGERIDO.map(function(l) { return { CLASE: l.CLASE, ID_SERVICIO: l.ID_SERVICIO, ID_ARTICULO: l.ID_ARTICULO, DESCRIPCION: l.DESCRIPCION, CANTIDAD: l.CANTIDAD, PRECIO_UNIT: l.PRECIO_UNIT, PRECIO_LISTA: l.PRECIO_UNIT, ID_OE: l.ID_OE }; });
   FPR_.nro = adic ? 'Presupuesto adicional' : 'Presupuesto'; fprEditor();
 }
 async function fprEditar(idP) {
@@ -19003,8 +19016,8 @@ function fprAddSel(sel, idU) {
   var v = sel[0]; UIB_[idU].sel = []; var el = $id('uib-' + idU); if (el) el.innerHTML = uibCuerpo(idU); if (!v) return;
   var c = FPR_.cat, oe = c.EQUIPOS.length === 1 ? c.EQUIPOS[0].ID_OE : '';
   if (v.charAt(0) === 'S') { var s = c.SERVICIOS.filter(function(x) { return 'S' + x.ID === v; })[0]; if (!s) return;
-    FPR_.lin.push(s.A ? { CLASE: 'SERVICIO', ID_SERVICIO: s.ID, ID_ARTICULO: s.A, DESCRIPCION: s.N, CANTIDAD: 1, PRECIO_UNIT: s.P, ID_OE: oe } : { CLASE: 'MANUAL', ID_SERVICIO: s.ID, ID_ARTICULO: '', DESCRIPCION: s.N, CANTIDAD: 1, PRECIO_UNIT: 0, ID_OE: oe }); }
-  else { var a = c.ARTICULOS.filter(function(x) { return 'A' + x.I === v; })[0]; if (!a) return; FPR_.lin.push({ CLASE: 'REPUESTO', ID_SERVICIO: '', ID_ARTICULO: a.I, DESCRIPCION: a.N, CANTIDAD: 1, PRECIO_UNIT: a.P, ID_OE: oe }); }
+    FPR_.lin.push(s.A ? { CLASE: 'SERVICIO', ID_SERVICIO: s.ID, ID_ARTICULO: s.A, DESCRIPCION: s.N, CANTIDAD: 1, PRECIO_UNIT: s.P, PRECIO_LISTA: s.P, ID_OE: oe } : { CLASE: 'MANUAL', ID_SERVICIO: s.ID, ID_ARTICULO: '', DESCRIPCION: s.N, CANTIDAD: 1, PRECIO_UNIT: 0, ID_OE: oe }); }
+  else { var a = c.ARTICULOS.filter(function(x) { return 'A' + x.I === v; })[0]; if (!a) return; FPR_.lin.push({ CLASE: 'REPUESTO', ID_SERVICIO: '', ID_ARTICULO: a.I, DESCRIPCION: a.N, CANTIDAD: 1, PRECIO_UNIT: a.P, PRECIO_LISTA: a.P, ID_OE: oe }); }
   fprTabla();
 }
 async function fprAddManual() {
@@ -19012,18 +19025,27 @@ async function fprAddManual() {
   var p = await uiPedir('Precio sin IVA de ' + d, { obligatorio: true, ayuda: 'Ej.: 25000' }); if (p === null) return;
   var c = FPR_.cat; FPR_.lin.push({ CLASE: 'MANUAL', ID_SERVICIO: '', ID_ARTICULO: '', DESCRIPCION: d, CANTIDAD: 1, PRECIO_UNIT: fprNum(p), ID_OE: c.EQUIPOS.length === 1 ? c.EQUIPOS[0].ID_OE : '' }); fprTabla();
 }
+function fprCeldasPrecio(l, i) {
+  var pu = fprNum(l.PRECIO_UNIT), pl = fprNum(l.PRECIO_LISTA), fin = Math.round(pu * 1.21 * 100) / 100, st = '';
+  if (pu <= 0 && l.CLASE !== 'CLIENTE') st = ' style="border-color:#dc2626;background:#fef2f2" placeholder="poné el precio"';
+  else if (pl > 0 && pu < pl - 0.005) st = ' style="border-color:#d97706;background:#fffbeb" title="Por debajo de la lista (' + fprPlata(pl) + ' + IVA)"';
+  var avi = pl > 0 && pu > 0 && Math.abs(pu - pl) >= 0.005 ? '<div class="tdim" style="font-size:11px">lista ' + fprPlata(pl) + '</div>' : '';
+  return '<td><input class="fi" inputmode="decimal" value="' + String(pu).replace('.', ',') + '" onchange="FPR_.lin[' + i + '].PRECIO_UNIT=fprNum(this.value);fprTabla()"' + st + '>' + avi + '</td>' +
+    '<td><input class="fi" inputmode="decimal" value="' + (pu > 0 ? String(fin).replace('.', ',') : '') + '" onchange="FPR_.lin[' + i + '].PRECIO_UNIT=Math.round(fprNum(this.value)/1.21*100)/100;fprTabla()"' + st + '></td>';
+}
 function fprTabla() {
   var c = FPR_.cat, multi = c.EQUIPOS.length > 1, tot = 0;
-  var h = '<div class="tw" data-noimp="1"><table style="font-size:13px"><thead><tr><th style="min-width:180px">Qué</th>' + (multi ? '<th>Unidad</th>' : '') + '<th style="width:80px">Cant.</th><th style="width:120px">Precio s/IVA</th><th class="tr">Subtotal</th><th></th></tr></thead><tbody>' +
+  var h = '<div class="tw" data-noimp="1"><table style="font-size:13px"><thead><tr><th style="min-width:180px">Qué</th>' + (multi ? '<th>Unidad</th>' : '') + '<th style="width:80px">Cant.</th><th style="width:120px">Precio s/IVA</th><th style="width:120px">Final c/IVA</th><th class="tr">Subtotal s/IVA</th><th></th></tr></thead><tbody>' +
     (FPR_.lin.length ? FPR_.lin.map(function(l, i) { var sub = Math.round(fprNum(l.CANTIDAD) * fprNum(l.PRECIO_UNIT) * 100) / 100; tot += sub;
       return '<tr><td>' + (l.CLASE === 'MANUAL' ? '<textarea class="fi" rows="2" style="width:100%;min-width:170px" oninput="FPR_.lin[' + i + '].DESCRIPCION=this.value">' + pcEsc(l.DESCRIPCION) + '</textarea>' : pcEsc(l.DESCRIPCION)) + '</td>' +
         (multi ? '<td><select class="fs" onchange="FPR_.lin[' + i + '].ID_OE=this.value">' + c.EQUIPOS.map(function(e) { return '<option value="' + e.ID_OE + '"' + (String(e.ID_OE) === String(l.ID_OE) ? ' selected' : '') + '>' + pcEsc(e.IDENT) + '</option>'; }).join('') + '</select></td>' : '') +
         '<td><input class="fi" inputmode="decimal" value="' + String(l.CANTIDAD).replace('.', ',') + '" onchange="FPR_.lin[' + i + '].CANTIDAD=fprNum(this.value);fprTabla()"></td>' +
-        '<td><input class="fi" inputmode="decimal" value="' + String(l.PRECIO_UNIT).replace('.', ',') + '" onchange="FPR_.lin[' + i + '].PRECIO_UNIT=fprNum(this.value);fprTabla()"' + (fprNum(l.PRECIO_UNIT) <= 0 && l.CLASE !== 'CLIENTE' ? ' style="border-color:#dc2626;background:#fef2f2" placeholder="poné el precio"' : '') + '></td>' +
-        '<td class="tr">' + fprPlata(sub) + '</td><td><button class="btn btn-d btn-xs" title="Sacar este renglón" onclick="FPR_.lin.splice(' + i + ',1);fprTabla()">✖</button></td></tr>'; }).join('') : '<tr><td colspan="6" class="tdim tc" style="padding:12px">Todavía no hay renglones: agregá servicios, repuestos o un renglón a mano.</td></tr>') +
+        fprCeldasPrecio(l, i) +
+        '<td class="tr">' + fprPlata(sub) + '</td><td><button class="btn btn-d btn-xs" title="Sacar este renglón" onclick="FPR_.lin.splice(' + i + ',1);fprTabla()">✖</button></td></tr>'; }).join('') : '<tr><td colspan="7" class="tdim tc" style="padding:12px">Todavía no hay renglones: agregá servicios, repuestos o un renglón a mano.</td></tr>') +
     '</tbody></table></div>' +
     '<div style="display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:8px"><label class="fl" style="margin:0">Descuento general %</label><input class="fi" inputmode="decimal" style="width:90px" value="' + String(FPR_.dg || 0).replace('.', ',') + '" onchange="FPR_.dg=fprNum(this.value);fprTabla()">' +
-    '<b style="font-size:16px">Total ' + fprPlata(Math.round(tot * (1 - (FPR_.dg || 0) / 100) * 100) / 100) + '</b> <span class="tdim" style="font-size:12px">sin IVA</span></div>';
+    '<b style="font-size:16px">Total ' + fprPlata(Math.round(tot * (1 - (FPR_.dg || 0) / 100) * 100) / 100) + '</b> <span class="tdim" style="font-size:12px">sin IVA · con IVA ' + fprPlata(Math.round(tot * (1 - (FPR_.dg || 0) / 100) * 1.21 * 100) / 100) + '</span></div>' +
+    '<div class="tdim" style="font-size:12px;text-align:right;margin-top:4px">Podés escribir el precio sin IVA o el final con IVA (21%): el otro se calcula solo. Si queda por debajo de la lista se marca en amarillo.</div>';
   $id('fpr-tab').innerHTML = h;
 }
 async function fprGuardar() {
