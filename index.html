@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611181050';
+var EMA_BUILD = '202611181130';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -11826,8 +11826,16 @@ async function okfConfirmar() {
   var d = { ID_OT: r.ID_OT, CUBS: ids, CERRAR: true };
   if (!r.ES_ENCARGADO) { var u = ($id('okf-u') || {}).value || '', c = ($id('okf-c') || {}).value || ''; if (!u || !c) { toast('Falta el usuario y la clave del encargado', 'r2'); return; } d.AUTORIZA = { USUARIO: u.trim(), CLAVE: c }; }
   var b = document.querySelector('#okf-m .mf .btn-p'); if (b) { b.disabled = true; b.textContent = 'Terminando…'; }
-  var x; try { x = await gsRun('gsPC_OKFinal', d); } catch (e) { toast(e.message, 'r2'); okfPintar(); return; }
-  if (!x || !x.ok) { toast((x && x.error) || 'No se pudo', 'r2'); okfPintar(); return; }
+  // 18/11/2026: de a 3 cubiertas por llamada (con 15 juntas el servidor se pasaba del límite de tiempo: «Error del servidor (546)»)
+  var x = null, terms = [], grupos = []; for (var gi = 0; gi < ids.length; gi += 3) grupos.push(ids.slice(gi, gi + 3)); if (!grupos.length) grupos.push([]);
+  for (var g = 0; g < grupos.length; g++) {
+    if (b) b.textContent = 'Terminando… ' + Math.min((g + 1) * 3, ids.length) + ' de ' + ids.length;
+    var dg = { ID_OT: d.ID_OT, CUBS: grupos[g], CERRAR: g === grupos.length - 1 }; if (d.AUTORIZA) dg.AUTORIZA = d.AUTORIZA;
+    try { x = await gsRun('gsPC_OKFinal', dg); } catch (e) { toast(e.message + (terms.length ? ' (ya quedaron terminadas ' + terms.length + ')' : ''), 'r2'); okfPintar(); return; }
+    if (!x || !x.ok) { toast(((x && x.error) || 'No se pudo') + (terms.length ? ' (ya quedaron terminadas ' + terms.length + ')' : ''), 'r2'); okfPintar(); return; }
+    terms = terms.concat(x.TERMINADAS || []);
+  }
+  x.TERMINADAS = terms;
   closeModal();
   var tot = 0; x.TERMINADAS.forEach(function(t) { tot += +t.COSTO || 0; });
   showModal('<div class="mh"><span class="mt">✅ OK final · ' + pcEsc(x.NRO_OT) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
@@ -12753,7 +12761,7 @@ function pcprPie() {
 .pu-vent{display:grid;gap:12px}
 .pu-vent label{display:grid;gap:6px;font-size:14px;color:var(--dim)}
 .pu-vent input,.pu-vent select{font:600 18px var(--sans);padding:10px 12px;border-radius:10px;border:2px solid var(--border)}
-@media (max-width:700px){.pu-mapa .p span{display:none}.pu-mapa .p b{width:28px;height:28px}.pu-wrap{padding-left:8px;padding-right:8px}.pu-row{grid-template-columns:1fr}.pu-act{justify-content:flex-start}.pu-ok{width:100%}}
+@media (max-width:700px){.pu-mapa .p span{display:none}.pu-mapa .p b{width:28px;height:28px}.pu-wrap{padding-left:8px;padding-right:8px}.pu-row{grid-template-columns:1fr}.pu-act{justify-content:flex-start}.pu-ok{width:100%;min-width:0}.pu-wrap{grid-template-columns:minmax(0,1fr)}.pu-wrap>*,.pu-wrap *{min-width:0;max-width:100%}.pu-btn{white-space:normal;height:auto;padding-top:8px;padding-bottom:8px}.pu-top .est{font-size:20px}}
 </style>
 <script>
 // ================================================================
