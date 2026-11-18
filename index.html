@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611180900';
+var EMA_BUILD = '202611180915';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17204,7 +17204,7 @@ function mtPresTabla(det, soloVer, dg) {
   var tot = 0, ve = MT_.d.VE_COSTO, cos = 0;
   var cls = { SERVICIO: 'mt-b-b', REPUESTO: 'mt-b-g', INSUMO: 'mt-b-v', TERCERO: 'mt-b-o', CLIENTE: 'mt-b-x' };
   var rows = det.map(function(l) { tot += l.SUBTOTAL; cos += (l.COSTO_UNIT || 0) * l.CANTIDAD;
-    return '<tr><td><span class="mt-bd ' + (cls[l.CLASE] || 'mt-b-x') + '">' + pcEsc(l.CLASE) + '</span></td><td class="pc-wr">' + pcEsc(l.DESCRIPCION) + '</td>' + mtStockTd(l) + '<td class="tr">' + l.CANTIDAD + '</td><td class="tr">' + mtPlata(mtPresPuDe(l)) + (Math.abs(mtPresPuDe(l) - (Number(l.PRECIO_LISTA) || 0)) >= 0.005 && l.PRECIO_LISTA ? '<div class="tdim" style="font-size:11px">lista ' + mtPlata(l.PRECIO_LISTA) + '</div>' : '') + '</td><td class="tr">' + (l.DESCUENTO_PCT ? String(l.DESCUENTO_PCT).replace('.', ',') + '%' : '') + '</td><td class="tr"><b>' + mtPlata(l.SUBTOTAL) + '</b></td>' + (ve ? '<td class="tr tdim">' + mtPlata((l.COSTO_UNIT || 0) * l.CANTIDAD) + '</td>' : '') + '</tr>'; }).join('');
+    return '<tr><td><span class="mt-bd ' + (cls[l.CLASE] || 'mt-b-x') + '">' + pcEsc(l.CLASE) + '</span></td><td class="pc-wr">' + pcEsc(l.DESCRIPCION) + '</td>' + mtStockTd(l) + '<td class="tr">' + l.CANTIDAD + '</td><td class="tr">' + mtPlata(mtPresPuDe(l)) + (Math.abs(mtPresPuDe(l) - (Number(l.PRECIO_LISTA) || 0)) >= 0.005 && l.PRECIO_LISTA ? '<div class="tdim" style="font-size:11px">lista ' + mtPlata(l.PRECIO_LISTA) + '</div>' : '') + '</td><td class="tr">' + (l.DESCUENTO_PCT > 0 ? String(l.DESCUENTO_PCT).replace('.', ',') + '%' : '') + '</td><td class="tr"><b>' + mtPlata(l.SUBTOTAL) + '</b></td>' + (ve ? '<td class="tr tdim">' + mtPlata((l.COSTO_UNIT || 0) * l.CANTIDAD) + '</td>' : '') + '</tr>'; }).join('');
   return '<div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Clase</th><th>Descripción</th><th class="tr">Stock</th><th class="tr">Cant.</th><th class="tr">Precio s/IVA</th><th class="tr">Desc.</th><th class="tr">Subtotal</th>' + (ve ? '<th class="tr">Costo</th>' : '') + '</tr></thead><tbody>' + rows +
     mtPresPie(tot, dg, 6, ve ? '<td></td>' : '') + (ve ? (function() { var fin = Math.round(tot * (1 - (Number(dg) || 0) / 100) * 100) / 100; return '<td class="tr tdim">' + mtPlata(cos) + (fin ? ' · margen ' + Math.round((fin - cos) / fin * 100) + '%' : '') + '</td>'; })() : '') + '</tr></tbody></table></div>';
 }
