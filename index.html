@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611181220';
+var EMA_BUILD = '202611181230';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13118,7 +13118,8 @@ function puResuelta(r) {
   if (r.no) return !!r.motivo && (!puMedir(r.l) || puSuper() || puCiego());
   if (r.l.TIPO_LINEA === 'HERRAMENTAL') return !!(r.pieza || r.sinNro);
   if (!r.ok) return false;
-  if (puPesarCub(r) && !puPesoOk(r)) return false;
+  // 18/11/2026 (Anibal): lo que se pesa por cubierta también se puede dar «como la receta»; si se pesa, antes y después tienen que estar bien
+  if (puPesarCub(r) && !puPesoOk(r) && !puSinPeso(r)) return false;
   if (puMedir(r.l) && !(puN(r.real) > 0) && !puSuper()) return false;
   return Math.abs(puDif(r)) <= (PU_.d.tolerancia || 0) + 1e-9 || !!r.motivo;
 }
@@ -13146,7 +13147,7 @@ function puFilaHTML(r, k) {
       (PU_.d.herrObligatorio ? '' : '<button class="' + (r.sinNro ? 'sel' : '') + '" data-a="sinnro">Sin número</button>') + '</div>';
   } else {
     if (puSinStock(l) && !r.reemp) h += '<span style="color:var(--danger);font-weight:700">Sin stock en planta</span><button class="pu-btn pu-eq" data-a="otro">↺ Usé otro</button>';
-    if (puPesarCub(r)) h += '<div style="font-weight:700;font-size:15px">⚖ Se pesa en cada cubierta</div><div class="pu-qty"><b style="font-size:15px;min-width:70px">Antes</b><input inputmode="decimal" data-a="pa" value="' + puEsc(r.pa) + '" placeholder="Antes" aria-label="Peso antes"><span>' + puEsc(l.UNIDAD) + '</span></div>' +
+    if (puPesarCub(r)) h += (l.CANTIDAD && !(puSinStock(l) && !r.reemp) ? '<button class="pu-btn pu-eq" data-a="igual">✓ Igual a receta</button>' : '') + '<div style="font-weight:700;font-size:15px">⚖ Si usaste otra cantidad, pesá:</div><div class="pu-qty"><b style="font-size:15px;min-width:70px">Antes</b><input inputmode="decimal" data-a="pa" value="' + puEsc(r.pa) + '" placeholder="Antes" aria-label="Peso antes"><span>' + puEsc(l.UNIDAD) + '</span></div>' +
       '<div class="pu-qty"><b style="font-size:15px;min-width:70px">Después</b><input inputmode="decimal" data-a="pz" value="' + puEsc(r.pz) + '" placeholder="Después" aria-label="Peso después"><span>' + puEsc(l.UNIDAD) + '</span></div>';
     else h += (l.CANTIDAD && !(puSinStock(l) && !r.reemp) ? '<button class="pu-btn pu-eq" data-a="igual">✓ Igual a receta</button>' : '') + '<div class="pu-qty"><input inputmode="decimal" data-a="real" value="' + puEsc(r.real) + '" placeholder="Medí" aria-label="Cantidad medida"><span>' + puEsc(l.UNIDAD) + '</span></div>';
   }
@@ -13216,7 +13217,7 @@ function puFicha() {
     var listos = PU_.rows.filter(puResuelta).length;
     h += '<div class="card pu-grilla"><div class="card-hd"><span class="card-title">Insumos de esta estación</span>' +
       '<span style="display:flex;gap:8px;align-items:center"><span class="badge ' + (listos === PU_.rows.length ? 'b-green' : 'b-red') + '">' + listos + ' de ' + PU_.rows.length + ' insumos listos</span>' +
-      (PU_.rows.some(function(r) { return !r.no && !r.ok && (!r.reemp || r.plan) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && (r.plan || !puSinStock(r.l)); }) ? '<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="puTodoReceta()">' + (PU_.rows.some(function(r) { return !r.no && !r.ok && !puPesarCub(r) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC; }) ? '✓ Todo como la receta' : '⚖ Pesar antes / después') + '</button>' : '') +
+      (PU_.rows.some(function(r) { return !r.no && !r.ok && (!r.reemp || r.plan) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && (r.plan || !puSinStock(r.l)); }) ? '<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="puTodoReceta()">✓ Todo como la receta</button>' : '') +
       (PU_.pend.length ? '<button class="btn btn-p btn-sm" onclick="PU_.verOtros=true;puFicha()"><i class="fas fa-plus"></i> Agregar</button>' : '') + '</span></div>' +
       '<div class="tw"><table><thead><tr><th>#</th><th>Insumo</th><th class="tr">' + (puCiego() ? 'Cargar' : 'Receta') + '</th><th class="tr">Usado</th><th>Estado</th><th></th></tr></thead><tbody>' +
       PU_.rows.map(puLinHTML).join('') + '</tbody></table></div></div>';
@@ -13479,7 +13480,7 @@ function puAbrirFila(k) {
   showModal('<div class="mh"><span class="mt">' + puEsc(r.reemp && r.idReal ? puNomIns(r.idReal) : r.l.NOMBRE) + '</span><button class="mc" onclick="closeModal();puFicha()">×</button></div>' +
     '<div class="mb2" id="pu-mfila"></div><div class="mf"><button class="btn btn-p" id="pu-mfila-ok" style="min-width:140px;min-height:48px;font-size:17px">Listo</button></div>', 'md-lg');
   var o = document.querySelector('.mo'); if (o) o.addEventListener('click', function(e) { if (e.target === o) puFicha(); });
-  $id('pu-mfila-ok').onclick = function() { closeModal(); puFicha(); var rr = PU_.rows[k], sg = rr && rr.ok && puPesarCub(rr) ? puPesaPend(k) : -1; if (sg !== -1) puAbrirFila(sg); };
+  $id('pu-mfila-ok').onclick = function() { closeModal(); puFicha(); };
   puPintarFila(k);
 }
 function puCerrarFila() { closeModal(); puFicha(); }
@@ -13503,7 +13504,7 @@ function puPintarFila(k) {
       return;
     }
     e.onclick = function() {
-      if (a === 'igual') { r.real = puExacto(r.l.CANTIDAD); r.ok = true; r.motivo = ''; return puCerrarFila(); }
+      if (a === 'igual') { r.real = puExacto(r.l.CANTIDAD); r.ok = true; r.pa = ''; r.pz = ''; r.motivo = ''; return puCerrarFila(); }
       if (a === 'motivo') { r.motivo = e.dataset.v; return puCerrarFila(); }
       if (a === 'pieza') { r.pieza = String(r.pieza) === e.dataset.v ? '' : e.dataset.v; r.sinNro = false; if (r.pieza) return puCerrarFila(); }
       if (a === 'sinnro') { r.sinNro = !r.sinNro; r.pieza = ''; if (r.sinNro) return puCerrarFila(); }
@@ -13518,11 +13519,8 @@ function puPintarFila(k) {
 }
 // Pone la cantidad de la receta en todos los insumos que todavía no se cargaron (los que tienen cantidad y hay stock)
 function puTodoReceta() {
-  PU_.rows.forEach(function(r) { if (!r.no && !r.ok && (!r.reemp || r.plan) && !puPesarCub(r) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && (r.plan || !puSinStock(r.l))) { r.real = puExacto(r.l.CANTIDAD); r.ok = true; if (!r.plan) r.motivo = ''; } });
+  PU_.rows.forEach(function(r) { if (!r.no && !r.ok && (!r.reemp || r.plan) && r.l.TIPO_LINEA !== 'HERRAMENTAL' && r.l.CANTIDAD > 0 && !r.l.ADIC && (r.plan || !puSinStock(r.l))) { r.real = puExacto(r.l.CANTIDAD); r.ok = true; if (!r.plan) r.motivo = ''; } });
   puFicha();
-  // 18/11/2026 (Anibal): lo que se pesa por cubierta no se puede dar «como la receta»: se abre para poner antes y después
-  var kp = puPesaPend(-1);
-  if (kp !== -1) { toast(PU_.rows[kp].l.NOMBRE + ' se pesa: poné cuánto pesa antes y después', 'b'); puAbrirFila(kp); }
 }
 // Siguiente renglón que se pesa por cubierta y todavía no está cargado (después del k)
 function puPesaPend(k) {
@@ -13665,7 +13663,7 @@ async function puConfirmar() {
   var b = $id('pu-ok'); if (b.disabled) return;
   var f = PU_.f, cons = [], adic = [], noAp = PU_.res === 'NO_APLICA';
   if (!noAp) PU_.rows.forEach(function(r) {
-    var pw = puPesarCub(r) && !r.no ? { PESO_ANTES: puN(r.pa), PESO_DESPUES: puN(r.pz) } : {};
+    var pw = puPesarCub(r) && !r.no && puPesoOk(r) ? { PESO_ANTES: puN(r.pa), PESO_DESPUES: puN(r.pz) } : {};
     if (r.l.ADIC) { adic.push(Object.assign({ ID_INSUMO: r.l.ID_INSUMO, REAL: r.real, MOTIVO: r.motivo }, pw)); return; }
     if (r.no) cons.push({ ID_DET: r.l.ID_DET, NO_USO: 1, MOTIVO: r.motivo });
     else if (r.l.TIPO_LINEA === 'HERRAMENTAL') cons.push({ ID_DET: r.l.ID_DET, ID_PIEZA: r.pieza || '' });
@@ -13830,6 +13828,7 @@ function puListoRechazo() {
 // Del día (obligatorio): a la mañana se pesa lo que se retira; a la tarde, lo que sobra. Por cubierta (si la estación lo tiene): peso antes y después
 function puPesarIns(id) { var p = PU_.f && PU_.f.pesar; return !!(p && id && p.ins.indexOf(String(id).toUpperCase()) !== -1); }
 function puPesarCub(r) { return !!(PU_.f && PU_.f.pesar && PU_.f.pesar.cub && r.l.TIPO_LINEA !== 'HERRAMENTAL' && puPesarIns(r.reemp && r.idReal ? r.idReal : r.l.ID_INSUMO)); }
+function puSinPeso(r) { return (r.pa === '' || r.pa === undefined) && (r.pz === '' || r.pz === undefined) && puN(r.real) > 0; }
 function puPesoOk(r) { var a = puN(r.pa), z = puN(r.pz); return r.pa !== '' && r.pz !== '' && r.pa !== undefined && r.pz !== undefined && !isNaN(a) && !isNaN(z) && z <= a + 1e-9; }
 function puPesajeBanner() {
   var p = PU_.pes; if (!p || !p.ITEMS || !p.ITEMS.length) return '';
