@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611201800';
+var EMA_BUILD = '202611201815';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12986,7 +12986,7 @@ function puElegirOS(ots, ids) {
   $id('pu-body').innerHTML = '<div class="pu-h">¿Qué carga vas a controlar?</div><div class="tdim" style="font-size:15px;margin-bottom:10px">Hay ' + ids.length + ' órdenes de servicio abiertas. Elegí una: vas a ver solo sus cubiertas. Se puede cambiar después.</div>' +
     '<div style="display:grid;gap:12px;max-width:640px">' + ids.map(function(k) {
       var enCurso = rel.filter(function(r) { return String(r.ID_OT) === k; }).length;
-      return '<button class="pu-btn" style="background:var(--accent);color:#fff;font-size:22px;min-height:72px;text-align:left;display:flex;justify-content:space-between;align-items:center" onclick="puFijarOS(\'' + puEsc(k) + '\')"><span>' + puEsc(ots[k].nro) + '</span><span style="font-size:16px">' + ots[k].n + ' cubiertas' + (enCurso ? ' · ⏱ ' + enCurso + ' en curso' : '') + '</span></button>';
+      return '<button class="pu-btn" style="background:var(--accent);color:#fff;font-size:22px;min-height:72px;text-align:left;display:flex;justify-content:space-between;align-items:center" onclick="puFijarOS(\'' + puEsc(k) + '\')"><span>' + puEsc(ots[k].nro) + '</span><span style="font-size:16px">' + ots[k].n + (ots[k].n === 1 ? ' cubierta' : ' cubiertas') + (enCurso ? ' · ⏱ ' + enCurso + ' en curso' : '') + '</span></button>';
     }).join('') + '</div>';
 }
 // ── 1. Lista de cubiertas ──
