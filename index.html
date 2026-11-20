@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611181745';
+var EMA_BUILD = '202611200855';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17099,7 +17099,7 @@ var MT_PIDE = ['Service completo', 'Revisión antes de viaje', 'Frenos', 'Luces 
 var MT_FALLAS = ['Gastado', 'Roto', 'Pierde', 'No funciona', 'Falta', 'Flojo', 'Bajo nivel', 'Sucio'];
 // Las marcas y modelos salen del catálogo (Flota y cubiertas → Marcas / Modelos de vehículos)
 function mtChips(lista, sel, js) { return '<div class="mt-chips">' + lista.map(function(x, i) { var on = sel.indexOf(x) !== -1; return '<button type="button" class="mt-chip' + (on ? ' on' : '') + '" onclick="' + js + '(' + i + ')">' + (on ? '✔ ' : '') + pcEsc(x) + '</button>'; }).join('') + '</div>'; }
-(function() { var st = document.createElement('style'); st.textContent = '.mt-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}.mt-chip{min-height:42px;padding:6px 14px;border-radius:22px;border:2px solid #cbd5e1;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#334155}.mt-chip.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}.mt-cli{display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #16a34a;border-radius:12px;background:#f0fdf4;margin-bottom:10px}.mt-res{max-height:260px;overflow:auto;margin-bottom:10px}.mt-bar.pegada{box-shadow:0 -60px 0 0 var(--card,#fff)}'; document.head.appendChild(st); })();
+(function() { var st = document.createElement('style'); st.textContent = '.mt-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}.mt-chip{min-height:42px;padding:6px 14px;border-radius:22px;border:2px solid #cbd5e1;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#334155}.mt-chip.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}.mt-cli{display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #16a34a;border-radius:12px;background:#f0fdf4;margin-bottom:10px}.mt-res{max-height:260px;overflow:auto;margin-bottom:10px}.mt-bar.pegada{box-shadow:0 -60px 0 0 var(--card,#fff)}.mt-obs .uib{margin:4px 0 0}.mt-obs .uib-res{position:static;max-height:240px}'; document.head.appendChild(st); })();
 function mtTop() { var m = document.querySelector('main'); if (m) m.scrollTop = 0; window.scrollTo(0, 0); }
 function mtNueva() {
   var d = MT_.d, pl = MT_.amb === 'planta';
@@ -17112,7 +17112,7 @@ function mtNueva() {
     '<div class="card mb3"><div class="card-hd"><span class="card-title">' + (pl ? '＋ Nueva orden de reparación · máquina propia' : '＋ Nueva orden del taller · cliente') + ' · ' + pcEsc(d.SUC.NOMBRE) + '</span></div><div class="card-body">';
   var n = 1;
   if (pl) {
-    h += '<label class="fl">' + (n++) + '. Tipo de trabajo</label>' + uiBusca('mt-n-tipo', { opciones: [{ v: 'PREVENTIVO', t: 'Preventivo' }, { v: 'CORRECTIVO', t: 'Correctivo' }, { v: 'ROTURA', t: 'Rotura' }], sel: N.tipo ? [N.tipo] : [], obligatorio: true, onchange: 'mtNTipoSet' });
+    h += '<label class="fl">' + (n++) + '. Tipo de trabajo</label>' + uiBusca('mt-n-tipo', { opciones: [{ v: 'PREVENTIVO', t: 'Preventivo' }, { v: 'CORRECTIVO', t: 'Correctivo' }, { v: 'ROTURA', t: 'Rotura' }], sel: N.tipo ? [N.tipo] : [], max: 0, obligatorio: true, onchange: 'mtNTipoSet' });
   } else {
     h += '<label class="fl">' + (n++) + '. Cliente</label>';
     if (c) h += '<div class="mt-cli"><div style="flex:1"><b>' + pcEsc(c.NOMBRE) + '</b><div class="tdim" style="font-size:12px">' + pcEsc([c.CUIT, c.LOCALIDAD].filter(Boolean).join(' · ')) + '</div></div><button class="btn btn-s btn-sm" onclick="MT_.N.cli=\'\';MT_.N.eqs={};mtNueva()">Cambiar</button></div>';
@@ -17132,7 +17132,7 @@ function mtNueva() {
       var sols = []; if (c && c.CONTACTO) sols.push(c.CONTACTO); sols.push('Chofer'); sols.push('Encargado de flota');
       if (!N.sol && c && c.CONTACTO) { N.sol = c.CONTACTO; }
       if (!N.tel && c && c.TEL) { N.tel = c.TEL; }
-      h += '<label class="fl">' + (n++) + '. Quién la pide</label>' + uiBusca('mt-n-sol', { opciones: sols, sel: N.sol ? [N.sol] : [], otro: true, ph: 'Buscá o escribí quién la pide', onchange: 'mtNSolSet' }) +
+      h += '<label class="fl">' + (n++) + '. Quién la pide</label>' + uiBusca('mt-n-sol', { opciones: sols, sel: N.sol ? [N.sol] : [], otro: true, max: 0, ph: 'Buscá o escribí quién la pide', onchange: 'mtNSolSet' }) +
         '<div class="tdim mb2" style="font-size:13px">Teléfono: <b>' + pcEsc(N.tel || '—') + '</b> <button class="btn btn-s btn-xs" onclick="mtNTel()">Cambiar</button></div>';
     }
     var pide = MT_PIDE.slice(); (d.SERVICIOS || []).forEach(function(sv) { if (sv.NOMBRE && pide.indexOf(sv.NOMBRE) === -1) pide.push(sv.NOMBRE); });
@@ -17391,7 +17391,7 @@ function mtCheck() {
       g.ITEMS.filter(function(i) { return i.ESENCIAL; }).concat(g.ITEMS.filter(function(i) { return !i.ESENCIAL; })).forEach(function(i) { var v = x.RESP[i.ID] || {}, mal = v.R === mtMalaResp(g);
         h += '<div class="mt-it' + (i.ESENCIAL ? ' es' : '') + (v.R ? ' r-' + (mal ? 'NO' : v.R) : '') + '"><div class="mt-n">' + (i.ESENCIAL ? '<span class="mt-es">ESENCIAL</span>' : '') + pcEsc(i.NOMBRE) + '</div><div class="mt-rb">' + ops.map(function(o) {
           return '<button' + (bloq ? ' disabled' : '') + ' class="' + (v.R === o[0] ? 's-' + (o[0] === mtMalaResp(g) ? 'NO' : (o[0] === 'NA' ? 'NA' : 'OK')) : '') + '" onclick="mtChkSet(' + i.ID + ',\'' + o[0] + '\')">' + o[1] + '</button>'; }).join('') + '</div>' +
-          (mal ? '<div class="mt-obs"><div class="tdim" style="font-size:12px">¿Qué tiene? (se pasa al presupuesto)</div>' + (bloq ? '<b>' + pcEsc(v.OBS || '—') + '</b>' : mtChips(MT_FALLAS.concat(['Otro…']), String(v.OBS || '').split(', '), 'mtChkFalla.bind(null,' + i.ID + ')') + (v.OBS ? '<div style="font-size:13px">Anotado: <b>' + pcEsc(v.OBS) + '</b></div>' : '')) + '</div>' : '') + '</div>'; });
+          (mal ? '<div class="mt-obs"><div class="tdim" style="font-size:12px">¿Qué tiene? (se pasa al presupuesto)</div>' + (bloq ? '<b>' + pcEsc(v.OBS || '—') + '</b>' : uiBusca('mt-f-' + i.ID, { opciones: MT_FALLAS, sel: String(v.OBS || '').split(', ').filter(Boolean), multi: true, otro: true, max: 0, ph: 'Buscá o escribí qué tiene (pierde, roto, gastado…)', onchange: 'mtChkFallaSet' })) + '</div>' : '') + '</div>'; });
     }
     h += '</div>';
   });
@@ -17405,6 +17405,8 @@ async function mtChkFalla(id, k) { var x = mtOeAct(); if (!x.RESP[id]) return; v
   if (k >= MT_FALLAS.length) { var v = await uiPedir('¿Qué tiene? (otra falla)', { obligatorio: true }); if (v === null) return; L.push(v.trim()); }
   else { var f = MT_FALLAS[k], j = L.indexOf(f); if (j === -1) L.push(f); else L.splice(j, 1); }
   x.RESP[id].OBS = L.join(', '); MT_.pend[id] = 1; mtCheck(); mtChkProg(); }
+// 20/11/2026 (Anibal): «¿Qué tiene?» con lista desplegable de búsqueda (no botones); lo elegido o escrito se guarda solo
+function mtChkFallaSet(sel, uid) { var id = Number(String(uid).replace('mt-f-', '')), x = mtOeAct(); if (!x || !x.RESP[id]) return; x.RESP[id].OBS = sel.join(', '); MT_.pend[id] = 1; mtChkProg(); }
 function mtChkObs(id, t) { var x = mtOeAct(); if (!x.RESP[id]) return; x.RESP[id].OBS = t; MT_.pend[id] = 1; mtChkProg(); }
 function mtChkTodo(idG) { var x = mtOeAct(), pl = mtPl(x.ID_PLANTILLA); pl.GRUPOS.forEach(function(g) { if (g.ID_GRUPO !== idG) return; g.ITEMS.forEach(function(i) { if (!x.RESP[i.ID] && !i.ESENCIAL) { x.RESP[i.ID] = { R: 'OK', OBS: '' }; MT_.pend[i.ID] = 1; } }); }); var gq = pl.GRUPOS.filter(function(g) { return g.ID_GRUPO === idG; })[0]; MT_.grAb[idG] = gq.ITEMS.some(function(i) { return !x.RESP[i.ID]; }); mtCheck(); mtChkProg(); }
 function mtChkKm(v) { MT_.km = v; MT_.pend._km = 1; mtChkProg(); }
