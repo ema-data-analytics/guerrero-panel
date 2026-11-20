@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611201015';
+var EMA_BUILD = '202611201340';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -14470,10 +14470,10 @@ function tbIrPuesto(ot, cub) {
     '.tp-hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}.tp-tt{flex:1;min-width:260px}.tp-tt b{display:block;font-size:26px;letter-spacing:.02em;color:#fff}.tp-tt span{font-size:13px;color:#94a3b8;letter-spacing:.12em;text-transform:uppercase}' +
     '.tp-clk{font-family:monospace;font-size:38px;font-weight:900;color:#fff;letter-spacing:.04em}' +
     '.tp-btn{border:1px solid #334155;background:#111a2e;color:#e2e8f0;border-radius:10px;padding:8px 13px;font-weight:700;font-size:13px;cursor:pointer}.tp-btn.on{background:#2563eb;border-color:#2563eb;color:#fff}' +
-    '.tp-kp{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:16px}' +
+    '.tp-kpw{container-type:inline-size}.tp-kp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}@container (min-width:1380px){.tp-kp{grid-template-columns:repeat(6,minmax(0,1fr))}}@container (max-width:620px){.tp-kp{grid-template-columns:1fr 1fr}}.tp-k>div:last-child{min-width:0}.tp-k .s{overflow-wrap:anywhere}' +
     '.tp-k{background:linear-gradient(160deg,#111a2e,#0d1526);border:1px solid #1e293b;border-radius:18px;padding:14px 16px;display:flex;gap:12px;align-items:center;min-height:104px}' +
     '.tp-k .ico{flex:0 0 52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px}' +
-    '.tp-k .v{font-size:44px;font-weight:900;line-height:1;color:#fff}.tp-k .l{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;margin-top:4px}.tp-k .s{font-size:13px;color:#cbd5e1;margin-top:3px}' +
+    '.tp-k .v{font-size:clamp(30px,3vw,44px);font-weight:900;line-height:1;color:#fff;white-space:nowrap}.tp-k .l{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;margin-top:4px}.tp-k .s{font-size:13px;color:#cbd5e1;margin-top:3px}' +
     '.tp-k.al{border-color:#ef4444;box-shadow:0 0 0 1px #ef4444 inset,0 0 22px #ef444455}' +
     '.tp-cin{position:relative;background:#0d1526;border:1px solid #1e293b;border-radius:20px;padding:12px 10px 10px;margin-bottom:16px;overflow-x:auto}' +
     '.tp-cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(112px,1fr);gap:4px;position:relative;min-width:100%}' +
@@ -14503,7 +14503,7 @@ function tbIrPuesto(ot, cub) {
     '.tp-br{display:grid;grid-template-columns:34px 1fr 60px;gap:8px;align-items:center;margin:7px 0;font-size:13px}.tp-br .n{font-weight:900;color:#fff;text-align:center;background:#1e293b;border-radius:8px;padding:3px 0}' +
     '.tp-br .b{height:20px;background:#111a2e;border-radius:6px;overflow:hidden;display:flex}.tp-br .b i{display:block;height:100%}.tp-br .t{font-family:monospace;color:#cbd5e1;text-align:right}' +
     '.tp-ley{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#cbd5e1;margin-top:12px}.tp-ley span{display:flex;gap:6px;align-items:center}.tp-ley i{width:14px;height:14px;border-radius:50%;display:inline-block}' +
-    '@media(max-width:1300px){.tp-kp{grid-template-columns:repeat(3,minmax(0,1fr))}.tp-bot{grid-template-columns:1fr}}@media(max-width:640px){.tp-kp{grid-template-columns:1fr 1fr}.tp-k .v{font-size:32px}.tp-clk{font-size:26px}}';
+    '@media(max-width:1300px){.tp-bot{grid-template-columns:1fr}}@media(max-width:640px){.tp-k .v{font-size:32px}.tp-clk{font-size:26px}}';
   document.head.appendChild(st);
 })();
 var TP_COL = { ok: '#3b82f6', ojo: '#f59e0b', mal: '#ef4444', par: '#94a3b8', coc: '#f97316', esp: '#fbbf24', emp: '#64748b', lis: '#22c55e' };
@@ -14547,13 +14547,13 @@ function tbPintarPlanta() {
     '<div class="tp-clk" id="tp-clk">' + tbHora(ahora) + '</div></div>';
   // Números grandes
   var k = function(ico, bg, v, l, s, al) { return '<div class="tp-k' + (al ? ' al' : '') + '"><div class="ico" style="background:' + bg + '">' + ico + '</div><div><div class="v">' + v + '</div><div class="l">' + l + '</div>' + (s ? '<div class="s">' + s + '</div>' : '') + '</div></div>'; };
-  h += '<div class="tp-kp">' +
+  h += '<div class="tp-kpw"><div class="tp-kp">' +
     '<div class="tp-k">' + tpAnillo(86, avance, '#22c55e', Math.round(avance * 100) + '%', 'avance') + '<div><div class="l">Avance de la carga</div><div class="s">' + (R.ORDENES.map(function(o) { return tbEsc(o.NRO_OT); }).join(' · ') || 'sin carga') + '</div></div></div>' +
     k('🔵', '#1e3a8a', R.TRABAJANDO, 'Trabajando', 'de ' + R.EN_LINEA + ' en la línea') +
     k('⏳', '#78350f', R.ESPERANDO, 'Esperando', R.ESPERANDO ? 'para entrar a una estación' : 'nadie esperando') +
     k('✅', '#14532d', R.TERMINADAS_HOY, 'Terminadas hoy', R.RECHAZADAS_HOY ? R.RECHAZADAS_HOY + ' rechazada' + (R.RECHAZADAS_HOY === 1 ? '' : 's') : 'sin rechazos') +
     k('🏁', '#312e81', R.FIN ? tbHora(R.FIN) : '—', 'Termina aprox.', R.FIN ? 'faltan ' + tbMin(R.FIN_MIN) : 'no hay carga') +
-    k(cu ? '⚠️' : '👍', cu ? '#7f1d1d' : '#14532d', cu ? cu.NRO : 'OK', cu ? 'Se traba acá' : 'Sin trabas', cu ? tbEsc(cu.NOMBRE) + ' · ' + cu.ESPERANDO + ' esperando' : 'ninguna estación acumula', !!(cu && cu.ESPERANDO >= 3)) + '</div>';
+    k(cu ? '⚠️' : '👍', cu ? '#7f1d1d' : '#14532d', cu ? cu.NRO : 'OK', cu ? 'Se traba acá' : 'Sin trabas', cu ? tbEsc(cu.NOMBRE) + ' · ' + cu.ESPERANDO + ' esperando' : 'ninguna estación acumula', !!(cu && cu.ESPERANDO >= 3)) + '</div></div>';
   // La línea como una cinta: en cada estación, TODAS las cubiertas que están ahí, cada una con su estado
   var listas = d.CUBIERTAS.filter(function(c) { return c.ESTADO_EST === 'LISTA'; });
   var ordC = { mal: 0, ojo: 1, ok: 2, par: 3, coc: 4, esp: 5, emp: 6, lis: 7 };
