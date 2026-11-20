@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "cd80575eee62"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d836ce5b0053"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611201540';
+var EMA_BUILD = '202611201625';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13342,7 +13342,14 @@ async function puAutoclave(idOt) {
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo abrir', 'r2'); return puVolver(); }
   PU_.ac.d = r;
   if (r.cocinando) PU_.ac.pos = r.cocinando.POSICIONES || {};
+  else PU_.ac.pos = r.ubic || {};   // 20/11/2026: el armado de la carga queda guardado
   puAutoclavePintar();
+}
+// Guarda dónde va cada cubierta (se puede salir y volver, o seguir desde otra tablet)
+async function puAcGuardarUbic() {
+  var A = PU_.ac; if (!A || !A.d || A.d.cocinando) return;
+  try { var r = await gsRun('gsPC_AutoclaveUbicar', { ID_OT: A.ot, POSICIONES: A.pos }); if (!r || !r.ok) toast((r && r.error) || 'No se pudo guardar dónde va cada cubierta', 'r2'); }
+  catch (e) { toast('No se pudo guardar dónde va cada cubierta: ' + e.message, 'r2'); }
 }
 function puAutoclavePintar() {
   var A = PU_.ac, r = A && A.d; if (!r) return;
@@ -13362,7 +13369,7 @@ function puAutoclavePintar() {
     h += '<div class="pu-reg"><div style="font-size:18px;font-weight:700">No hay cubiertas listas para el autoclave en esta orden.</div>' + (r.anteriores.length ? '<div class="tdim">Ya se cocinó: ' + r.anteriores.map(function(a) { return a.N + ' cubiertas · ' + a.MINUTOS + ' min'; }).join(' · ') + '</div>' : '') + '</div>';
   } else {
     h += '<div class="pu-h">Tocá cada lugar y elegí qué cubierta va · ' + ub + ' de ' + listas.length + ' ubicadas</div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pu-btn pu-min" onclick="puAcAuto()">Ubicar en orden</button><button class="pu-btn pu-min" onclick="PU_.ac.pos={};puAutoclavePintar()">Vaciar</button></div>';
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pu-btn pu-min" onclick="puAcAuto()">Ubicar en orden</button><button class="pu-btn pu-min" onclick="PU_.ac.pos={};puAutoclavePintar();puAcGuardarUbic()">Vaciar</button></div>';
   }
   h += '<div class="pu-ac-mapa">';
   for (var n = 1; n <= r.lugares; n++) {
@@ -13458,13 +13465,13 @@ function puAcElegir(n) {
     ops.map(function(c) { return '<button class="pu-chip" data-id="' + puEsc(c.ID_CUB) + '"><b>' + puEsc(puIdTxt(c.MARCA, c.DOT || puDotDe(c.ID_CUB))) + '</b> · ' + puEsc(c.MEDIDA) + (c.REPROCESO ? ' · reproceso' : '') + '</button>'; }).join('') +
     (A.pos[String(n)] ? '<button class="pu-chip" data-id="">Dejar vacío</button>' : '') + (ops.length ? '' : '<div class="tdim">No quedan cubiertas listas sin lugar.</div>') +
     '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button></div>');
-  document.querySelectorAll('.mo .pu-chip').forEach(function(b) { b.onclick = function() { closeModal(); if (b.dataset.id) PU_.ac.pos[String(n)] = b.dataset.id; else delete PU_.ac.pos[String(n)]; puAutoclavePintar(); }; });
+  document.querySelectorAll('.mo .pu-chip').forEach(function(b) { b.onclick = function() { closeModal(); if (b.dataset.id) PU_.ac.pos[String(n)] = b.dataset.id; else delete PU_.ac.pos[String(n)]; puAutoclavePintar(); puAcGuardarUbic(); }; });
 }
 function puAcAuto() {
   var A = PU_.ac, r = A.d, usadas = {}; Object.keys(A.pos).forEach(function(k) { if (A.pos[k]) usadas[String(A.pos[k])] = true; });
   var n = 1;
   r.cubiertas.filter(function(c) { return c.LISTA && !usadas[String(c.ID_CUB)]; }).forEach(function(c) { while (n <= r.lugares && A.pos[String(n)]) n++; if (n <= r.lugares) A.pos[String(n)] = String(c.ID_CUB); });
-  puAutoclavePintar();
+  puAutoclavePintar(); puAcGuardarUbic();
 }
 async function puAcIni() {
   var A = PU_.ac;
