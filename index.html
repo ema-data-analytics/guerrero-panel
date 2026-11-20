@@ -1692,7 +1692,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611200945';
+var EMA_BUILD = '202611200950';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17061,7 +17061,7 @@ function mtOrdGrilla() {
   }).sort(function(a, b) { return b.ID_ORDEN - a.ID_ORDEN; });
   var por = 50, pags = Math.max(1, Math.ceil(l.length / por)); if (F.pag >= pags) F.pag = pags - 1; var desde = F.pag * por;
   el.innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> orden' + (l.length === 1 ? '' : 'es') + (pags > 1 ? ' · página ' + (F.pag + 1) + ' de ' + pags : '') + '</div>' +
-    '<div class="tw pc-abm mt-ordt" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Acciones</th><th>N° de orden</th><th>Cliente y equipo</th><th>Estado</th><th>Presupuesto</th><th>Check list</th><th>Sucursal</th></tr></thead><tbody>' +
+    '<div class="tw pc-abm mt-ordt" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Acciones</th><th>Orden y estado</th><th>Cliente y equipo</th><th>Presupuesto</th><th>Check list</th><th>Sucursal</th></tr></thead><tbody>' +
     (l.length ? l.slice(desde, desde + por).map(function(o) {
       var an = o.ESTADO === 'ANULADA', r = 0, t = 0, no = 0; o.EQUIPOS.forEach(function(e) { r += e.RESP; t += e.TOTAL; no += e.NO; });
       // 20/11/2026 (Anibal): los botones van primero (en el celular se ven sin deslizar) y después las columnas que más importan
@@ -17069,13 +17069,12 @@ function mtOrdGrilla() {
           (o.PRESUP ? mtBtn('btn-s', '🧾 Presupuesto', 'mtImpPresupDe(' + o.ID_ORDEN + ')', 'PDF del presupuesto') : '<span></span>') +
           mtBtn('btn-s', '📲 WhatsApp', 'mtWhats(' + o.ID_ORDEN + ')', 'Mandar un WhatsApp a quien pidió la orden') +
           (an ? '' : mtBtn('btn-s', '✏ Modificar', 'mtOrdEditar(' + o.ID_ORDEN + ')', 'Cambiar quién la pidió, teléfono u observaciones') + (mtPuede('ANULAR') && o.ESTADO !== 'FACTURADA' ? mtBtn('btn-d', '✖ Anular', 'mtOrdAnular(' + o.ID_ORDEN + ')', 'Anular la orden') : '')) + '</div></td>' +
-        '<td class="mono"><b>' + pcEsc(o.NRO) + '</b><div class="tdim" style="font-family:inherit">' + fmtD(o.FECHA) + '</div></td>' +
+        '<td class="mono"><b>' + pcEsc(o.NRO) + '</b><div class="tdim" style="font-family:inherit">' + fmtD(o.FECHA) + '</div><div style="font-family:inherit;margin-top:3px">' + mtBadge(o.ESTADO) + '</div>' + (an && o.MOTIVO_ANULACION ? '<div class="pc-nota" style="font-family:inherit">' + pcEsc(o.MOTIVO_ANULACION.slice(0, 80)) + '</div>' : '') + '</td>' +
         '<td class="pc-wr"><b>' + pcEsc(o.CLIENTE || 'Interno') + '</b><div class="tdim">' + o.EQUIPOS.map(function(e) { return pcEsc((e.IDENT || e.DOMINIO || '—') + ' ' + e.EQUIPO); }).join('<br>') + '</div>' + (o.SOLICITANTE ? '<div class="pc-nota tdim">Pidió: ' + pcEsc(o.SOLICITANTE) + '</div>' : '') + '</td>' +
-        '<td>' + mtBadge(o.ESTADO) + (an && o.MOTIVO_ANULACION ? '<div class="pc-nota">' + pcEsc(o.MOTIVO_ANULACION.slice(0, 80)) + '</div>' : '') + '</td>' +
         '<td>' + (o.PRESUP ? pcEsc(o.PRESUP.NRO) + '<br>' + mtBadge(o.PRESUP.ESTADO) + ' ' + mtPlata(o.PRESUP.TOTAL) : '<span class="tdim">—</span>') + '</td>' +
         '<td>' + r + '/' + t + (no ? ' · <b style="color:#dc2626">' + no + ' NO</b>' : '') + '</td>' +
         '<td>' + pcEsc(o.SUCURSAL) + '</td></tr>';
-    }).join('') : '<tr><td colspan="7" class="tc tdim" style="padding:16px">No hay órdenes con esos filtros.</td></tr>') + '</tbody></table></div>' +
+    }).join('') : '<tr><td colspan="6" class="tc tdim" style="padding:16px">No hay órdenes con esos filtros.</td></tr>') + '</tbody></table></div>' +
     (pags > 1 ? '<div class="flex gap2 mt2" style="justify-content:center"><button class="btn btn-s btn-sm"' + (F.pag ? '' : ' disabled') + ' onclick="MT_.F.pag--;mtOrdGrilla()">‹ Anterior</button><span style="align-self:center">' + (F.pag + 1) + ' / ' + pags + '</span><button class="btn btn-s btn-sm"' + (F.pag < pags - 1 ? '' : ' disabled') + ' onclick="MT_.F.pag++;mtOrdGrilla()">Siguiente ›</button></div>' : '');
 }
 // PDF del presupuesto desde la lista (20/11/2026)
