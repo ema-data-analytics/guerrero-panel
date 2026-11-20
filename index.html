@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611201450';
+var EMA_BUILD = '202611201520';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17113,7 +17113,7 @@ var MT_PIDE = ['Service completo', 'Revisión antes de viaje', 'Frenos', 'Luces 
 var MT_FALLAS = ['Gastado', 'Roto', 'Pierde', 'No funciona', 'Falta', 'Flojo', 'Bajo nivel', 'Sucio'];
 // Las marcas y modelos salen del catálogo (Flota y cubiertas → Marcas / Modelos de vehículos)
 function mtChips(lista, sel, js) { return '<div class="mt-chips">' + lista.map(function(x, i) { var on = sel.indexOf(x) !== -1; return '<button type="button" class="mt-chip' + (on ? ' on' : '') + '" onclick="' + js + '(' + i + ')">' + (on ? '✔ ' : '') + pcEsc(x) + '</button>'; }).join('') + '</div>'; }
-(function() { var st = document.createElement('style'); st.textContent = '.mt-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}.mt-chip{min-height:42px;padding:6px 14px;border-radius:22px;border:2px solid #cbd5e1;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#334155}.mt-chip.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}.mt-cli{display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #16a34a;border-radius:12px;background:#f0fdf4;margin-bottom:10px}.mt-res{max-height:260px;overflow:auto;margin-bottom:10px}.mt-bar.pegada{box-shadow:0 -60px 0 0 var(--card,#fff)}.mt-pc{border:1.5px solid var(--border,#e2e8f0);border-radius:12px;padding:10px 12px;margin:0 0 10px;background:var(--card,#fff)}.mt-pc.falta{border-color:#dc2626;background:#fef2f2}.mt-pc.sc{border-color:#16a34a;background:#f0fdf4}.mt-pc-h{font-size:14px;line-height:1.35}.mt-pc-g{display:grid;grid-template-columns:70px 1fr 1fr;gap:8px;margin-top:8px}.mt-pc-g label{font-size:11.5px;color:var(--dim,#64748b);display:flex;flex-direction:column;gap:3px}.mt-pc-g input{min-height:44px;font-size:16px;width:100%;min-width:0}.mt-pc-f{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;font-size:13.5px}.mt-pc-tot{border-top:2px solid var(--border,#e2e8f0);padding-top:8px;margin-top:4px;font-size:15px;display:flex;flex-direction:column;gap:2px;align-items:flex-end}@media(max-width:700px){#page-taller .mt-ordt td.pc-wr{min-width:120px!important;max-width:150px;white-space:normal}.mt-ordt td,.mt-ordt th{padding-left:4px!important;padding-right:4px!important}.mt-ordt td.mono{font-size:11.5px}.mt-ordt .mt-bd{white-space:normal}}.mt-acc6{display:grid;grid-template-columns:repeat(3,auto);gap:3px;justify-content:start}.mt-acc6 .btn{margin:0}.mt-obs .uib{margin:4px 0 0}.mt-obs .uib-res{position:static;max-height:240px}'; document.head.appendChild(st); })();
+(function() { var st = document.createElement('style'); st.textContent = '.mt-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}.mt-chip{min-height:42px;padding:6px 14px;border-radius:22px;border:2px solid #cbd5e1;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#334155}.mt-chip.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}.mt-cli{display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #16a34a;border-radius:12px;background:#f0fdf4;margin-bottom:10px}.mt-res{max-height:260px;overflow:auto;margin-bottom:10px}.mt-bar.pegada{box-shadow:0 -60px 0 0 var(--card,#fff)}.mt-pc{border:1.5px solid var(--border,#e2e8f0);border-radius:12px;padding:10px 12px;margin:0 0 10px;background:var(--card,#fff)}.mt-pc.falta{border-color:#dc2626;background:#fef2f2}.mt-pc.sc{border-color:#16a34a;background:#f0fdf4}.mt-pc-h{font-size:14px;line-height:1.35}.mt-pc-g{display:grid;grid-template-columns:70px 1fr 1fr;gap:8px;margin-top:8px}.mt-pc-g label{font-size:11.5px;color:var(--dim,#64748b);display:flex;flex-direction:column;gap:3px}.mt-pc-g input{min-height:44px;font-size:16px;width:100%;min-width:0}.mt-pc-f{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;font-size:13.5px}.mt-pc-tot{border-top:2px solid var(--border,#e2e8f0);padding-top:8px;margin-top:4px;font-size:15px;display:flex;flex-direction:column;gap:2px;align-items:flex-end}@media(max-width:700px){#page-taller .mt-ordt td.pc-wr{min-width:120px!important;max-width:150px;white-space:normal}.mt-ordt td,.mt-ordt th{padding-left:4px!important;padding-right:4px!important}.mt-ordt td.mono{font-size:11.5px}.mt-ordt .mt-bd{white-space:normal}}.mt-acc6{display:grid;grid-template-columns:repeat(3,auto);gap:3px;justify-content:start}.mt-acc6 .btn{margin:0}.mt-obs .uib{margin:4px 0 0}.mt-obs .uib-res{position:static;max-height:240px}.mt-fo-w{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:10px 12px}.mt-fo-th{display:flex;flex-wrap:wrap;gap:8px}.mt-fo-i{position:relative;width:132px}.mt-fo-i img{width:132px;height:100px;object-fit:cover;border-radius:8px;background:#e2e8f0;cursor:zoom-in;display:block}.mt-fo-p{font-size:10.5px;color:var(--dim,#64748b);line-height:1.25;margin-top:2px}.mt-fo-x{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(15,23,42,.7);color:#fff;font-size:13px;cursor:pointer}@media(max-width:700px){.mt-fo-w{grid-template-columns:1fr;padding:8px}.mt-fo-i,.mt-fo-i img{width:calc(50vw - 40px)}.mt-fo-i img{height:calc((50vw - 40px)*.75)}}'; document.head.appendChild(st); })();
 function mtTop() { var m = document.querySelector('main'); if (m) m.scrollTop = 0; window.scrollTo(0, 0); }
 function mtNueva() {
   var d = MT_.d, pl = MT_.amb === 'planta';
@@ -17201,6 +17201,8 @@ function mtOrdenVer() {
       if (pl) pl.GRUPOS.forEach(function(g) { t += g.ITEMS.length; }); Object.keys(x.RESP).forEach(function(k) { if (pl && x.RESP[k].R === mtMalaResp(mtGrupoDeItem(pl, k))) no++; });
       if (!pl) return O.ORDEN.ESTADO === 'CHECK_LIST' ? '<div class="al" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;width:100%"><b>' + pcEsc(mtEqIdent(e)) + '</b> no tiene check list para su tipo. Elegí cuál usar: <select class="fs" id="mt-oepl-' + x.ID_OE + '" style="max-width:340px">' + mtPlTodas('') + '</select><button class="btn btn-p btn-sm" onclick="mtOePlantilla(' + x.ID_OE + ')">Usar este check list</button></div>' : '<span class="tdim">' + pcEsc(mtEqIdent(e)) + ': sin check list</span>';
       return '<button class="btn ' + (r >= t && t ? 'btn-s' : 'btn-p') + '" onclick="mtAbrirCheck(' + x.ID_OE + ')">✔ ' + pcEsc(mtEqIdent(e)) + ' · ' + r + '/' + t + (no ? ' · ' + no + ' a reparar' : '') + '</button>'; }).join('') + '</div></div></div>';
+  // Fotos antes / después (20/11/2026)
+  h += '<div class="card mb3" id="mt-fotos-card"><div class="card-hd"><span class="card-title">📷 Fotos · antes y después</span></div><div class="card-body" id="mt-fotos"><div class="tdim">Cargando fotos…</div></div></div>';
   // Presupuesto
   h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Presupuesto' + (P ? ' ' + pcEsc(P.NRO) : '') + '</span>' + (P ? mtBadge(P.ESTADO) : '') + '</div><div class="card-body" id="mt-pres">';
   if (MT_.lin) h += mtFaltaStockHtml(MT_.lin) + mtPresEditorHtml();
@@ -17219,6 +17221,65 @@ function mtOrdenVer() {
     if (adh) h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Adicionales y factura</span></div><div class="card-body">' + adh + '</div></div>'; }
   if (P && P.ESTADO === 'APROBADO' && O.TRAB) h += mtTrabHtml(O, an);
   $id('mt-body').innerHTML = h;
+  mtFotosCargar();
+}
+// ── FOTOS ANTES / DESPUÉS de cada equipo de la orden (20/11/2026). Se guardan con la orden; una cargada por error se saca (queda el rastro) ──
+var MT_FOTOS_IMG = {};
+async function mtFotosCargar() {
+  var c = $id('mt-fotos'); if (!c || !MT_.ord) return;
+  var idO = MT_.ord.ORDEN.ID_ORDEN, r;
+  try { r = await asImg('vt_ot_fotos', { tok: SES.token, nord: idO }); } catch (e) { r = { ok: false, error: e.message }; }
+  c = $id('mt-fotos'); if (!c || !MT_.ord || MT_.ord.ORDEN.ID_ORDEN !== idO) return;
+  if (!r || !r.ok) { c.innerHTML = '<div class="al">No se pudieron traer las fotos: ' + pcEsc((r && r.error) || '') + '</div>'; return; }
+  MT_.fotos = r.fotos || [];
+  var an = MT_.ord.ORDEN.ESTADO === 'ANULADA', eqs = MT_.ord.EQUIPOS || [], h = '<div class="tdim mb2" style="font-size:13px">Sacá la foto <b>antes</b> de tocar el equipo (cómo llegó, la pieza que se cambia) y <b>después</b> (cómo quedó, la pieza nueva). Quedan guardadas en la orden con la fecha y quién las cargó.</div>';
+  eqs.forEach(function(x) {
+    var e = mtEq(x.ID_EQUIPO);
+    h += '<div class="mt-gr mb2"><div class="mt-gh" style="cursor:default">🚛 ' + pcEsc(mtEqIdent(e)) + ' <span class="tdim" style="font-weight:500;font-size:13px">' + pcEsc((e.MARCA || '') + ' ' + (e.MODELO || '')) + '</span></div><div class="mt-fo-w">';
+    ['ANTES', 'DESPUES'].forEach(function(m) {
+      var fs = MT_.fotos.filter(function(f) { return f.momento === m && (String(f.oe || '') === String(x.ID_OE) || (!f.oe && eqs.length === 1)); });
+      h += '<div class="mt-fo-col"><div style="font-weight:700;margin-bottom:6px">' + (m === 'ANTES' ? 'Antes' : 'Después') + ' <span class="tdim" style="font-weight:400">(' + fs.length + ')</span></div><div class="mt-fo-th">' +
+        fs.map(function(f) { return '<div class="mt-fo-i"><img id="mt-fo-' + f.id + '" alt="" onclick="mtFotoVer(' + f.id + ')"><div class="mt-fo-p">' + mtHora(f.creado) + ' · ' + pcEsc(f.usuario || '') + '</div>' + (an ? '' : '<button class="mt-fo-x" title="Sacar esta foto (cargada por error)" onclick="mtFotoSacar(' + f.id + ')">✖</button>') + '</div>'; }).join('') +
+        (fs.length ? '' : '<div class="tdim" style="font-size:13px">Sin fotos</div>') + '</div>' +
+        (an ? '' : '<label class="btn btn-p" style="min-height:46px;margin-top:8px;display:inline-flex;align-items:center;gap:6px;cursor:pointer">📷 Agregar foto ' + (m === 'ANTES' ? 'antes' : 'después') + '<input type="file" accept="image/*" multiple style="display:none" onchange="mtFotoSubir(this,' + x.ID_OE + ',\'' + m + '\')"></label>') + '</div>';
+    });
+    h += '</div></div>';
+  });
+  if (!eqs.length) h += '<div class="tdim">La orden no tiene equipos.</div>';
+  c.innerHTML = h;
+  MT_.fotos.forEach(function(f) { mtFotoMini(f.id); });
+}
+async function mtFotoDato(id) {
+  if (MT_FOTOS_IMG[id]) return MT_FOTOS_IMG[id];
+  var r = await asImg('vt_as_img_get', { tok: SES.token, nid: Number(id) });
+  if (r && r.ok) MT_FOTOS_IMG[id] = r.data;
+  return MT_FOTOS_IMG[id] || '';
+}
+async function mtFotoMini(id) { try { var d = await mtFotoDato(id), im = $id('mt-fo-' + id); if (im && d) im.src = d; } catch (e) {} }
+async function mtFotoVer(id) {
+  var d = await mtFotoDato(id); if (!d) { toast('No se pudo abrir la foto', 'r2'); return; }
+  var ov = document.createElement('div'); ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:12px;cursor:zoom-out';
+  ov.onclick = function() { ov.remove(); }; ov.innerHTML = '<img src="' + d + '" style="max-width:100%;max-height:100%;border-radius:8px">'; document.body.appendChild(ov);
+}
+function mtFotoLeer(f) {
+  return new Promise(function(ok, mal) { var rd = new FileReader(); rd.onerror = function() { mal(new Error('No se pudo leer la foto')); }; rd.onload = function() { var im = new Image(); im.onerror = function() { mal(new Error('El archivo no es una foto')); }; im.onload = function() { var d = asComprimir(im, 1400, 0.72); if (d.length > 590000) d = asComprimir(im, 1100, 0.6); ok(d); }; im.src = rd.result; }; rd.readAsDataURL(f); });
+}
+async function mtFotoSubir(inp, idOe, momento) {
+  var fs = Array.prototype.slice.call(inp.files || []); if (!fs.length || !MT_.ord) return;
+  var idO = MT_.ord.ORDEN.ID_ORDEN, bien = 0, lbl = inp.parentNode; if (lbl) lbl.style.opacity = '.6';
+  for (var i = 0; i < fs.length; i++) {
+    toast('Subiendo foto ' + (i + 1) + ' de ' + fs.length + '…', 'w');
+    try { var d = await mtFotoLeer(fs[i]); var r = await asImg('vt_ot_foto_put', { tok: SES.token, nord: idO, noe: idOe, momento: momento, data: d });
+      if (r && r.ok) { MT_FOTOS_IMG[r.id] = d; bien++; } else toast((r && r.error) || 'No se pudo subir la foto', 'r2');
+    } catch (e) { toast(e.message, 'r2'); }
+  }
+  inp.value = ''; if (lbl) lbl.style.opacity = '';
+  if (bien) toast(bien + ' foto' + (bien === 1 ? '' : 's') + ' guardada' + (bien === 1 ? '' : 's') + ' ✓', 'g');
+  mtFotosCargar();
+}
+async function mtFotoSacar(id) {
+  if (!(await uiConfirmar('¿Sacar esta foto de la orden? (cargada por error; queda registrado quién la sacó)', 'Sí, sacarla'))) return;
+  try { var r = await asImg('vt_ot_foto_anular', { tok: SES.token, nid: Number(id) }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Foto sacada', 'g'); mtFotosCargar(); } catch (e) { toast(e.message, 'r2'); }
 }
 // ── TRABAJO Y CONTROL FINAL: una tarea por servicio aprobado; mecánico, empecé / terminé y control OK o rechazo ──
 var MT_TRAB_EST = { PENDIENTE: ['mt-b-o', 'Para hacer'], EN_CURSO: ['mt-b-v', 'Haciéndose'], TERMINADO: ['mt-b-b', 'Terminada: falta control'], OK: ['mt-b-g', 'Control OK'], RECHAZADO: ['mt-b-r', 'Rechazada: rehacer'] };
