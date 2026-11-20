@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "acc1482a7a39"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "cd80575eee62"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611201520';
+var EMA_BUILD = '202611201540';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17633,7 +17633,7 @@ function mtEqGrilla() {
     if (q.length) { var t = [e.CODIGO, e.DOMINIO, e.INTERNO, e.MARCA, e.MODELO, e.CLIENTE, e.CHASIS].join(' ').toUpperCase(); if (!q.every(function(w) { return t.indexOf(w) !== -1; })) return false; } return true; });
   el.innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> equipo' + (l.length === 1 ? '' : 's') + '</div><div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px"><thead><tr><th>Código</th><th>Dominio</th><th>Tipo</th><th>Marca y modelo</th><th>Año</th><th class="tr">Km / horas</th><th>Cliente</th><th>Órdenes</th><th>Acciones</th></tr></thead><tbody>' +
     (l.length ? l.map(function(e) { var n = d.ORDENES.filter(function(o) { return o.ESTADO !== 'ANULADA' && o.EQUIPOS.some(function(x) { return x.ID_EQUIPO === e.ID_EQUIPO; }); }).length;
-      return '<tr' + (e.ESTADO === 'BAJA' ? ' style="opacity:.6"' : '') + '><td class="mono">' + pcEsc(e.CODIGO) + '</td><td><b>' + pcEsc(e.DOMINIO || '—') + '</b>' + (e.INTERNO ? ' · int. ' + pcEsc(e.INTERNO) : '') + '</td><td>' + pcEsc(tn[e.ID_TIPO] || '') + '</td><td class="pc-wr">' + pcEsc(e.MARCA + ' ' + e.MODELO) + '</td><td>' + (e.ANIO || '') + '</td><td class="tr">' + (e.KM_HS ? Number(e.KM_HS).toLocaleString('es-AR') : '') + '</td><td class="pc-wr">' + pcEsc(e.CLIENTE || 'Propio') + '</td><td>' + n + '</td>' +
+      return '<tr' + (e.ESTADO === 'BAJA' ? ' style="opacity:.6"' : '') + '><td class="mono">' + pcEsc(e.CODIGO) + '</td><td><b>' + pcEsc(e.DOMINIO || '—') + '</b>' + (e.INTERNO ? ' · int. ' + pcEsc(e.INTERNO) : '') + '</td><td>' + pcEsc(tn[e.ID_TIPO] || '') + '</td><td class="pc-wr">' + pcEsc(e.MARCA + ' ' + e.MODELO) + (!e.ID_MODELO && e.MARCA && e.ID_TIPO !== 3 ? ' <span style="color:#b91c1c;font-size:12px;font-weight:700">· falta el modelo</span>' : '') + '</td><td>' + (e.ANIO || '') + '</td><td class="tr">' + (e.KM_HS ? Number(e.KM_HS).toLocaleString('es-AR') : '') + '</td><td class="pc-wr">' + pcEsc(e.CLIENTE || 'Propio') + '</td><td>' + n + '</td>' +
         '<td><div class="pc-acc">' + mtBtn('btn-s', '👁 Ver', 'mtEqVer(' + e.ID_EQUIPO + ')', 'Datos y órdenes del equipo') + (mtPuede('EDITAR') ? mtBtn('btn-s', '✏ Modificar', 'mtEqForm(' + e.ID_EQUIPO + ',false)') : '') + '</div></td></tr>'; }).join('')
       : '<tr><td colspan="9" class="tc tdim" style="padding:16px">No hay equipos con esos filtros.</td></tr>') + '</tbody></table></div>';
 }
@@ -17666,7 +17666,7 @@ function mtEqLlenar(keep) {
   var conMod = {}; f.MODELOS.forEach(function(m) { if (m.A && m.TIPO === t) conMod[String(m.P)] = 1; });
   var sm = $id('mt-e-mar'); if (sm) { var mv = sm.value || (keep ? String(MT_.eqF.ID_MARCA_V || '') : ''); var mC = f.MARCAS.filter(function(x) { return x.A && (conMod[String(x.V)] || String(x.V) === String(mv)); }), mO = f.MARCAS.filter(function(x) { return x.A && !conMod[String(x.V)] && String(x.V) !== String(mv); });
     sm.innerHTML = mtOps(mC, mv, '— elegí la marca —') + (mO.length ? '<optgroup label="' + (mC.length ? 'Otras marcas (sin modelos de este tipo todavía)' : 'Marcas (todavía no hay modelos de este tipo: elegí la marca y agregá el modelo con ＋)') + '">' + mO.map(function(x) { return '<option value="' + x.V + '">' + pcEsc(x.T) + '</option>'; }).join('') + '</optgroup>' : ''); if (sm.__selb && typeof sm.__selb.refrescar === 'function') sm.__selb.refrescar(); mar = sm.value; }
-  put('mt-e-mod', mtOps(f.MODELOS.filter(function(m) { return m.A && m.TIPO === t && String(m.P) === String(mar); }), keep ? MT_.eqF.ID_MODELO : '', mar ? '— elegí el modelo —' : '— primero la marca —'));
+  put('mt-e-mod', mtOps(f.MODELOS.filter(function(m) { return m.A && m.TIPO === t && String(m.P) === String(mar); }), keep ? MT_.eqF.ID_MODELO : '', mar ? '— no lo sé todavía (completar después) —' : '— primero la marca —'));
   put('mt-e-sub', mtOps(f.SUBTIPOS.filter(function(x) { return x.A && x.TIPO === t; }), keep ? MT_.eqF.ID_SUBTIPO : '', '— sin subtipo —'));
   put('mt-e-cfg', mtOps(f.CONFIGS.filter(function(c) { return c.ACTIVO && c.ID_TIPO === t; }).map(function(c) { return { V: c.ID, T: c.NOMBRE }; }), keep ? MT_.eqF.ID_CONFIG : '', '— sin configuración de ejes —'));
   put('mt-e-base', mtOps(f.BASES.filter(function(b) { return b.A && String(b.P) === String(cli); }), keep ? MT_.eqF.ID_BASE : '', cli ? '— sin base —' : '— elegí el cliente —'));
@@ -17688,7 +17688,7 @@ function mtEqForm(id, desdeOrden) {
   var e = id ? mtEq(id) : { ID_TIPO: 1, ID_CLIENTE: desdeOrden && MT_.N ? MT_.N.cli : '' }, d = MT_.d, f = mtFL();
   MT_.eqF = { ID_MODELO: e.ID_MODELO || '', ID_SUBTIPO: e.ID_SUBTIPO || '', ID_CONFIG: e.ID_CONFIG || '', ID_BASE: e.ID_BASE || '' };
   var cli = d.CLIENTES.slice().sort(function(a, b) { return a.NOMBRE < b.NOMBRE ? -1 : 1; });
-  var viejo = id && !e.ID_MODELO && e.MARCA ? '<div class="fl-ayu" style="color:#9a3412">Antes decía: ' + pcEsc(e.MARCA + ' ' + e.MODELO) + '</div>' : '';
+  var viejo = id && !e.ID_MODELO && e.MARCA && !e.ID_MARCA_V ? '<div class="fl-ayu" style="color:#9a3412">Antes decía: ' + pcEsc(e.MARCA + ' ' + e.MODELO) + '</div>' : '';
   showModal('<div class="mh"><span class="mt">' + (id ? '✏ Modificar ' + pcEsc(e.CODIGO) : '＋ Nuevo equipo') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     '<div class="pc-fila3" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
     '<div class="fg"><label class="fl">Tipo *</label><select class="fs" id="mt-e-tipo" onchange="mtEqTipoCambio()">' + mtOpt(d.TIPOS.map(function(t) { return [t.ID_TIPO, t.NOMBRE]; }), e.ID_TIPO) + '</select></div>' +
@@ -17698,7 +17698,7 @@ function mtEqForm(id, desdeOrden) {
     '<div class="fg" id="mt-e-dom-w"' + ([3, 4].indexOf(Number(e.ID_TIPO)) !== -1 ? ' style="display:none"' : '') + '><label class="fl">Dominio (patente) <span class="tdim">· obligatoria en camión, acoplado, camioneta, auto y colectivo; la maquinaria sin patente va con N° interno o serie</span></label><input class="fi" id="mt-e-dom" style="text-transform:uppercase" value="' + pcEsc(e.DOMINIO || '') + '"></div>' +
     '<div class="fg"><label class="fl">N° interno</label><input class="fi" id="mt-e-int" value="' + pcEsc(e.INTERNO || '') + '"></div>' +
     '<div class="fg"><label class="fl">Marca * <button type="button" class="btn btn-s btn-xs" onclick="mtEqNuevaMarca()" title="Agregar una marca al catálogo">＋</button></label><select class="fs" id="mt-e-mar" data-filtro onchange="mtEqLlenar(false)">' + mtOps(f.MARCAS.filter(function(x) { return x.A || String(x.V) === String(e.ID_MARCA_V); }), e.ID_MARCA_V, '— elegí la marca —') + '</select>' + viejo + '</div>' +
-    '<div class="fg"><label class="fl">Modelo * <button type="button" class="btn btn-s btn-xs" onclick="mtEqNuevoModelo()" title="Agregar un modelo al catálogo">＋</button></label><select class="fs" id="mt-e-mod"></select></div>' +
+    '<div class="fg"><label class="fl">Modelo <button type="button" class="btn btn-s btn-xs" onclick="mtEqNuevoModelo()" title="Agregar un modelo al catálogo">＋</button></label><select class="fs" id="mt-e-mod"></select></div>' +
     '<div class="fg"><label class="fl">Año</label><select class="fs" id="mt-e-anio"><option value="">—</option>' + (function() { var o = '', y = new Date().getFullYear() + 1; for (; y >= 1980; y--) o += '<option' + (Number(e.ANIO) === y ? ' selected' : '') + '>' + y + '</option>'; return o; })() + '</select></div>' +
     '<div class="fg"><label class="fl">Km / horas</label><input class="fi" id="mt-e-km" inputmode="numeric" value="' + (e.KM_HS || '') + '"></div>' +
     '<div class="fg" style="grid-column:1/-1"><label class="fl">Configuración de ejes (mapa de ruedas)</label><div style="display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:10px;align-items:start"><select class="fs" id="mt-e-cfg" onchange="mtEqDibujo()"></select><div class="fl-map" id="mt-e-map"></div></div></div>' +
@@ -17713,7 +17713,7 @@ function mtEqForm(id, desdeOrden) {
 }
 async function mtEqGuardar(id, desdeOrden) {
   var b = $id('mt-e-ok'); b.disabled = true;
-  try { var r = await gsRun('gsMT_EquipoGuardar', { ID_EQUIPO: id || '', ID_TIPO: $v('mt-e-tipo'), ID_SUBTIPO: $v('mt-e-sub'), ID_CLIENTE: $v('mt-e-cli'), ID_BASE: $v('mt-e-base'), DOMINIO: $v('mt-e-dom'), INTERNO: $v('mt-e-int'), ID_MODELO: $v('mt-e-mod'), ID_CONFIG: $v('mt-e-cfg'), ANIO: $v('mt-e-anio'), KM_HS: $v('mt-e-km'), CHASIS: $v('mt-e-cha'), OBSERVACIONES: $v('mt-e-obs'), CUB_TIPO: $v('mt-e-cubt'), CUB_MED_DEL: $v('mt-e-cubd'), CUB_MED_TRAS: $v('mt-e-cubr'), ID_PLANTILLA: $v('mt-e-pl') });
+  try { var r = await gsRun('gsMT_EquipoGuardar', { ID_EQUIPO: id || '', ID_TIPO: $v('mt-e-tipo'), ID_SUBTIPO: $v('mt-e-sub'), ID_CLIENTE: $v('mt-e-cli'), ID_BASE: $v('mt-e-base'), DOMINIO: $v('mt-e-dom'), INTERNO: $v('mt-e-int'), ID_MODELO: $v('mt-e-mod'), ID_MARCA_V: $v('mt-e-mar'), ID_CONFIG: $v('mt-e-cfg'), ANIO: $v('mt-e-anio'), KM_HS: $v('mt-e-km'), CHASIS: $v('mt-e-cha'), OBSERVACIONES: $v('mt-e-obs'), CUB_TIPO: $v('mt-e-cubt'), CUB_MED_DEL: $v('mt-e-cubd'), CUB_MED_TRAS: $v('mt-e-cubr'), ID_PLANTILLA: $v('mt-e-pl') });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
     closeModal(); toast('Equipo guardado ✓', 'g');
     if (desdeOrden && MT_.N) { MT_.N.eqs[r.ID_EQUIPO] = true; if (!MT_.N.cli && MT_.N.tipo === 'SERVICIO_CLIENTE') MT_.N.cli = $v('mt-e-cli'); }
