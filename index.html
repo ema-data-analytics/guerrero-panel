@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611201445';
+var EMA_BUILD = '202611201450';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -24993,7 +24993,7 @@ function audPintarItem(it) {
     '</div>' +
     (!it.listo && !it.err && it.t0 && it.modo === 'google' ? '<div style="height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin-top:8px"><div id="aud-pb-' + it.n + '" style="height:100%;width:' + audPct(it) + '%;background:#22c55e;transition:width .9s linear"></div></div><div style="font-size:11px;color:#64748b;margin-top:2px">Avance estimado según lo que dura el audio · llega al 100 % cuando vuelve el texto</div>' : '') +
     (it.err && it.intentos && it.intentos.length ? '<div style="font-size:11.5px;color:#64748b;margin-top:4px">' + it.intentos.map(audEsc).join('<br>') + '</div>' : '') +
-    (it.texto ? '<textarea class="form-control" data-txt="' + it.n + '" rows="2" style="display:block;width:100%;max-width:none;box-sizing:border-box;margin-top:8px;font-size:14px;line-height:1.5;resize:vertical;overflow:hidden">' + audEsc(it.texto) + '</textarea>' : '');
+    (it.texto ? '<textarea class="form-control" data-txt="' + it.n + '" rows="2" style="display:block;width:100%;max-width:none;box-sizing:border-box;margin-top:8px;font-family:inherit;font-size:15px;line-height:1.55;resize:vertical;overflow:hidden">' + audEsc(it.texto) + '</textarea>' : '');
   var b = c.querySelector('[data-cop]'); if (b) b.onclick = function() { var ta = c.querySelector('[data-txt]'); audCopiar(ta ? ta.value : it.texto); };
   var ta = c.querySelector('[data-txt]'); if (ta) { var alto = function() { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 4) + 'px'; }; ta.oninput = function() { it.texto = ta.value; alto(); }; alto(); setTimeout(alto, 0); }
 }
