@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611201745';
+var EMA_BUILD = '202611201750';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -10070,7 +10070,7 @@ function pcAccPrimero() {
     t.querySelectorAll('tr').forEach(function(tr) { var c = tr.children; if (c.length < 2) return; var last = c[c.length - 1]; tr.insertBefore(last, c[0]); if (last.tagName === 'TH' && !last.textContent.trim()) last.textContent = 'Acciones'; });
   });
 }
-(function() { if (typeof MutationObserver === 'undefined') return; var mo = new MutationObserver(function() { if (document.querySelector('table[data-accprim="1"]:not([data-accok])')) pcAccPrimero(); }); var go = function() { var b = document.getElementById('pc-body'); if (b) mo.observe(b, { childList: true, subtree: true }); else setTimeout(go, 500); }; go(); })();
+(function() { if (typeof MutationObserver === 'undefined') return; var mo = new MutationObserver(function() { if (document.querySelector('table[data-accprim="1"]:not([data-accok])')) pcAccPrimero(); }); var go = function() { if (document.body) mo.observe(document.body, { childList: true, subtree: true }); else setTimeout(go, 300); }; go(); })();
 async function pcRecargar() { PC_.d = await gsRun('gsPC_Datos'); PC_.hd = null; pcPintar(); }
 
 // Cada sección de producción es una entrada propia del menú Producción (05/11/2026, Anibal): sin solapas.
