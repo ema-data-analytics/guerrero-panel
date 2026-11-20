@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "5d2634011d63"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "787eca449977"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611201700';
+var EMA_BUILD = '202611201745';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -10063,6 +10063,14 @@ async function renderProdCub() {
   try { PC_.d = await gsRun('gsPC_Datos'); } catch (e) { el.innerHTML = '<div class="al al-r">' + pcEsc(e.message) + '</div>'; return; }
   pcPintar();
 }
+// 20/11/2026 (Anibal): en las grillas de la línea los botones van en la primera columna (no hay que deslizar hasta el final)
+function pcAccPrimero() {
+  document.querySelectorAll('table[data-accprim="1"]:not([data-accok])').forEach(function(t) {
+    t.setAttribute('data-accok', '1');
+    t.querySelectorAll('tr').forEach(function(tr) { var c = tr.children; if (c.length < 2) return; var last = c[c.length - 1]; tr.insertBefore(last, c[0]); if (last.tagName === 'TH' && !last.textContent.trim()) last.textContent = 'Acciones'; });
+  });
+}
+(function() { if (typeof MutationObserver === 'undefined') return; var mo = new MutationObserver(function() { if (document.querySelector('table[data-accprim="1"]:not([data-accok])')) pcAccPrimero(); }); var go = function() { var b = document.getElementById('pc-body'); if (b) mo.observe(b, { childList: true, subtree: true }); else setTimeout(go, 500); }; go(); })();
 async function pcRecargar() { PC_.d = await gsRun('gsPC_Datos'); PC_.hd = null; pcPintar(); }
 
 // Cada sección de producción es una entrada propia del menú Producción (05/11/2026, Anibal): sin solapas.
@@ -10783,7 +10791,7 @@ function pcOTGrilla() {
   var por = 50, pags = Math.max(1, Math.ceil(l.length / por)); if (F.pag >= pags) F.pag = pags - 1; var desde = F.pag * por;
   var b = function(cls, txt, js, tit) { return pcBtnAbm(cls, txt, js, tit); };
   el.innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> orden' + (l.length === 1 ? '' : 'es') + (pags > 1 ? ' · página ' + (F.pag + 1) + ' de ' + pags : '') + '</div>' +
-    '<div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px" id="pc-ot-tab"><thead><tr><th>N° de orden</th><th>Fecha</th><th>Cliente</th><th class="tr">Cascos</th><th>Estado</th><th>Recepción</th><th>Entregó</th><th>Acciones</th></tr></thead><tbody>' +
+    '<div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px" id="pc-ot-tab" data-accprim="1"><thead><tr><th>N° de orden</th><th>Fecha</th><th>Cliente</th><th class="tr">Cascos</th><th>Estado</th><th>Recepción</th><th>Entregó</th><th>Acciones</th></tr></thead><tbody>' +
     (l.length ? l.slice(desde, desde + por).map(function(x) { var o = x.o, an = o.ESTADO === 'ANULADA', re = pcRecEstado(o), todasEsp = x.cs.length && x.cs.every(function(c) { return c.ESTADO === 'EN_ESPERA' || c.ESTADO === 'ANULADA'; });
       return '<tr' + (an ? ' style="opacity:.6"' : '') + '><td class="mono"><b>' + pcEsc(o.NRO) + '</b>' + (o.NRO_MANUAL ? '<div class="pc-nota">Boleta ' + pcEsc(o.NRO_MANUAL) + '</div>' : '') + '</td><td>' + fmtD(+o.FECHA) + '</td><td class="pc-wr">' + pcEsc(o.CLIENTE) + '</td><td class="tr">' + x.cs.length + '</td>' +
         '<td><span class="badge ' + x.e[0] + '">' + x.e[1] + '</span>' + (an && o.MOTIVO_ANULACION ? '<div class="pc-nota">' + pcEsc(o.MOTIVO_ANULACION) + '</div>' : '') + '</td>' +
@@ -11278,7 +11286,7 @@ function pcOSGrilla() {
   var por = 50, pags = Math.max(1, Math.ceil(l.length / por)); if (F.pag >= pags) F.pag = pags - 1; var desde = F.pag * por;
   var b = function(cls, txt, js, tit) { return pcBtnAbm(cls, txt, js, tit); };
   el.innerHTML = '<div class="tdim mb2" style="font-size:13px"><b>' + l.length + '</b> orden' + (l.length === 1 ? '' : 'es') + ' de servicio' + (pags > 1 ? ' · página ' + (F.pag + 1) + ' de ' + pags : '') + '</div>' +
-    '<div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px" id="pc-os-tab"><thead><tr><th>N° de OS</th><th>Fecha</th><th>Línea</th><th>Clientes</th><th class="tr">Titulares</th><th class="tr">Suplentes</th><th class="tr">Terminadas</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' +
+    '<div class="tw pc-abm" data-noimp="1"><table style="font-size:12.5px" id="pc-os-tab" data-accprim="1"><thead><tr><th>N° de OS</th><th>Fecha</th><th>Línea</th><th>Clientes</th><th class="tr">Titulares</th><th class="tr">Suplentes</th><th class="tr">Terminadas</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' +
     (l.length ? l.slice(desde, desde + por).map(function(o) { var an = o.ESTADO === 'ANULADA', ce = o.ESTADO === 'CERRADA';
       return '<tr' + (an ? ' style="opacity:.6"' : '') + '><td class="mono"><b>' + pcEsc(o.NRO_OT) + '</b></td><td>' + fmtD(o.FECHA) + '</td><td>' + pcEsc(o.LINEA) + '</td><td class="pc-wr">' + pcEsc(o.CLIENTES || '—') + '</td><td class="tr">' + o.TITULARES + (o.TOPE ? '/' + o.TOPE : '') + '</td><td class="tr">' + o.SUPLENTES + '</td><td class="tr">' + o.TERMINADAS + '</td>' +
         '<td>' + pcBadge(o.ESTADO) + (an && o.OBSERVACIONES ? '<div class="pc-nota">' + pcEsc(String(o.OBSERVACIONES).slice(0, 80)) + '</div>' : '') + '</td>' +
@@ -11631,8 +11639,11 @@ async function pcAbrirOT(id) {
   PC_.ot = r;
   if (PC_.tab !== 'os') { PC_.tab = 'os'; pcPintar(); }
   pcPintarOT();
-  var po = $id('pc-ot'); if (po && po.scrollIntoView) po.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // 20/11/2026 (Anibal): la orden abierta se ve sola, arriba, sin la lista (con el botón para volver)
+  var lg = $id('pc-os-g'), lc = lg ? lg.closest('.card') : null; if (lc) lc.style.display = 'none';
+  window.scrollTo(0, 0); var mn = document.querySelector('main'); if (mn) mn.scrollTop = 0;
 }
+function pcOSVolverLista() { PC_.ot = null; pcPintar(); window.scrollTo(0, 0); }
 function pcEstacionesOT() {
   var ot = PC_.ot, est = pcEstLin(ot.ot && ot.ot.LINEA).slice(), usadas = {};
   ot.items.forEach(function(i) { i.LINEAS.forEach(function(l) { usadas[l.ID_ESTACION] = true; }); });
@@ -11653,7 +11664,7 @@ function pcPintarOT() {
   var ot = PC_.ot, o = ot.ot, cols = pcEstacionesOT(), abierta = o.ESTADO === 'ARMADA' || o.ESTADO === 'EN_PROCESO';
   var tot = { mat: 0, herr: 0, mo: 0, fij: 0, t: 0, n: 0 };
   ot.items.forEach(function(i) { if (i.ESTADO === 'TERMINADA') { tot.mat += i.COSTO.MATERIALES; tot.herr += i.COSTO.HERRAMENTAL; tot.mo += i.COSTO.MO; tot.fij += i.COSTO.FIJOS; tot.t += i.COSTO.TOTAL; tot.n++; } });
-  var h = '<div class="card mt3"><div class="card-hd"><span class="card-title">' + pcEsc(o.NRO_OT) + ' · ' + pcEsc(o.LINEA) + ' · tope ' + o.TOPE + ' + ' + o.SUPLENTES_MAX + ' suplentes ' + pcBadge(o.ESTADO) + '</span>' +
+  var h = ($id('pc-os-g') ? '<div class="mb2"><button class="btn btn-s" onclick="pcOSVolverLista()">← Volver a la lista de órdenes de servicio</button></div>' : '') + '<div class="card mt3"><div class="card-hd"><span class="card-title">' + pcEsc(o.NRO_OT) + ' · ' + pcEsc(o.LINEA) + ' · tope ' + o.TOPE + ' + ' + o.SUPLENTES_MAX + ' suplentes ' + pcBadge(o.ESTADO) + '</span>' +
     '<span class="flex gap2">' + (abierta && ot.soyEncargado ? '<button class="btn btn-s btn-sm" onclick="pcTiempos()"><i class="fas fa-stopwatch"></i> Tiempos</button>' : '') +
     (abierta ? '<button class="btn btn-p btn-sm" onclick="pcPrep(' + o.ID_OT + ')">⚖ Preparación y pesaje</button>' : '') +
     '<button class="btn btn-s btn-sm" onclick="pcImpOS(' + o.ID_OT + ')"><i class="fas fa-print"></i> Imprimir</button>' +
@@ -11918,7 +11929,7 @@ function pcRemEstado(x) {
   return x.ESTADO === 'ENTREGADO' ? '<span class="badge b-green">✓ Entregado ' + fmtD(x.FECHA_ENTREGA) + '</span>' : '<span class="badge b-orange">Falta la foto firmada</span>';
 }
 function pcRemTabla(rs) {
-  return '<table style="font-size:12px" id="pc-rem-t"><thead><tr><th>Remito</th><th>Fecha</th><th>Cliente</th><th>Orden de servicio</th><th class="tr">Terminadas</th><th class="tr">Devueltas</th><th>Estado</th><th></th></tr></thead><tbody>' +
+  return '<table style="font-size:12px" id="pc-rem-t" data-accprim="1"><thead><tr><th>Remito</th><th>Fecha</th><th>Cliente</th><th>Orden de servicio</th><th class="tr">Terminadas</th><th class="tr">Devueltas</th><th>Estado</th><th></th></tr></thead><tbody>' +
     (rs.length ? rs.map(function(x, i) {
       var pend = x.ESTADO !== 'ENTREGADO' ? pcRechSinDev(x.ID_CLIENTE) : [];
       return '<tr><td class="mono"><b>' + pcEsc(x.NRO) + '</b></td><td>' + fmtD(x.FECHA) + '</td><td>' + pcEsc(x.CLIENTE) + '</td><td class="mono">' + pcEsc(x.NRO_OT || 'devolución') + '</td><td class="tr">' + x.N_TERMINADAS + '</td><td class="tr">' + x.N_DEVUELTAS + '</td><td>' + pcRemEstado(x) + '</td>' +
@@ -11954,7 +11965,12 @@ function pcRemFoto(i) {
   };
   inp.click();
 }
-function pcRemRefrescar() { var t = $id('pc-rem-t'); if (t) t.outerHTML = pcRemTabla(window.PC_REM); }
+function pcRemRefrescar() {
+  var t = $id('pc-rem-t'); if (t) t.outerHTML = pcRemTabla(window.PC_REM);
+  // 20/11/2026: también el título (cuántos faltan con la foto firmada)
+  var rs = window.PC_REM || [], nP = rs.filter(function(x) { return x.ESTADO !== 'ENTREGADO'; }).length, ti = $id('pc-rem-tit'); if (ti) ti.textContent = 'Remitos (' + rs.length + ') · ' + (nP ? nP + ' sin la foto firmada' : 'todos con la foto firmada');
+  pcAccPrimero();
+}
 function pcRemUrl(x) { return location.origin + location.pathname.replace(/[^\/]*$/, '') + 'firma/?t=' + encodeURIComponent(x.TOKEN_FIRMA || ''); }
 // Entregas: todos los remitos, primero los que no tienen la foto firmada
 async function pcEntregas() {
@@ -11965,7 +11981,8 @@ async function pcEntregas() {
   var nP = rs.filter(function(x) { return x.ESTADO !== 'ENTREGADO'; }).length;
   var nR = (PC_.d.cubiertas || []).filter(function(c) { return c.ESTADO === 'RECHAZADA' && !c.FECHA_DEVOLUCION; }).length;
   $id('pc-body').innerHTML = (nR ? '<div class="al al-y mb3">Hay ' + nR + (nR === 1 ? ' cubierta rechazada' : ' cubiertas rechazadas') + ' sin devolver: sumalas a un remito de abajo o hacé el remito de devolución en "Rechazadas".</div>' : '') +
-    '<div class="card"><div class="card-hd"><span class="card-title">Remitos (' + rs.length + ') · ' + nP + ' sin la foto firmada</span><span class="tdim" style="font-size:12px">El remito queda "Entregado" cuando se carga la foto firmada (QR del remito o botón 📷)</span></div><div class="tw">' + pcRemTabla(rs) + '</div></div>';
+    '<div class="card"><div class="card-hd"><span class="card-title" id="pc-rem-tit">Remitos (' + rs.length + ') · ' + (nP ? nP + ' sin la foto firmada' : 'todos con la foto firmada') + '</span><span class="tdim" style="font-size:12px">El remito queda "Entregado" cuando se carga la foto firmada (QR del remito o botón 📷)</span></div><div class="tw">' + pcRemTabla(rs) + '</div></div>';
+  pcAccPrimero();
 }
 async function pcImpRemito(i) {
   var x = window.PC_REM[i]; if (!x) return;
@@ -12764,7 +12781,7 @@ function pcprPie() {
 .pu-enficha .pu-back{min-height:40px;font-size:14px;padding:0 12px}
 .mo .pu-row .n{display:none}
 .pu-cnt{font-size:18px;font-weight:700}
-.mo .pu-row{border:0;padding:4px 0;background:transparent}
+.mo .pu-row{border:0;padding:4px 0;background:transparent}.mo .pu-row{grid-template-columns:1fr!important}.mo .pu-act{justify-content:flex-start}.mo .pu-act .pu-qty{width:100%}.mo .pu-act .pu-qty input{width:100%;max-width:320px}
 .pu-row{background:#fff;border:2px solid var(--border);border-radius:14px;padding:12px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;align-items:center}
 .pu-row.ok{border-color:var(--success);background:var(--success-light)}
 .pu-row.warn{border-color:var(--warn)}
@@ -13051,7 +13068,39 @@ async function puAbrir(idOt, idCub, estF) {
   var alts = (f.ot && f.ot.ALTERNATIVAS) || {};
   PU_.rows.forEach(function(r) { var a = alts[r.l.ID_INSUMO]; if (a && r.l.TIPO_LINEA !== 'HERRAMENTAL') { r.reemp = true; r.idReal = a; r.plan = true; r.motivo = 'Alternativa prevista en la carga'; } });
   PU_.pend = abiertas.filter(function(l) { return !aca(l); });
+  PU_.borrKey = f.ot.ID_OT + '|' + f.cub.ID_CUB + '|' + puE(); PU_.borrUlt = '';
+  if (f.borrador) puBorrAplicar(f.borrador);
   puFicha();
+}
+// ── 20/11/2026 (Anibal): lo tildado en la estación queda guardado aunque salgas (se borra al confirmar el paso) ──
+var PU_BORR_CAMPOS = ['real', 'ok', 'no', 'motivo', 'pieza', 'sinNro', 'idReal', 'reemp', 'pa', 'pz', 'plan'];
+function puBorrFoto() {
+  return { res: PU_.res, obs: PU_.obs, insp: PU_.insp || null, ctrl: PU_.ctrl || null,
+    rows: (PU_.rows || []).map(function(r) { var o = { id: String(r.l.ID_DET || ''), ins: String(r.l.ID_INSUMO || ''), adic: !!r.l.ADIC }; PU_BORR_CAMPOS.forEach(function(c) { o[c] = r[c]; }); if (r.l.ADIC) o.l = r.l; return o; }) };
+}
+function puBorrAplicar(b) {
+  try {
+    if (b.res) PU_.res = b.res; if (b.obs) PU_.obs = b.obs;
+    if (b.insp && PU_.insp) Object.keys(b.insp).forEach(function(k) { PU_.insp[k] = b.insp[k]; });
+    if (b.ctrl && PU_.ctrl) Object.keys(b.ctrl).forEach(function(k) { PU_.ctrl[k] = b.ctrl[k]; });
+    (b.rows || []).forEach(function(x, i) {
+      var r = x.adic ? null : PU_.rows.filter(function(q) { return String(q.l.ID_DET || '') === x.id && String(q.l.ID_INSUMO || '') === x.ins; })[0];
+      if (!r && x.adic && x.l) { r = puNuevaFila(x.l); PU_.rows.push(r); }
+      if (r) PU_BORR_CAMPOS.forEach(function(c) { if (x[c] !== undefined) r[c] = x[c]; });
+    });
+  } catch (e) {}
+}
+function puBorrGuardar() {
+  var f = PU_.f; if (!f || PU_.vista !== 'ficha' || !PU_.borrKey) return;
+  var txt = JSON.stringify(puBorrFoto()); if (txt === PU_.borrUlt) return;
+  if (PU_.borrUlt === '') { PU_.borrUlt = txt; return; }   // la primera foto es como abrió: no hace falta guardarla
+  PU_.borrUlt = txt; var key = PU_.borrKey;
+  clearTimeout(PU_.borrT);
+  PU_.borrT = setTimeout(function() {
+    if (key !== PU_.borrKey) return;
+    var p = key.split('|');
+    gsRun('gsPC_Borrador', { ID_OT: p[0], ID_CUB: p[1], ID_ESTACION: p[2], B: JSON.parse(txt) }).then(function(r) { if (r && !r.ok) toast(r.error || 'No se pudo guardar lo tildado', 'r2'); }, function(e) { toast('No se pudo guardar lo tildado: ' + e.message, 'r2'); });
+  }, 600);
 }
 // ── Retiro del depósito: lo que se lleva a la estación. Al confirmar el paso, lo que no se usó vuelve solo al stock ──
 // Banda o taco que se saca de una cubierta y se guarda para volver a usar: entra al stock como REUTILIZADA
@@ -13274,8 +13323,9 @@ function puFicha() {
     '<div class="fr2"><input id="pu-aut-u" placeholder="Usuario del encargado" value="' + puEsc(PU_.aut.u) + '" autocomplete="off"><input id="pu-aut-c" type="password" placeholder="Clave" autocomplete="new-password"></div></div>';
   $id('pu-body').innerHTML = h;
   if ($id('pu-aut-u')) $id('pu-aut-u').addEventListener('input', function() { PU_.aut.u = this.value; puPieFicha(); });
-  if ($id('pu-ctrl-txt')) $id('pu-ctrl-txt').addEventListener('input', function() { PU_.ctrl.txt = this.value; });
+  if ($id('pu-ctrl-txt')) $id('pu-ctrl-txt').addEventListener('input', function() { PU_.ctrl.txt = this.value; puBorrGuardar(); });
   puPieFicha();
+  puBorrGuardar();
 }
 // ── Control final (inspección final): lo decide el encargado. OK → Pintura · Volver a una estación → corrección y otra carga del autoclave · Rechazo final ──
 function puControlHTML() {
@@ -13324,7 +13374,7 @@ async function puCtrlConfirmar() {
     b.textContent = '✓ Confirmar paso';
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); b.disabled = false; return; }
     var sigue = C.dec === 'OK' ? 'Pasa a Pintura' : C.dec === 'PULIR' ? 'Vuelve a ' + (r.VUELVE_A || []).map(function(e) { return (e.NRO || e.ORDEN) + ' · ' + e.NOMBRE; }).join(', ') + ' para repulir. Después va directo a Pintura (no vuelve al autoclave).' : (C.dec === 'REPROCESO' ? 'Vuelve a ' + (r.VUELVE_A || []).map(function(e) { return (e.NRO || e.ORDEN) + ' · ' + e.NOMBRE; }).join(', ') + ' para corregirla. Después espera la próxima carga del autoclave.' : 'Rechazo final: queda para devolver al cliente.');
-    puRelQuitar(f.ot.ID_OT, f.cub.ID_CUB, puE());
+    puRelQuitar(f.ot.ID_OT, f.cub.ID_CUB, puE()); clearTimeout(PU_.borrT); if (PU_.borrKey) gsRun('gsPC_Borrador', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE(), B: null }).then(function() {}, function() {}); PU_.borrKey = '';
     PU_.fin = { marca: f.cub.MARCA, dot: f.cub.DOT || '', min: r.MINUTOS, n: cons.filter(function(c) { return !c.NO_USO; }).length, desvios: r.DESVIOS || [], sinStock: r.SIN_STOCK || [], reemplazos: r.REEMPLAZOS || [], sigue: sigue, ot: f.ot.ID_OT, cub: f.cub.ID_CUB, dec: C.dec };
     try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e2) {}
     PU_.ctrl = null; PU_.vista = 'listo'; puListo();
@@ -13383,7 +13433,7 @@ function puAutoclavePintar() {
   else if (!listas.length && r.anteriores.length) h += r.anteriores.map(function(a) { return '<button class="pu-btn pu-min" style="color:var(--danger);border:2px solid var(--danger);background:var(--surface)" onclick="puAcAnular(' + a.ID_AUTOC + ', true)">✗ Anular la cocción de las ' + new Date(a.INICIO).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' (' + a.N + ' cubiertas · ' + a.MINUTOS + ' min)</button>'; }).join('');
   else if (listas.length) {
     var ok = ub === listas.length && !noListas.length;
-    h += '<button class="pu-btn pu-ir" ' + (ok ? '' : 'disabled ') + 'onclick="puAcIni()">▶ Empieza la cocción (' + ub + ' cubiertas)</button>' + (ok ? '' : '<div class="tdim" style="font-size:14px">Para empezar tienen que estar ubicadas todas las cubiertas listas.</div>');
+    h += '<button class="pu-btn pu-ir" ' + (ok ? '' : 'disabled ') + 'onclick="puAcIni()">▶ Empieza la cocción (' + ub + (ub === 1 ? ' cubierta' : ' cubiertas') + ')</button>' + (ok ? '' : '<div class="tdim" style="font-size:14px">Para empezar tienen que estar ubicadas todas las cubiertas listas.</div>');
   }
   $id('pu-body').innerHTML = h;
   if (r.cocinando) {
@@ -13478,7 +13528,7 @@ async function puAcIni() {
   try {
     var r = await gsRun('gsPC_AutoclaveIniciar', { ID_OT: A.ot, POSICIONES: A.pos, OPERARIO: PU_.oper });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo empezar', 'r2'); return; }
-    toast('Empezó la cocción: ' + r.N + ' cubiertas ✓', 'g'); puAutoclave(A.ot);
+    toast('Empezó la cocción: ' + r.N + (r.N === 1 ? ' cubierta' : ' cubiertas') + ' ✓', 'g'); puAutoclave(A.ot);
   } catch (e) { toast(e.message, 'r2'); }
 }
 async function puAcFin() {
@@ -13627,6 +13677,8 @@ function puEmpezar(seguir) {
     toast('▶ ' + puIdTxt(f.cub.MARCA, f.cub.DOT) + ' · ' + r.RELOJ.OPERARIO + ' empezó. Podés volver y empezar otra cubierta.', 'g');
   };
   if (seguir) return go(PU_.operF || PU_.oper);
+  // 20/11/2026 (Anibal): con el operario de turno elegido arriba no se vuelve a preguntar en cada estación (se cambia con el botón de arriba)
+  if (PU_.oper) return go(PU_.oper);
   var emps = ((PU_.d && PU_.d.empleados) || []).map(function(e) { return e.NOMBRE; });
   if (!emps.length) return go(PU_.oper || 'SIN NOMBRE');
   puElegir('¿Quién hace este trabajo?', emps, go);
@@ -13722,13 +13774,14 @@ async function puConfirmar() {
     else { insp = { APTA: false, ID_MOTIVO: I.motivo, REEMPLAZO: I.reemplazo || '' }; cons = []; aut = null; }
   }
   b.disabled = true; b.textContent = 'Guardando…';
+  clearTimeout(PU_.borrT);
   try {
     var r = await gsRun('gsPC_Registrar', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE(), RESULTADO: PU_.res, OBSERVACION: PU_.obs, OPERARIO: PU_.operF || PU_.oper,
       CONSUMOS: cons, ADICIONALES: adic, MINUTOS: PU_.d.tiempoOperario && !noAp ? Math.round(PU_.seg / 60 * 100) / 100 : '', AUTORIZA: noAp ? null : aut, INSPECCION: insp, SOBRANTE: PU_.sobra || 'VUELVE' });
     if ($id('pu-aut-c')) $id('pu-aut-c').value = '';
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); b.disabled = false; b.textContent = '✓ Confirmar paso'; return; }
     b.textContent = '✓ Confirmar paso';   // si no, en la estación siguiente el botón queda diciendo "Guardando…"
-    puRelQuitar(f.ot.ID_OT, f.cub.ID_CUB, puE());
+    puRelQuitar(f.ot.ID_OT, f.cub.ID_CUB, puE()); clearTimeout(PU_.borrT); if (PU_.borrKey) gsRun('gsPC_Borrador', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE(), B: null }).then(function() {}, function() {}); PU_.borrKey = '';
     PU_.fin = { marca: f.cub.MARCA, dot: f.cub.DOT || '', min: r.MINUTOS, n: cons.filter(function(c) { return !c.NO_USO; }).length + adic.length, desvios: r.DESVIOS || [], sinStock: r.SIN_STOCK || [], reemplazos: r.REEMPLAZOS || [], sigue: puSiguiente() };
     PU_.fin.ot = f.ot.ID_OT; PU_.fin.cub = f.cub.ID_CUB; PU_.fin.rechazo = r.RECHAZO || null; PU_.fin.devuelto = r.DEVUELTO || [];
     if (r.RECHAZO) { PU_.vista = 'listo'; return puListoRechazo(); }
@@ -13758,9 +13811,9 @@ function puSiguiente() {
     var act = todas.filter(function(e) { return String(e.ID_ESTACION) === String(puE()); })[0];
     var prox = act ? todas.filter(function(e) { return Number(e.ORDEN) > Number(act.ORDEN); })[0] : null;
     if (prox) return 'Sigue en: ' + (prox.NRO || prox.ORDEN) + ' · ' + prox.NOMBRE;
-    return quedan.length ? 'Pasó por todas las estaciones. Le quedan ' + quedan.length + ' insumos sin confirmar' : 'Pasó por todas las estaciones: lista para terminar';
+    return quedan.length ? 'Pasó por todas las estaciones. Le quedan ' + quedan.length + ' insumos sin confirmar' : 'Pasó por todas las estaciones: falta el OK final del encargado (en Órdenes de servicio)';
   }
-  if (!quedan.length) return 'Ya tiene todos los insumos confirmados: lista para terminar';
+  if (!quedan.length) return 'Ya tiene todos los insumos confirmados: falta el OK final del encargado (en Órdenes de servicio)';
   var ests = {}; quedan.forEach(function(l) { var e = l.ID_ESTACION || l.SUGERIDA; if (e) ests[e] = true; });
   var ord = PU_.f.estaciones.filter(function(e) { return ests[String(e.ID_ESTACION)]; });
   return ord.length ? 'Sigue en: ' + (ord[0].NRO || ord[0].ORDEN) + ' · ' + ord[0].NOMBRE : 'Le quedan ' + quedan.length + ' insumos por usar en otras estaciones';
@@ -13770,16 +13823,23 @@ function puListo() {
   puPie(false);
   var x = PU_.fin, cd = puCubD(x.cub);
   $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">' + (x.dec === 'RECHAZO' ? '⛔' : (x.dec === 'REPROCESO' ? '↻' : (x.dec === 'PULIR' ? '✂' : '✅'))) + '</div>' + puIdHTML(x.marca, x.dot) + '<h2>Paso confirmado</h2>' +
-    '<div class="tdim" style="font-size:18px">' + (x.min ? 'Tardó ' + puDur(x.min * 60) + ' · ' : '') + x.n + ' insumo' + (x.n === 1 ? '' : 's') + ' cargado' + (x.n === 1 ? '' : 's') + ' · el stock ya se descontó</div>' +
+    '<div class="tdim" style="font-size:18px">' + (x.min ? 'Tardó ' + puDur(x.min * 60) + ' · ' : '') + (x.n ? x.n + ' insumo' + (x.n === 1 ? '' : 's') + ' cargado' + (x.n === 1 ? '' : 's') + ' · ya se descontó del stock' : 'esta estación no lleva insumos') + '</div>' +
     (x.sinStock.length ? '<div style="color:var(--danger);font-weight:700">⚠ Sin stock en el sistema: ' + puEsc(x.sinStock.join(', ')) + '</div>' : '') +
     (x.reemplazos.length ? '<div style="color:var(--warn);font-weight:700">Reemplazo autorizado: ' + puEsc(x.reemplazos.join('; ')) + '</div>' : '') +
     ((x.devuelto || []).filter(function(v) { return v.VUELVE > 0; }).length ? '<div style="font-size:18px;color:var(--success);font-weight:700">↩ Volvió al stock: ' + x.devuelto.filter(function(v) { return v.VUELVE > 0; }).map(function(v) { return puF(v.VUELVE) + ' ' + puEsc(v.UNIDAD) + ' de ' + puEsc(v.NOMBRE); }).join(' · ') + '</div>' : '') +
     ((x.devuelto || []).filter(function(v) { return v.QUEDA > 0; }).length ? '<div style="font-size:18px;color:var(--accent);font-weight:700">📍 Quedó en la estación: ' + x.devuelto.filter(function(v) { return v.QUEDA > 0; }).map(function(v) { return puF(v.QUEDA) + ' ' + puEsc(v.UNIDAD) + ' de ' + puEsc(v.NOMBRE); }).join(' · ') + '</div>' : '') +
     '<div style="font-size:20px"><b>' + puEsc(x.sigue) + '</b></div>' + puMapa(cd) +
     (puTodas() && cd && cd.SIGUIENTE ? '<button class="pu-btn" style="min-width:260px;background:var(--accent);color:#fff" onclick="puAbrir(' + x.ot + ',' + x.cub + ',\'' + cd.SIGUIENTE.ID_ESTACION + '\')">→ Seguir con ' + puEsc(puIdTxt(x.marca, x.dot)) + ' en ' + puEsc((cd.SIGUIENTE.NRO || cd.SIGUIENTE.ORDEN) + ' · ' + cd.SIGUIENTE.NOMBRE) + '</button>' : '') +
+    (cd && !cd.SIGUIENTE && /OK final/.test(x.sigue || '') && typeof puedeVerPagina === 'function' && puedeVerPagina('produccion-cubiertas') ? '<button class="pu-btn" style="min-width:260px;background:var(--success);color:#fff" onclick="puIrOkFinal(' + x.ot + ')">✓ Ir a dar el OK final de la carga</button>' : '') +
     '<button class="pu-btn" style="min-width:260px;' + (puTodas() && cd && cd.SIGUIENTE ? '' : 'background:var(--accent);color:#fff') + '" onclick="puVolver()">' + (puTodas() ? 'Ver todas las cubiertas' : 'Siguiente cubierta') + '</button></div>';
 }
 
+// 20/11/2026 (Anibal): después de la última estación, un botón lleva directo a la orden de servicio para dar el OK final
+function puIrOkFinal(idOt) {
+  var n = document.querySelector('.nav-item[data-acc="pc-os"]'); if (!n) { toast('No tenés acceso a Órdenes de servicio: avisale al encargado', 'w'); return; }
+  n.click();
+  var k = 0, t = setInterval(function() { k++; if (typeof pcAbrirOT === 'function' && typeof PC_ !== 'undefined' && PC_.d && document.getElementById('pc-os-g')) { clearInterval(t); pcAbrirOT(idOt); } else if (k > 40) clearInterval(t); }, 250);
+}
 // ── Estación 1: inspección. APTA → el inspector elige banda y parches. NO APTA → motivo y qué suplente entra en su lugar ──
 // ── Cambio de trabajo en la inspección: lo decide el encargado (ej. VULCANIZADO ↔ RECAPADO) ──
 function puTrabajoHTML() {
@@ -13894,7 +13954,7 @@ function puPesajeBanner() {
   var sinIni = p.ITEMS.filter(function(i) { return !i.PES && i.PREVISTO; }) /* 02/11/2026: solo lo que la carga de hoy usa en esa estación */, abiertos = p.ITEMS.filter(function(i) { return i.PES && i.PES.ESTADO === 'ABIERTO'; });
   if (sinIni.length) return '<div class="pu-reg" style="border-color:var(--danger);background:var(--danger-light, #fde8e8)"><div style="font-size:19px;font-weight:700;color:var(--danger)">⚖ Falta el pesaje de inicio del día: ' + puEsc(sinIni.map(function(i) { return i.NOMBRE + (puTodas() ? ' (' + i.ESTACION + ')' : ''); }).join(', ')) + '</div>' +
     '<div style="font-size:15px">Hasta que no se pese lo que se retira, esta estación no deja cargar ese insumo.</div><button class="pu-btn" style="background:var(--danger);color:#fff;width:max-content" onclick="puPesaje(\'\')">Pesar ahora</button></div>';
-  if (abiertos.length) return '<div class="pu-reg" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-color:var(--accent)"><div style="font-size:17px">⚖ Pesaje del día abierto: ' + puEsc(abiertos.map(function(i) { return i.NOMBRE; }).join(', ')) + '. Al terminar el día pesá lo que sobra.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pu-btn pu-min" onclick="puPesaje(\'\')">Pesaje del día</button><button class="pu-btn pu-min" onclick="puPesaje(\'' + puEsc(p.MANANA || '') + '\')">⚖ Preparar mañana</button></div></div>';
+  if (abiertos.length) return '<div class="pu-reg" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-color:var(--accent)"><div style="font-size:17px">⚖ Pesaje del día abierto: ' + puEsc(abiertos.map(function(i) { return i.NOMBRE; }).filter(function(n, k, a) { return a.indexOf(n) === k; }).join(', ')) + '. Al terminar el día pesá lo que sobra.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pu-btn pu-min" onclick="puPesaje(\'\')">Pesaje del día</button><button class="pu-btn pu-min" onclick="puPesaje(\'' + puEsc(p.MANANA || '') + '\')">⚖ Preparar mañana</button></div></div>';
   return '<div class="pu-reg" style="border-color:var(--success)"><div style="font-size:16px;color:var(--success);font-weight:700">⚖ Pesaje del día cerrado ✓</div><button class="pu-btn pu-min" style="width:max-content" onclick="puPesaje(\'\')">Ver</button> <button class="pu-btn pu-min" style="width:max-content" onclick="puPesaje(\'' + puEsc(p.MANANA || '') + '\')">⚖ Preparar mañana</button></div>';
 }
 async function puPesajeCargar(dia) { try { PU_.pes = await gsRun('gsPC_PesajeDia', puTodas() ? '' : PU_.est, dia || ''); } catch (e) { PU_.pes = null; } }
