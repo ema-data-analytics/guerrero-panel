@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "787eca449977"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "18f7c0f9123c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611201750';
+var EMA_BUILD = '202611201800';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -10663,7 +10663,7 @@ async function pcCasGrabar() {
   try {
     var r = await gsRun('gsPC_CascosGuardar', { ID_CLIENTE: cli, FECHA: $v('pc-k-f'), NRO_MANUAL: $v('pc-k-man'), CASCOS: PC_.kf, COMPRA: compra || undefined });
     if (!r || !r.ok) { pcCasErr((r && r.error) || 'No se pudo'); return; }
-    toast('Grabados ' + r.IDS.length + ' cascos · marcas ' + (r.MARCAS || r.DOTS || []).join(', ') + (r.OT ? ' · orden de trabajo ' + r.OT + ' con ' + r.OT_N + ' cubiertas' : '') + (r.SIN_RECETA ? ' · ' + r.SIN_RECETA + ' sin receta' : '') + ' ✓', r.SIN_RECETA ? 'r2' : 'g');
+    toast('Grabados ' + r.IDS.length + ' cascos · marcas ' + (r.MARCAS || r.DOTS || []).join(', ') + (r.OT ? ' · orden de trabajo ' + r.OT + ' con ' + r.OT_N + (r.OT_N === 1 ? ' cubierta' : ' cubiertas') : '') + (r.SIN_RECETA ? ' · ' + r.SIN_RECETA + ' sin receta' : '') + ' ✓', r.SIN_RECETA ? 'r2' : 'g');
     if (compra) { toast('Compra de cascos registrada' + (r.FALTA_COSTO ? ' · FALTA COSTO: completalo en "Cascos comprados"' : '') + ' ✓', r.FALTA_COSTO ? 'b' : 'g'); PC_.kc = null; }
     PC_.kf = []; PC_.kcli = cli; PC_.kman = ''; PC_.ultOT = r.OT || ''; await pcRecargar(); var gOk = document.querySelector('#pc-body .al.al-g'); if (gOk) gOk.scrollIntoView({ block: 'center', behavior: 'smooth' });
   } catch (e) { pcCasErr(e.message); } finally { b.disabled = false; }
@@ -12172,7 +12172,7 @@ function pcPlImp() {
   var f3 = function(n) { return n === null || n === undefined ? '—' : n === true ? 'falta' : (Math.round((+n || 0) * 1000) / 1000).toLocaleString('es-AR'); }, ids = pcPlIds(), dia = String(r.DIA).split('-').reverse().join('/');
   var cubs = PC_.d.cubiertas.filter(function(c) { return PC_.plSel[c.ID_CUB]; }), E = r.ESTACIONES, ests = [];
   E.forEach(function(x) { if (ests.indexOf(x.ESTACION) === -1) ests.push(x.ESTACION); });
-  var h = pcEncImp('PLAN DEL DÍA ' + dia, ids.length + ' cubiertas') +
+  var h = pcEncImp('PLAN DEL DÍA ' + dia, ids.length + (ids.length === 1 ? ' cubierta' : ' cubiertas')) +
     ($v('pc-pl-obs') ? '<div class="nota"><b>Notas:</b> ' + pcEsc($v('pc-pl-obs')) + '</div>' : '') +
     '<h3>Cubiertas</h3><table><thead><tr><th>Marca grabada</th><th>DOT</th><th>Cliente</th><th>Medida</th><th>Trabajo</th></tr></thead><tbody>' + cubs.map(function(c) { return '<tr><td><b>' + pcEsc(c.MARCA) + '</b></td><td>' + pcDotTxt(pcDotDe(c)) + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td>' + pcEsc((c.TIPO || '') + ' ' + (c.MEDIDA || '')) + '</td><td>' + pcEsc(c.TRABAJO) + '</td></tr>'; }).join('') + '</tbody></table>' +
     '<h3>Materiales</h3><table><thead><tr><th>Material</th><th>Necesita</th><th>Hay</th><th>Falta</th></tr></thead><tbody>' + r.MATERIALES.LINEAS.map(function(x) { return '<tr><td>' + pcEsc(x.NOMBRE) + '</td><td>' + f3(x.NECESITA) + ' ' + pcEsc(x.UNIDAD) + '</td><td>' + f3(x.HAY) + '</td><td>' + (x.FALTA ? '<b>' + f3(x.FALTA) + '</b>' : '—') + '</td></tr>'; }).join('') + '</tbody></table>' +
@@ -12513,7 +12513,7 @@ function pcCostosImp() {
   var t = { mat: 0, herr: 0, mo: 0, fij: 0, tot: 0, min: 0 };
   r.filas.forEach(function(f) { t.mat += f.MATERIALES; t.herr += f.HERRAMENTAL; t.mo += f.MO; t.fij += f.FIJOS; t.tot += f.TOTAL; t.min += f.MINUTOS; });
   var n = r.filas.length;
-  var h = pcEncImp('COSTO POR CUBIERTA TERMINADA', PC_.mes, n + ' cubiertas') +
+  var h = pcEncImp('COSTO POR CUBIERTA TERMINADA', PC_.mes, n + (n === 1 ? ' cubierta' : ' cubiertas')) +
     '<table class="res"><thead><tr><th style="width:9%">Terminada</th><th style="width:9%">OT</th><th style="width:14%">Marca grabada · DOT</th><th>Cliente</th><th>Cubierta</th><th class="n">Materiales</th><th class="n">Herram.</th><th class="n">Min</th><th class="n">Mano obra</th><th class="n">Fijos</th><th class="n">Total</th></tr></thead><tbody>' +
     r.filas.map(function(f) { return '<tr><td>' + fmtD(f.FECHA_FIN) + '</td><td>' + pcEsc(f.NRO_OT) + '</td><td><b>' + pcEsc(f.MARCA) + '</b><div>DOT: ' + pcDotTxt(pcDotDe(f)) + '</div></td><td>' + pcEsc(f.CLIENTE) + '</td><td>' + pcEsc([f.TIPO, f.MEDIDA].filter(Boolean).join(' ') + (f.TRABAJO ? ' · ' + f.TRABAJO : '')) + '</td><td class="n">' + fmt(f.MATERIALES) + '</td><td class="n">' + fmt(f.HERRAMENTAL) + '</td><td class="n">' + pcDur(f.MINUTOS) + '</td><td class="n">' + fmt(f.MO) + '</td><td class="n">' + fmt(f.FIJOS) + '</td><td class="n"><b>' + fmt(f.TOTAL) + '</b></td></tr>'; }).join('') +
     (n ? '<tr class="tot" style="font-weight:700"><td colspan="5">Total ' + n + ' cubiertas · promedio ' + fmt(t.tot / n) + '</td><td class="n">' + fmt(t.mat) + '</td><td class="n">' + fmt(t.herr) + '</td><td class="n">' + pcDur(t.min) + '</td><td class="n">' + fmt(t.mo) + '</td><td class="n">' + fmt(t.fij) + '</td><td class="n">' + fmt(t.tot) + '</td></tr>' : '<tr><td colspan="11">No hay cubiertas terminadas en ' + pcEsc(PC_.mes) + '</td></tr>') +
