@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "595af9b3cf4b"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "acc1482a7a39"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -22,6 +22,7 @@
   if (/[?&#]docs/.test(q)) window.EMA_MODO_DOCS = true;
   if (/[?&#]cascos/.test(q)) window.EMA_MODO_CASCOS = true;
   if (/[?&#]tablero/.test(q)) window.EMA_MODO_TABLERO = true;
+  if (/[?&#]audios/.test(q)) window.EMA_MODO_AUDIOS = true; // 20/11/2026: link directo a Audios a texto
   if (window.EMA_MODO_DOCS || window.EMA_MODO_CASCOS) { var m = document.createElement('meta'); m.name = 'theme-color'; m.content = '#1f2a5c'; document.head.appendChild(m); }
 })();
 // Sin acceso directo: el sistema se instala en el celular como «Vulcan» (Agregar a pantalla de inicio) y abre el menú del celular
@@ -1539,6 +1540,8 @@ async function appInit() {
   // Pantalla de fichaje (tablet de la entrada): siempre sola, sin menú, también para un administrador
   // Tablero de la línea en un televisor de la planta (?tablero): pantalla grande, sin menú
   if (window.EMA_MODO_TABLERO && puedeVerPagina('tablero-linea')) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-tablero'); inicio = 'tablero-linea'; document.title = 'Vulcan Línea'; }
+  // Link directo a «Audios a texto» (?audios), con el menú
+  else if (window.EMA_MODO_AUDIOS && puedeVerPagina('audios')) { inicio = 'audios'; document.title = 'Vulcan Audios'; }
   else if (window.EMA_MODO_FICHAJE && puedeVerPagina('fichaje')) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-fichaje'); inicio = 'fichaje'; document.title = 'Vulcan Fichaje'; }
   // Documentos para el cliente (?docs) y carga de cascos desde el celular (?cascos): pantalla sola, sin menú
   else if (window.EMA_MODO_DOCS && puedeVerPagina('documentos')) { document.body.classList.add('modo-puesto'); inicio = 'documentos'; document.title = 'Vulcan Documentos'; }
@@ -1549,7 +1552,7 @@ async function appInit() {
   else if (!adminP && rolP.indexOf('VENDE') !== -1 && window.innerWidth >= 760 && puedeVerPagina('precios-nuevos')) { document.body.classList.add('modo-puesto'); inicio = 'precios-nuevos'; document.title = 'Vulcan Precios'; }
   // Celular: un solo link para todo. Si no entró por un acceso directo, arranca en el menú del celular (botones grandes según sus permisos)
   // El operario va directo a sus estaciones (ya quedó en modo puesto): el menú es para los demás
-  if (!document.body.classList.contains('modo-puesto') && !window.EMA_MODO_FICHAJE && !window.EMA_MODO_TABLERO && !window.EMA_MODO_DOCS && !window.EMA_MODO_CASCOS && !window.EMA_MODO_PRECIOS && !window.EMA_MODO_PUESTO && window.innerWidth < 760) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-movil'); inicio = 'inicio-movil'; }
+  if (!document.body.classList.contains('modo-puesto') && !window.EMA_MODO_FICHAJE && !window.EMA_MODO_TABLERO && !window.EMA_MODO_AUDIOS && !window.EMA_MODO_DOCS && !window.EMA_MODO_CASCOS && !window.EMA_MODO_PRECIOS && !window.EMA_MODO_PUESTO && window.innerWidth < 760) { document.body.classList.add('modo-puesto'); document.body.classList.add('modo-movil'); inicio = 'inicio-movil'; }
   _hist.pagina = null;
   histReplace({ ema: 1, base: 1 });
   if (inicio) navTo(inicio);
@@ -1692,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611201340';
+var EMA_BUILD = '202611201345';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17200,10 +17203,10 @@ function mtOrdenVer() {
       return '<button class="btn ' + (r >= t && t ? 'btn-s' : 'btn-p') + '" onclick="mtAbrirCheck(' + x.ID_OE + ')">✔ ' + pcEsc(mtEqIdent(e)) + ' · ' + r + '/' + t + (no ? ' · ' + no + ' a reparar' : '') + '</button>'; }).join('') + '</div></div></div>';
   // Presupuesto
   h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Presupuesto' + (P ? ' ' + pcEsc(P.NRO) : '') + '</span>' + (P ? mtBadge(P.ESTADO) : '') + '</div><div class="card-body" id="mt-pres">';
-  if (MT_.lin) h += mtPresEditorHtml();
+  if (MT_.lin) h += mtFaltaStockHtml(MT_.lin) + mtPresEditorHtml();
   else if (!P) h += '<div class="tdim mb2">Todavía no hay presupuesto. Se arma solo con lo que dio <b>NO</b> en el check list: el servicio que corresponde, sus repuestos y los precios de la lista vigente (' + pcEsc(MT_.d.LISTA) + '). Después se puede corregir.</div>' + (an || cerr ? '' : (mtChkFaltaTxt() ? '<div class="al mb2">' + pcEsc(mtChkFaltaTxt()) + '</div>' : '') + '<button class="btn btn-p" style="min-height:48px" onclick="mtPresArmar()">⚙ Armar el presupuesto desde el check list</button>');
   else {
-    h += mtPresTabla(P.DET, true, P.DESCUENTO_PCT) + '<div class="tdim mt2" style="font-size:12px">Fecha ' + fmtD(P.FECHA) + ' · válido ' + P.VALIDEZ + ' días · versión ' + P.VERSION + (P.APROBADO_POR ? ' · aprobó <b>' + pcEsc(P.APROBADO_POR) + '</b> (' + pcEsc(P.MEDIO) + ') el ' + fmtD(P.FECHA_APROB) : '') + (P.MOTIVO ? ' · ' + pcEsc(P.MOTIVO) : '') + '</div>';
+    h += (['BORRADOR', 'ENVIADO', 'APROBADO'].indexOf(P.ESTADO) !== -1 ? mtFaltaStockHtml(P.DET) : '') + mtPresTabla(P.DET, true, P.DESCUENTO_PCT) + '<div class="tdim mt2" style="font-size:12px">Fecha ' + fmtD(P.FECHA) + ' · válido ' + P.VALIDEZ + ' días · versión ' + P.VERSION + (P.APROBADO_POR ? ' · aprobó <b>' + pcEsc(P.APROBADO_POR) + '</b> (' + pcEsc(P.MEDIO) + ') el ' + fmtD(P.FECHA_APROB) : '') + (P.MOTIVO ? ' · ' + pcEsc(P.MOTIVO) : '') + '</div>';
     if (!an && !cerr) h += '<div class="flex gap2 mt2" style="flex-wrap:wrap">' +
       ((P.ESTADO === 'BORRADOR' || P.ESTADO === 'ENVIADO' || P.ESTADO === 'RECHAZADO') ? '<button class="btn btn-s" onclick="mtPresCorregir()">✏ Corregir (versión nueva)</button>' : '') +
       (P.ESTADO === 'BORRADOR' ? '<button class="btn btn-s" onclick="mtPresEstado(\'ENVIADO\')">📤 Marcar como enviado al cliente</button>' : '') +
@@ -17296,6 +17299,14 @@ function mtPresPie(tot, dg, cols, extra) {
   return (dgv ? '<tr><td colspan="' + cols + '" class="tr">Subtotal</td><td class="tr">' + mtPlata(tot) + '</td>' + (extra || '') + '</tr><tr><td colspan="' + cols + '" class="tr">Descuento general ' + String(dgv).replace('.', ',') + '%</td><td class="tr">− ' + mtPlata(Math.round((tot - fin) * 100) / 100) + '</td>' + (extra || '') + '</tr>' : '') +
     '<tr><td colspan="' + cols + '" class="tr"><b>Total sin IVA</b></td><td class="tr"><b>' + mtPlata(fin) + '</b></td>';
 }
+// 20/11/2026 (Anibal): aviso de repuestos que faltan comprar (lo que pide el presupuesto contra el stock de hoy)
+function mtFaltaStock(lin) { var nec = {}, ord = []; (lin || []).forEach(function(l) { if ((l.CLASE === 'REPUESTO' || l.CLASE === 'INSUMO') && Number(l.ID_ARTICULO) > 0) { var k = String(l.ID_ARTICULO); if (!nec[k]) { nec[k] = 0; ord.push(k); } nec[k] += Number(l.CANTIDAD) || 0; } });
+  var arts = {}; ((MT_.d && MT_.d.ARTS) || []).forEach(function(a) { arts[String(a.I)] = a; });
+  return ord.map(function(k) { var a = arts[k] || {}, hay = Number(a.S) || 0; return { N: a.N || ('Artículo ' + k), C: a.C || '', NEC: nec[k], HAY: hay }; }).filter(function(x) { return x.HAY < x.NEC - 1e-9; }); }
+function mtFaltaStockHtml(lin) { var f = mtFaltaStock(lin); if (!f.length) return '';
+  return '<div style="border:2px solid #ea7317;background:#fff7ed;border-radius:10px;padding:10px 12px;margin:0 0 10px;font-size:13.5px;line-height:1.5"><b>⚠ Faltan comprar</b> (no alcanza el stock):<ul style="margin:4px 0 0;padding-left:18px">' +
+    f.map(function(x) { return '<li><b>' + pcEsc(x.N) + '</b>' + (x.C ? ' <span class="tdim mono">' + pcEsc(x.C) + '</span>' : '') + ': se necesitan ' + x.NEC + ', hay ' + x.HAY + ' → comprar <b>' + Math.round((x.NEC - x.HAY) * 1000) / 1000 + '</b></li>'; }).join('') +
+    '</ul><div class="tdim" style="font-size:12px;margin-top:4px">Cargá la compra antes de cerrar la orden: sin stock no se puede cerrar.</div></div>'; }
 function mtPresTabla(det, soloVer, dg) {
   if (window.innerWidth < 700) { var tt = 0; var hc = det.map(function(l) { tt += l.SUBTOTAL; return '<div class="mt-pc"><div class="mt-pc-h"><span class="mt-bd mt-b-x">' + pcEsc(l.CLASE) + '</span> <b>' + pcEsc(l.DESCRIPCION) + '</b></div><div class="mt-pc-f"><span>' + (mtSinCargo(l) ? l.CANTIDAD + ' × sin cargo' : l.CANTIDAD + ' × ' + mtPlata(mtPresPuDe(l)) + ' sin IVA') + '</span><b>' + (mtSinCargo(l) ? 'SIN CARGO' : mtPlata(l.SUBTOTAL)) + '</b></div></div>'; }).join('');
     var ff = Math.round(tt * (1 - (Number(dg) || 0) / 100) * 100) / 100;
