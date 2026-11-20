@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "28cc0135785e"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "57301b70caa9"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611202130';
+var EMA_BUILD = '202611202200';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17396,7 +17396,7 @@ function mtTrabFila(t, T, ed) {
   if (t.INTENTOS > 1) inf.push('vez ' + t.INTENTOS);
   // repuestos usados de más (no estaban en el presupuesto): al cerrar la orden se elige cobrar o sin cargo
   var rx = (T.EXTRAS || []).filter(function(r) { return r.ID_TRAB === t.ID_TRAB; });
-  var rxh = rx.length ? '<div style="margin-top:6px;font-size:13px;background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:6px 8px"><b>Repuestos que usó y no estaban en el presupuesto:</b>' + rx.map(function(r) { return '<div class="flex gap2" style="align-items:center;flex-wrap:wrap;margin-top:4px">' + (ed && !r.ID_REMITO ? '<button class="btn btn-s btn-xs" onclick="mtRexSacar(' + t.ID_TRAB + ',' + r.ID_REX + ')">Sacar</button>' : '') + '<span>' + pcEsc(r.NOMBRE) + ' × ' + String(r.CANTIDAD).replace('.', ',') + (r.OBS ? ' <span class="tdim">· ' + pcEsc(r.OBS) + '</span>' : '') + (r.COBRO ? ' <b style="color:' + (r.COBRO === 'COBRAR' ? '#1d4ed8' : '#15803d') + '">· ' + (r.COBRO === 'COBRAR' ? 'se cobra' : 'sin cargo') + '</b>' : ' <span class="tdim">· al cerrar se elige cobrar o sin cargo</span>') + '</span></div>'; }).join('') + '</div>' : '';
+  var rxh = rx.length ? '<div style="margin-top:6px;font-size:13px;background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:6px 8px"><b>Repuestos que usó y no estaban en el presupuesto:</b>' + rx.map(function(r) { return '<div class="flex gap2" style="align-items:flex-start;margin-top:4px">' + (ed && !r.ID_REMITO ? '<button class="btn btn-s btn-xs" style="flex:0 0 auto" onclick="mtRexSacar(' + t.ID_TRAB + ',' + r.ID_REX + ')">Sacar</button>' : '') + '<span style="flex:1;min-width:0">' + pcEsc(r.NOMBRE) + ' × ' + String(r.CANTIDAD).replace('.', ',') + (r.OBS ? ' <span class="tdim">· ' + pcEsc(r.OBS) + '</span>' : '') + (r.COBRO ? ' <b style="color:' + (r.COBRO === 'COBRAR' ? '#1d4ed8' : '#15803d') + '">· ' + (r.COBRO === 'COBRAR' ? 'se cobra' : 'sin cargo') + '</b>' : ' <span class="tdim">· al cerrar se elige cobrar o sin cargo</span>') + '</span></div>'; }).join('') + '</div>' : '';
   if (ed && t.ESTADO !== 'PENDIENTE') b += '<button class="btn btn-s" style="min-height:44px" onclick="mtRexAgregar(' + t.ID_TRAB + ')" title="Un repuesto que no estaba en el presupuesto">＋ Repuesto que usé</button>';
   return '<div class="mt-it' + (t.ESTADO === 'OK' ? ' r-OK' : t.ESTADO === 'RECHAZADO' ? ' r-NO' : '') + '" data-trab="' + t.ID_TRAB + '"><div class="mt-n"><b>' + pcEsc(t.DESCRIPCION) + '</b> <span class="mt-bd ' + x[0] + '">' + pcEsc(x[1]) + '</span>' + (inf.length ? '<div class="tdim" style="font-size:12.5px;margin-top:3px">' + inf.join(' · ') + '</div>' : '') + rxh + '</div>' + sel + '<div class="flex gap2" style="flex-wrap:wrap">' + b + '</div></div>';
 }
@@ -18829,7 +18829,7 @@ function flpCerrar() {
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="flp-c-ok" onclick="flpCerrarOk()">Cerrar orden' + (L.length || (r.COBRAR.EXTRAS || []).length ? ' y hacer el remito' : '') + '</button></div>');
 }
 async function flpCerrarOk() {
-  var b = $id('flp-c-ok'), mot = {}; Array.prototype.forEach.call(document.querySelectorAll('.flp-c-m'), function(x) { if (x.value.trim()) mot[x.getAttribute('data-p')] = x.value.trim(); });
+  var b = $id('flp-c-ok'), bTxt = b ? b.textContent : '', mot = {}; Array.prototype.forEach.call(document.querySelectorAll('.flp-c-m'), function(x) { if (x.value.trim()) mot[x.getAttribute('data-p')] = x.value.trim(); });
   var ext = {}, falta = []; Array.prototype.forEach.call(document.querySelectorAll('.flp-c-x'), function(x) { if (x.value) ext[x.getAttribute('data-x')] = x.value; else falta.push(x); });
   if (falta.length) { toast('Elegí si se cobra o va sin cargo cada repuesto usado de más', 'r2'); falta[0].focus(); return; }
   b.disabled = true; b.textContent = 'Guardando…';
@@ -18838,7 +18838,7 @@ async function flpCerrarOk() {
     // desde la orden del taller: vuelve a la orden del taller ya terminada; desde Órdenes en campo: refresca la grilla y muestra la orden
     if (!$id('flp-g') && $id('mt-body') && typeof MT_ !== 'undefined' && MT_.ord && typeof mtRecargar === 'function') { var idT = MT_.ord.ORDEN.ID_ORDEN; await mtRecargar(); await mtAbrir(idT); return; }
     if ($id('flp-g')) await renderPlanes(); flpVer(FLP_.v.O.ID);
-  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = 'Cerrar orden'; } }
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) { b.disabled = false; b.textContent = bTxt; } }
 }
 // Desde la orden del taller: abre el cierre con lo aprobado del presupuesto
 async function flpCerrarDesde(id) { var r = await gsRun('gsMT_Plan', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } FLP_.v = r; flpCerrar(); }
