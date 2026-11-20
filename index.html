@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611201345';
+var EMA_BUILD = '202611201445';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -24873,7 +24873,7 @@ function audEnganchar(el) {
   el.querySelector('#aud-bajar').onclick = audBajar;
   el.querySelector('#aud-limpiar').onclick = function() { if (AUD_.ocupado) { audAviso('Esperá que termine el audio que se está pasando.'); return; } AUD_.items = []; AUD_.cola = []; audPintarLista(); audAviso(''); };
   var sel = el.querySelector('#aud-modelo');
-  el.querySelector('#aud-clave-ok').onclick = function() { var v = String(el.querySelector('#aud-clave').value || '').trim(); v = v.replace(/\s+/g, ''); if (v.length < 20) { audAviso('La clave está incompleta. Copiala entera desde aistudio.google.com/apikey (botón de copiar al lado de la clave).', true); return; } audClaveSet(v); el.querySelector('#aud-clave').value = ''; audClaveEstado(); audAviso('Clave guardada. Ya podés arrastrar los audios.'); };
+  el.querySelector('#aud-clave-ok').onclick = function() { var v = String(el.querySelector('#aud-clave').value || '').trim(); v = v.replace(/\s+/g, ''); if (v.length < 20) { audAviso('La clave está incompleta. Copiala entera desde aistudio.google.com/apikey (botón de copiar al lado de la clave).', true); return; } audClaveSet(v); el.querySelector('#aud-clave').value = ''; audClaveEstado(); AUD_.items = AUD_.items.filter(function(x) { return !x.sinClave; }); audPintarLista(); audAviso('Clave guardada. Ya podés arrastrar los audios.'); };
   el.querySelector('#aud-clave-borrar').onclick = function() { audClaveSet(''); audClaveEstado(); };
   audClaveEstado();
   sel.addEventListener('change', audClaveEstado);
@@ -24992,10 +24992,10 @@ function audPintarItem(it) {
       (it.listo && !it.err ? '<button class="btn btn-s" data-cop="' + it.n + '"><i class="fas fa-copy"></i> Copiar</button>' : '') +
     '</div>' +
     (!it.listo && !it.err && it.t0 && it.modo === 'google' ? '<div style="height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin-top:8px"><div id="aud-pb-' + it.n + '" style="height:100%;width:' + audPct(it) + '%;background:#22c55e;transition:width .9s linear"></div></div><div style="font-size:11px;color:#64748b;margin-top:2px">Avance estimado según lo que dura el audio · llega al 100 % cuando vuelve el texto</div>' : '') +
-    (it.intentos && it.intentos.length ? '<div style="font-size:11.5px;color:#64748b;margin-top:4px">' + it.intentos.map(audEsc).join('<br>') + '</div>' : '') +
-    (it.texto ? '<textarea class="form-control" data-txt="' + it.n + '" style="margin-top:8px;min-height:' + (it.listo ? 90 : 60) + 'px;font-size:14px;line-height:1.45">' + audEsc(it.texto) + '</textarea>' : '');
+    (it.err && it.intentos && it.intentos.length ? '<div style="font-size:11.5px;color:#64748b;margin-top:4px">' + it.intentos.map(audEsc).join('<br>') + '</div>' : '') +
+    (it.texto ? '<textarea class="form-control" data-txt="' + it.n + '" rows="2" style="display:block;width:100%;max-width:none;box-sizing:border-box;margin-top:8px;font-size:14px;line-height:1.5;resize:vertical;overflow:hidden">' + audEsc(it.texto) + '</textarea>' : '');
   var b = c.querySelector('[data-cop]'); if (b) b.onclick = function() { var ta = c.querySelector('[data-txt]'); audCopiar(ta ? ta.value : it.texto); };
-  var ta = c.querySelector('[data-txt]'); if (ta) ta.oninput = function() { it.texto = ta.value; };
+  var ta = c.querySelector('[data-txt]'); if (ta) { var alto = function() { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 4) + 'px'; }; ta.oninput = function() { it.texto = ta.value; alto(); }; alto(); setTimeout(alto, 0); }
 }
 
 function audTodo() {
@@ -25074,7 +25074,8 @@ function audErrGoogle(st, j) {
 }
 function audGoogleCola() {
   var k = audClave();
-  if (!k) { AUD_.cola.forEach(function(it) { it.estado = 'Falta la clave de Google (arriba): pegala, guardala y volvé a elegir el audio.'; it.err = true; it.listo = true; audPintarItem(it); }); AUD_.cola = []; audAviso('Falta la clave de Google. Pegala en el recuadro de arriba y tocá Guardar clave.', true); return; }
+  if (!k) { AUD_.cola.forEach(function(it) { it.estado = 'Falta la clave de Google (arriba): pegala, guardala y volvé a elegir el audio.'; it.err = true; it.sinClave = true; it.listo = true; audPintarItem(it); }); AUD_.cola = []; audAviso('Falta la clave de Google. Pegala en el recuadro de arriba y tocá Guardar clave.', true); return; }
+  if (AUD_.items.some(function(x) { return x.sinClave; })) { AUD_.items = AUD_.items.filter(function(x) { return !x.sinClave; }); audPintarLista(); audAviso(''); }
   while (AUD_G_.activos < AUD_G_.max && AUD_.cola.length) audGoogleUno(AUD_.cola.shift(), k, 0);
 }
 function audGoogleUno(it, k, intento) {
