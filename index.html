@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611212000';
+var EMA_BUILD = '202611212030';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -4416,6 +4416,8 @@ async function vrArmar() {
 }
 // ── Remitos de venta ──
 async function vrRemitos() {
+  // si ya estaba abierta (se recarga después de anular o entregar), se cierra esa: si no, quedaban dos y la de arriba se trababa en «Cargando…» (21/11/2026)
+  var vie = $id('vr-rl'), vmo = vie ? vie.closest('.mo') : null; if (vmo) vmo.remove();
   var html = '<div class="mh"><span class="mt"><i class="fas fa-truck" style="color:var(--accent)"></i> Remitos</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" id="vr-rl"><div class="tdim tc" style="padding:16px">Cargando…</div></div>' +
     '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button><button class="btn btn-p" onclick="vrNuevo()"><i class="fas fa-plus"></i> Nuevo remito</button></div>';
   showModal(html, 'md-lg');
