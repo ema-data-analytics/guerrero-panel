@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611211400';
+var EMA_BUILD = '202611211430';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -18785,15 +18785,15 @@ async function flpSalida() {
   flpSalReps();
 }
 function flpSalReps() { var el = $id('flp-s-rl'); if (!el) return;
-  el.innerHTML = FLP_.reps.length ? FLP_.reps.map(function(x, k) { return '<div style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:4px;flex-wrap:wrap">' + flBtn('btn-d', '✖', 'flpSalRepSacar(' + k + ')') + '<input class="fi" style="width:80px" inputmode="decimal" value="' + flpN(x.CANT) + '" onchange="FLP_.reps[' + k + '].CANT=this.value"><span style="flex:1;min-width:160px">' + pcEsc(x.NOMBRE) + ' <span class="tdim">' + (x.PRESUP ? '· presupuesto ' + flpN(x.PRESUP) : '· no está en el presupuesto') + ' · stock ' + flpN(x.STOCK) + '</span></span></div>'; }).join('') : '<div class="tdim" style="font-size:12.5px">No llevan repuestos.</div>'; }
+  el.innerHTML = FLP_.reps.length ? FLP_.reps.map(function(x, k) { return '<div style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:4px;flex-wrap:wrap">' + flBtn('btn-d', '✖ Sacar', 'flpSalRepSacar(' + k + ')') + '<input class="fi" style="width:80px" inputmode="decimal" value="' + flpN(x.CANT) + '" onchange="FLP_.reps[' + k + '].CANT=this.value"><span style="flex:1;min-width:160px">' + pcEsc(x.NOMBRE) + ' <span class="tdim">' + (x.PRESUP ? '· presupuesto ' + flpN(x.PRESUP) : '· no está en el presupuesto') + ' · stock ' + flpN(x.STOCK) + '</span></span></div>'; }).join('') : '<div class="tdim" style="font-size:12.5px">No llevan repuestos.</div>'; }
 function flpSalRepSacar(k) { FLP_.reps.splice(k, 1); flpSalReps(); }
 function flpSalRepAdd(sel) { var v = sel && sel.length ? sel[0] : ''; if (!v) return; var a = (FLP_.pd.REPUESTOS || []).filter(function(x) { return String(x.V) === String(v); })[0]; if (!a) return;
   if (!FLP_.reps.some(function(x) { return String(x.ID_ARTICULO) === String(a.V); })) FLP_.reps.push({ ID_ARTICULO: a.V, NOMBRE: a.T, CANT: 1, PRESUP: 0, STOCK: a.S });
   flpSalReps(); try { UIB_['flp-s-ra'].sel = []; $id('uib-flp-s-ra').innerHTML = uibCuerpo('flp-s-ra'); } catch (e) {} }
 function flpSalIns() { var t = $v('flp-s-i'), x = FLP_.pd.INSUMOS.filter(function(i) { return i.T === t; })[0], c = Number(String($v('flp-s-c')).replace(',', '.')); if (!x) { toast('Elegí un insumo de la lista', 'r2'); return; } if (!(c > 0)) { toast('Poné la cantidad', 'r2'); return; }
   FLP_.ins.push({ ID_INSUMO: x.V, T: x.T, CANTIDAD: c }); $id('flp-s-i').value = ''; $id('flp-s-c').value = '';
-  $id('flp-s-il2').innerHTML = FLP_.ins.map(function(i, k) { return '<div style="display:flex;gap:6px;align-items:center;font-size:13px">' + pcEsc(i.T) + ' × <b>' + i.CANTIDAD + '</b> ' + flBtn('btn-d', '✖', 'FLP_.ins.splice(' + k + ',1);flpSalIns2()') + '</div>'; }).join(''); }
-function flpSalIns2() { $id('flp-s-il2').innerHTML = FLP_.ins.map(function(i, k) { return '<div style="display:flex;gap:6px;align-items:center;font-size:13px">' + pcEsc(i.T) + ' × <b>' + i.CANTIDAD + '</b> ' + flBtn('btn-d', '✖', 'FLP_.ins.splice(' + k + ',1);flpSalIns2()') + '</div>'; }).join(''); }
+  $id('flp-s-il2').innerHTML = FLP_.ins.map(function(i, k) { return '<div style="display:flex;gap:6px;align-items:center;font-size:13px">' + pcEsc(i.T) + ' × <b>' + i.CANTIDAD + '</b> ' + flBtn('btn-d', '✖ Sacar', 'FLP_.ins.splice(' + k + ',1);flpSalIns2()') + '</div>'; }).join(''); }
+function flpSalIns2() { $id('flp-s-il2').innerHTML = FLP_.ins.map(function(i, k) { return '<div style="display:flex;gap:6px;align-items:center;font-size:13px">' + pcEsc(i.T) + ' × <b>' + i.CANTIDAD + '</b> ' + flBtn('btn-d', '✖ Sacar', 'FLP_.ins.splice(' + k + ',1);flpSalIns2()') + '</div>'; }).join(''); }
 async function flpSalidaOk() {
   var b = $id('flp-s-ok'), o = { ID_ORDEN: FLP_.v.O.ID, ID_RESPONSABLE: $v('flp-s-r'), ID_VEHICULO: $v('flp-s-v'), OBSERVACIONES: $v('flp-s-o'), KM_SALIDA: String($v('flp-s-km')).replace(/\./g, '').replace(',', '.'),
     ACOMP: Array.prototype.map.call(document.querySelectorAll('.flp-s-a:checked'), function(x) { return x.value; }), HERR: Array.prototype.map.call(document.querySelectorAll('.flp-s-h:checked'), function(x) { return x.value; }), INSUMOS: FLP_.ins.map(function(i) { return { ID_INSUMO: i.ID_INSUMO, CANTIDAD: i.CANTIDAD }; }),
