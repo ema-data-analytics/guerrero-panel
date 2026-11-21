@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611211930';
+var EMA_BUILD = '202611212000';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -5289,7 +5289,7 @@ async function verDetalleCompra(id) {
 var _compAnulando={};
 async function compraAnular(id, btn) {
   if(_compAnulando[id]) return;
-  if(!confirm('¿Anular este comprobante? Se revierte todo: stock, insumos, cuenta corriente y caja. No se borra nada.')) return;
+  if(!(await uiConfirmar('¿Anular este comprobante? Se revierte todo: stock, insumos, cuenta corriente y caja. No se borra nada.'))) return;
   if(_compAnulando[id]) return;
   _compAnulando[id]=true; if(btn) btn.disabled=true;
   try {
@@ -8477,7 +8477,7 @@ async function saveABM() {
 async function delABM(page, keyVal) {
   var cfg = ABM_CONFIGS[page];
   if (!cfg) return;
-  if (!confirm('\u00bfAnular este registro de "' + cfg.title + '"?\nID: ' + keyVal + '\n\nQuedar\u00e1 inactivo y no se podr\u00e1 usar en nuevos registros.')) return;
+  if(!(await uiConfirmar('\u00bfAnular este registro de "' + cfg.title + '"?\nID: ' + keyVal + '\n\nQuedar\u00e1 inactivo y no se podr\u00e1 usar en nuevos registros.'))) return;
   try {
     var key = cfg.isNumericKey ? parseInt(keyVal) : keyVal;
     var rec = await ADB.get(cfg.store, key);
@@ -8670,7 +8670,7 @@ async function editRecapado(id) {
 }
 
 async function delRecapado(id) {
-  if (!confirm('¿Anular este recapado? Queda guardado como ANULADO (no se borra).')) return;
+  if(!(await uiConfirmar('¿Anular este recapado? Queda guardado como ANULADO (no se borra).'))) return;
   try { await ADB.del('recapados_base', id); toast('Anulado ✓','g'); renderRecapados(); }
   catch(e) { toast('Error: ' + e.message,'r2'); }
 }
@@ -8857,7 +8857,7 @@ async function editArticulo(id) {
 }
 
 async function delArticulo(id) {
-  if (!confirm('¿Anular artículo #' + id + '? Queda guardado como ANULADO (no se borra).')) return;
+  if(!(await uiConfirmar('¿Anular artículo #' + id + '? Queda guardado como ANULADO (no se borra).'))) return;
   try {
     await ADB.del('bd_articulos', id);
     toast('Artículo anulado ✓', 'g');
@@ -8993,7 +8993,7 @@ async function lpGuardarEnc() {
 }
 
 async function lpEliminarLista(id) {
-  if(!confirm('¿Anular esta lista de precios? Queda guardada como ANULADA (no se borra).')) return;
+  if(!(await uiConfirmar('¿Anular esta lista de precios? Queda guardada como ANULADA (no se borra).'))) return;
   try {
     var r = await gsRun('gsLP_DeleteEnc', String(id));
     if (r && !r.ok) { toast(r.error || 'Error', 'r2'); return; }
@@ -22099,7 +22099,7 @@ async function segGuardarUsuario(id) {
 }
 
 async function segDesactivar(id) {
-  if(!confirm('¿Desactivar este usuario? No podrá ingresar al sistema.')) return;
+  if(!(await uiConfirmar('¿Desactivar este usuario? No podrá ingresar al sistema.'))) return;
   try {
     var r = await gsRun('gsDesactivarUsuario', id);
     if (r && r.ok === false) { toast(r.error || 'No se pudo desactivar','r2'); return; }
