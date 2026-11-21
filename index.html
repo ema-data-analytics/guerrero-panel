@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "4a5bdc07a973"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "6c89cb004385"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611211430';
+var EMA_BUILD = '202611211800';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -4734,7 +4734,7 @@ async function renderCargaCompras() {
   var provs=_b['proveedores']||[], metodos=_b['metodo_pago']||[], cajas=_b['cajas']||[];
   window._compraArticulos=_b['bd_articulos']||[];
   window._compraInsumos=_b['m_insumos']||[];
-  try { var _cd=await gsRun('gsCOMP_Datos'); if(_cd&&_cd.insumos) window._compraInsumos=_cd.insumos; } catch(eCd){ console.error('gsCOMP_Datos',eCd); }
+  try { var _cd=await gsRun('gsCOMP_Datos'); if(_cd&&_cd.insumos) window._compraInsumos=_cd.insumos; if(_cd&&_cd.ordenes) window._compraOrdenes=_cd.ordenes; } catch(eCd){ console.error('gsCOMP_Datos',eCd); }
   window._compraHist=_b['compras_enc']||[];
   var _compraCondIVA=_b['condiciones_iva']||[];
   var compCiMap={}; _compraCondIVA.forEach(function(c){compCiMap[c.ID_CONDICION_IVA]=c;});
@@ -5155,20 +5155,22 @@ function renderCartCompra() {
   var hasDif=cartCompra.some(function(i){return i.DIF_NETO&&i.DIF_NETO!==0;});
   var colTipo={INSUMO:'b-blue',PRODUCTO:'b-green',RECAPADO:'b-orange',SERVICIO:'b-gray'};
   body.innerHTML='<div class="tw"><table style="font-size:12px"><thead><tr>'+
-    '<th>Tipo</th><th>Artículo</th><th class="tr">Cant</th><th class="tr">P.Lista</th><th class="tr">P.Factura</th><th class="tr">Dif.Neto</th><th class="tr">Total</th><th></th>'+
+    '<th></th><th>Tipo</th><th>Artículo</th><th>Para la orden</th><th class="tr">Cant</th><th class="tr">P.Lista</th><th class="tr">P.Factura</th><th class="tr">Dif.Neto</th><th class="tr">Total</th>'+
     '</tr></thead><tbody>'+
     cartCompra.map(function(it,idx){
       var dif=it.DIF_NETO||0;
       var difColor=dif>0?'var(--danger)':(dif<0?'var(--success)':'var(--dim)');
+      var ords=window._compraOrdenes||[], esRep=it.TIPO==='PRODUCTO'&&($v('comp-tipo')||'COMPRA')==='COMPRA';
       return '<tr>'+
+        '<td><button class="btn btn-xs btn-d" onclick="cartCompra.splice('+idx+',1);renderCartCompra()">✕ Sacar</button></td>'+
         '<td><span class="badge '+(colTipo[it.TIPO]||'b-gray')+'" style="font-size:9px">'+(COMP_TIPO_TXT[it.TIPO]||it.TIPO)+'</span></td>'+
         '<td style="font-size:11px">'+it.NOMBRE+(it.UNIDAD_TXT?'<div class="tdim" style="font-size:10px">por '+it.UNIDAD_TXT+'</div>':'')+'</td>'+
+        '<td>'+(esRep?'<select class="fs" style="font-size:11px;min-width:170px" title="Si este repuesto se compra para una orden de taller o en campo, elegila: queda en la orden" onchange="cartCompra['+idx+'].ID_ORDEN=this.value"><option value="">— para stock —</option>'+ords.map(function(o){return '<option value="'+o.V+'"'+(String(it.ID_ORDEN||'')===String(o.V)?' selected':'')+'>'+o.T+'</option>';}).join('')+'</select>':'<span class="tdim">—</span>')+'</td>'+
         '<td class="mono tr">'+it.CANT_COMPRA+'</td>'+
         '<td class="mono tr tdim">'+(it.PRECIO_LISTA>0?fmt(it.PRECIO_LISTA):'—')+'</td>'+
         '<td class="mono tr">'+fmt(it.PRECIO_NETO||0)+'</td>'+
         '<td class="mono tr" style="font-weight:700;color:'+difColor+'">'+(dif!==0?(dif>0?'+':'')+fmt(dif):'—')+'</td>'+
         '<td class="mono tr tred" style="font-weight:700">'+fmt(it.SUBTOTAL_COMPRA)+'</td>'+
-        '<td><button class="btn btn-xs btn-d" onclick="cartCompra.splice('+idx+',1);renderCartCompra()">✕</button></td>'+
         '</tr>';
     }).join('')+'</tbody></table></div>'+
     '<div style="padding:10px 14px;background:'+(hasDif?'var(--warn-light)':'var(--success-light)')+';border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'+
@@ -5191,7 +5193,7 @@ async function confirmarCompra() {
     TIPO_COMP:tipo, FECHA:$v('ce-fecha'), NRO:$v('ce-nro'), ID_PROVEEDOR:provId,
     ID_METODO_PAGO:$v('ce-metodo'), ID_CAJA:$v('ce-caja'), TIPO_RECEPCION:'REMITO',
     ID_COMP_ORIGEN:$v('comp-nc-origen')||'', NC_IMPORTE:$v('comp-nc-importe'), NC_CONCEPTO:$v('comp-nc-concepto'), NC_IVA:$v('comp-nc-iva'),
-    ITEMS: tipo==='NC_PROV_IMP'?[]:cartCompra.map(function(it){ return {TIPO:it.TIPO,ID:it.ID_ARTICULO,CANT:it.CANT_COMPRA,NETO:it.NETO,DTO:it.DTO,IVA:it.IVA_ALICUOTA,POR:it.POR,PRECIO_LISTA:it.PRECIO_LISTA}; })
+    ITEMS: tipo==='NC_PROV_IMP'?[]:cartCompra.map(function(it){ return {TIPO:it.TIPO,ID:it.ID_ARTICULO,CANT:it.CANT_COMPRA,NETO:it.NETO,DTO:it.DTO,IVA:it.IVA_ALICUOTA,POR:it.POR,PRECIO_LISTA:it.PRECIO_LISTA,ID_ORDEN:it.ID_ORDEN||''}; })
   };
   var btn=$id('comp-btn-ok'); _compGrabando=true; if(btn){btn.disabled=true;}
   try {
@@ -17363,12 +17365,15 @@ function mtTrabHtml(O, an) {
   h += '<div class="mt-prog mb3"><div style="width:' + Math.round(nok * 100 / tr.length) + '%"></div></div>';
   var porEq = {}, orden = [];
   tr.forEach(function(t) { var k = String(t.ID_OE || 0); if (!porEq[k]) { porEq[k] = []; orden.push(k); } porEq[k].push(t); });
+  var cpsYa = false;
   orden.forEach(function(k) {
     var x = O.EQUIPOS.filter(function(q) { return String(q.ID_OE) === k; })[0], e = x ? mtEq(x.ID_EQUIPO) : null;
     var reps = (T.REPUESTOS || []).filter(function(r) { return String(r.ID_OE || 0) === k; });
     h += '<div class="mt-gr"><div class="mt-gh" style="cursor:default">' + (e ? '🚛 ' + pcEsc(mtEqIdent(e)) + ' <span class="tdim" style="font-weight:500;font-size:13px">' + pcEsc((e.MARCA || '') + ' ' + (e.MODELO || '')) + '</span>' : 'General') + '</div>';
     porEq[k].forEach(function(t) { h += mtTrabFila(t, T, ed); });
     if (reps.length) h += '<div class="mt-it" style="background:#f8fafc;font-size:13px"><div class="mt-n"><b>Repuestos del presupuesto</b> (se descuentan del stock al cerrar la orden): ' + reps.map(function(r) { return pcEsc(r.DESCRIPCION) + ' × ' + r.CANTIDAD + (r.CLASE === 'CLIENTE' ? ' (los trae el cliente)' : ''); }).join(' · ') + '</div></div>';
+    var cps = T.COMPRAS || [];
+    if (cps.length && !cpsYa) { cpsYa = true; h += '<div class="mt-it" style="background:#eff6ff;font-size:13px"><div class="mt-n"><b>Comprado para esta orden:</b> ' + cps.map(function(c) { return pcEsc(c.NOMBRE) + ' × ' + String(c.CANTIDAD).replace('.', ',') + ' <span class="tdim">(factura ' + pcEsc(c.FACTURA) + ')</span>' + (c.COBRO ? ' <b>· ' + (c.COBRO === 'COBRAR' ? 'se cobra' : 'sin cargo') + '</b>' : ''); }).join(' · ') + '<div class="tdim" style="font-size:12px">Si no está en el presupuesto ni anotado en una tarea, al cerrar se elige si se cobra o va sin cargo.</div></div></div>'; }
     h += '</div>';
   });
   if (ed) h += '<div class="flex gap2 mt2" style="flex-wrap:wrap;align-items:center"><select class="fs" id="mt-tr-eq" style="max-width:220px">' + O.EQUIPOS.map(function(x) { return '<option value="' + x.ID_OE + '">' + pcEsc(mtEqIdent(mtEq(x.ID_EQUIPO))) + '</option>'; }).join('') + '</select><button class="btn btn-s" onclick="mtTrabAgregar()">＋ Agregar una tarea que apareció</button></div>';
@@ -18727,6 +18732,7 @@ async function flpVer(id) {
     '<div class="mt3"><b>Plan</b> <span class="tdim">(' + r.PLAN.filter(function(p) { return p.ESTADO === 'HECHO'; }).length + ' hechas de ' + r.PLAN.length + (pend ? ' · ' + pend + ' pendiente(s)' : '') + ')</span></div><div class="tw mt2"><table style="font-size:12.5px"><thead><tr><th>Unidad</th><th>Tarea</th><th>Cubierta</th><th>Rueda</th><th>Llanta</th><th>Estado</th><th>Obs.</th>' + (O.ESTADO === 'PLANIFICADA' ? '<th></th>' : '') + '</tr></thead><tbody>' +
     r.PLAN.map(function(p) { return '<tr><td><b>' + pcEsc(p.UNIDAD) + '</b></td><td>' + pcEsc(p.TAREA) + '</td><td class="mono">' + pcEsc(p.C ? p.C.MARCA : '') + (p.C && p.C.DOT ? '<div class="tdim" style="font-size:11px">DOT ' + pcEsc(p.C.DOT) + '</div>' : '') + '</td><td>' + pcEsc(p.POS) + '</td><td>' + (p.EN_LLANTA === 1 ? 'Sí' : '') + '</td><td>' + flpBd(FLP_PEST, p.ESTADO) + '</td><td>' + pcEsc(p.OBS) + '</td>' + (O.ESTADO === 'PLANIFICADA' ? '<td>' + flBtn('btn-d', 'Anular', 'flpLineaAnular(' + p.ID + ')', 'Anular tarea') + '</td>' : '') + '</tr>'; }).join('') + '</tbody></table></div>' +
     '<div id="flp-agr"></div>' +
+    ((r.COMPRAS || []).length ? '<div class="mt3" style="font-size:12.5px"><b>Comprado para esta orden:</b> ' + r.COMPRAS.map(function(c) { return pcEsc(c.NOMBRE) + ' × ' + flpN(c.CANTIDAD) + ' (factura ' + pcEsc(c.FACTURA) + ')'; }).join(' · ') + '</div>' : '') +
     (S ? '<div class="mt3"><b>Salida ' + pcEsc(S.NRO) + '</b> · ' + fmtD(S.FECHA) + (S.REGRESO ? ' · volvió ' + fmtD(S.REGRESO) : ' · <b>afuera</b>') + '<div class="tdim">Vehículo <b>' + pcEsc(S.VEH) + '</b> · ' + S.PERS.map(function(p) { return pcEsc(p.N) + (p.ROL === 'RESPONSABLE' ? ' (responsable)' : ''); }).join(', ') + '</div><div class="tdim" style="font-size:12px">' + S.ITEMS.map(function(i) { return pcEsc(i.NOMBRE) + (i.TIPO === 'INSUMO' ? ' ×' + i.SALE : '') + (i.EST && i.EST !== 'OK' ? ' [' + pcEsc(i.EST) + ']' : ''); }).join(' · ') + '</div>' +
       ((S.REPS || []).length ? '<div style="font-size:12.5px;margin-top:4px"><b>Repuestos que llevaron:</b> ' + S.REPS.map(function(x) { return pcEsc(x.NOMBRE) + ' · salió ' + flpN(x.SALE) + (x.ESTADO === 'VOLVIO' ? ' · volvió ' + flpN(x.VUELVE) + ' · <b>usado ' + flpN(x.USADA) + '</b>' : ''); }).join(' — ') + '</div>' : '') + '</div>' : '') +
     (r.MOVS ? '<div class="mt2 tdim">' + r.MOVS + ' movimiento(s) de cubiertas cargados con esta orden</div>' : '') +
