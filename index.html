@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611240920';
+var EMA_BUILD = '202611241005';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17680,6 +17680,21 @@ function mtChkTablaImp(pl, resp) {
     g.ITEMS.forEach(function(i) { var v = (resp[i.ID] || {}).R || ''; c += '<tr><td>' + pcEsc(i.NOMBRE) + (i.ESENCIAL ? ' <b>*</b>' : '') + '</td><td class="ck">' + (v === 'OK' || v === 'SI' ? '✔' : '☐') + '</td><td class="ck">' + (v === 'NO' ? '✖' : '☐') + '</td><td class="ck">' + (v === 'NA' ? '—' : '☐') + '</td><td>' + pcEsc((resp[i.ID] || {}).OBS || '') + '</td></tr>'; }); });
   return c + '</tbody></table>';
 }
+// Hoja de ruedas y alineación por eje (24/11/2026, Anibal: el check list impreso tiene que traer cada rueda de la unidad según su configuración de ejes)
+function mtRuedasImp(e) {
+  var c = e && e.ID_CONFIG ? mtFL().CONFIGS.filter(function(x) { return String(x.ID) === String(e.ID_CONFIG); })[0] : null; if (!c || !c.EJES || !c.EJES.length) return '';
+  var ub = { EXT: 'exterior', INT: 'interior', UNICA: '' }, fn = { DIRECCION: 'dirección', TRACCION: 'tracción', LIBRE: 'libre' };
+  var h = '<h2>Ruedas · ' + pcEsc(c.NOMBRE) + '</h2><table class="det"><thead><tr><th style="width:9%">Eje</th><th style="width:17%">Posición</th><th style="width:17%">Marca grabada</th><th style="width:14%">Medida</th><th class="n" style="width:9%">Dibujo mm</th><th class="n" style="width:9%">Presión lb</th><th>Observación</th></tr></thead><tbody>';
+  c.EJES.slice().sort(function(a, b) { return a.NRO - b.NRO; }).forEach(function(x) {
+    c.POS.filter(function(p) { return String(p.ID_EJE) === String(x.ID) && !p.AUX; }).sort(function(a, b) { return a.X - b.X; }).forEach(function(p, k) {
+      h += '<tr><td>' + (k ? '' : '<b>' + x.NRO + '</b> <span style="font-size:9px">' + pcEsc(fn[x.FUNCION] || '') + '</span>') + '</td><td>' + (p.LADO === 'I' ? 'Izquierda' : 'Derecha') + (ub[p.UB] ? ' ' + ub[p.UB] : '') + '</td><td style="height:20px"></td><td></td><td></td><td></td><td></td></tr>';
+    });
+  });
+  c.POS.filter(function(p) { return p.AUX; }).forEach(function(p, k) { h += '<tr><td>Auxilio</td><td>' + pcEsc(p.COD) + '</td><td style="height:20px"></td><td></td><td></td><td></td><td></td></tr>'; });
+  h += '</tbody></table><h2>Alineación por eje</h2><table class="det"><thead><tr><th style="width:12%">Eje</th><th>Medida antes (paralelismo / escuadra)</th><th>Medida después</th><th class="ck">OK</th><th>Observación</th></tr></thead><tbody>';
+  c.EJES.slice().sort(function(a, b) { return a.NRO - b.NRO; }).forEach(function(x) { h += '<tr><td><b>' + x.NRO + '</b> <span style="font-size:9px">' + pcEsc(fn[x.FUNCION] || '') + '</span></td><td style="height:22px"></td><td></td><td class="ck">☐</td><td></td></tr>'; });
+  return h + '</tbody></table>';
+}
 function mtTrabManoImp() {
   var c = '<h2>Trabajos y repuestos para presupuestar</h2><table class="det"><thead><tr><th style="width:55%">Trabajo o repuesto (ej.: desarme y arme de cubierta)</th><th class="n" style="width:12%">Cant.</th><th>Observación</th></tr></thead><tbody>';
   for (var k = 0; k < 8; k++) c += '<tr><td style="height:26px"></td><td></td><td></td></tr>';
@@ -17703,7 +17718,7 @@ async function mtImpOrden(id) {
     '<div class="dat"><div><b>Cliente</b>' + pcEsc(o.CLIENTE || 'Interno') + '</div><div><b>Fecha</b>' + fmtD(o.FECHA) + '</div><div><b>Pidió</b>' + pcEsc(o.SOLICITANTE || '—') + '</div><div><b>Estado</b>' + pcEsc((MT_EST[r.ORDEN.ESTADO] || [0, r.ORDEN.ESTADO])[1]) + '</div></div>' + (o.OBSERVACIONES ? '<div class="nota">' + pcEsc(o.OBSERVACIONES) + '</div>' : '');
   r.EQUIPOS.forEach(function(x) { var e = mtEq(x.ID_EQUIPO), pl = mtPl(x.ID_PLANTILLA); if (!pl) return;
     c += '<h2>' + pcEsc(pl.CODIGO + ' · ' + pl.NOMBRE) + ' — ' + pcEsc(mtEqIdent(e)) + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + (x.KM_HS ? ' · ' + Number(x.KM_HS).toLocaleString('es-AR') + ' km/h' : '') + '</h2>' + mtCubTxt(e, 'p') + mtChkTablaImp(pl, x.RESP);
-    c += (x.OBSERVACIONES ? '<div class="nota">Observaciones: ' + pcEsc(x.OBSERVACIONES) + '</div>' : ''); });
+    c += (x.OBSERVACIONES ? '<div class="nota">Observaciones: ' + pcEsc(x.OBSERVACIONES) + '</div>' : '') + (r.ORDEN.ESTADO === 'CHECK_LIST' ? mtRuedasImp(e) : ''); });
   if (r.ORDEN.ESTADO === 'CHECK_LIST') c += mtTrabManoImp();
   if (r.TRAB && r.TRAB.TRABAJOS && r.TRAB.TRABAJOS.length) {
     c += '<h2>Trabajo y control final</h2><table class="det"><thead><tr><th style="width:38%">Tarea</th><th>Equipo</th><th>Mecánico</th><th class="n">Tiempo</th><th>Control final</th></tr></thead><tbody>' +
