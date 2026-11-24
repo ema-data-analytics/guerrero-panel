@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611241050';
+var EMA_BUILD = '202611241105';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17705,9 +17705,9 @@ function mtRuedasImp(e) {
   c.EJES.slice().sort(function(a, b) { return a.NRO - b.NRO; }).forEach(function(x) { h += '<tr><td><b>' + x.NRO + '</b> <span style="font-size:9px">' + pcEsc(fn[x.FUNCION] || '') + '</span></td><td style="height:22px"></td><td></td><td class="ck">☐</td><td></td></tr>'; });
   return h + '</tbody></table>';
 }
-function mtTrabManoImp() {
-  var c = '<h2>Trabajos y repuestos para presupuestar</h2><table class="det"><thead><tr><th style="width:55%">Trabajo o repuesto (ej.: desarme y arme de cubierta)</th><th class="n" style="width:12%">Cant.</th><th>Observación</th></tr></thead><tbody>';
-  for (var k = 0; k < 8; k++) c += '<tr><td style="height:26px"></td><td></td><td></td></tr>';
+function mtTrabManoImp(varias) {
+  var c = '<h2>Trabajos y repuestos para presupuestar</h2><table class="det"><thead><tr><th style="width:' + (varias ? 40 : 55) + '%">Trabajo o repuesto (ej.: desarme y arme de cubierta)</th>' + (varias ? '<th style="width:15%">Unidad</th>' : '') + '<th class="n" style="width:10%">Cant.</th><th>Observación</th></tr></thead><tbody>';
+  for (var k = 0; k < (varias ? 10 : 8); k++) c += '<tr><td style="height:26px"></td>' + (varias ? '<td></td>' : '') + '<td></td><td></td></tr>';
   return c + '</tbody></table>';
 }
 async function mtImpChkBlanco() {
@@ -17729,7 +17729,7 @@ async function mtImpOrden(id) {
   r.EQUIPOS.forEach(function(x) { var e = mtEq(x.ID_EQUIPO), pl = mtPl(x.ID_PLANTILLA); if (!pl) return;
     c += '<h2>' + pcEsc(pl.CODIGO + ' · ' + pl.NOMBRE) + ' — ' + pcEsc(mtEqIdent(e)) + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + (x.KM_HS ? ' · ' + Number(x.KM_HS).toLocaleString('es-AR') + ' km/h' : '') + '</h2>' + mtCubTxt(e, 'p') + mtChkTablaImp(pl, x.RESP);
     c += (x.OBSERVACIONES ? '<div class="nota">Observaciones: ' + pcEsc(x.OBSERVACIONES) + '</div>' : '') + (r.ORDEN.ESTADO === 'CHECK_LIST' ? mtRuedasImp(e) : ''); });
-  if (r.ORDEN.ESTADO === 'CHECK_LIST') c += mtTrabManoImp();
+  if (r.ORDEN.ESTADO === 'CHECK_LIST') c += mtTrabManoImp(r.EQUIPOS.length > 1);
   if (r.TRAB && r.TRAB.TRABAJOS && r.TRAB.TRABAJOS.length) {
     c += '<h2>Trabajo y control final</h2><table class="det"><thead><tr><th style="width:38%">Tarea</th><th>Equipo</th><th>Mecánico</th><th class="n">Tiempo</th><th>Control final</th></tr></thead><tbody>' +
       r.TRAB.TRABAJOS.map(function(t) { var x = r.EQUIPOS.filter(function(q) { return q.ID_OE === t.ID_OE; })[0];
