@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "0c242ccaa598"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "136e15e898c9"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611212030';
+var EMA_BUILD = '202611240920';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12298,11 +12298,11 @@ async function pcPesaje() {
         (P && P.ESTADO !== 'ANULADO' ? ' <button class="btn btn-xs btn-s" onclick="pcPesAnular(' + P.ID_PES + ')">Anular</button>' : '') + '</td></tr>';
     }).join('') + '</tbody></table></div>';
   h += '</div></div>';
-  h += '<div class="card"><div class="card-hd"><span class="card-title">Qué se pesa en cada estación</span></div><div class="card-body"><div class="tdim mb2" style="font-size:12px">Se controla <b>todo lo que va por cantidad</b>: kg, gramos, litros, metros (' + cfg.INSUMOS.length + ' insumos). Lo que va por unidad no se pesa.<br>' +
+  h += '<div class="card"><div class="card-hd"><span class="card-title">Qué se pesa en cada estación</span></div><div class="card-body"><div class="tdim mb2" style="font-size:12px">Se controla <b>todo lo que va por cantidad</b>: kg, gramos, litros, metros. Lo que va por unidad no se pesa. Esta tabla sale de las <b>recetas vigentes</b>: al lado de cada material dice de qué receta viene. Lo que se pesa cada día es lo que piden las cubiertas que se tildan arriba.<br>' +
     '<b>Inicio y fin del día</b>: obligatorio en toda estación que usa alguno. <b>Por cubierta</b>: se elige acá; con el tilde, la tablet pide peso de antes y de después en cada cubierta.</div>' +
     '<div class="tw"><table><thead><tr><th>Estación</th><th>Línea</th><th>Usa</th><th>Inicio y fin del día</th><th>Por cubierta</th></tr></thead><tbody>' +
     cfg.ESTACIONES.filter(function(e) { return e.DIA || e.CUB; }).map(function(e) {
-      return '<tr><td>' + pcEsc((e.NRO || e.ORDEN) + ' · ' + e.NOMBRE) + '</td><td>' + pcEsc(e.LINEA || '') + '</td><td style="font-size:11px">' + pcEsc(e.INSUMOS.join(', ')) + '</td><td>' + (e.DIA ? '<span class="badge b-green">Obligatorio</span>' : '—') + '</td>' +
+      return '<tr><td>' + pcEsc((e.NRO || e.ORDEN) + ' · ' + e.NOMBRE) + '</td><td>' + pcEsc(e.LINEA || '') + '</td><td style="font-size:12px">' + ((e.DETALLE && e.DETALLE.length) ? e.DETALLE.map(function(d) { var rs = d.RECETAS || []; return '<div><b>' + pcEsc(d.NOMBRE) + '</b> <span class="tdim" style="font-size:11px">(' + pcEsc(d.UNIDAD) + ') · ' + pcEsc(rs.length > 2 ? rs.length + ' recetas' : rs.join(' / ')) + '</span></div>'; }).join('') : pcEsc(e.INSUMOS.join(', '))) + '</td><td>' + (e.DIA ? '<span class="badge b-green">Obligatorio</span>' : '—') + '</td>' +
         '<td><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="pc-pes-cub" value="' + pcEsc(e.ID_ESTACION) + '"' + (e.CUB ? ' checked' : '') + '> pesar cada cubierta</label></td></tr>';
     }).join('') + '</tbody></table></div>' +
     '<div class="flex gap2 mt2" style="align-items:center">Margen de diferencia permitido <input class="fi" id="pc-pes-mg" style="width:70px" value="' + pcEsc(cfg.MARGEN) + '"> % <button class="btn btn-p" onclick="pcPesGuardar()">Guardar</button></div></div></div>';
