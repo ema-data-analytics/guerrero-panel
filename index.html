@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "3185b3abe928"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9cc90887e41a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1695,7 +1695,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611241035';
+var EMA_BUILD = '202611241050';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17271,7 +17271,7 @@ function mtOrdenVer() {
     '<label class="fl">Check list de cada equipo</label><div class="mt-eqs mb2">' + O.EQUIPOS.map(function(x) { var e = mtEq(x.ID_EQUIPO), pl = mtPl(x.ID_PLANTILLA), t = 0, r = Object.keys(x.RESP).length, no = 0;
       if (pl) pl.GRUPOS.forEach(function(g) { t += g.ITEMS.length; }); Object.keys(x.RESP).forEach(function(k) { if (pl && x.RESP[k].R === mtMalaResp(mtGrupoDeItem(pl, k))) no++; });
       if (!pl) return O.ORDEN.ESTADO === 'CHECK_LIST' ? '<div class="al" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;width:100%"><b>' + pcEsc(mtEqIdent(e)) + '</b> no tiene check list para su tipo. Elegí cuál usar: <select class="fs" id="mt-oepl-' + x.ID_OE + '" style="max-width:340px">' + mtPlTodas('') + '</select><button class="btn btn-p btn-sm" onclick="mtOePlantilla(' + x.ID_OE + ')">Usar este check list</button></div>' : '<span class="tdim">' + pcEsc(mtEqIdent(e)) + ': sin check list</span>';
-      return '<button class="btn ' + (r >= t && t ? 'btn-s' : 'btn-p') + '" onclick="mtAbrirCheck(' + x.ID_OE + ')">✔ ' + pcEsc(mtEqIdent(e)) + ' · ' + r + '/' + t + (no ? ' · ' + no + ' a reparar' : '') + '</button>'; }).join('') + '</div></div></div>';
+      return '<button class="btn ' + (r >= t && t ? 'btn-s' : 'btn-p') + '" onclick="mtAbrirCheck(' + x.ID_OE + ')">✔ ' + pcEsc(mtEqIdent(e)) + ' · ' + r + '/' + t + (no ? ' · ' + no + ' a reparar' : '') + '</button>'; }).join('') + '</div>' + (O.ORDEN.ESTADO === 'CHECK_LIST' ? '<button class="btn btn-s btn-sm" onclick="mtOeAgregar()">＋ Agregar otra unidad del cliente a esta orden</button>' : '') + '</div></div>';
   // Fotos antes / después (20/11/2026)
   h += '<div class="card mb3" id="mt-fotos-card"><div class="card-hd"><span class="card-title">📷 Fotos · antes y después</span></div><div class="card-body" id="mt-fotos"><div class="tdim">Cargando fotos…</div></div></div>';
   // Presupuesto
@@ -17596,6 +17596,16 @@ async function mtPresEstado(est) {
 // Todos los check lists (para un tipo que no tiene uno propio), agrupados por tipo
 function mtPlTodas(sel) { var tip = {}; (MT_.d.TIPOS || []).forEach(function(t) { tip[String(t.ID_TIPO)] = t.NOMBRE; });
   return '<option value="">— elegí el check list —</option>' + MT_.d.PLANTILLAS.slice().sort(function(a, b) { return a.ID_TIPO - b.ID_TIPO || (a.NOMBRE < b.NOMBRE ? -1 : 1); }).map(function(p) { return '<option value="' + p.ID_PLANTILLA + '"' + (String(p.ID_PLANTILLA) === String(sel || '') ? ' selected' : '') + '>' + pcEsc((tip[String(p.ID_TIPO)] ? tip[String(p.ID_TIPO)] + ' · ' : '') + p.NOMBRE) + '</option>'; }).join(''); }
+// Agregar otra unidad del mismo cliente con la orden en check list (24/11/2026: camión y acoplado en la misma orden)
+async function mtOeAgregar() {
+  var O = MT_.ord, o = mtOrdenRes(O.ORDEN.ID_ORDEN) || {}, cli = String(O.ORDEN.ID_CLIENTE || o.ID_CLIENTE || ''), ya = O.EQUIPOS.map(function(x) { return String(x.ID_EQUIPO); });
+  var ops = MT_.d.EQUIPOS.filter(function(e) { return String(e.ID_CLIENTE) === cli && ya.indexOf(String(e.ID_EQUIPO)) === -1 && e.ESTADO !== 'BAJA'; }).map(function(e) { return [e.ID_EQUIPO, mtEqIdent(e) + ' · ' + (e.MARCA || '') + ' ' + (e.MODELO || '')]; });
+  if (!ops.length) { toast('El cliente no tiene otra unidad cargada: dala de alta en Unidades y máquinas', 'w'); return; }
+  var id = await uiElegir('¿Qué unidad agregás a la orden?', ops); if (id === null || id === undefined) return;
+  try { var r = await gsRun('gsMT_OrdenEquipoAgregar', { ID_ORDEN: O.ORDEN.ID_ORDEN, ID_EQUIPO: Number(id) }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast('Unidad agregada a la orden ✓', 'g'); var io = O.ORDEN.ID_ORDEN; await mtRecargar(); await mtAbrir(io);
+  } catch (e) { toast(e.message || e, 'r2'); }
+}
 async function mtOePlantilla(idOe) { var v = $v('mt-oepl-' + idOe); if (!v) { toast('Elegí el check list', 'r2'); return; }
   try { var r = await gsRun('gsMT_OrdenPlantilla', { ID_OE: idOe, ID_PLANTILLA: v }); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
     toast('Check list asignado ✓', 'g'); var id = MT_.ord.ORDEN.ID_ORDEN; await mtRecargar(); await mtAbrir(id); mtAbrirCheck(idOe);
