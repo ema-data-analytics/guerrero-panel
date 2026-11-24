@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "5673ca51ce89"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "39bc8f82f287"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -363,6 +363,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="stock-insumos"><span class="nav-icon"><i class="fas fa-box-open"></i></span> Stock de insumos (planta)</div>
         <div class="nav-item" data-page="stock"><span class="nav-icon"><i class="fas fa-boxes"></i></span> Control de stock</div>
         <div class="nav-item" data-page="stock" data-acc="rem-int"><span class="nav-icon"><i class="fas fa-exchange-alt"></i></span> Remito interno (ajuste de stock)</div>
+        <div class="nav-item" data-page="bienes"><span class="nav-icon"><i class="fas fa-toolbox"></i></span> Herramientas y muebles (por lugar)</div>
       </div></div>
       <div class="sb-grp" data-g="tes"><div class="sb-gh" onclick="menuGrupo('tes')"><span class="sb-gi-ic">💰</span><span class="sb-gt">Cobranzas y tesorería</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="cobranzas"><span class="nav-icon"><i class="fas fa-hand-holding-usd"></i></span> Cobranzas</div>
@@ -473,6 +474,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-cheques" class="hidden"></div>
     <div id="page-ventas" class="hidden"></div>
     <div id="page-taller" class="hidden"></div>
+    <div id="page-bienes" class="hidden"></div>
     <div id="page-flota" class="hidden"></div>
     <div id="page-rpt-costo-cubiertas" class="hidden"></div>
     <div id="page-inteligencia" class="hidden"></div>
@@ -793,7 +795,7 @@ var PAGINA_MODULO = {
   'estado-resultados':'REPORTES', 'rpt-ventas':'REPORTES', 'rpt-produccion':'REPORTES', 'rpt-gastos':'REPORTES',
   'rpt-costo-cubiertas':'REPORTES', 'rpt-diferencias-precios':'REPORTES', 'rpt-dibujos':'REPORTES', 'inteligencia':'REPORTES',
   'objetivo':'REPORTES', 'clientes-analisis':'REPORTES', 'rentabilidad':'REPORTES', 'iva-control':'REPORTES',
-  'stock':'STOCK', 'recapados':'PRODUCCION', 'seguridad':'SEGURIDAD', 'agenda':'SEGURIDAD', 'bitacora':'SEGURIDAD',
+  'stock':'STOCK', 'bienes':'STOCK', 'recapados':'PRODUCCION', 'seguridad':'SEGURIDAD', 'agenda':'SEGURIDAD', 'bitacora':'SEGURIDAD',
   'configuracion':'CONFIGURACION', 'gsheets':'CONFIGURACION', 'backup-page':'CONFIGURACION'
 };
 
@@ -1401,6 +1403,7 @@ function getPage(name) {
     'taller': function(){ if(typeof renderTaller!=='undefined') renderTaller(); },
     'flota': function(){ if(typeof renderFlota!=='undefined') renderFlota(); },
     'stock': function(){ if(typeof renderStock!=='undefined') renderStock(); },
+    'bienes': function(){ if(typeof renderBienes!=='undefined') renderBienes(); },
     'seguridad': typeof renderSeguridad !== 'undefined' ? renderSeguridad : null,
     'agenda': function(){ if(typeof renderAgenda!=='undefined') renderAgenda(); },
     'pruebas': function(){ if(typeof renderPruebas!=='undefined') renderPruebas(); },
@@ -1696,7 +1699,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611241200';
+var EMA_BUILD = '202611241530';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -18087,6 +18090,221 @@ function mpCum(tabs) {
     ((M.d.PERSONAS || []).length ? '<div class="tw"><table><thead><tr><th>Usuario</th><th>Controles hechos</th><th>Días que controló</th></tr></thead><tbody>' + M.d.PERSONAS.map(function(p) { return '<tr><td>' + pcEsc(p.USUARIO) + '</td><td>' + p.CONTROLES + '</td><td>' + p.DIAS + '</td></tr>'; }).join('') + '</tbody></table></div>'
       : '<div class="al">Nadie registró controles en los últimos 30 días.</div>') + '</div></div>';
   $id('mt-body').innerHTML = h;
+}
+</script>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// HERRAMIENTAS Y MUEBLES POR LUGAR (24/11/2026, Anibal: «eso estan llevando de inventario a guemes, hay que tener registrado eso»)
+// Cada bien tiene su etiqueta B-0001 y está en un lugar (Planta / Güemes). Alta con foto, traslado con la firma de quien recibe
+// (remito TB-00001 para imprimir), baja con motivo y listado por lugar para controlar. Nada se borra.
+// ════════════════════════════════════════════════════════════════
+var BI_ = { d: null, vista: 'bienes', lugar: '', tipo: '', q: '', bajas: false, foto: '', firmaHay: false };
+(function() { var st = document.createElement('style');
+  st.textContent = '.bi-bd{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}.bi-g{background:#dcfce7;color:#166534}.bi-o{background:#ffedd5;color:#9a3412}.bi-x{background:#e5e7eb;color:#374151}.bi-r{background:#fee2e2;color:#991b1b}' +
+    '.bi-acc{display:flex;gap:4px;flex-wrap:nowrap}.bi-fil{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}.bi-fil .fs,.bi-fil .fi{min-height:44px;font-size:15px}' +
+    '.bi-res{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.bi-res div{background:var(--card,#fff);border:1.5px solid var(--border,#e2e8f0);border-radius:10px;padding:8px 12px;font-size:13px}.bi-res b{font-size:18px;display:block}' +
+    '.bi-pick{display:flex;gap:10px;align-items:center;padding:9px 12px;border:1.5px solid var(--border,#e2e8f0);border-radius:10px;margin:0 0 6px;cursor:pointer;font-size:14px}.bi-pick input{width:22px;height:22px;flex:0 0 auto}.bi-pick:has(input:checked){border-color:#16a34a;background:#f0fdf4}' +
+    '.bi-g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:700px){.bi-g2{grid-template-columns:1fr}.bi-fil .fs,.bi-fil .fi{flex:1 1 100%}}';
+  document.head.appendChild(st); })();
+var BI_EST = { EN_USO: ['bi-g', 'En uso'], ROTO: ['bi-o', 'Roto'], BAJA: ['bi-x', 'De baja'], VIGENTE: ['bi-g', 'Vigente'], ANULADO: ['bi-x', 'Anulado'] };
+function biBadge(e) { var x = BI_EST[e] || ['bi-x', e || '—']; return '<span class="bi-bd ' + x[0] + '">' + pcEsc(x[1]) + '</span>'; }
+function biPuede(acc) { return typeof tienePermiso === 'function' ? tienePermiso('STOCK', acc) : true; }
+function biFH(ms) { if (!ms) return '—'; var d = new Date(+ms); return fmtD(d) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+function biBien(id) { return ((BI_.d && BI_.d.BIENES) || []).filter(function(b) { return b.ID === Number(id); })[0]; }
+function biTipoNom(t) { return (BI_.d && BI_.d.TIPOS && BI_.d.TIPOS[t]) || t; }
+function biLogo() { return (window.EMA_CONFIG && EMA_CONFIG.logo_b64) || 'https://sistema.vulcantreadsrl.com.ar/logo_vulcan.jpg?v=4'; }
+
+async function renderBienes() {
+  var el = $id('page-bienes'); if (!el) return;
+  if (window._menuAcc && String(window._menuAcc).indexOf('bi-') === 0) { BI_.vista = String(window._menuAcc).substring(3); window._menuAcc = ''; }
+  el.innerHTML = '<div class="mb3" style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-size:20px;font-weight:800">🧰 Herramientas y muebles por lugar</span><span class="tdim" style="font-size:13px">Qué hay en la planta y en cada sucursal, quién lo tiene y lo que se lleva de un lugar a otro</span></div>' +
+    '<div class="flex gap2 mb3" style="flex-wrap:wrap"><button class="btn ' + (BI_.vista === 'bienes' ? 'btn-p' : 'btn-s') + '" onclick="BI_.vista=\'bienes\';biPintar()">📋 Lo que hay</button><button class="btn ' + (BI_.vista === 'tras' ? 'btn-p' : 'btn-s') + '" onclick="BI_.vista=\'tras\';biPintar()">🚚 Traslados</button></div>' +
+    '<div id="bi-body"><div class="tdim" style="padding:20px">Cargando…</div></div>';
+  await biRecargar();
+}
+async function biRecargar() {
+  try { var r = await gsRun('gsBI_Datos'); if (!r || !r.ok) { $id('bi-body').innerHTML = '<div class="al">' + pcEsc((r && r.error) || 'No se pudo cargar') + '</div>'; return; } BI_.d = r; }
+  catch (e) { var b = $id('bi-body'); if (b) b.innerHTML = '<div class="al">' + pcEsc(e.message) + '</div>'; return; }
+  biPintar();
+}
+function biPintar() {
+  var pg = $id('page-bienes'); if (pg) pg.querySelectorAll('.flex.gap2.mb3 button').forEach(function(b, i) { b.className = 'btn ' + ((i === 0) === (BI_.vista === 'bienes') ? 'btn-p' : 'btn-s'); });
+  if (BI_.vista === 'tras') biTraslados(); else biLista();
+}
+function biFiltrados() {
+  var q = uibNorm(BI_.q);
+  return BI_.d.BIENES.filter(function(b) {
+    if (!BI_.bajas && b.ESTADO === 'BAJA') return false;
+    if (BI_.lugar && String(b.ID_SUCURSAL) !== String(BI_.lugar)) return false;
+    if (BI_.tipo && b.TIPO !== BI_.tipo) return false;
+    if (q && uibNorm([b.CODIGO, b.NOMBRE, b.MARCA, b.MODELO, b.DETALLE, b.RESPONSABLE].join(' ')).indexOf(q) === -1) return false;
+    return true;
+  });
+}
+function biLista() {
+  var b = $id('bi-body'); if (!b) return; var d = BI_.d, L = biFiltrados(), ag = biPuede('AGREGAR'), an = biPuede('ANULAR');
+  var res = d.SUCURSALES.map(function(s) { var xs = d.BIENES.filter(function(x) { return x.ID_SUCURSAL === s.ID && x.ESTADO !== 'BAJA'; }); return '<div>' + pcEsc(s.NOMBRE) + '<b>' + xs.length + ' bien' + (xs.length === 1 ? '' : 'es') + '</b><span class="tdim">' + xs.reduce(function(a, x) { return a + x.CANTIDAD; }, 0) + ' unidades</span></div>'; }).join('');
+  var h = '<div class="bi-res">' + res + '</div>' +
+    '<div class="flex gap2 mb3" style="flex-wrap:wrap">' + (ag ? '<button class="btn btn-p" onclick="biForm()">＋ Agregar herramienta o mueble</button><button class="btn btn-s" onclick="biTrasForm()">🚚 Llevar a otro lugar (con firma)</button>' : '') + '<button class="btn btn-s" onclick="biImpLista()">🖨 Imprimir listado para controlar</button></div>' +
+    '<div class="bi-fil"><select class="fs" onchange="BI_.lugar=this.value;biLista()"><option value="">Todos los lugares</option>' + d.SUCURSALES.map(function(s) { return '<option value="' + s.ID + '"' + (String(BI_.lugar) === String(s.ID) ? ' selected' : '') + '>' + pcEsc(s.NOMBRE) + '</option>'; }).join('') + '</select>' +
+    '<select class="fs" onchange="BI_.tipo=this.value;biLista()"><option value="">Todos los tipos</option>' + Object.keys(d.TIPOS).map(function(k) { return '<option value="' + k + '"' + (BI_.tipo === k ? ' selected' : '') + '>' + pcEsc(d.TIPOS[k]) + '</option>'; }).join('') + '</select>' +
+    '<input class="fi" id="bi-q" style="flex:1 1 220px" placeholder="Buscar: código, nombre, marca, quién lo tiene…" value="' + pcEsc(BI_.q) + '" oninput="BI_.q=this.value;clearTimeout(BI_.tq);BI_.tq=setTimeout(function(){biLista();var i=$id(\'bi-q\');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},250)">' +
+    '<label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox"' + (BI_.bajas ? ' checked' : '') + ' onchange="BI_.bajas=this.checked;biLista()"> ver dados de baja</label></div>';
+  if (!L.length) { b.innerHTML = h + '<div class="al">' + (d.BIENES.length ? 'No hay nada con ese filtro.' : 'Todavía no hay nada cargado. Tocá «＋ Agregar herramienta o mueble».') + '</div>'; return; }
+  h += '<div class="tw"><table><thead><tr><th>Acciones</th><th>Etiqueta</th><th>Qué es</th><th>Tipo</th><th>Marca · modelo</th><th class="n">Cant.</th><th>Dónde está</th><th>Quién lo tiene</th><th>Estado</th></tr></thead><tbody>' +
+    L.map(function(x) {
+      var acc = '<div class="bi-acc">' + (x.ID_FOTO ? '<button class="btn btn-s btn-xs" title="Ver la foto" onclick="biVerFoto(' + x.ID_FOTO + ',\'' + pcEsc(x.CODIGO) + '\')">📷</button>' : '') + '<button class="btn btn-s btn-xs" title="Ver los movimientos" onclick="biHist(' + x.ID + ')">🕘</button>' +
+        (x.ESTADO !== 'BAJA' && ag ? '<button class="btn btn-s btn-xs" onclick="biForm(' + x.ID + ')">✏ Editar</button>' : '') + (x.ESTADO !== 'BAJA' && an ? '<button class="btn btn-s btn-xs" style="color:#b91c1c" onclick="biBaja(' + x.ID + ')">Dar de baja</button>' : '') + '</div>';
+      return '<tr><td>' + acc + '</td><td><b>' + pcEsc(x.CODIGO) + '</b></td><td style="min-width:200px">' + pcEsc(x.NOMBRE) + (x.DETALLE ? '<div class="tdim" style="font-size:12px">' + pcEsc(x.DETALLE) + '</div>' : '') + (x.ESTADO === 'BAJA' && x.MOTIVO_BAJA ? '<div class="tdim" style="font-size:12px">Baja: ' + pcEsc(x.MOTIVO_BAJA) + '</div>' : '') + '</td><td>' + pcEsc(biTipoNom(x.TIPO)) + '</td><td>' + pcEsc([x.MARCA, x.MODELO].filter(Boolean).join(' · ') || '—') + '</td><td class="n">' + x.CANTIDAD + '</td><td>' + pcEsc(x.LUGAR) + '</td><td>' + pcEsc(x.RESPONSABLE || '—') + '</td><td>' + biBadge(x.ESTADO) + '</td></tr>';
+    }).join('') + '</tbody></table></div><div class="tdim mt2" style="font-size:12px">' + L.length + ' renglón' + (L.length === 1 ? '' : 'es') + '. La etiqueta (B-0001) conviene escribirla o pegarla en la herramienta o el mueble.</div>';
+  b.innerHTML = h;
+}
+
+// ── Alta / edición ──
+function biForm(id) {
+  var x = id ? biBien(id) : null, d = BI_.d; BI_.foto = '';
+  var lug = x ? '<div class="fi" style="background:#f8fafc">' + pcEsc(x.LUGAR) + ' <span class="tdim" style="font-size:12px">(para cambiarlo se hace un traslado con firma)</span></div>' : uiBusca('bi-lug', { opciones: d.SUCURSALES.map(function(s) { return { v: String(s.ID), t: s.NOMBRE }; }), sel: [String(BI_.lugar || (d.SUCURSALES[0] || {}).ID || '')], obligatorio: true });
+  showModal('<div class="mh"><span class="mt">' + (x ? '✏ ' + pcEsc(x.CODIGO) + ' · ' + pcEsc(x.NOMBRE) : '＋ Agregar herramienta o mueble') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<label class="fl">Qué es *</label><input class="fi" id="bi-nom" style="width:100%" placeholder="Ej.: Juego de pinzas 4 piezas, Silla negra, Exhibidor amarillo" value="' + pcEsc(x ? x.NOMBRE : '') + '">' +
+    '<label class="fl mt2">Tipo *</label>' + uiBusca('bi-tipo', { opciones: Object.keys(d.TIPOS).map(function(k) { return { v: k, t: d.TIPOS[k] }; }), sel: [x ? x.TIPO : ''], obligatorio: true }) +
+    '<div class="bi-g2 mt2"><div><label class="fl">Marca</label><input class="fi" id="bi-mar" style="width:100%" placeholder="Ej.: TOTAL, INGCO" value="' + pcEsc(x ? x.MARCA : '') + '"></div><div><label class="fl">Modelo o código del fabricante</label><input class="fi" id="bi-mod" style="width:100%" placeholder="Ej.: HKPS28488" value="' + pcEsc(x ? x.MODELO : '') + '"></div>' +
+    '<div><label class="fl">Cantidad *</label><input class="fi" id="bi-cant" type="number" inputmode="decimal" min="1" step="1" style="width:100%" value="' + (x ? x.CANTIDAD : 1) + '"></div><div><label class="fl">Valor aproximado $ (opcional)</label><input class="fi" id="bi-val" type="number" inputmode="decimal" min="0" style="width:100%" value="' + (x && x.VALOR !== '' ? x.VALOR : '') + '"></div></div>' +
+    '<label class="fl mt2">Detalle (qué trae, medidas, color)</label><input class="fi" id="bi-det" style="width:100%" placeholder="Ej.: taladro + pistola de calor + amoladora + 2 baterías + cargador" value="' + pcEsc(x ? x.DETALLE : '') + '">' +
+    '<label class="fl mt2">Dónde está *</label>' + lug +
+    '<label class="fl mt2">Quién lo tiene a cargo</label><input class="fi" id="bi-resp" style="width:100%" placeholder="Nombre de la persona (opcional)" value="' + pcEsc(x ? x.RESPONSABLE : '') + '">' +
+    (x ? '<label class="fl mt2">Estado</label>' + uiBusca('bi-est', { opciones: [{ v: 'EN_USO', t: 'En uso' }, { v: 'ROTO', t: 'Roto / para arreglar' }], sel: [x.ESTADO], obligatorio: true }) : '') +
+    '<label class="fl mt2">Observaciones</label><input class="fi" id="bi-obs" style="width:100%" value="' + pcEsc(x ? x.OBS : '') + '">' +
+    '<div class="mt2" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label class="btn btn-s" style="cursor:pointer">📷 ' + (x && x.ID_FOTO ? 'Cambiar la foto' : 'Sacar o elegir foto') + '<input type="file" accept="image/*" capture="environment" style="display:none" onchange="biFotoSel(this)"></label><span id="bi-fv" class="tdim" style="font-size:12px">' + (x && x.ID_FOTO ? 'Ya tiene foto' : '') + '</span></div>' +
+    '<div id="bi-err" style="color:var(--danger);font-size:14px;margin-top:8px"></div>' +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="bi-ok" onclick="biGuardar(' + (x ? x.ID : 0) + ')">Guardar</button></div>', 'md-lg');
+}
+async function biFotoSel(inp) {
+  var f = inp.files && inp.files[0]; if (!f) return; var v = $id('bi-fv');
+  try {
+    var url = await new Promise(function(ok, mal) { var rd = new FileReader(); rd.onload = function() { ok(rd.result); }; rd.onerror = mal; rd.readAsDataURL(f); });
+    var im = await new Promise(function(ok, mal) { var i = new Image(); i.onload = function() { ok(i); }; i.onerror = function() { mal(new Error('No es una imagen')); }; i.src = url; });
+    BI_.foto = asComprimir(im, 1400, 0.72); if (v) v.innerHTML = '<img src="' + BI_.foto + '" style="height:60px;border-radius:6px;vertical-align:middle"> lista para guardar';
+  } catch (e) { BI_.foto = ''; if (v) v.textContent = e.message; }
+}
+async function biGuardar(id) {
+  var er = $id('bi-err'), b = $id('bi-ok'); er.textContent = ''; b.disabled = true;
+  try {
+    var d = { ID: id || '', NOMBRE: $id('bi-nom').value, TIPO: (uibVal('bi-tipo')[0] || ''), MARCA: $id('bi-mar').value, MODELO: $id('bi-mod').value, CANTIDAD: $id('bi-cant').value, VALOR: $id('bi-val').value, DETALLE: $id('bi-det').value, RESPONSABLE: $id('bi-resp').value, OBS: $id('bi-obs').value };
+    if (!id) d.ID_SUCURSAL = uibVal('bi-lug')[0] || ''; else d.ESTADO = uibVal('bi-est')[0] || 'EN_USO';
+    if (String(d.NOMBRE).trim().length < 3) { er.textContent = 'Escribí qué es'; return; }
+    if (!d.TIPO) { er.textContent = 'Elegí el tipo'; return; }
+    if (BI_.foto) { b.textContent = 'Subiendo la foto…'; var up = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'BIEN', ref: String(id || 'alta'), data: BI_.foto }); if (!up || !up.ok) { er.textContent = (up && up.error) || 'No se pudo subir la foto'; return; } d.ID_FOTO = String(up.id); }
+    b.textContent = 'Guardando…';
+    var r = await gsRun('gsBI_Guardar', d); if (!r || !r.ok) { er.textContent = (r && r.error) || 'No se pudo guardar'; return; }
+    closeModal(); toast((id ? 'Guardado ' : 'Cargado con la etiqueta ') + r.CODIGO + ' ✓', 'g'); await biRecargar();
+  } catch (e) { er.textContent = e.message; } finally { if ($id('bi-ok')) { b.disabled = false; b.textContent = 'Guardar'; } }
+}
+async function biBaja(id) {
+  var x = biBien(id); if (!x) return;
+  var mo = await uiPedir('Dar de baja ' + x.CODIGO + ' · ' + x.NOMBRE + ': ¿por qué? (roto sin arreglo, perdido, vendido…)', { obligatorio: true }); if (mo === null) return;
+  try { var r = await gsRun('gsBI_Baja', id, mo); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast(x.CODIGO + ' dado de baja', 'g'); await biRecargar(); } catch (e) { toast(e.message, 'r2'); }
+}
+async function biVerFoto(fid, tit) {
+  showModal('<div class="mh"><span class="mt">📷 ' + pcEsc(tit || 'Foto') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2" id="bi-fb" style="text-align:center">Cargando la foto…</div>', 'md-lg');
+  try { var r = await asImg('vt_as_img_get', { tok: SES.token, nid: Number(fid) }); var el = $id('bi-fb'); if (el) el.innerHTML = r && r.ok ? '<img src="' + r.data + '" style="max-width:100%;max-height:70vh;border-radius:8px">' : pcEsc((r && r.error) || 'No se pudo cargar'); } catch (e) { var el2 = $id('bi-fb'); if (el2) el2.textContent = e.message; }
+}
+function biHist(id) {
+  var x = biBien(id); if (!x) return; var ms = BI_.d.MOVS.filter(function(m) { return m.ID_BIEN === x.ID; });
+  showModal('<div class="mh"><span class="mt">🕘 ' + pcEsc(x.CODIGO + ' · ' + x.NOMBRE) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2"><div class="tw"><table><thead><tr><th>Fecha</th><th>Qué pasó</th><th>Desde</th><th>Hasta</th><th>Recibió</th><th>Usuario</th><th>Estado</th></tr></thead><tbody>' +
+    ms.map(function(m) { return '<tr><td>' + biFH(m.FECHA) + '</td><td>' + pcEsc(m.TIPO === 'TRASLADO' ? 'Traslado ' + m.NRO : (m.TIPO === 'ALTA' ? 'Alta' : 'Baja: ' + m.OBS)) + '</td><td>' + pcEsc(m.DESDE || '—') + '</td><td>' + pcEsc(m.HASTA || '—') + '</td><td>' + pcEsc(m.RECIBE || '—') + '</td><td>' + pcEsc(m.USUARIO) + '</td><td>' + biBadge(m.ESTADO) + '</td></tr>'; }).join('') +
+    '</tbody></table></div></div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>', 'md-lg');
+}
+
+// ── Traslado con firma de quien recibe ──
+function biTrasForm(desde) {
+  var d = BI_.d; if (d.SUCURSALES.length < 2) { toast('Hace falta más de un lugar', 'r2'); return; }
+  BI_.tDesde = desde || BI_.tDesde || String(d.SUCURSALES[0].ID);
+  var hasta = d.SUCURSALES.filter(function(s) { return String(s.ID) !== String(BI_.tDesde); });
+  var L = d.BIENES.filter(function(x) { return String(x.ID_SUCURSAL) === String(BI_.tDesde) && x.ESTADO !== 'BAJA'; });
+  showModal('<div class="mh"><span class="mt">🚚 Llevar a otro lugar</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
+    '<label class="fl">Sale de</label><select class="fs" style="width:100%;min-height:44px;font-size:15px" onchange="biTrasForm(this.value)">' + d.SUCURSALES.map(function(s) { return '<option value="' + s.ID + '"' + (String(s.ID) === String(BI_.tDesde) ? ' selected' : '') + '>' + pcEsc(s.NOMBRE) + '</option>'; }).join('') + '</select>' +
+    '<label class="fl mt2">Va a *</label>' + uiBusca('bi-hasta', { opciones: hasta.map(function(s) { return { v: String(s.ID), t: s.NOMBRE }; }), sel: hasta.length === 1 ? [String(hasta[0].ID)] : [], obligatorio: true }) +
+    '<div class="flex gap2 mt2" style="align-items:center;flex-wrap:wrap"><label class="fl" style="margin:0">Tildá lo que se lleva *</label>' + (L.length ? '<button class="btn btn-s btn-xs" onclick="document.querySelectorAll(\'.bi-tck\').forEach(function(c){c.checked=true})">Tildar todo</button><button class="btn btn-s btn-xs" onclick="document.querySelectorAll(\'.bi-tck\').forEach(function(c){c.checked=false})">Destildar</button>' : '') + '</div>' +
+    '<div style="max-height:300px;overflow:auto;margin-top:6px">' + (L.length ? L.map(function(x) { return '<label class="bi-pick"><input type="checkbox" class="bi-tck" value="' + x.ID + '"><span><b>' + pcEsc(x.CODIGO) + '</b> · ' + pcEsc(x.NOMBRE) + (x.CANTIDAD !== 1 ? ' · <b>×' + x.CANTIDAD + '</b>' : '') + (x.MARCA ? ' <span class="tdim">(' + pcEsc(x.MARCA) + ')</span>' : '') + '</span></label>'; }).join('') : '<div class="al">No hay nada cargado en este lugar.</div>') + '</div>' +
+    '<label class="fl mt2">Quién recibe (nombre y apellido) *</label><input class="fi" id="bi-rec" style="width:100%" placeholder="La persona que lo recibe en destino">' +
+    '<label class="fl mt2">Firma de quien recibe *</label><canvas id="bi-fir" style="width:100%;height:180px;border:2px dashed var(--border);border-radius:10px;background:#fff;touch-action:none"></canvas><div class="flex gap2" style="justify-content:flex-end"><button class="btn btn-s btn-xs" onclick="biFirmaBorrar()">Borrar firma</button></div>' +
+    '<label class="fl mt2">Observaciones</label><input class="fi" id="bi-tobs" style="width:100%" placeholder="Ej.: lo llevó en la camioneta de la empresa">' +
+    '<div id="bi-terr" style="color:var(--danger);font-size:14px;margin-top:8px"></div>' +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" id="bi-tok" onclick="biTrasGuardar()">Grabar traslado</button></div>', 'md-lg');
+  setTimeout(biFirmaIni, 80);
+}
+function biFirmaIni() {
+  var cv = $id('bi-fir'); if (!cv) return; var r = cv.getBoundingClientRect(); cv.width = Math.round(r.width); cv.height = Math.round(r.height);
+  var g = cv.getContext('2d'); g.lineWidth = 2.5; g.lineCap = 'round'; g.strokeStyle = '#111'; BI_.firmaHay = false; var on = false;
+  var pt = function(e) { var b = cv.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; };
+  cv.onpointerdown = function(e) { on = true; var p = pt(e); g.beginPath(); g.moveTo(p.x, p.y); cv.setPointerCapture(e.pointerId); };
+  cv.onpointermove = function(e) { if (!on) return; var p = pt(e); g.lineTo(p.x, p.y); g.stroke(); BI_.firmaHay = true; };
+  cv.onpointerup = cv.onpointercancel = function() { on = false; };
+}
+function biFirmaBorrar() { var cv = $id('bi-fir'); if (!cv) return; cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); BI_.firmaHay = false; }
+function biFirmaJpg(cv) { var c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = cv.height; var g2 = c2.getContext('2d'); g2.fillStyle = '#fff'; g2.fillRect(0, 0, c2.width, c2.height); g2.drawImage(cv, 0, 0); return c2.toDataURL('image/jpeg', 0.8); }
+async function biTrasGuardar() {
+  var er = $id('bi-terr'), b = $id('bi-tok'); er.textContent = '';
+  var ids = []; document.querySelectorAll('.bi-tck').forEach(function(c) { if (c.checked) ids.push(Number(c.value)); });
+  var hasta = uibVal('bi-hasta')[0] || '', rec = $id('bi-rec').value.trim();
+  if (!ids.length) { er.textContent = 'Tildá lo que se lleva'; return; }
+  if (!hasta) { er.textContent = 'Elegí a dónde va'; return; }
+  if (rec.length < 3) { er.textContent = 'Escribí quién recibe'; return; }
+  if (!BI_.firmaHay) { er.textContent = 'Falta la firma de quien recibe'; return; }
+  b.disabled = true;
+  try {
+    b.textContent = 'Subiendo la firma…';
+    var up = await asImg('vt_as_img_put', { tok: SES.token, tipo: 'FIRMA_BIEN', ref: 'traslado', data: biFirmaJpg($id('bi-fir')) }); if (!up || !up.ok) { er.textContent = (up && up.error) || 'No se pudo subir la firma'; return; }
+    b.textContent = 'Grabando…';
+    var r = await gsRun('gsBI_Trasladar', { IDS: ids, HASTA: hasta, RECIBE: rec, ID_FIRMA: String(up.id), OBS: $id('bi-tobs').value }); if (!r || !r.ok) { er.textContent = (r && r.error) || 'No se pudo grabar'; return; }
+    closeModal(); toast('Traslado ' + r.NRO + ' grabado (' + r.CANT + ') ✓', 'g'); await biRecargar(); biImpTras(r.NRO);
+  } catch (e) { er.textContent = e.message; } finally { if ($id('bi-tok')) { b.disabled = false; b.textContent = 'Grabar traslado'; } }
+}
+function biTrasGrupos() {
+  var g = {}, L = [];
+  BI_.d.MOVS.forEach(function(m) { if (m.TIPO !== 'TRASLADO') return; if (!g[m.NRO]) { g[m.NRO] = { NRO: m.NRO, FECHA: m.FECHA, DESDE: m.DESDE, HASTA: m.HASTA, RECIBE: m.RECIBE, ID_FIRMA: m.ID_FIRMA, ESTADO: m.ESTADO, USUARIO: m.USUARIO, OBS: m.OBS, ITEMS: [] }; L.push(g[m.NRO]); } g[m.NRO].ITEMS.push(m); });
+  return L;
+}
+function biTraslados() {
+  var b = $id('bi-body'); if (!b) return; var L = biTrasGrupos(), an = biPuede('ANULAR'), ag = biPuede('AGREGAR');
+  var h = '<div class="flex gap2 mb3" style="flex-wrap:wrap">' + (ag ? '<button class="btn btn-p" onclick="biTrasForm()">🚚 Llevar a otro lugar (con firma)</button>' : '') + '</div>';
+  if (!L.length) { b.innerHTML = h + '<div class="al">Todavía no hay traslados.</div>'; return; }
+  h += '<div class="tw"><table><thead><tr><th>Acciones</th><th>Remito</th><th>Fecha</th><th>Desde</th><th>Hasta</th><th class="n">Bienes</th><th>Recibió</th><th>Cargó</th><th>Estado</th></tr></thead><tbody>' +
+    L.map(function(t) { return '<tr><td><div class="bi-acc"><button class="btn btn-s btn-xs" onclick="biImpTras(\'' + t.NRO + '\')">🖨 Imprimir</button>' + (t.ESTADO === 'VIGENTE' && an ? '<button class="btn btn-s btn-xs" style="color:#b91c1c" onclick="biTrasAnular(\'' + t.NRO + '\')">Anular</button>' : '') + '</div></td><td><b>' + pcEsc(t.NRO) + '</b></td><td>' + biFH(t.FECHA) + '</td><td>' + pcEsc(t.DESDE) + '</td><td>' + pcEsc(t.HASTA) + '</td><td class="n">' + t.ITEMS.length + '</td><td>' + pcEsc(t.RECIBE) + '</td><td>' + pcEsc(t.USUARIO) + '</td><td>' + biBadge(t.ESTADO) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  b.innerHTML = h;
+}
+async function biTrasAnular(nro) {
+  var mo = await uiPedir('Anular el traslado ' + nro + ' (cada cosa vuelve a donde estaba). ¿Por qué?', { obligatorio: true }); if (mo === null) return;
+  try { var r = await gsRun('gsBI_TrasladoAnular', nro, mo); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Traslado ' + nro + ' anulado', 'g'); await biRecargar(); } catch (e) { toast(e.message, 'r2'); }
+}
+
+// ── Impresión ──
+function biEnc(tit, sub) {
+  return '<div class="enc"><div style="display:flex;gap:10px;align-items:center"><img src="' + biLogo() + '" crossorigin="anonymous" style="height:42px;border-radius:4px"><div><div style="font-weight:800;font-size:13px">VULCAN TREAD NEUMÁTICOS S.R.L.</div><div class="emp">Herramientas y muebles por lugar</div></div></div><div style="text-align:right"><h1>' + pcEsc(tit) + '</h1><div class="emp">' + pcEsc(sub || '') + '</div></div></div>';
+}
+async function biImpTras(nro) {
+  var t = biTrasGrupos().filter(function(x) { return x.NRO === nro; })[0]; if (!t) return;
+  var firma = ''; if (t.ID_FIRMA) { try { var fi = await asImg('vt_as_img_get', { tok: SES.token, nid: Number(t.ID_FIRMA) }); if (fi && fi.ok) firma = fi.data; } catch (e) { firma = ''; } }
+  var h = biEnc('Remito de traslado ' + t.NRO, 'Impreso ' + biFH(Date.now()) + (t.ESTADO === 'ANULADO' ? ' · ANULADO' : '')) +
+    '<div class="dat"><div><b>Fecha</b>' + biFH(t.FECHA) + '</div><div><b>Sale de</b>' + pcEsc(t.DESDE) + '</div><div><b>Va a</b>' + pcEsc(t.HASTA) + '</div><div><b>Cargó</b>' + pcEsc(t.USUARIO) + '</div></div>' +
+    '<table class="det"><thead><tr><th style="width:5%">#</th><th style="width:13%">Etiqueta</th><th>Qué es</th><th class="n" style="width:9%">Cant.</th><th class="ck">Llegó</th></tr></thead><tbody>' +
+    t.ITEMS.map(function(m, i) { var x = biBien(m.ID_BIEN) || {}; return '<tr><td>' + (i + 1) + '</td><td><b>' + pcEsc(m.CODIGO) + '</b></td><td>' + pcEsc(m.NOMBRE) + (x.MARCA || x.MODELO ? ' · ' + pcEsc([x.MARCA, x.MODELO].filter(Boolean).join(' ')) : '') + (x.DETALLE ? '<div style="font-size:9.5px;color:#555">' + pcEsc(x.DETALLE) + '</div>' : '') + '</td><td class="n">' + m.CANTIDAD + '</td><td class="ck">☐</td></tr>'; }).join('') + '</tbody></table>' +
+    (t.OBS ? '<div class="nota">Observaciones: ' + pcEsc(t.OBS) + '</div>' : '') +
+    '<div class="firmas"><div>Entrega (firma y aclaración)</div><div>' + (firma ? '<img src="' + firma + '" style="max-height:80px;max-width:100%;display:block;margin:-90px auto 4px">' : '') + 'Recibe: ' + pcEsc(t.RECIBE) + '</div></div>';
+  pcImprimir('Traslado ' + t.NRO, h);
+}
+function biImpLista() {
+  var d = BI_.d, sucs = BI_.lugar ? d.SUCURSALES.filter(function(s) { return String(s.ID) === String(BI_.lugar); }) : d.SUCURSALES, h = '';
+  sucs.forEach(function(s, k) {
+    var L = d.BIENES.filter(function(x) { return x.ID_SUCURSAL === s.ID && x.ESTADO !== 'BAJA' && (!BI_.tipo || x.TIPO === BI_.tipo); }); if (!L.length) return;
+    h += '<div style="' + (k && h ? 'page-break-before:always;' : '') + '">' + biEnc('Inventario · ' + s.NOMBRE, 'Impreso ' + biFH(Date.now()) + ' · ' + L.length + ' renglones') +
+      '<table class="det"><thead><tr><th style="width:11%">Etiqueta</th><th>Qué es</th><th style="width:14%">Tipo</th><th style="width:16%">Marca · modelo</th><th class="n" style="width:7%">Cant.</th><th style="width:14%">A cargo</th><th class="ck">Está</th></tr></thead><tbody>' +
+      L.map(function(x) { return '<tr><td><b>' + pcEsc(x.CODIGO) + '</b></td><td>' + pcEsc(x.NOMBRE) + (x.DETALLE ? '<div style="font-size:9.5px;color:#555">' + pcEsc(x.DETALLE) + '</div>' : '') + (x.ESTADO === 'ROTO' ? ' <b>(roto)</b>' : '') + '</td><td>' + pcEsc(biTipoNom(x.TIPO)) + '</td><td>' + pcEsc([x.MARCA, x.MODELO].filter(Boolean).join(' · ')) + '</td><td class="n">' + x.CANTIDAD + '</td><td>' + pcEsc(x.RESPONSABLE) + '</td><td class="ck">☐</td></tr>'; }).join('') +
+      '</tbody></table><div class="firmas"><div>Controló (firma y aclaración)</div><div>Fecha del control</div></div></div>';
+  });
+  if (!h) { toast('No hay nada para imprimir con ese filtro', 'r2'); return; }
+  pcImprimir('Inventario de herramientas y muebles', h);
 }
 </script>
 
