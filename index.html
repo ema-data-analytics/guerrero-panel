@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9cc90887e41a"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "5673ca51ce89"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -321,6 +321,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
       <div class="sb-grp" data-g="tll"><div class="sb-gh" onclick="menuGrupo('tll')"><span class="sb-gi-ic">🔧</span><span class="sb-gt">Taller</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="taller" data-acc="mt-ord"><span class="nav-icon"><i class="fas fa-wrench"></i></span> Órdenes de trabajo del taller</div>
         <div class="nav-item" data-page="taller" data-acc="mt-cat"><span class="nav-icon"><i class="fas fa-list-ul"></i></span> Catálogo de servicios del taller</div>
+        <div class="nav-item" data-page="taller" data-acc="mt-chk"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Check lists (qué revisa el mecánico)</div>
       </div></div>
       <div class="sb-grp" data-g="flo"><div class="sb-gh" onclick="menuGrupo('flo')"><span class="sb-gi-ic">🚛</span><span class="sb-gt">Servicios a empresas</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="sb-group">Taller</div>
@@ -1695,7 +1696,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611241105';
+var EMA_BUILD = '202611241200';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17081,7 +17082,7 @@ function mtBadge(e) { var x = MT_EST[e] || ['mt-b-x', e || '—']; return '<span
 function mtPlata(n) { return '$ ' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function mtBtn(cls, txt, js, tit) { return typeof pcBtnAbm === 'function' ? pcBtnAbm(cls, txt, js, tit) : '<button class="btn ' + cls + ' btn-xs" onclick="' + js + '">' + txt + '</button>'; }
 function mtPuede(acc) { return typeof tienePermiso === 'function' ? tienePermiso('VENTAS', acc) : true; }
-function mtTit() { return { ord: MT_.amb === 'planta' ? 'Órdenes de reparación de máquinas propias' : 'Órdenes del taller (clientes)', eq: 'Unidades y máquinas', cat: 'Catálogo de servicios del taller', mp: 'Mantenimiento de máquinas de planta' }[MT_.vista] || 'Taller'; }
+function mtTit() { return { ord: MT_.amb === 'planta' ? 'Órdenes de reparación de máquinas propias' : 'Órdenes del taller (clientes)', eq: 'Unidades y máquinas', cat: 'Catálogo de servicios del taller', chk: 'Check lists (qué revisa el mecánico)', mp: 'Mantenimiento de máquinas de planta' }[MT_.vista] || 'Taller'; }
 function mtGrupo() { return MT_.vista === 'mp' || MT_.amb === 'planta' && MT_.vista === 'ord' ? 'Planta' : (MT_.vista === 'eq' ? 'Servicios a empresas' : 'Taller'); }
 async function renderTaller() {
   var el = $id('page-taller'); if (!el) return;
@@ -17098,6 +17099,7 @@ function mtPintar() {
   var pt = $id('mt-tit'); if (pt) pt.textContent = '🔧 ' + mtTit(); var pg = pt && pt.nextElementSibling; if (pg) pg.textContent = mtGrupo();
   if (MT_.vista === 'eq') return mtEquipos();
   if (MT_.vista === 'cat') return mtCatalogo();
+  if (MT_.vista === 'chk') return mtChkEd();
   if (MT_.vista === 'mp') return mpPintar();
   if (MT_.oe) return mtCheck();
   if (MT_.ord) return mtOrdenVer();
@@ -17859,6 +17861,50 @@ async function mtEqGuardar(id, desdeOrden) {
 }
 function mtEqFormPagina() { MT_.eqNuevo = false; mtEquipos(); }
 // ── CATÁLOGO: servicios, horas, precio y receta de repuestos ──
+// ── EDITOR DE CHECK LIST (24/11/2026, Anibal: «que todo quede simple para que se agreguen las cosas nuevas» que indica el mecánico) ──
+var MTK_ = { d: null, pl: null, desac: false };
+async function mtChkEd(recargar) {
+  var b = $id('mt-body'); if (!b) return;
+  if (!MTK_.d || recargar) { b.innerHTML = '<div class="tdim">Cargando check lists…</div>'; try { var r = await gsRun('gsMT_ChkEditor'); if (!r || !r.ok) { b.innerHTML = '<div class="al">' + pcEsc((r && r.error) || 'No se pudo') + '</div>'; return; } MTK_.d = r; } catch (e) { b.innerHTML = '<div class="al">' + pcEsc(e.message) + '</div>'; return; } }
+  var L = MTK_.d.PLANTILLAS; if (!MTK_.pl || !L.some(function(p) { return p.ID_PLANTILLA === MTK_.pl; })) MTK_.pl = (L[0] || {}).ID_PLANTILLA;
+  var p = L.filter(function(x) { return x.ID_PLANTILLA === MTK_.pl; })[0], ed = mtPuede('EDITAR');
+  var h = '<div class="card mb3"><div class="card-body"><div class="tdim mb2" style="font-size:13px">Elegí el check list y agregá lo que te indique el mecánico. <b>Esencial</b> = sin contestarlo no se puede armar el presupuesto. Lo que no sirve se <b>desactiva</b> (no se borra: los check list ya hechos guardan su respuesta).</div>' +
+    '<div class="flex gap2" style="flex-wrap:wrap;align-items:center"><select class="fs" style="max-width:520px;min-height:44px;font-size:15px" onchange="MTK_.pl=Number(this.value);mtChkEd()">' + L.map(function(x) { return '<option value="' + x.ID_PLANTILLA + '"' + (x.ID_PLANTILLA === MTK_.pl ? ' selected' : '') + '>' + pcEsc(x.TIPO + ' · ' + x.NOMBRE.replace(/^Check list de (revisión de )?/i, '')) + '</option>'; }).join('') + '</select>' +
+    '<label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox"' + (MTK_.desac ? ' checked' : '') + ' onchange="MTK_.desac=this.checked;mtChkEd()"> ver desactivados</label></div>';
+  if (!p) { b.innerHTML = h + '<div class="al mt2">No hay check lists.</div></div></div>'; return; }
+  h += '<div class="tdim mt2" style="font-size:12.5px">' + pcEsc(p.CODIGO) + (p.SUBTIPOS.length ? ' · se usa para: <b>' + pcEsc(p.SUBTIPOS.join(', ')) + '</b>' : '') + ' · ' + p.UNIDADES + ' unidad' + (p.UNIDADES === 1 ? '' : 'es') + ' lo tienen asignado</div></div></div>';
+  p.GRUPOS.forEach(function(g, gi) {
+    var its = g.ITEMS.filter(function(i) { return i.ACTIVO || MTK_.desac; }), act = g.ITEMS.filter(function(i) { return i.ACTIVO; }).length;
+    h += '<div class="card mb3"><div class="card-hd" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">' +
+      (ed ? '<button class="btn btn-s btn-xs" title="Subir el grupo" onclick="mtChkMov(\'GRUPO\',' + g.ID_GRUPO + ',-1)"' + (gi ? '' : ' disabled') + '>↑</button><button class="btn btn-s btn-xs" title="Bajar el grupo" onclick="mtChkMov(\'GRUPO\',' + g.ID_GRUPO + ',1)"' + (gi < p.GRUPOS.length - 1 ? '' : ' disabled') + '>↓</button><button class="btn btn-s btn-xs" title="Cambiar el nombre del grupo" onclick="mtChkGrNom(' + g.ID_GRUPO + ')">✏</button>' : '') +
+      '<span class="card-title">' + pcEsc(g.NOMBRE) + '</span><span class="tdim" style="font-size:12px">' + act + ' ítem' + (act === 1 ? '' : 's') + (g.RESP === 'SI_NO_NA' ? ' · se contesta Sí / No / N/A' : ' · se contesta OK / NO / N/A') + '</span></div><div class="card-body" style="padding:0">';
+    its.forEach(function(i, ii) {
+      h += '<div class="mt-it" style="' + (i.ACTIVO ? '' : 'opacity:.55;background:#f8fafc') + '">' + (ed ? '<span style="display:flex;gap:4px;flex-wrap:nowrap">' +
+        (i.ACTIVO ? '<button class="btn btn-s btn-xs" title="Subir" onclick="mtChkMov(\'ITEM\',' + i.ID + ',-1)"' + (ii ? '' : ' disabled') + '>↑</button><button class="btn btn-s btn-xs" title="Bajar" onclick="mtChkMov(\'ITEM\',' + i.ID + ',1)"' + (ii < its.length - 1 ? '' : ' disabled') + '>↓</button><button class="btn btn-s btn-xs" title="Corregir el texto" onclick="mtChkItNom(' + i.ID + ')">✏</button>' +
+          '<button class="btn btn-xs ' + (i.ESENCIAL ? 'btn-p' : 'btn-s') + '" title="Esencial: sin contestarlo no se arma el presupuesto" onclick="mtChkItEsen(' + i.ID + ')">' + (i.ESENCIAL ? '★ Esencial' : '☆ Esencial') + '</button><button class="btn btn-s btn-xs" style="color:#b91c1c" onclick="mtChkItAct(' + i.ID + ',0)">Desactivar</button>'
+          : '<button class="btn btn-s btn-xs" onclick="mtChkItAct(' + i.ID + ',1)">Volver a activar</button>') + '</span>' : '') +
+        '<span class="mt-n">' + pcEsc(i.NOMBRE) + (i.ESENCIAL ? ' <span class="mt-es">*</span>' : '') + (i.ACTIVO ? '' : ' <span class="tdim">(desactivado)</span>') + '</span></div>';
+    });
+    if (ed) h += '<div class="mt-it" style="background:#f8fafc"><input class="fi" id="mtk-n-' + g.ID_GRUPO + '" placeholder="＋ Ítem nuevo en «' + pcEsc(g.NOMBRE) + '» (qué se revisa)" style="flex:1 1 260px;min-height:44px;font-size:15px" onkeydown="if(event.key===\'Enter\')mtChkItAdd(' + g.ID_GRUPO + ')">' +
+      '<label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" id="mtk-e-' + g.ID_GRUPO + '"> Esencial</label><button class="btn btn-p" onclick="mtChkItAdd(' + g.ID_GRUPO + ')">Agregar</button></div>';
+    h += '</div></div>';
+  });
+  if (ed) h += '<div class="card mb3"><div class="card-body flex gap2" style="flex-wrap:wrap;align-items:center"><input class="fi" id="mtk-gn" placeholder="＋ Grupo nuevo (por ejemplo: Sistema hidráulico)" style="flex:1 1 260px;min-height:44px;font-size:15px">' +
+    '<select class="fs" id="mtk-gr" style="max-width:260px"><option value="OK_NO_NA">Se contesta OK / NO / N/A</option><option value="SI_NO_NA">Se contesta Sí / No / N/A (Sí = hay que hacer algo)</option></select><button class="btn btn-p" onclick="mtChkGrAdd()">Agregar grupo</button></div></div>';
+  b.innerHTML = h;
+}
+function mtChkItem(id) { var r = null; (MTK_.d.PLANTILLAS || []).forEach(function(p) { p.GRUPOS.forEach(function(g) { g.ITEMS.forEach(function(i) { if (i.ID === id) r = i; }); }); }); return r; }
+async function mtChkRun(fn, args, ok) {
+  try { var r = await gsRun.apply(null, [fn].concat(args)); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return false; } if (ok) toast(ok, 'g'); var y = window.scrollY; await mtChkEd(true); window.scrollTo(0, y); return true; }
+  catch (e) { toast(e.message || e, 'r2'); return false; }
+}
+async function mtChkItAdd(idG) { var v = ($v('mtk-n-' + idG) || '').trim(); if (v.length < 3) { toast('Escribí qué se revisa', 'r2'); return; } var e = $id('mtk-e-' + idG); await mtChkRun('gsMT_ChkItemGuardar', [{ ID_GRUPO: idG, NOMBRE: v, ESENCIAL: e && e.checked ? 1 : 0 }], 'Ítem agregado ✓'); }
+async function mtChkItNom(id) { var i = mtChkItem(id); if (!i) return; var v = await uiPedir('Corregir el ítem', { obligatorio: true, valor: i.NOMBRE }); if (v === null || v.trim() === i.NOMBRE) return; await mtChkRun('gsMT_ChkItemGuardar', [{ ID: id, NOMBRE: v, ESENCIAL: i.ESENCIAL }], 'Corregido ✓'); }
+async function mtChkItEsen(id) { var i = mtChkItem(id); if (!i) return; await mtChkRun('gsMT_ChkItemGuardar', [{ ID: id, NOMBRE: i.NOMBRE, ESENCIAL: i.ESENCIAL ? 0 : 1 }], i.ESENCIAL ? 'Ya no es esencial' : 'Marcado esencial ✓'); }
+async function mtChkItAct(id, a) { var i = mtChkItem(id); if (!i) return; if (!a && !(await uiConfirmar('¿Desactivar «' + i.NOMBRE + '»? Deja de salir en los check list nuevos; los ya hechos guardan su respuesta.', 'Desactivar'))) return; await mtChkRun('gsMT_ChkItemActivo', [id, a], a ? 'Activado ✓' : 'Desactivado'); }
+async function mtChkMov(t, id, dir) { await mtChkRun('gsMT_ChkMover', [t, id, dir]); }
+async function mtChkGrNom(id) { var g = null; MTK_.d.PLANTILLAS.forEach(function(p) { p.GRUPOS.forEach(function(x) { if (x.ID_GRUPO === id) g = x; }); }); if (!g) return; var v = await uiPedir('Nombre del grupo', { obligatorio: true, valor: g.NOMBRE }); if (v === null || v.trim() === g.NOMBRE) return; await mtChkRun('gsMT_ChkGrupoGuardar', [{ ID: id, NOMBRE: v }], 'Grupo corregido ✓'); }
+async function mtChkGrAdd() { var v = ($v('mtk-gn') || '').trim(); if (v.length < 3) { toast('Escribí el nombre del grupo', 'r2'); return; } await mtChkRun('gsMT_ChkGrupoGuardar', [{ ID_PLANTILLA: MTK_.pl, NOMBRE: v, RESP: $v('mtk-gr') }], 'Grupo agregado ✓: ahora agregale los ítems'); }
 function mtCatalogo() {
   var d = MT_.d, F = MT_.FC = MT_.FC || { q: '', sis: '' };
   var sis = {}; d.SERVICIOS.forEach(function(s) { sis[s.SISTEMA] = 1; });
