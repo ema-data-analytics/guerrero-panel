@@ -614,7 +614,7 @@ function pcCasFilas() {
     fg('DOT (si la cubierta lo trae)', '<input class="fi" id="pc-ke-DOT" value="' + pcEsc(f.DOT) + '" placeholder="Si no tiene, vacío" style="text-transform:uppercase"/>') +
     fg('Observaciones', '<input class="fi" id="pc-ke-OBSERVACIONES" value="' + pcEsc(f.OBSERVACIONES) + '"/>', 'grid-column:span 2') +
     '</div><div class="flex gap2 mt2" style="flex-wrap:wrap"><button class="btn btn-p" id="pc-ke-ok" style="min-height:46px;font-size:15px;flex:1;max-width:340px" onclick="pcCasAgregar()">' + (ed ? '✓ Guardar cambios del casco ' + (PC_.kedit + 1) : '＋ Agregar casco a la orden') + '</button>' +
-    (ed ? '<button class="btn btn-s" onclick="PC_.ke=pcCasVacio();PC_.kedit=-1;pcCasFilas()">Cancelar corrección</button>' : '<span class="tdim" style="font-size:12px;align-self:center">Tipo, medida, marca, dibujo y trabajo quedan del casco anterior: cambiá solo lo distinto. Enter en el DOT agrega.</span>') + '</div></div>';
+    (ed ? '<button class="btn btn-s" onclick="document.activeElement&&document.activeElement.blur();PC_.ke=pcCasVacio();PC_.kedit=-1;pcCasFilas()">Cancelar corrección</button>' : '<span class="tdim" style="font-size:12px;align-self:center">Tipo, medida, marca, dibujo y trabajo quedan del casco anterior: cambiá solo lo distinto. Enter en el DOT agrega.</span>') + '</div></div>';
   // Detalle: los cascos cargados en esta orden
   var n = PC_.kf.length;
   h += '<div class="fl" style="margin-bottom:4px">Detalle de cascos de esta orden <span class="badge b-blue">' + n + '</span></div>' +
@@ -633,6 +633,7 @@ function pcCasFilas() {
   });
 }
 function pcCasAgregar() {
+  var ae = document.activeElement; if (ae && ae.blur) ae.blur(); // que el «change» del campo no pise el casco nuevo
   var e = PC_.ke; ['TIPO', 'MEDIDA', 'MARCA_FAB', 'DIBUJO', 'TRABAJO', 'DOT', 'OBSERVACIONES'].forEach(function(k) { var el = $id('pc-ke-' + k); if (el) e[k] = el.value; });
   if (!e.TIPO) { toast('Elegí el tipo', 'r2'); return; }
   if (!e.MEDIDA || !pcMedDeTipo(e.TIPO, e.MEDIDA)) { toast('Elegí la medida de la lista (si es nueva, agregala con el ＋)', 'r2'); return; }
@@ -646,7 +647,7 @@ function pcCasAgregar() {
   PC_.kedit = -1; PC_.ke = pcCasVacio(); pcCasFilas(); toast(msg, 'g');
   var d = $id('pc-ke-DOT'); if (d) d.focus();
 }
-function pcCasEditar(i) { var k = PC_.kf[i]; if (!k) return; PC_.kedit = i; PC_.ke = { TIPO: k.TIPO, MEDIDA: k.MEDIDA, MARCA_FAB: k.MARCA_FAB, DIBUJO: k.DIBUJO, TRABAJO: k.TRABAJO, DOT: k.DOT, OBSERVACIONES: k.OBSERVACIONES }; pcCasFilas(); var t = $id('pc-k-filas'); if (t) t.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+function pcCasEditar(i) { var k = PC_.kf[i]; if (!k) return; var ae = document.activeElement; if (ae && ae.blur) ae.blur(); PC_.kedit = i; PC_.ke = { TIPO: k.TIPO, MEDIDA: k.MEDIDA, MARCA_FAB: k.MARCA_FAB, DIBUJO: k.DIBUJO, TRABAJO: k.TRABAJO, DOT: k.DOT, OBSERVACIONES: k.OBSERVACIONES }; pcCasFilas(); var t = $id('pc-k-filas'); if (t) t.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
 async function pcCasSacar(i) { var k = PC_.kf[i]; if (!k) return; if (!(await uiConfirmar('¿Sacar el casco ' + (i + 1) + (k._MK ? ' (' + k._MK + ')' : '') + ' de esta orden?', 'Sí, sacar'))) return;
   PC_.kf.splice(i, 1); if (PC_.kedit === i) { PC_.kedit = -1; PC_.ke = pcCasVacio(); } else if (PC_.kedit > i) PC_.kedit--; pcCasFilas(); }
 var PC_CAS_EST = { NUEVO: ['b-orange', 'Sin orden de trabajo'], EN_OT: ['b-blue', 'En orden de trabajo'], ANULADO: ['b-gray', 'Anulado'] };
