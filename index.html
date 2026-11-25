@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "8d1ba6879db4"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "7b4541e77759"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1699,7 +1699,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611251530';
+var EMA_BUILD = '202611251645';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17322,8 +17322,11 @@ function mtOrdenVer() {
   else if (!P) h += '<div class="tdim mb2">Todavía no hay presupuesto. Con <b>tildes</b>: ves lo que dio mal y lo que tiene observación, tildás lo que se cobra (cada uno con su servicio codificado) y le ponés el precio. El <b>automático</b> arma solo con lo que dio NO, el servicio sugerido, sus repuestos y los precios de la lista vigente (' + pcEsc(MT_.d.LISTA) + '). Después se puede corregir.</div>' + (an || cerr ? '' : (mtChkFaltaTxt() ? '<div class="al mb2">' + pcEsc(mtChkFaltaTxt()) + '</div>' : '') + '<div class="flex gap2" style="flex-wrap:wrap"><button class="btn btn-p" style="min-height:48px" onclick="mtPresTildes()">☑ Armar el presupuesto con tildes (lo marcado y las observaciones)</button><button class="btn btn-s" style="min-height:48px" onclick="mtPresArmar()">⚙ Armado automático</button></div>');
   else {
     h += (['BORRADOR', 'ENVIADO', 'APROBADO'].indexOf(P.ESTADO) !== -1 ? mtFaltaStockHtml(P.DET) : '') + mtPresTabla(P.DET, true, P.DESCUENTO_PCT) + '<div class="tdim mt2" style="font-size:12px">Fecha ' + fmtD(P.FECHA) + ' · válido ' + P.VALIDEZ + ' días · versión ' + P.VERSION + (P.APROBADO_POR ? ' · aprobó <b>' + pcEsc(P.APROBADO_POR) + '</b> (' + pcEsc(P.MEDIO) + ') el ' + fmtD(P.FECHA_APROB) : '') + (P.MOTIVO ? ' · ' + pcEsc(P.MOTIVO) : '') + '</div>';
+    // 25/11/2026 (Anibal): el presupuesto grabado se edita (precio, agregar, sacar) hasta que se factura; si estaba aprobado sigue aprobado
+    var pEdit = !an && O.ORDEN.ESTADO !== 'FACTURADA' && !P.FACTURA && (P.ESTADO === 'APROBADO' || ['EN_TRABAJO', 'TERMINADA'].indexOf(O.ORDEN.ESTADO) === -1);
+    if (P.FACTURA) h += '<div class="al mt2">Este presupuesto está <b>' + pcEsc(P.FACTURA.TXT) + '</b>: ya no se edita.</div>';
+    if (pEdit) h += '<div class="flex gap2 mt2" style="flex-wrap:wrap"><button class="btn btn-p" style="min-height:46px" onclick="mtPresCorregir()">✏ Editar presupuesto (cambiar precios, agregar o sacar)</button></div>';
     if (!an && !cerr) h += '<div class="flex gap2 mt2" style="flex-wrap:wrap">' +
-      ((P.ESTADO === 'BORRADOR' || P.ESTADO === 'ENVIADO' || P.ESTADO === 'RECHAZADO') ? '<button class="btn btn-s" onclick="mtPresCorregir()">✏ Corregir (versión nueva)</button>' : '') +
       (P.ESTADO === 'BORRADOR' ? '<button class="btn btn-s" onclick="mtPresEstado(\'ENVIADO\')">📤 Marcar como enviado al cliente</button>' : '') +
       ((P.ESTADO === 'BORRADOR' || P.ESTADO === 'ENVIADO') ? '<button class="btn btn-p" onclick="mtPresEstado(\'APROBADO\')">✅ El cliente lo aprobó</button><button class="btn btn-d" onclick="mtPresEstado(\'RECHAZADO\')">✖ El cliente no lo aprobó</button>' : '') +
       (P.ESTADO === 'APROBADO' ? '<div class="al" style="flex:1">Aprobado. Abajo, en <b>Trabajo y control final</b>, se reparten las tareas a los mecánicos; con todas controladas se cierra la orden y se hace el remito.</div>' : '') + '</div>';
@@ -17627,7 +17630,9 @@ function mtPresPrecio(i, q, v) {
   else { pu = q === 'CON' ? Math.round(x / 1.21 * 100) / 100 : x; l.PRECIO_UNIT = pu; if (pl > 0) l.DESCUENTO_PCT = Math.round((1 - pu / pl) * 10000) / 100; else { l.PRECIO_LISTA = pu; l.DESCUENTO_PCT = 0; } }
   mtOrdenVer();
 }
-function mtPresEditorHtml() {
+function mtPresAvisoEd() { var P = MT_.ord.PRESUP; if (!P) return ''; return '<div class="al mb2" style="font-size:13px">Editando <b>' + pcEsc(P.NRO) + '</b>. Al guardar queda una versión nueva' + (P.ESTADO === 'APROBADO' ? ' que <b>sigue aprobada</b> (queda anotado que se corrigió y cuánto daba antes)' : '') + (MT_.ord.ORDEN.ESTADO === 'TERMINADA' ? '. La orden ya tiene remito: se cambian precios y servicios; los repuestos quedan como están' : '') + '.</div>'; }
+function mtPresEditorHtml() { return mtPresAvisoEd() + mtPresEditorHtml0(); }
+function mtPresEditorHtml0() {
   var L = MT_.lin, tot = 0, d = MT_.d;
   // 20/11/2026 (Anibal): en el celular cada renglón va uno debajo del otro y el precio se escribe sin deslizar al costado
   var cel = window.innerWidth < 700;
@@ -17697,7 +17702,7 @@ async function mtPresGuardar() {
   var b = $id('mt-p-ok'); b.disabled = true;
   try { var r = await gsRun('gsMT_PresupGuardar', { ID_ORDEN: MT_.ord.ORDEN.ID_ORDEN, LINEAS: MT_.lin, DESCUENTO_PCT: Number(MT_.dg) || 0 });
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
-    toast('Presupuesto ' + r.NRO + ' guardado · ' + mtPlata(r.TOTAL) + ' sin IVA ✓', 'g'); MT_.lin = null; var id = MT_.ord.ORDEN.ID_ORDEN; await mtRecargar(); await mtAbrir(id);
+    toast('Presupuesto ' + r.NRO + ' guardado · ' + mtPlata(r.TOTAL) + ' sin IVA' + (r.APROBADO ? ' · sigue aprobado' : '') + ' ✓', 'g'); MT_.lin = null; var id = MT_.ord.ORDEN.ID_ORDEN; await mtRecargar(); await mtAbrir(id);
   } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
 }
 async function mtPresEstado(est) {
@@ -19850,8 +19855,9 @@ function fprBloque(o, ps, vuelta, opt) {
     if (!cerr && !f) {
       if (p.ESTADO === 'BORRADOR') b += flBtn('btn-s', '📤 Ya se lo mandé', 'fprEstado(' + p.ID_PRESUP + ',\'ENVIADO\')');
       if (p.ESTADO === 'BORRADOR' || p.ESTADO === 'ENVIADO') b += flBtn('btn-p', '✅ El cliente lo aprobó', 'fprEstado(' + p.ID_PRESUP + ',\'APROBADO\')') + flBtn('btn-d', '✖ No lo aprobó', 'fprEstado(' + p.ID_PRESUP + ',\'RECHAZADO\')');
-      if (p.ESTADO !== 'APROBADO' && (p.NRO_ADIC || ['EN_TRABAJO'].indexOf(o.ESTADO) === -1)) b += flBtn('btn-s', '✏ Corregir (versión nueva)', 'fprEditar(' + p.ID_PRESUP + ')');
     }
+    // 25/11/2026 (Anibal): se edita hasta que se factura; si estaba aprobado sigue aprobado
+    if (!f && ['ANULADA', 'FACTURADA'].indexOf(o.ESTADO) === -1 && (p.ESTADO === 'APROBADO' || (p.NRO_ADIC ? ['TERMINADA'].indexOf(o.ESTADO) === -1 : ['EN_TRABAJO', 'TERMINADA'].indexOf(o.ESTADO) === -1))) b += flBtn('btn-s', '✏ Editar (precios, agregar o sacar)', 'fprEditar(' + p.ID_PRESUP + ')');
     b += flBtn('btn-s', '💬 Texto para el cliente', 'fprTexto(' + p.ID_PRESUP + ')') + flBtn('btn-s', '🖨 Imprimir', 'fprImprimir(' + p.ID_PRESUP + ')');
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' + b + '</div></div></div>';
   });
