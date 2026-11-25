@@ -1699,7 +1699,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611251320';
+var EMA_BUILD = '202611251400';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17281,7 +17281,7 @@ function mtOrdenVer() {
   h += '<div class="card mb3" id="mt-fotos-card"><div class="card-hd"><span class="card-title">📷 Fotos · antes y después</span></div><div class="card-body" id="mt-fotos"><div class="tdim">Cargando fotos…</div></div></div>';
   // Presupuesto
   h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Presupuesto' + (P ? ' ' + pcEsc(P.NRO) : '') + '</span>' + (P ? mtBadge(P.ESTADO) : '') + '</div><div class="card-body" id="mt-pres">';
-  if (MT_.til) h += mtTilHtml();
+  if (MT_.til) { h += mtTilHtml(); setTimeout(function() { if (MT_.til) mtTilTot(); }, 0); }
   else if (MT_.lin) h += mtFaltaStockHtml(MT_.lin) + mtPresEditorHtml();
   else if (!P) h += '<div class="tdim mb2">Todavía no hay presupuesto. Con <b>tildes</b>: ves lo que dio mal y lo que tiene observación, tildás lo que se cobra (cada uno con su servicio codificado) y le ponés el precio. El <b>automático</b> arma solo con lo que dio NO, el servicio sugerido, sus repuestos y los precios de la lista vigente (' + pcEsc(MT_.d.LISTA) + '). Después se puede corregir.</div>' + (an || cerr ? '' : (mtChkFaltaTxt() ? '<div class="al mb2">' + pcEsc(mtChkFaltaTxt()) + '</div>' : '') + '<div class="flex gap2" style="flex-wrap:wrap"><button class="btn btn-p" style="min-height:48px" onclick="mtPresTildes()">☑ Armar el presupuesto con tildes (lo marcado y las observaciones)</button><button class="btn btn-s" style="min-height:48px" onclick="mtPresArmar()">⚙ Armado automático</button></div>');
   else {
@@ -17511,54 +17511,71 @@ function mtPresTildes(agregar) {
     pl.GRUPOS.forEach(function(g) { g.ITEMS.forEach(function(i) { var v = x.RESP[i.ID]; if (!v) return; var mal = v.R === mtMalaResp(g), obs = String(v.OBS || '').trim(); if (!mal && !obs) return;
       var sg = (MT_.d.SUG_ITEM || {})[String(i.ID)]; sg = sg ? (sg.length === undefined ? [sg] : sg) : [];
       if (!sg.length) sg = [''];
-      // Si el renglón tiene más de un servicio posible (ej.: recapar o vulcanizar), sale uno debajo del otro: el primero tildado, los otros para tildar si corresponden
-      sg.forEach(function(sv, n) { rows.push({ OE: x.ID_OE, ITEM: i.ID, NOMBRE: i.NOMBRE, R: v.R, MAL: mal, OBS: n ? '' : obs, ALT: n > 0, ON: mal && !n ? 1 : 0, SERV: sv, CANT: 1 }); }); }); }); });
+      // Solo lo que dio NO o tiene observación, todo tildado. Si el punto tiene más de un servicio (ej.: recapar y vulcanizar) sale un renglón por servicio.
+      sg.forEach(function(sv, n) { rows.push({ OE: x.ID_OE, ITEM: i.ID, NOMBRE: i.NOMBRE, R: v.R, MAL: mal, OBS: obs, ALT: n > 0, ON: 1, SERV: sv, CANT: 1, PU: mtTilPLista(sv) }); }); }); }); });
   MT_.til = { rows: rows, agregar: !!agregar }; mtOrdenVer();
 }
+function mtTilS(id) { return id ? MT_.d.SERVICIOS.filter(function(z) { return String(z.ID_SERVICIO) === String(id); })[0] : null; }
+function mtTilPLista(id) { var s = mtTilS(id); return s && s.PRECIO > 0 ? s.PRECIO : ''; }
+function mtTilRec(r) { var s = mtTilS(r.SERV), t = 0; if (s) s.RECETA.forEach(function(q) { t += (Number(q.PRECIO) || 0) * q.CANT * (Number(r.CANT) || 0); }); return Math.round(t * 100) / 100; }
+function mtTilRecTxt(r) { var s = mtTilS(r.SERV); return s && s.RECETA.length ? '+ repuestos: ' + s.RECETA.map(function(q) { return q.NOMBRE + ' ×' + Math.round(q.CANT * (Number(r.CANT) || 0) * 100) / 100; }).join(', ') + ' (' + mtPlata(mtTilRec(r)) + ', precio de lista)' : ''; }
+function mtTilSub(r) { return Math.round(((Number(r.PU) || 0) * (Number(r.CANT) || 0) + mtTilRec(r)) * 100) / 100; }
 function mtTilEqTxt(oe) { var x = MT_.ord.EQUIPOS.filter(function(q) { return String(q.ID_OE) === String(oe); })[0]; return x ? mtEqIdent(mtEq(x.ID_EQUIPO)) : ''; }
-function mtTilServ(sel, uid) { var k = Number(String(uid).replace('mt-ts-', '')), r = MT_.til.rows[k]; if (!r) return; r.SERV = sel.length ? Number(sel[0]) : ''; if (r.SERV) r.ON = 1; var c = $id('mt-tc-' + k); if (c) c.checked = !!r.ON; mtTilCuenta(); }
-function mtTilAdd(sel, uid) { if (!sel.length) return; var oe = Number(String(uid).replace('mt-ta-', '')), s = MT_.d.SERVICIOS.filter(function(z) { return String(z.ID_SERVICIO) === String(sel[0]); })[0]; if (!s) return;
-  MT_.til.rows.push({ OE: oe, ITEM: '', NOMBRE: s.NOMBRE, R: '', MAL: false, OBS: '', ON: 1, SERV: s.ID_SERVICIO, CANT: 1, HOJA: 1 }); mtOrdenVer(); }
-function mtTilCuenta() { var n = MT_.til.rows.filter(function(r) { return r.ON; }).length, b = $id('mt-til-ok'); if (b) b.textContent = 'Pasar ' + n + (n === 1 ? ' renglón' : ' renglones') + ' al presupuesto →'; }
+function mtTilTot() { var t = 0, n = 0; MT_.til.rows.forEach(function(r, k) { if (r.ON) { t += mtTilSub(r); n++; } var e = $id('mt-tsub-' + k); if (e) e.textContent = r.ON ? mtPlata(mtTilSub(r)) : '—'; var rt = $id('mt-trec-' + k); if (rt) rt.textContent = mtTilRecTxt(r); var w = $id('mt-tr-' + k); if (w) w.style.opacity = r.ON ? '1' : '.45'; });
+  t = Math.round(t * 100) / 100; var e2 = $id('mt-ttot'); if (e2) e2.innerHTML = n + (n === 1 ? ' renglón' : ' renglones') + ' · Total sin IVA <b>' + mtPlata(t) + '</b> · con IVA <b>' + mtPlata(Math.round(t * 121) / 100) + '</b>'; }
+function mtTilServ(sel, uid) { var k = Number(String(uid).replace('mt-ts-', '')), r = MT_.til.rows[k]; if (!r) return; r.SERV = sel.length ? Number(sel[0]) : ''; var pl = mtTilPLista(r.SERV); r.PU = pl; r.ON = 1;
+  var c = $id('mt-tc-' + k); if (c) c.checked = true; var p1 = $id('mt-tp-' + k), p2 = $id('mt-tq-' + k); if (p1) p1.value = pl ? String(pl).replace('.', ',') : ''; if (p2) p2.value = pl ? String(Math.round(pl * 121) / 100).replace('.', ',') : ''; var w = $id('mt-tr-' + k); if (w) { w.style.background = ''; } mtTilTot(); }
+function mtTilPrecio(k, q, v) { var r = MT_.til.rows[k], x = mtNum(v); if (q === 'CANT') r.CANT = x; else { r.PU = q === 'CON' ? Math.round(x / 1.21 * 100) / 100 : x; var o = $id(q === 'CON' ? 'mt-tp-' + k : 'mt-tq-' + k); if (o) o.value = r.PU ? String(q === 'CON' ? r.PU : Math.round(r.PU * 121) / 100).replace('.', ',') : ''; var w = $id('mt-tr-' + k); if (w && r.PU > 0) w.style.background = ''; } mtTilTot(); }
+function mtTilAdd(sel, uid) { if (!sel.length) return; var oe = Number(String(uid).replace('mt-ta-', '')), s = mtTilS(sel[0]); if (!s) return;
+  MT_.til.rows.push({ OE: oe, ITEM: '', NOMBRE: s.NOMBRE, R: '', MAL: false, OBS: '', ON: 1, SERV: s.ID_SERVICIO, CANT: 1, PU: mtTilPLista(s.ID_SERVICIO), HOJA: 1 }); mtOrdenVer(); }
 function mtTilHtml() {
   var T = MT_.til, opS = MT_.d.SERVICIOS.map(function(x) { return { v: x.ID_SERVICIO, t: x.NOMBRE, sub: x.SISTEMA + ' · ' + x.CODIGO }; });
-  var h = '<div class="flex gap2 mb2" style="flex-wrap:wrap"><button class="btn btn-p" style="flex:1;min-height:50px;font-size:15px" id="mt-til-ok" onclick="mtTilPasar()">Pasar al presupuesto →</button><button class="btn btn-s" onclick="MT_.til=null;mtOrdenVer()">Cancelar</button></div>' +
-    '<div class="tdim mb2" style="font-size:13px">Está todo lo que dio <b>mal</b> en el check list (ya tildado) y lo que tiene <b>observación</b> (sin tildar). Tildá lo que se cobra: cada renglón tildado lleva su servicio codificado (si no tiene, elegilo de la lista; queda guardado para la próxima vez). Si un punto tiene dos servicios posibles salen uno debajo del otro (ej.: recapar y vulcanizar). El precio se pone en el paso siguiente.</div>';
+  var bOk = T.agregar ? '＋ Agregar al presupuesto' : '💾 Guardar presupuesto';
+  var css = '<style>.mt-tg{display:grid;grid-template-columns:30px minmax(150px,1.4fr) minmax(170px,1.3fr) 58px 100px 100px 110px;gap:6px;align-items:center;padding:8px 6px;border-bottom:1px solid #e5e7eb}.mt-tg.hd{font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db;padding-top:0}.mt-tg input[type=checkbox]{width:22px;height:22px}.mt-tg .fi{padding:6px 8px;min-height:38px}.mt-tg .mt-tsb{text-align:right;font-weight:600}.mt-tl{display:none;font-size:11px;color:#6b7280}@media(max-width:800px){.mt-tg{grid-template-columns:34px 1fr 1fr;}.mt-tg.hd{display:none}.mt-tg .c2,.mt-tg .c3{grid-column:2 / span 2}.mt-tl{display:block}}</style>';
+  var h = css + '<div class="tdim mb2" style="font-size:13px">Están <b>solo</b> los puntos del check list que dieron <b>NO</b> o tienen <b>observación</b>, todos tildados: <b>destildá lo que no se cobra</b>, revisá la cantidad y poné el precio (sin IVA o con IVA, el otro se calcula). Cada renglón lleva su servicio codificado; si un tildado no tiene, elegilo de la lista.</div>';
   (MT_.ord.EQUIPOS || []).forEach(function(x) {
     var e = mtEq(x.ID_EQUIPO), rs = [];
     T.rows.forEach(function(r, k) { if (String(r.OE) === String(x.ID_OE)) rs.push(k); });
-    h += '<div class="card mb3"><div class="card-hd"><span class="card-title">' + pcEsc(mtEqIdent(e)) + ' · ' + pcEsc((e.MARCA || '') + ' ' + (e.MODELO || '')) + '</span></div><div class="card-body">' +
-      (x.OBSERVACIONES ? '<div class="nota mb2" style="background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:8px 10px;font-size:13px"><b>Hoja del mecánico:</b> ' + pcEsc(x.OBSERVACIONES) + '</div>' : '');
-    if (!rs.length) h += '<div class="tdim mb2">No hay nada en mal ni con observación.</div>';
-    rs.forEach(function(k) { var r = T.rows[k];
-      h += '<div id="mt-tr-' + k + '" style="border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;margin-bottom:8px;' + (r.MAL ? 'border-left:4px solid #dc2626' : (r.HOJA ? 'border-left:4px solid #2563eb' : 'border-left:4px solid #9ca3af')) + '">' +
-        '<label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="mt-tc-' + k + '" style="width:22px;height:22px;margin-top:2px;flex:none"' + (r.ON ? ' checked' : '') + ' onchange="MT_.til.rows[' + k + '].ON=this.checked?1:0;mtTilCuenta()">' +
-        '<span><b>' + pcEsc(r.NOMBRE) + '</b> ' + (r.ALT ? '<span class="mt-bd mt-b-x">otro servicio posible</span> ' : '') + (r.HOJA ? '<span class="mt-bd mt-b-b">hoja del mecánico</span>' : '<span class="mt-bd ' + (r.MAL ? 'mt-b-o' : 'mt-b-x') + '">' + pcEsc(r.R) + '</span>') + (r.OBS ? '<div style="font-size:13px;margin-top:2px">' + pcEsc(r.OBS) + '</div>' : '') + '</span></label>' +
-        '<div style="display:grid;grid-template-columns:1fr 90px;gap:8px;margin-top:6px;align-items:end"><div class="fg" style="margin:0"><label class="fl">Servicio</label>' + uiBusca('mt-ts-' + k, { opciones: opS, sel: r.SERV ? [String(r.SERV)] : [], max: 0, ph: 'Elegí el servicio (obligatorio si está tildado)', onchange: 'mtTilServ' }) + '</div>' +
-        '<div class="fg" style="margin:0"><label class="fl">Cantidad</label><input class="fi tr" inputmode="decimal" value="' + r.CANT + '" onchange="MT_.til.rows[' + k + '].CANT=mtNum(this.value)||1"></div></div></div>'; });
-    h += '<div class="fg mt2"><label class="fl">＋ Otro servicio que se hizo en esta unidad (de la lista codificada)</label>' + uiBusca('mt-ta-' + x.ID_OE, { opciones: opS, sel: [], max: 0, ph: 'Buscá el servicio (regulación de frenos, alemites, alineado…)', onchange: 'mtTilAdd' }) + '</div></div></div>';
+    h += '<div class="card mb3"><div class="card-hd"><span class="card-title">' + pcEsc(mtEqIdent(e)) + ' · ' + pcEsc((e.MARCA || '') + ' ' + (e.MODELO || '')) + '</span></div><div class="card-body" style="padding-top:6px">' +
+      (x.OBSERVACIONES ? '<div class="mb2" style="background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:6px 10px;font-size:12.5px"><b>Hoja del mecánico:</b> ' + pcEsc(x.OBSERVACIONES) + '</div>' : '') +
+      '<div class="mt-tg hd"><span></span><span>Punto del check list</span><span>Servicio</span><span>Cant.</span><span>Precio s/IVA</span><span>Precio c/IVA</span><span style="text-align:right">Subtotal s/IVA</span></div>';
+    if (!rs.length) h += '<div class="tdim" style="padding:8px">No hay nada en NO ni con observación.</div>';
+    rs.forEach(function(k) { var r = T.rows[k], pu = Number(r.PU) || 0;
+      h += '<div class="mt-tg" id="mt-tr-' + k + '" style="' + (r.ON ? '' : 'opacity:.45') + '"><input type="checkbox" id="mt-tc-' + k + '"' + (r.ON ? ' checked' : '') + ' onchange="MT_.til.rows[' + k + '].ON=this.checked?1:0;mtTilTot()">' +
+        '<div style="font-size:13px"><b>' + pcEsc(r.NOMBRE) + '</b> ' + (r.HOJA ? '<span class="mt-bd mt-b-b">agregado</span>' : '<span class="mt-bd ' + (r.MAL ? 'mt-b-o' : 'mt-b-x') + '">' + pcEsc(r.R) + '</span>') + (r.OBS && !r.ALT ? '<div class="tdim" style="font-size:12px">' + pcEsc(r.OBS) + '</div>' : '') + (r.ALT ? '<div class="tdim" style="font-size:12px">otro servicio del mismo punto</div>' : '') + '</div>' +
+        '<div class="c2">' + uiBusca('mt-ts-' + k, { opciones: opS, sel: r.SERV ? [String(r.SERV)] : [], max: 0, ph: 'Elegí el servicio', onchange: 'mtTilServ' }) + '<div class="tdim" id="mt-trec-' + k + '" style="font-size:11px">' + mtTilRecTxt(r) + '</div></div>' +
+        '<label class="c3" style="display:contents"><span class="mt-tl">Cantidad</span><input class="fi tr" inputmode="decimal" value="' + r.CANT + '" oninput="mtTilPrecio(' + k + ',\'CANT\',this.value)"></label>' +
+        '<label style="display:contents"><span class="mt-tl">Precio sin IVA</span><input class="fi tr" id="mt-tp-' + k + '" inputmode="decimal" placeholder="poné el precio" value="' + (pu ? String(pu).replace('.', ',') : '') + '" oninput="mtTilPrecio(' + k + ',\'SIN\',this.value)"></label>' +
+        '<label style="display:contents"><span class="mt-tl">Precio con IVA</span><input class="fi tr" id="mt-tq-' + k + '" inputmode="decimal" value="' + (pu ? String(Math.round(pu * 121) / 100).replace('.', ',') : '') + '" oninput="mtTilPrecio(' + k + ',\'CON\',this.value)"></label>' +
+        '<div class="mt-tsb" id="mt-tsub-' + k + '">' + (r.ON ? mtPlata(mtTilSub(r)) : '—') + '</div></div>'; });
+    h += '<div class="fg mt2" style="max-width:520px"><label class="fl">＋ Otro servicio que se hizo en esta unidad</label>' + uiBusca('mt-ta-' + x.ID_OE, { opciones: opS, sel: [], max: 0, ph: 'Buscá el servicio', onchange: 'mtTilAdd' }) + '</div></div></div>';
   });
-  return h + '<div class="flex gap2"><button class="btn btn-s" onclick="MT_.til=null;mtOrdenVer()">Cancelar</button><button class="btn btn-p" style="flex:1;min-height:50px;font-size:15px" onclick="mtTilPasar()">Pasar al presupuesto →</button></div>';
+  return h + '<div id="mt-ttot" style="font-size:15px;text-align:right;margin:4px 0 10px"></div><div class="flex gap2"><button class="btn btn-s" onclick="MT_.til=null;mtOrdenVer()">Cancelar</button><button class="btn btn-p" style="flex:1;min-height:52px;font-size:16px" id="mt-til-ok" onclick="mtTilGuardar()">' + bOk + '</button></div>';
 }
-function mtTilPasar() {
-  var T = MT_.til, sinS = [];
-  T.rows.forEach(function(r, k) { if (r.ON && !r.SERV) sinS.push(k); });
-  if (sinS.length) { toast(sinS.length + (sinS.length === 1 ? ' renglón tildado no tiene' : ' renglones tildados no tienen') + ' servicio: elegilo de la lista (no se carga nada a mano)', 'r2');
-    sinS.forEach(function(k) { var e = $id('mt-tr-' + k); if (e) { e.style.background = '#fef2f2'; e.style.borderColor = '#dc2626'; } }); var e0 = $id('mt-tr-' + sinS[0]); if (e0) e0.scrollIntoView({ block: 'center' }); return; }
-  var pares = [], sv0 = MT_.d.SUG_ITEM || {};
-  T.rows.forEach(function(r) { if (r.ON && r.ITEM) { var lst = sv0[String(r.ITEM)]; lst = lst ? (lst.length === undefined ? [lst] : lst) : []; if (lst.indexOf(Number(r.SERV)) === -1) pares.push({ ITEM: r.ITEM, SERV: r.SERV }); } });
-  if (pares.length) gsRun('gsMT_SugAgregar', { PARES: pares }).then(function(x) { if (x && x.ok) pares.forEach(function(p) { var l = sv0[String(p.ITEM)]; l = l ? (l.length === undefined ? [l] : l) : []; l.push(Number(p.SERV)); sv0[String(p.ITEM)] = l; }); }).catch(function() {});
-  var lin = T.agregar && MT_.lin ? MT_.lin : [], n = 0;
+async function mtTilGuardar() {
+  var T = MT_.til, sinS = [], sinP = [];
+  T.rows.forEach(function(r, k) { if (!r.ON) return; if (!r.SERV) sinS.push(k); else if (!(Number(r.PU) > 0)) sinP.push(k); });
+  var marcar = function(ls) { ls.forEach(function(k) { var e = $id('mt-tr-' + k); if (e) e.style.background = '#fef2f2'; }); var e0 = $id('mt-tr-' + ls[0]); if (e0) e0.scrollIntoView({ block: 'center' }); };
+  if (sinS.length) { toast(sinS.length + (sinS.length === 1 ? ' renglón tildado no tiene' : ' renglones tildados no tienen') + ' servicio: elegilo de la lista o destildalo', 'r2'); marcar(sinS); return; }
+  if (sinP.length) { toast(sinP.length + (sinP.length === 1 ? ' renglón tildado no tiene' : ' renglones tildados no tienen') + ' precio: ponelo o destildalo', 'r2'); marcar(sinP); return; }
+  var lin = [], n = 0;
   T.rows.forEach(function(r) { if (!r.ON) return; n++;
-    var eqT = mtTilEqTxt(r.OE), donde = r.ITEM ? ' (' + r.NOMBRE + (r.OBS ? ': ' + r.OBS : '') + ')' : '', cant = Number(r.CANT) || 1;
-    var s = r.SERV ? MT_.d.SERVICIOS.filter(function(z) { return String(z.ID_SERVICIO) === String(r.SERV); })[0] : null;
-    if (!s) return;
-    if (s.CODIGO === 'TLR-TERCERO') { lin.push({ CLASE: 'TERCERO', ID_OE: r.OE, ID_SERVICIO: s.ID_SERVICIO, ID_ITEM_CHK: r.ITEM || '', DESCRIPCION: ('Trabajo de tercero — ' + eqT + donde).substring(0, 300), CANTIDAD: cant, PRECIO_LISTA: 0, COSTO_UNIT: 0, DESCUENTO_PCT: 0 }); return; }
-    lin.push({ CLASE: 'SERVICIO', ID_OE: r.OE, ID_SERVICIO: s.ID_SERVICIO, ID_ARTICULO: s.ID_ARTICULO, ID_ITEM_CHK: r.ITEM || '', DESCRIPCION: (s.NOMBRE + ' — ' + eqT + donde).substring(0, 300), CANTIDAD: cant, PRECIO_LISTA: s.PRECIO, DESCUENTO_PCT: 0, COSTO_UNIT: Math.round(s.HORAS * MT_.d.COSTO_HORA * 100) / 100 });
+    var s = mtTilS(r.SERV), eqT = mtTilEqTxt(r.OE), donde = r.ITEM ? ' (' + r.NOMBRE + (r.OBS ? ': ' + r.OBS : '') + ')' : '', cant = Number(r.CANT) || 1;
+    if (s.CODIGO === 'TLR-TERCERO') { lin.push({ CLASE: 'TERCERO', ID_OE: r.OE, ID_SERVICIO: s.ID_SERVICIO, ID_ITEM_CHK: r.ITEM || '', DESCRIPCION: ('Trabajo de tercero — ' + eqT + donde).substring(0, 300), CANTIDAD: cant, PRECIO_LISTA: Number(r.PU), PRECIO_UNIT: Number(r.PU), COSTO_UNIT: 0, DESCUENTO_PCT: 0 }); return; }
+    lin.push({ CLASE: 'SERVICIO', ID_OE: r.OE, ID_SERVICIO: s.ID_SERVICIO, ID_ARTICULO: s.ID_ARTICULO, ID_ITEM_CHK: r.ITEM || '', DESCRIPCION: (s.NOMBRE + ' — ' + eqT + donde).substring(0, 300), CANTIDAD: cant, PRECIO_LISTA: s.PRECIO, PRECIO_UNIT: Number(r.PU), DESCUENTO_PCT: 0, COSTO_UNIT: Math.round(s.HORAS * MT_.d.COSTO_HORA * 100) / 100 });
     s.RECETA.forEach(function(q) { lin.push({ CLASE: 'REPUESTO', ID_OE: r.OE, ID_SERVICIO: s.ID_SERVICIO, ID_ARTICULO: q.ID_ARTICULO, ID_ITEM_CHK: r.ITEM || '', DESCRIPCION: q.NOMBRE, CANTIDAD: q.CANT * cant, PRECIO_LISTA: q.PRECIO, DESCUENTO_PCT: 0, COSTO_UNIT: q.COSTO }); });
   });
-  if (!n) { toast('No tildaste nada', 'r2'); return; }
-  if (!T.agregar) MT_.dg = 0; MT_.lin = lin; MT_.til = null; mtOrdenVer(); toast(n + (n === 1 ? ' renglón pasado' : ' renglones pasados') + ': poné el precio de cada uno y guardá', 'g');
+  if (!n) { toast('No hay nada tildado', 'r2'); return; }
+  // El servicio elegido para un punto del check list queda guardado: la próxima vez sale solo
+  var pares = [], sv0 = MT_.d.SUG_ITEM || {};
+  T.rows.forEach(function(r) { if (r.ON && r.ITEM) { var l = sv0[String(r.ITEM)]; l = l ? (l.length === undefined ? [l] : l) : []; if (l.indexOf(Number(r.SERV)) === -1) pares.push({ ITEM: r.ITEM, SERV: r.SERV }); } });
+  if (pares.length) gsRun('gsMT_SugAgregar', { PARES: pares }).then(function(x) { if (x && x.ok) pares.forEach(function(p) { var l = sv0[String(p.ITEM)]; l = l ? (l.length === undefined ? [l] : l) : []; l.push(Number(p.SERV)); sv0[String(p.ITEM)] = l; }); }).catch(function() {});
+  if (T.agregar) { MT_.lin = (MT_.lin || []).concat(lin); MT_.til = null; mtOrdenVer(); toast(n + (n === 1 ? ' renglón agregado' : ' renglones agregados'), 'g'); return; }
+  var b = $id('mt-til-ok'); if (b) b.disabled = true;
+  try { var r = await gsRun('gsMT_PresupGuardar', { ID_ORDEN: MT_.ord.ORDEN.ID_ORDEN, LINEAS: lin, DESCUENTO_PCT: 0 });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast('Presupuesto ' + r.NRO + ' guardado · ' + mtPlata(r.TOTAL) + ' sin IVA ✓', 'g'); MT_.til = null; MT_.lin = null; var id = MT_.ord.ORDEN.ID_ORDEN; await mtRecargar(); await mtAbrir(id);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
 }
 function mtPresCorregir() { MT_.lin = MT_.ord.PRESUP.DET.map(function(l) { var c = {}; Object.keys(l).forEach(function(k) { c[k] = l[k]; }); if (Number(c.DESCUENTO_PCT) >= 100 && !(Number(c.PRECIO_UNIT) > 0)) c.SIN_CARGO = 1; return c; }); MT_.dg = Number(MT_.ord.PRESUP.DESCUENTO_PCT) || 0; mtOrdenVer(); }
 function mtNum(v) { var t = String(v == null ? '' : v).replace(/[\s$]/g, ''); if (t.indexOf(',') > -1) t = t.replace(/\./g, '').replace(',', '.'); else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, ''); var x = parseFloat(t); return isNaN(x) ? 0 : x; }
