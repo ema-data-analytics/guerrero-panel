@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "52f17b78d29b"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "8d1ba6879db4"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1699,7 +1699,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611251415';
+var EMA_BUILD = '202611251440';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17312,7 +17312,7 @@ function mtOrdenVer() {
     '<label class="fl">Check list de cada equipo</label><div class="mt-eqs mb2">' + O.EQUIPOS.map(function(x) { var e = mtEq(x.ID_EQUIPO), pl = mtPl(x.ID_PLANTILLA), t = 0, r = Object.keys(x.RESP).length, no = 0;
       if (pl) pl.GRUPOS.forEach(function(g) { t += g.ITEMS.length; }); Object.keys(x.RESP).forEach(function(k) { if (pl && x.RESP[k].R === mtMalaResp(mtGrupoDeItem(pl, k))) no++; });
       if (!pl) return O.ORDEN.ESTADO === 'CHECK_LIST' ? '<div class="al" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;width:100%"><b>' + pcEsc(mtEqIdent(e)) + '</b> no tiene check list para su tipo. Elegí cuál usar: <select class="fs" id="mt-oepl-' + x.ID_OE + '" style="max-width:340px">' + mtPlTodas('') + '</select><button class="btn btn-p btn-sm" onclick="mtOePlantilla(' + x.ID_OE + ')">Usar este check list</button></div>' : '<span class="tdim">' + pcEsc(mtEqIdent(e)) + ': sin check list</span>';
-      return '<button class="btn ' + (r >= t && t ? 'btn-s' : 'btn-p') + '" onclick="mtAbrirCheck(' + x.ID_OE + ')">✔ ' + pcEsc(mtEqIdent(e)) + ' · ' + r + '/' + t + (no ? ' · ' + no + ' a reparar' : '') + '</button>'; }).join('') + '</div>' + (O.ORDEN.ESTADO === 'CHECK_LIST' ? '<button class="btn btn-s btn-sm" onclick="mtOeAgregar()">＋ Agregar otra unidad del cliente a esta orden</button>' : '') + '</div></div>';
+      return '<button class="btn ' + (r >= t && t ? 'btn-s' : 'btn-p') + '" onclick="mtAbrirCheck(' + x.ID_OE + ')">✔ ' + pcEsc(mtEqIdent(e)) + ' · ' + pcEsc(mtEqTipo(e).toUpperCase()) + ' · ' + r + '/' + t + (no ? ' · ' + no + ' a reparar' : '') + '</button>' + (mtEqCfg(e) ? '<button class="btn btn-s" onclick="mtRuedas(' + x.ID_OE + ')">🛞 Ruedas y alineación · ' + pcEsc(mtEqIdent(e)) + ' · ' + Object.keys(x.RUEDAS || {}).length + '/' + mtEqCfg(e).POS.length + '</button>' : ''); }).join('') + '</div>' + (O.ORDEN.ESTADO === 'CHECK_LIST' ? '<button class="btn btn-s btn-sm" onclick="mtOeAgregar()">＋ Agregar otra unidad del cliente a esta orden</button>' : '') + '</div></div>';
   // Fotos antes / después (20/11/2026)
   h += '<div class="card mb3" id="mt-fotos-card"><div class="card-hd"><span class="card-title">📷 Fotos · antes y después</span></div><div class="card-body" id="mt-fotos"><div class="tdim">Cargando fotos…</div></div></div>';
   // Presupuesto
@@ -17348,7 +17348,7 @@ async function mtFotosCargar() {
   var an = MT_.ord.ORDEN.ESTADO === 'ANULADA', eqs = MT_.ord.EQUIPOS || [], h = '<div class="tdim mb2" style="font-size:13px">Sacá la foto <b>antes</b> de tocar el equipo (cómo llegó, la pieza que se cambia) y <b>después</b> (cómo quedó, la pieza nueva). Quedan guardadas en la orden con la fecha y quién las cargó.</div>';
   eqs.forEach(function(x) {
     var e = mtEq(x.ID_EQUIPO);
-    h += '<div class="mt-gr mb2"><div class="mt-gh" style="cursor:default">🚛 ' + pcEsc(mtEqIdent(e)) + ' <span class="tdim" style="font-weight:500;font-size:13px">' + pcEsc((e.MARCA || '') + ' ' + (e.MODELO || '')) + '</span></div><div class="mt-fo-w">';
+    h += '<div class="mt-gr mb2"><div class="mt-gh" style="cursor:default">🚛 ' + pcEsc(mtEqIdent(e)) + mtEqTipoBd(e) + ' <span class="tdim" style="font-weight:500;font-size:13px">' + pcEsc((e.MARCA || '') + ' ' + (e.MODELO || '')) + '</span></div><div class="mt-fo-w">';
     ['ANTES', 'DESPUES'].forEach(function(m) {
       var fs = MT_.fotos.filter(function(f) { return f.momento === m && (String(f.oe || '') === String(x.ID_OE) || (!f.oe && eqs.length === 1)); });
       h += '<div class="mt-fo-col"><div style="font-weight:700;margin-bottom:6px">' + (m === 'ANTES' ? 'Antes' : 'Después') + ' <span class="tdim" style="font-weight:400">(' + fs.length + ')</span></div><div class="mt-fo-th">' +
@@ -17413,7 +17413,7 @@ function mtTrabHtml(O, an) {
   orden.forEach(function(k) {
     var x = O.EQUIPOS.filter(function(q) { return String(q.ID_OE) === k; })[0], e = x ? mtEq(x.ID_EQUIPO) : null;
     var reps = (T.REPUESTOS || []).filter(function(r) { return String(r.ID_OE || 0) === k; });
-    h += '<div class="mt-gr"><div class="mt-gh" style="cursor:default">' + (e ? '🚛 ' + pcEsc(mtEqIdent(e)) + ' <span class="tdim" style="font-weight:500;font-size:13px">' + pcEsc((e.MARCA || '') + ' ' + (e.MODELO || '')) + '</span>' : 'General') + '</div>';
+    h += '<div class="mt-gr"><div class="mt-gh" style="cursor:default">' + (e ? '🚛 ' + pcEsc(mtEqIdent(e)) + mtEqTipoBd(e) + ' <span class="tdim" style="font-weight:500;font-size:13px">' + pcEsc((e.MARCA || '') + ' ' + (e.MODELO || '')) + '</span>' : 'General') + '</div>';
     porEq[k].forEach(function(t) { h += mtTrabFila(t, T, ed); });
     if (reps.length) h += '<div class="mt-it" style="background:#f8fafc;font-size:13px"><div class="mt-n"><b>Repuestos del presupuesto</b> (se descuentan del stock al cerrar la orden): ' + reps.map(function(r) { return pcEsc(r.DESCRIPCION) + ' × ' + r.CANTIDAD + (r.CLASE === 'CLIENTE' ? ' (los trae el cliente)' : ''); }).join(' · ') + '</div></div>';
     var cps = T.COMPRAS || [];
@@ -17572,7 +17572,7 @@ function mtTilHtml() {
   (MT_.ord.EQUIPOS || []).forEach(function(x) {
     var e = mtEq(x.ID_EQUIPO), rs = [];
     T.rows.forEach(function(r, k) { if (String(r.OE) === String(x.ID_OE)) rs.push(k); });
-    h += '<div class="card mb3"><div class="card-hd"><span class="card-title">' + pcEsc(mtEqIdent(e)) + ' · ' + pcEsc((e.MARCA || '') + ' ' + (e.MODELO || '')) + '</span></div><div class="card-body" style="padding-top:6px">' +
+    h += '<div class="card mb3"><div class="card-hd"><span class="card-title">' + pcEsc(mtEqIdent(e)) + ' · ' + pcEsc(mtEqTipo(e).toUpperCase()) + ' · ' + pcEsc((e.MARCA || '') + ' ' + (e.MODELO || '')) + '</span></div><div class="card-body" style="padding-top:6px">' +
       (x.OBSERVACIONES ? '<div class="mb2" style="background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:6px 10px;font-size:12.5px"><b>Hoja del mecánico:</b> ' + pcEsc(x.OBSERVACIONES) + '</div>' : '') +
       '<div class="mt-tg hd"><span></span><span>Punto del check list</span><span>Servicio</span><span>Cant.</span><span>Precio s/IVA</span><span>Precio c/IVA</span><span style="text-align:right">Subtotal s/IVA</span></div>';
     if (!rs.length) h += '<div class="tdim" style="padding:8px">No hay nada en NO ni con observación.</div>';
@@ -17807,19 +17807,58 @@ function mtChkTablaImp(pl, resp) {
   return c + '</tbody></table>';
 }
 // Hoja de ruedas y alineación por eje (24/11/2026, Anibal: el check list impreso tiene que traer cada rueda de la unidad según su configuración de ejes)
-function mtRuedasImp(e) {
-  var c = e && e.ID_CONFIG ? mtFL().CONFIGS.filter(function(x) { return String(x.ID) === String(e.ID_CONFIG); })[0] : null; if (!c || !c.EJES || !c.EJES.length) return '';
-  var ub = { EXT: 'exterior', INT: 'interior', UNICA: '' }, fn = { DIRECCION: 'dirección', TRACCION: 'tracción', LIBRE: 'libre' };
-  var h = '<h2>Ruedas · ' + pcEsc(c.NOMBRE) + '</h2><table class="det"><thead><tr><th style="width:9%">Eje</th><th style="width:17%">Posición</th><th style="width:17%">Marca grabada</th><th style="width:14%">Medida</th><th class="n" style="width:9%">Dibujo mm</th><th class="n" style="width:9%">Presión lb</th><th>Observación</th></tr></thead><tbody>';
+var MT_RU_EST = { OK: '✓ OK', R: 'R · recapar', V: 'V · vulcanizar', C: 'C · cambiar', NA: 'N/A' };
+function mtRuedasPos(c) { var ub = { EXT: 'exterior', INT: 'interior', UNICA: '' }, fn = { DIRECCION: 'dirección', TRACCION: 'tracción', LIBRE: 'libre' }, out = [];
   c.EJES.slice().sort(function(a, b) { return a.NRO - b.NRO; }).forEach(function(x) {
-    c.POS.filter(function(p) { return String(p.ID_EJE) === String(x.ID) && !p.AUX; }).sort(function(a, b) { return a.X - b.X; }).forEach(function(p, k) {
-      h += '<tr><td>' + (k ? '' : '<b>' + x.NRO + '</b> <span style="font-size:9px">' + pcEsc(fn[x.FUNCION] || '') + '</span>') + '</td><td>' + (p.LADO === 'I' ? 'Izquierda' : 'Derecha') + (ub[p.UB] ? ' ' + ub[p.UB] : '') + '</td><td style="height:20px"></td><td></td><td></td><td></td><td></td></tr>';
-    });
-  });
-  c.POS.filter(function(p) { return p.AUX; }).forEach(function(p, k) { h += '<tr><td>Auxilio</td><td>' + pcEsc(p.COD) + '</td><td style="height:20px"></td><td></td><td></td><td></td><td></td></tr>'; });
-  h += '</tbody></table><h2>Alineación por eje</h2><table class="det"><thead><tr><th style="width:12%">Eje</th><th>Medida antes (paralelismo / escuadra)</th><th>Medida después</th><th class="ck">OK</th><th>Observación</th></tr></thead><tbody>';
-  c.EJES.slice().sort(function(a, b) { return a.NRO - b.NRO; }).forEach(function(x) { h += '<tr><td><b>' + x.NRO + '</b> <span style="font-size:9px">' + pcEsc(fn[x.FUNCION] || '') + '</span></td><td style="height:22px"></td><td></td><td class="ck">☐</td><td></td></tr>'; });
+    c.POS.filter(function(p) { return String(p.ID_EJE) === String(x.ID) && !p.AUX; }).sort(function(a, b) { return a.X - b.X; }).forEach(function(p, k) { out.push({ POS: p.COD, EJE: x.NRO, FN: fn[x.FUNCION] || '', PRIM: !k, POSICION: (p.LADO === 'I' ? 'Izquierda' : 'Derecha') + (ub[p.UB] ? ' ' + ub[p.UB] : '') }); }); });
+  c.POS.filter(function(p) { return p.AUX; }).forEach(function(p) { out.push({ POS: p.COD, EJE: '', FN: '', PRIM: true, AUX: 1, POSICION: 'Auxilio ' + p.COD }); });
+  return out; }
+function mtRuedasImp(e, x) {
+  var c = mtEqCfg(e); if (!c || !c.EJES || !c.EJES.length) return '';
+  var R = (x && x.RUEDAS) || {}, A = (x && x.ALIN) || {}, fn = { DIRECCION: 'dirección', TRACCION: 'tracción', LIBRE: 'libre' };
+  var h = '<h2>Ruedas · ' + pcEsc(c.NOMBRE) + '</h2><table class="det"><thead><tr><th style="width:8%">Eje</th><th style="width:15%">Posición</th><th style="width:11%">Estado</th><th style="width:14%">Marca grabada</th><th style="width:12%">Medida</th><th class="n" style="width:8%">Dibujo mm</th><th class="n" style="width:8%">Presión lb</th><th>Observación</th></tr></thead><tbody>';
+  mtRuedasPos(c).forEach(function(p) { var v = R[p.POS] || {};
+    h += '<tr><td>' + (p.AUX ? 'Auxilio' : (p.PRIM ? '<b>' + p.EJE + '</b> <span style="font-size:9px">' + pcEsc(p.FN) + '</span>' : '')) + '</td><td>' + pcEsc(p.AUX ? p.POS : p.POSICION) + '</td><td style="height:20px"><b>' + pcEsc(MT_RU_EST[v.EST] || '') + '</b></td><td>' + pcEsc(v.MARCA || '') + '</td><td>' + pcEsc(v.MEDIDA || '') + '</td><td class="n">' + pcEsc(v.DIBUJO || '') + '</td><td class="n">' + pcEsc(v.PRESION || '') + '</td><td>' + pcEsc(v.OBS || '') + '</td></tr>'; });
+  h += '</tbody></table><div style="font-size:9.5px;margin-top:2px">Estado: ✓ OK · R recapar · V vulcanizar · C cambiar · N/A no corresponde</div><h2>Alineación por eje</h2><table class="det"><thead><tr><th style="width:12%">Eje</th><th>Medida antes (paralelismo / escuadra)</th><th>Medida después</th><th class="ck">OK</th><th>Observación</th></tr></thead><tbody>';
+  c.EJES.slice().sort(function(a, b) { return a.NRO - b.NRO; }).forEach(function(j) { var v = A[String(j.NRO)] || {}; h += '<tr><td><b>' + j.NRO + '</b> <span style="font-size:9px">' + pcEsc(fn[j.FUNCION] || '') + '</span></td><td style="height:22px">' + pcEsc(v.ANTES || '') + '</td><td>' + pcEsc(v.DESPUES || '') + '</td><td class="ck">' + (v.OK ? '☑' : '☐') + '</td><td>' + pcEsc(v.OBS || '') + '</td></tr>'; });
   return h + '</tbody></table>';
+}
+// ── Cargar en el sistema la hoja de ruedas y la alineación de cada unidad (25/11/2026, Anibal) ──
+function mtRuedas(oe) {
+  var x = MT_.ord.EQUIPOS.filter(function(q) { return String(q.ID_OE) === String(oe); })[0]; if (!x) return; var e = mtEq(x.ID_EQUIPO), c = mtEqCfg(e); if (!c) { toast('La unidad no tiene configuración de ejes', 'r2'); return; }
+  var R = x.RUEDAS || {}, A = x.ALIN || {};
+  MT_.ru = { oe: oe, rows: mtRuedasPos(c).map(function(p) { var v = R[p.POS] || {}; return { POS: p.POS, EJE: p.EJE, FN: p.FN, PRIM: p.PRIM, AUX: p.AUX, POSICION: p.POSICION, EST: v.EST || '', MARCA: v.MARCA || '', MEDIDA: v.MEDIDA || '', DIBUJO: v.DIBUJO || '', PRESION: v.PRESION || '', OBS: v.OBS || '' }; }),
+    al: c.EJES.slice().sort(function(a, b) { return a.NRO - b.NRO; }).map(function(j) { var v = A[String(j.NRO)] || {}; return { EJE: j.NRO, ANTES: v.ANTES || '', DESPUES: v.DESPUES || '', OK: v.OK ? 1 : 0, OBS: v.OBS || '' }; }), tit: mtEqIdent(e) + ' · ' + mtEqTipo(e) };
+  showModal('<div class="mh"><span class="mt">🛞 Ruedas y alineación · ' + pcEsc(MT_.ru.tit) + '</span><button class="mc" onclick="closeModal()">×</button></div><div id="mt-ru-b"></div>', 'md-lg'); mtRuedasPintar();
+}
+function mtRuSet(k, f, v) { var r = MT_.ru.rows[k]; if (r) r[f] = v; }
+function mtRuEst(k, v) { var r = MT_.ru.rows[k]; r.EST = r.EST === v ? '' : v; var g = $id('mt-ru-e-' + k); if (g) g.innerHTML = mtRuEstBtns(k); }
+function mtRuEstBtns(k) { var r = MT_.ru.rows[k], col = { OK: '#16a34a', R: '#dc2626', V: '#ea580c', C: '#7c3aed', NA: '#6b7280' };
+  return ['OK', 'R', 'V', 'C', 'NA'].map(function(v) { var on = r.EST === v; return '<button type="button" onclick="mtRuEst(' + k + ',\'' + v + '\')" style="min-width:32px;min-height:34px;padding:0 5px;border-radius:8px;border:2px solid ' + col[v] + ';background:' + (on ? col[v] : '#fff') + ';color:' + (on ? '#fff' : col[v]) + ';font-weight:700;cursor:pointer">' + (v === 'OK' ? '✓' : v === 'NA' ? 'N/A' : v) + '</button>'; }).join(' '); }
+function mtRuTodas() { var m = String($v('mt-ru-am') || '').trim().toUpperCase(), p = String($v('mt-ru-ap') || '').trim(), soloOk = $id('mt-ru-ao') && $id('mt-ru-ao').checked;
+  MT_.ru.rows.forEach(function(r) { if (m && !r.MEDIDA) r.MEDIDA = m; if (p && !r.PRESION && r.EST !== 'NA') r.PRESION = p; if (soloOk && !r.EST) r.EST = 'OK'; }); mtRuedasPintar(); toast('Completado ✓', 'g'); }
+function mtRuedasPintar() {
+  var b = $id('mt-ru-b'); if (!b) return; var T = MT_.ru, inp = function(k, f, w, ph, im) { return '<input class="fi" style="min-height:36px;padding:5px 7px' + (w ? ';max-width:' + w : '') + '"' + (im ? ' inputmode="decimal"' : '') + ' placeholder="' + (ph || '') + '" value="' + pcEsc(T.rows[k][f]) + '" oninput="mtRuSet(' + k + ',\'' + f + '\',this.value)">'; };
+  var css = '<style>.mt-rg{display:grid;grid-template-columns:120px 170px minmax(70px,1fr) minmax(70px,1fr) 58px 58px minmax(90px,1.2fr);gap:6px;align-items:center;padding:6px 2px;border-bottom:1px solid #e5e7eb;font-size:13px}.mt-rg.hd{font-size:11px;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #d1d5db}.mt-rl{display:none;font-size:11px;color:#6b7280}@media(max-width:800px){.mt-rg{grid-template-columns:1fr 1fr}.mt-rg.hd{display:none}.mt-rg .w2{grid-column:1 / span 2}.mt-rl{display:block}}</style>';
+  var h = css + '<div class="mb2" style="background:#f8fbff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 10px;font-size:13px"><b>Para completar rápido:</b> <span style="display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center">medida <input class="fi" id="mt-ru-am" style="width:130px;min-height:34px" placeholder="ej.: 295/80R22.5"> presión lb <input class="fi" id="mt-ru-ap" style="width:80px;min-height:34px" inputmode="decimal"> <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" id="mt-ru-ao"> las que no marcaste quedan ✓ OK</label> <button class="btn btn-s btn-sm" onclick="mtRuTodas()">Aplicar a las vacías</button></span></div>' +
+    '<div class="tdim mb2" style="font-size:12.5px">Estado de cada rueda: <b style="color:#16a34a">✓</b> OK · <b style="color:#dc2626">R</b> recapar · <b style="color:#ea580c">V</b> vulcanizar · <b style="color:#7c3aed">C</b> cambiar · N/A no corresponde (ej.: no tiene auxilio).</div>' +
+    '<div class="mt-rg hd"><span>Eje</span><span>Estado</span><span>Marca grabada</span><span>Medida</span><span>Dibujo mm</span><span>Presión lb</span><span>Observación</span></div>';
+  T.rows.forEach(function(r, k) { h += '<div class="mt-rg"><div class="w2"><b>' + (r.AUX ? 'Auxilio ' + pcEsc(r.POS) : 'Eje ' + r.EJE + ' · ' + pcEsc(r.POSICION)) + '</b>' + (r.FN ? ' <span class="tdim" style="font-size:11px">' + pcEsc(r.FN) + '</span>' : '') + '</div>' +
+      '<div class="w2" id="mt-ru-e-' + k + '" style="display:flex;gap:4px;flex-wrap:wrap">' + mtRuEstBtns(k) + '</div>' +
+      '<label><span class="mt-rl">Marca grabada</span>' + inp(k, 'MARCA', '', '') + '</label><label><span class="mt-rl">Medida</span>' + inp(k, 'MEDIDA', '', '') + '</label>' +
+      '<label><span class="mt-rl">Dibujo mm</span>' + inp(k, 'DIBUJO', '', '', 1) + '</label><label><span class="mt-rl">Presión lb</span>' + inp(k, 'PRESION', '', '', 1) + '</label>' +
+      '<label class="w2" style="grid-column:auto"><span class="mt-rl">Observación</span>' + inp(k, 'OBS', '', '') + '</label></div>'; });
+  h += '<div class="fl mt3">Alineación por eje</div><div class="tw"><table style="font-size:13px"><thead><tr><th>Eje</th><th>Medida antes (paralelismo / escuadra)</th><th>Medida después</th><th>OK</th><th>Observación</th></tr></thead><tbody>' +
+    T.al.map(function(a, k) { return '<tr><td><b>' + a.EJE + '</b></td><td><input class="fi" value="' + pcEsc(a.ANTES) + '" oninput="MT_.ru.al[' + k + '].ANTES=this.value"></td><td><input class="fi" value="' + pcEsc(a.DESPUES) + '" oninput="MT_.ru.al[' + k + '].DESPUES=this.value"></td><td class="tc"><input type="checkbox" style="width:22px;height:22px"' + (a.OK ? ' checked' : '') + ' onchange="MT_.ru.al[' + k + '].OK=this.checked?1:0"></td><td><input class="fi" value="' + pcEsc(a.OBS) + '" oninput="MT_.ru.al[' + k + '].OBS=this.value"></td></tr>'; }).join('') + '</tbody></table></div>' +
+    '<div class="flex gap2 mt3"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" style="flex:1;min-height:48px" id="mt-ru-ok" onclick="mtRuedasGuardar()">💾 Guardar ruedas y alineación</button></div>';
+  b.innerHTML = h;
+}
+async function mtRuedasGuardar() {
+  var b = $id('mt-ru-ok'); if (b) b.disabled = true; var T = MT_.ru;
+  try { var r = await gsRun('gsMT_RuedasGuardar', { ID_OE: T.oe, RUEDAS: T.rows.map(function(x) { return { POS: x.POS, EJE: x.EJE, POSICION: x.POSICION, EST: x.EST, MARCA: x.MARCA, MEDIDA: x.MEDIDA, DIBUJO: x.DIBUJO, PRESION: x.PRESION, OBS: x.OBS }; }), ALIN: T.al });
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+    toast('Ruedas y alineación guardadas ✓', 'g'); closeModal(); var id = MT_.ord.ORDEN.ID_ORDEN; await mtAbrir(id);
+  } catch (e) { toast(e.message, 'r2'); } finally { if (b) b.disabled = false; }
 }
 function mtTrabManoImp(varias) {
   var c = '<h2>Trabajos y repuestos para presupuestar</h2><table class="det"><thead><tr><th style="width:' + (varias ? 40 : 55) + '%">Trabajo o repuesto (ej.: desarme y arme de cubierta)</th>' + (varias ? '<th style="width:15%">Unidad</th>' : '') + '<th class="n" style="width:10%">Cant.</th><th>Observación</th></tr></thead><tbody>';
@@ -17843,8 +17882,8 @@ async function mtImpOrden(id) {
   c += pcEncImp('Orden del taller · Check list', r.ORDEN.NRO, o.SUCURSAL ? 'Sucursal ' + o.SUCURSAL : '') +
     '<div class="dat"><div><b>Cliente</b>' + pcEsc(o.CLIENTE || 'Interno') + '</div><div><b>Fecha</b>' + fmtD(o.FECHA) + '</div><div><b>Pidió</b>' + pcEsc(o.SOLICITANTE || '—') + '</div><div><b>Estado</b>' + pcEsc((MT_EST[r.ORDEN.ESTADO] || [0, r.ORDEN.ESTADO])[1]) + '</div></div>' + (o.OBSERVACIONES ? '<div class="nota">' + pcEsc(o.OBSERVACIONES) + '</div>' : '');
   r.EQUIPOS.forEach(function(x) { var e = mtEq(x.ID_EQUIPO), pl = mtPl(x.ID_PLANTILLA); if (!pl) return;
-    c += '<h2>' + pcEsc(pl.CODIGO + ' · ' + pl.NOMBRE) + ' — ' + pcEsc(mtEqIdent(e)) + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + (x.KM_HS ? ' · ' + Number(x.KM_HS).toLocaleString('es-AR') + ' km/h' : '') + '</h2>' + mtCubTxt(e, 'p') + mtChkTablaImp(pl, x.RESP);
-    c += (x.OBSERVACIONES ? '<div class="nota">Observaciones: ' + pcEsc(x.OBSERVACIONES) + '</div>' : '') + (r.ORDEN.ESTADO === 'CHECK_LIST' ? mtRuedasImp(e) : ''); });
+    c += '<h2>' + pcEsc(pl.CODIGO + ' · ' + pl.NOMBRE) + ' — ' + pcEsc(mtEqIdent(e)) + ' · ' + pcEsc(mtEqTipo(e).toUpperCase()) + ' · ' + pcEsc(e.MARCA + ' ' + e.MODELO) + (x.KM_HS ? ' · ' + Number(x.KM_HS).toLocaleString('es-AR') + ' km/h' : '') + '</h2>' + mtCubTxt(e, 'p') + mtChkTablaImp(pl, x.RESP);
+    c += (x.OBSERVACIONES ? '<div class="nota">Observaciones: ' + pcEsc(x.OBSERVACIONES) + '</div>' : '') + (r.ORDEN.ESTADO === 'CHECK_LIST' || Object.keys(x.RUEDAS || {}).length || Object.keys(x.ALIN || {}).length ? mtRuedasImp(e, x) : ''); });
   if (r.ORDEN.ESTADO === 'CHECK_LIST') c += mtTrabManoImp(r.EQUIPOS.length > 1);
   if (r.TRAB && r.TRAB.TRABAJOS && r.TRAB.TRABAJOS.length) {
     c += '<h2>Trabajo y control final</h2><table class="det"><thead><tr><th style="width:38%">Tarea</th><th>Equipo</th><th>Mecánico</th><th class="n">Tiempo</th><th>Control final</th></tr></thead><tbody>' +
@@ -17892,6 +17931,10 @@ function mtEqGrilla() {
 }
 // Cubiertas del equipo: tipo y medidas (se ven en la ficha, en el check list y en el PDF)
 function mtEqIdent(e) { return (e && (e.IDENT || e.DOMINIO || e.CODIGO)) || ''; }
+// Qué es cada unidad (25/11/2026, Anibal): «Acoplado 4 ejes», «Camión 4x2 (2 ejes)»; si no tiene configuración, el tipo
+function mtEqCfg(e) { return e && e.ID_CONFIG ? mtFL().CONFIGS.filter(function(x) { return String(x.ID) === String(e.ID_CONFIG); })[0] : null; }
+function mtEqTipo(e) { if (!e) return ''; var c = mtEqCfg(e); if (c && c.NOMBRE) return c.NOMBRE; var t = (MT_.d.TIPOS || []).filter(function(x) { return x.ID_TIPO === e.ID_TIPO; })[0]; return t ? t.NOMBRE : ''; }
+function mtEqTipoBd(e) { var t = mtEqTipo(e); return t ? ' <span class="mt-bd mt-b-b" style="font-size:12px">' + pcEsc(t.toUpperCase()) + '</span>' : ''; }
 function mtCubTxt(e, tag) {
   if (!e || (!e.CUB_TIPO && !e.CUB_MED_DEL && !e.CUB_MED_TRAS)) return '';
   var t = 'Cubiertas: ' + (e.CUB_TIPO ? '<b>' + (e.CUB_TIPO === 'MACIZA' ? 'macizas' : 'inflables') + '</b>' : '') + (e.CUB_MED_DEL ? ' · delantera <b>' + pcEsc(e.CUB_MED_DEL) + '</b>' : '') + (e.CUB_MED_TRAS ? ' · trasera <b>' + pcEsc(e.CUB_MED_TRAS) + '</b>' : '');
