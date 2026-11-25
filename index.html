@@ -1699,7 +1699,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611251240';
+var EMA_BUILD = '202611251300';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17283,7 +17283,7 @@ function mtOrdenVer() {
   h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Presupuesto' + (P ? ' ' + pcEsc(P.NRO) : '') + '</span>' + (P ? mtBadge(P.ESTADO) : '') + '</div><div class="card-body" id="mt-pres">';
   if (MT_.til) h += mtTilHtml();
   else if (MT_.lin) h += mtFaltaStockHtml(MT_.lin) + mtPresEditorHtml();
-  else if (!P) h += '<div class="tdim mb2">Todavía no hay presupuesto. Se arma solo con lo que dio <b>NO</b> en el check list: el servicio que corresponde, sus repuestos y los precios de la lista vigente (' + pcEsc(MT_.d.LISTA) + '). Después se puede corregir.</div>' + (an || cerr ? '' : (mtChkFaltaTxt() ? '<div class="al mb2">' + pcEsc(mtChkFaltaTxt()) + '</div>' : '') + '<div class="flex gap2" style="flex-wrap:wrap"><button class="btn btn-p" style="min-height:48px" onclick="mtPresTildes()">☑ Armar el presupuesto con tildes (lo marcado y las observaciones)</button><button class="btn btn-s" style="min-height:48px" onclick="mtPresArmar()">⚙ Armado automático</button></div>');
+  else if (!P) h += '<div class="tdim mb2">Todavía no hay presupuesto. Con <b>tildes</b>: ves lo que dio mal y lo que tiene observación, tildás lo que se cobra y le ponés el precio. El <b>automático</b> arma solo con lo que dio NO, el servicio sugerido, sus repuestos y los precios de la lista vigente (' + pcEsc(MT_.d.LISTA) + '). Después se puede corregir.</div>' + (an || cerr ? '' : (mtChkFaltaTxt() ? '<div class="al mb2">' + pcEsc(mtChkFaltaTxt()) + '</div>' : '') + '<div class="flex gap2" style="flex-wrap:wrap"><button class="btn btn-p" style="min-height:48px" onclick="mtPresTildes()">☑ Armar el presupuesto con tildes (lo marcado y las observaciones)</button><button class="btn btn-s" style="min-height:48px" onclick="mtPresArmar()">⚙ Armado automático</button></div>');
   else {
     h += (['BORRADOR', 'ENVIADO', 'APROBADO'].indexOf(P.ESTADO) !== -1 ? mtFaltaStockHtml(P.DET) : '') + mtPresTabla(P.DET, true, P.DESCUENTO_PCT) + '<div class="tdim mt2" style="font-size:12px">Fecha ' + fmtD(P.FECHA) + ' · válido ' + P.VALIDEZ + ' días · versión ' + P.VERSION + (P.APROBADO_POR ? ' · aprobó <b>' + pcEsc(P.APROBADO_POR) + '</b> (' + pcEsc(P.MEDIO) + ') el ' + fmtD(P.FECHA_APROB) : '') + (P.MOTIVO ? ' · ' + pcEsc(P.MOTIVO) : '') + '</div>';
     if (!an && !cerr) h += '<div class="flex gap2 mt2" style="flex-wrap:wrap">' +
@@ -17570,7 +17570,7 @@ function mtPresEditorHtml() {
   var cel = window.innerWidth < 700;
   if (cel) {
     var rc = L.map(function(l, i) { var pu = mtPresPuDe(l), sub = Math.round(pu * l.CANTIDAD * 100) / 100; tot += sub; var te = l.CLASE === 'TERCERO', sc = mtSinCargo(l), falta = pu <= 0 && l.CLASE !== 'CLIENTE' && !sc;
-      return '<div class="mt-pc' + (falta ? ' falta' : '') + (sc ? ' sc' : '') + '" id="mt-pc-' + i + '"><div class="mt-pc-h"><span class="mt-bd mt-b-x">' + pcEsc(l.CLASE) + '</span> ' + (te || l.CLASE === 'MANUAL' ? '<input class="fi" value="' + pcEsc(l.DESCRIPCION) + '" onchange="MT_.lin[' + i + '].DESCRIPCION=this.value">' : '<b>' + pcEsc(l.DESCRIPCION) + '</b>') + '</div>' +
+      return '<div class="mt-pc' + (falta ? ' falta' : '') + (sc ? ' sc' : '') + '" id="mt-pc-' + i + '"><div class="mt-pc-h"><span class="mt-bd mt-b-x">' + pcEsc(l.CLASE) + '</span> ' + (te || l.CLASE === 'MANUAL' ? '<input class="fi" style="min-width:240px" value="' + pcEsc(l.DESCRIPCION) + '" onchange="MT_.lin[' + i + '].DESCRIPCION=this.value">' : '<b>' + pcEsc(l.DESCRIPCION) + '</b>') + '</div>' +
         '<div class="mt-pc-g"><label>Cantidad<input class="fi tr" inputmode="decimal" value="' + l.CANTIDAD + '" oninput="mtPcVivo(' + i + ',\'CANT\',this.value)"></label>' +
         '<label>Precio sin IVA<input class="fi tr" inputmode="decimal"' + (sc ? ' disabled placeholder="SIN CARGO"' : '') + (falta ? ' placeholder="poné el precio"' : '') + ' data-q="SIN" value="' + (pu ? String(pu).replace('.', ',') : '') + '" oninput="mtPcVivo(' + i + ',\'SIN\',this.value)"></label>' +
         '<label>Precio con IVA<input class="fi tr" inputmode="decimal"' + (sc ? ' disabled placeholder="SIN CARGO"' : '') + ' data-q="CON" value="' + (pu ? String(Math.round(pu * 121) / 100).replace('.', ',') : '') + '" oninput="mtPcVivo(' + i + ',\'CON\',this.value)"></label></div>' +
@@ -17587,7 +17587,7 @@ function mtPresEditorHtml() {
   }
   var rows = L.map(function(l, i) { var pl = Number(l.PRECIO_LISTA) || 0, pu = mtPresPuDe(l), sub = Math.round(pu * l.CANTIDAD * 100) / 100; tot += sub; var te = l.CLASE === 'TERCERO';
     var scD = mtSinCargo(l), st = scD ? ' style="width:110px" disabled placeholder="SIN CARGO"' : pu <= 0 && l.CLASE !== 'CLIENTE' ? ' style="width:110px;border-color:#dc2626;background:#fef2f2" placeholder="poné el precio"' : (pl > 0 && pu < pl - 0.005 ? ' style="width:110px;border-color:#d97706;background:#fffbeb" title="Por debajo de la lista"' : ' style="width:110px"');
-    return '<tr><td>' + pcEsc(l.CLASE) + '</td><td class="pc-wr">' + (te || l.CLASE === 'MANUAL' ? '<input class="fi" value="' + pcEsc(l.DESCRIPCION) + '" onchange="MT_.lin[' + i + '].DESCRIPCION=this.value">' : pcEsc(l.DESCRIPCION)) + '</td>' + mtStockTd(l) +
+    return '<tr><td>' + pcEsc(l.CLASE) + '</td><td class="pc-wr">' + (te || l.CLASE === 'MANUAL' ? '<input class="fi" style="min-width:240px" value="' + pcEsc(l.DESCRIPCION) + '" onchange="MT_.lin[' + i + '].DESCRIPCION=this.value">' : pcEsc(l.DESCRIPCION)) + '</td>' + mtStockTd(l) +
       '<td><input class="fi tr" style="width:70px" inputmode="decimal" value="' + l.CANTIDAD + '" onchange="MT_.lin[' + i + '].CANTIDAD=mtNum(this.value);mtOrdenVer()"></td>' +
       '<td class="tr">' + (te ? '<input class="fi tr" style="width:110px" inputmode="decimal" placeholder="Precio" value="' + (pl || '') + '" onchange="mtPresPrecio(' + i + ',\'LISTA\',this.value)"><input class="fi tr mt2" style="width:110px" inputmode="decimal" placeholder="Costo del tercero" value="' + (l.COSTO_UNIT || '') + '" onchange="MT_.lin[' + i + '].COSTO_UNIT=mtNum(this.value);mtPresPrecio(' + i + ',\'LISTA\',Math.round(MT_.lin[' + i + '].COSTO_UNIT*(1+' + (d.MARGEN_TERC || 30) + '/100)*100)/100)">' : (pl ? mtPlata(pl) : '<span class="tdim">sin lista</span>')) + '</td>' +
       '<td><input class="fi tr" inputmode="decimal"' + st + ' value="' + (pu ? String(pu).replace('.', ',') : '') + '" onchange="mtPresPrecio(' + i + ',\'SIN\',this.value)"></td>' +
