@@ -1699,7 +1699,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611251953';
+var EMA_BUILD = '202611252001';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17182,6 +17182,7 @@ function mtOrdGrilla() {
       // 20/11/2026 (Anibal): los botones van primero (en el celular se ven sin deslizar) y después las columnas que más importan
       return '<tr' + (an ? ' style="opacity:.6"' : '') + '><td><div class="mt-acc6">' + mtBtn('btn-s', '👁 Ver', 'mtAbrir(' + o.ID_ORDEN + ')', 'Ver la orden, el check list y el presupuesto') + mtBtn('btn-s', '🖨 PDF', 'mtImpOrden(' + o.ID_ORDEN + ')', 'PDF de la orden con el check list (imprimir o guardar)') +
           (o.PRESUP ? mtBtn('btn-s', '🧾 Presupuesto', 'mtImpPresupDe(' + o.ID_ORDEN + ')', 'PDF del presupuesto') : '<span></span>') +
+          (o.PRESUP && !an && o.ESTADO !== 'FACTURADA' && o.PRESUP.ESTADO !== 'ANULADO' ? mtBtn('btn-p', '☑ Editar presupuesto', 'mtPresEditarDe(' + o.ID_ORDEN + ')', 'Modificar el presupuesto sobre el check list original (aunque esté aprobado), mientras no esté facturado') : '') +
           mtBtn('btn-s', '📲 WhatsApp', 'mtWhats(' + o.ID_ORDEN + ')', 'Mandar un WhatsApp a quien pidió la orden') +
           (an ? '' : mtBtn('btn-s', '✏ Modificar', 'mtOrdEditar(' + o.ID_ORDEN + ')', 'Cambiar quién la pidió, teléfono u observaciones') + (mtPuede('ANULAR') && o.ESTADO !== 'FACTURADA' ? mtBtn('btn-d', '✖ Anular', 'mtOrdAnular(' + o.ID_ORDEN + ')', 'Anular la orden') : '')) + '</div></td>' +
         '<td class="mono"><b>' + pcEsc(o.NRO) + '</b><div class="tdim" style="font-family:inherit">' + fmtD(o.FECHA) + '</div><div style="font-family:inherit;margin-top:3px">' + mtBadge(o.ESTADO) + '</div>' + (an && o.MOTIVO_ANULACION ? '<div class="pc-nota" style="font-family:inherit">' + pcEsc(o.MOTIVO_ANULACION.slice(0, 80)) + '</div>' : '') + '</td>' +
@@ -17556,6 +17557,11 @@ function mtPresTildes(agregar) {
 }
 // 25/11/2026 (Anibal): modificar el presupuesto grabado sobre el check list original: cada punto que dio NO u observación,
 // tildado si estaba en el presupuesto (con la cantidad y el precio grabados) y destildado si no estaba; lo que no sale del check list también aparece.
+// 25/11/2026 (Anibal): desde la grilla, directo a modificar el presupuesto
+async function mtPresEditarDe(id) { await mtAbrir(id); var O = MT_.ord, P = O && O.PRESUP; if (!P) { toast('La orden no tiene presupuesto', 'r2'); return; }
+  if (P.FACTURA) { toast('El presupuesto está ' + P.FACTURA.TXT + ': ya no se edita', 'r2'); return; }
+  if (P.ESTADO !== 'APROBADO' && ['EN_TRABAJO', 'TERMINADA'].indexOf(O.ORDEN.ESTADO) !== -1) { toast('La orden está ' + O.ORDEN.ESTADO.toLowerCase().replace('_', ' ') + ' y el presupuesto no está aprobado: no se edita', 'r2'); return; }
+  mtPresTildesEditar(); setTimeout(function() { var e = $id('mt-pres'); if (e) e.scrollIntoView({ block: 'start' }); }, 50); }
 function mtPresTildesEditar() {
   var P = MT_.ord.PRESUP; if (!P) return;
   mtPresTildes(); var T = MT_.til; T.editar = 1; T.dg = Number(P.DESCUENTO_PCT) || 0; T.nroAnt = P.NRO; T.totAnt = P.TOTAL;
