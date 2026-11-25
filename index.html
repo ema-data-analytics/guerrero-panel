@@ -1699,7 +1699,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611252003';
+var EMA_BUILD = '202611252006';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17593,7 +17593,7 @@ function mtTilGrab(r) { return !!(r.ANT && String(r.SERV) === String(r.SERV_ANT)
 function mtTilRepsF(r) { if (!r.REPS) return []; var f = (Number(r.CANT) || 0) / (Number(r.CANT_ANT) || 1); return r.REPS.map(function(d) { var c = {}; Object.keys(d).forEach(function(q) { c[q] = d[q]; }); c.CANTIDAD = Math.round(Number(d.CANTIDAD) * f * 1000) / 1000; return c; }); }
 function mtTilRec(r) { if (mtTilGrab(r)) { var t0 = 0; mtTilRepsF(r).forEach(function(d) { t0 += (Number(d.PRECIO_UNIT) || 0) * d.CANTIDAD; }); return Math.round(t0 * 100) / 100; }
   var s = mtTilS(r.SERV), t = 0, pr = (MT_.til && MT_.til.pRep) || {}; if (s) s.RECETA.forEach(function(q) { var kp = [r.OE, s.ID_SERVICIO, q.ID_ARTICULO, r.ITEM || ''].join('|'), pq = pr[kp] !== undefined ? Number(pr[kp]) : (Number(q.PRECIO) || 0); t += pq * q.CANT * (Number(r.CANT) || 0); }); return Math.round(t * 100) / 100; }
-function mtTilRecTxt(r) { if (mtTilGrab(r)) return '+ repuestos como se grabaron: ' + mtTilRepsF(r).map(function(d) { return d.DESCRIPCION + ' ×' + String(d.CANTIDAD).replace('.', ','); }).join(', ') + ' (' + mtPlata(mtTilRec(r)) + ')';
+function mtTilRecTxt(r) { if (mtTilGrab(r)) return !(r.REPS && r.REPS.length) ? '' : '+ repuestos como se grabaron: ' + mtTilRepsF(r).map(function(d) { return d.DESCRIPCION + ' ×' + String(d.CANTIDAD).replace('.', ','); }).join(', ') + ' (' + mtPlata(mtTilRec(r)) + ')';
   var s = mtTilS(r.SERV); return s && s.RECETA.length ? '+ repuestos: ' + s.RECETA.map(function(q) { return q.NOMBRE + ' ×' + Math.round(q.CANT * (Number(r.CANT) || 0) * 100) / 100; }).join(', ') + ' (' + mtPlata(mtTilRec(r)) + (MT_.til && MT_.til.editar ? ', precio del presupuesto' : ', precio de lista') + ')' : ''; }
 function mtTilSub(r) { return Math.round(((Number(r.PU) || 0) * (Number(r.CANT) || 0) + mtTilRec(r)) * 100) / 100; }
 function mtTilEqTxt(oe) { var x = MT_.ord.EQUIPOS.filter(function(q) { return String(q.ID_OE) === String(oe); })[0]; return x ? mtEqIdent(mtEq(x.ID_EQUIPO)) : ''; }
