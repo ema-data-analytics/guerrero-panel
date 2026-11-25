@@ -1699,7 +1699,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611251700';
+var EMA_BUILD = '202611251710';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17580,7 +17580,7 @@ function mtPresTildesEditar() {
 function mtTilS(id) { return id ? MT_.d.SERVICIOS.filter(function(z) { return String(z.ID_SERVICIO) === String(id); })[0] : null; }
 function mtTilPLista(id) { var s = mtTilS(id); return s && s.PRECIO > 0 ? s.PRECIO : ''; }
 function mtTilRec(r) { var s = mtTilS(r.SERV), t = 0, pr = (MT_.til && MT_.til.pRep) || {}; if (s) s.RECETA.forEach(function(q) { var kp = [r.OE, s.ID_SERVICIO, q.ID_ARTICULO, r.ITEM || ''].join('|'), pq = pr[kp] !== undefined ? Number(pr[kp]) : (Number(q.PRECIO) || 0); t += pq * q.CANT * (Number(r.CANT) || 0); }); return Math.round(t * 100) / 100; }
-function mtTilRecTxt(r) { var s = mtTilS(r.SERV); return s && s.RECETA.length ? '+ repuestos: ' + s.RECETA.map(function(q) { return q.NOMBRE + ' ×' + Math.round(q.CANT * (Number(r.CANT) || 0) * 100) / 100; }).join(', ') + ' (' + mtPlata(mtTilRec(r)) + ', precio de lista)' : ''; }
+function mtTilRecTxt(r) { var s = mtTilS(r.SERV); return s && s.RECETA.length ? '+ repuestos: ' + s.RECETA.map(function(q) { return q.NOMBRE + ' ×' + Math.round(q.CANT * (Number(r.CANT) || 0) * 100) / 100; }).join(', ') + ' (' + mtPlata(mtTilRec(r)) + (MT_.til && MT_.til.editar ? ', precio del presupuesto' : ', precio de lista') + ')' : ''; }
 function mtTilSub(r) { return Math.round(((Number(r.PU) || 0) * (Number(r.CANT) || 0) + mtTilRec(r)) * 100) / 100; }
 function mtTilEqTxt(oe) { var x = MT_.ord.EQUIPOS.filter(function(q) { return String(q.ID_OE) === String(oe); })[0]; return x ? mtEqIdent(mtEq(x.ID_EQUIPO)) : ''; }
 function mtTilTot() { var t = 0, n = 0; (MT_.til.editar && MT_.til.fijas || []).forEach(function(d) { t += Number(d.SUBTOTAL) || 0; n++; }); MT_.til.rows.forEach(function(r, k) { if (r.ON) { t += mtTilSub(r); n++; } var e = $id('mt-tsub-' + k); if (e) e.textContent = r.ON ? mtPlata(mtTilSub(r)) : '—'; var rt = $id('mt-trec-' + k); if (rt) rt.textContent = mtTilRecTxt(r); var w = $id('mt-tr-' + k); if (w) w.style.opacity = r.ON ? '1' : '.45'; });
