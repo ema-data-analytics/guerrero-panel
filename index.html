@@ -1699,7 +1699,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611252001';
+var EMA_BUILD = '202611252003';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17575,18 +17575,26 @@ function mtPresTildesEditar() {
     T.rows.forEach(function(r, j) { if (k === -1 && !r.USADA && String(r.OE) === String(d.ID_OE) && d.ID_ITEM_CHK && String(r.ITEM) === String(d.ID_ITEM_CHK) && (String(r.SERV) === String(d.ID_SERVICIO) || !r.SERV)) k = j; });
     if (k === -1) T.rows.forEach(function(r, j) { if (k === -1 && !r.USADA && String(r.OE) === String(d.ID_OE) && d.ID_ITEM_CHK && String(r.ITEM) === String(d.ID_ITEM_CHK)) k = j; });
     var pu = d.DESCUENTO_PCT >= 100 && !(d.PRECIO_UNIT > 0) ? 0 : d.PRECIO_UNIT;
-    if (k > -1) { var r = T.rows[k]; r.USADA = 1; r.ON = 1; r.ANT = 1; r.SERV = d.ID_SERVICIO || r.SERV; r.CANT = d.CANTIDAD; r.PU = pu; r.PU_ANT = pu; r.SC = pu > 0 ? 0 : 1; r.DESC = d.DESCRIPCION; }
-    else { var it = d.ID_ITEM_CHK ? null : null; nuevas.push({ OE: d.ID_OE, ITEM: d.ID_ITEM_CHK || '', NOMBRE: d.DESCRIPCION.split(' — ')[0], R: '', MAL: false, OBS: '', ON: 1, ANT: 1, SERV: d.ID_SERVICIO, CANT: d.CANTIDAD, PU: pu, PU_ANT: pu, SC: pu > 0 ? 0 : 1, HOJA: 1, DESC: d.DESCRIPCION, TERC: d.CLASE === 'TERCERO' ? 1 : 0 }); }
+    if (k > -1) { var r = T.rows[k]; r.USADA = 1; r.ON = 1; r.ANT = 1; r.SERV = d.ID_SERVICIO || r.SERV; r.SERV_ANT = r.SERV; r.CANT = d.CANTIDAD; r.PU = pu; r.PU_ANT = pu; r.SC = pu > 0 ? 0 : 1; r.DESC = d.DESCRIPCION; }
+    else { var it = d.ID_ITEM_CHK ? null : null; nuevas.push({ OE: d.ID_OE, ITEM: d.ID_ITEM_CHK || '', NOMBRE: d.DESCRIPCION.split(' — ')[0], R: '', MAL: false, OBS: '', ON: 1, ANT: 1, SERV: d.ID_SERVICIO, SERV_ANT: d.ID_SERVICIO, CANT: d.CANTIDAD, PU: pu, PU_ANT: pu, SC: pu > 0 ? 0 : 1, HOJA: 1, DESC: d.DESCRIPCION, TERC: d.CLASE === 'TERCERO' ? 1 : 0 }); }
   });
   T.rows = T.rows.concat(nuevas);
   // repuestos o insumos agregados aparte (no son de un servicio): se mantienen como estaban
-  T.fijas = det.filter(function(d) { return (d.CLASE === 'REPUESTO' || d.CLASE === 'INSUMO' || d.CLASE === 'CLIENTE' || d.CLASE === 'MANUAL') && !d.ID_SERVICIO; }).map(function(d) { var c = {}; Object.keys(d).forEach(function(q) { c[q] = d[q]; }); return c; });
+  // repuestos del presupuesto: los de un servicio van con su renglón (como se grabaron); los sueltos quedan aparte, como estaban
+  T.fijas = [];
+  det.forEach(function(d) { if (d.CLASE === 'SERVICIO' || d.CLASE === 'TERCERO') return; var c = {}; Object.keys(d).forEach(function(q) { c[q] = d[q]; });
+    var due = null; if (d.ID_SERVICIO) T.rows.forEach(function(r) { if (!due && r.ANT && String(r.OE) === String(d.ID_OE) && String(r.SERV) === String(d.ID_SERVICIO) && String(r.ITEM || '') === String(d.ID_ITEM_CHK || '')) due = r; });
+    if (due) { due.REPS = due.REPS || []; due.REPS.push(c); due.CANT_ANT = due.CANT; } else T.fijas.push(c); });
   mtOrdenVer();
 }
 function mtTilS(id) { return id ? MT_.d.SERVICIOS.filter(function(z) { return String(z.ID_SERVICIO) === String(id); })[0] : null; }
 function mtTilPLista(id) { var s = mtTilS(id); return s && s.PRECIO > 0 ? s.PRECIO : ''; }
-function mtTilRec(r) { var s = mtTilS(r.SERV), t = 0, pr = (MT_.til && MT_.til.pRep) || {}; if (s) s.RECETA.forEach(function(q) { var kp = [r.OE, s.ID_SERVICIO, q.ID_ARTICULO, r.ITEM || ''].join('|'), pq = pr[kp] !== undefined ? Number(pr[kp]) : (Number(q.PRECIO) || 0); t += pq * q.CANT * (Number(r.CANT) || 0); }); return Math.round(t * 100) / 100; }
-function mtTilRecTxt(r) { var s = mtTilS(r.SERV); return s && s.RECETA.length ? '+ repuestos: ' + s.RECETA.map(function(q) { return q.NOMBRE + ' ×' + Math.round(q.CANT * (Number(r.CANT) || 0) * 100) / 100; }).join(', ') + ' (' + mtPlata(mtTilRec(r)) + (MT_.til && MT_.til.editar ? ', precio del presupuesto' : ', precio de lista') + ')' : ''; }
+function mtTilGrab(r) { return !!(r.ANT && String(r.SERV) === String(r.SERV_ANT)); }
+function mtTilRepsF(r) { if (!r.REPS) return []; var f = (Number(r.CANT) || 0) / (Number(r.CANT_ANT) || 1); return r.REPS.map(function(d) { var c = {}; Object.keys(d).forEach(function(q) { c[q] = d[q]; }); c.CANTIDAD = Math.round(Number(d.CANTIDAD) * f * 1000) / 1000; return c; }); }
+function mtTilRec(r) { if (mtTilGrab(r)) { var t0 = 0; mtTilRepsF(r).forEach(function(d) { t0 += (Number(d.PRECIO_UNIT) || 0) * d.CANTIDAD; }); return Math.round(t0 * 100) / 100; }
+  var s = mtTilS(r.SERV), t = 0, pr = (MT_.til && MT_.til.pRep) || {}; if (s) s.RECETA.forEach(function(q) { var kp = [r.OE, s.ID_SERVICIO, q.ID_ARTICULO, r.ITEM || ''].join('|'), pq = pr[kp] !== undefined ? Number(pr[kp]) : (Number(q.PRECIO) || 0); t += pq * q.CANT * (Number(r.CANT) || 0); }); return Math.round(t * 100) / 100; }
+function mtTilRecTxt(r) { if (mtTilGrab(r)) return '+ repuestos como se grabaron: ' + mtTilRepsF(r).map(function(d) { return d.DESCRIPCION + ' ×' + String(d.CANTIDAD).replace('.', ','); }).join(', ') + ' (' + mtPlata(mtTilRec(r)) + ')';
+  var s = mtTilS(r.SERV); return s && s.RECETA.length ? '+ repuestos: ' + s.RECETA.map(function(q) { return q.NOMBRE + ' ×' + Math.round(q.CANT * (Number(r.CANT) || 0) * 100) / 100; }).join(', ') + ' (' + mtPlata(mtTilRec(r)) + (MT_.til && MT_.til.editar ? ', precio del presupuesto' : ', precio de lista') + ')' : ''; }
 function mtTilSub(r) { return Math.round(((Number(r.PU) || 0) * (Number(r.CANT) || 0) + mtTilRec(r)) * 100) / 100; }
 function mtTilEqTxt(oe) { var x = MT_.ord.EQUIPOS.filter(function(q) { return String(q.ID_OE) === String(oe); })[0]; return x ? mtEqIdent(mtEq(x.ID_EQUIPO)) : ''; }
 function mtTilTot() { var t = 0, n = 0; (MT_.til.editar && MT_.til.fijas || []).forEach(function(d) { t += Number(d.SUBTOTAL) || 0; n++; }); MT_.til.rows.forEach(function(r, k) { if (r.ON) { t += mtTilSub(r); n++; } var e = $id('mt-tsub-' + k); if (e) e.textContent = r.ON ? mtPlata(mtTilSub(r)) : '—'; var rt = $id('mt-trec-' + k); if (rt) rt.textContent = mtTilRecTxt(r); var w = $id('mt-tr-' + k); if (w) w.style.opacity = r.ON ? '1' : '.45'; });
@@ -17632,6 +17640,7 @@ async function mtTilGuardar() {
     var s = mtTilS(r.SERV), eqT = mtTilEqTxt(r.OE), donde = r.ITEM ? ' (' + r.NOMBRE + (r.OBS ? ': ' + r.OBS : '') + ')' : '', cant = Number(r.CANT) || 1;
     if (s.CODIGO === 'TLR-TERCERO' || r.TERC) { lin.push({ CLASE: 'TERCERO', ID_OE: r.OE, ID_SERVICIO: s.ID_SERVICIO, ID_ITEM_CHK: r.ITEM || '', DESCRIPCION: ('Trabajo de tercero — ' + eqT + donde).substring(0, 300), CANTIDAD: cant, PRECIO_LISTA: Number(r.PU), PRECIO_UNIT: Number(r.PU), COSTO_UNIT: 0, DESCUENTO_PCT: 0 }); return; }
     lin.push({ CLASE: 'SERVICIO', ID_OE: r.OE, ID_SERVICIO: s.ID_SERVICIO, ID_ARTICULO: s.ID_ARTICULO, ID_ITEM_CHK: r.ITEM || '', DESCRIPCION: (s.NOMBRE + ' — ' + eqT + donde).substring(0, 300), CANTIDAD: cant, PRECIO_LISTA: s.PRECIO, PRECIO_UNIT: Number(r.PU), DESCUENTO_PCT: 0, SIN_CARGO: r.SC && !(Number(r.PU) > 0) ? 1 : 0, COSTO_UNIT: Math.round(s.HORAS * MT_.d.COSTO_HORA * 100) / 100 });
+    if (mtTilGrab(r)) { mtTilRepsF(r).forEach(function(d) { lin.push(d); }); return; }
     s.RECETA.forEach(function(q) { var lr = { CLASE: 'REPUESTO', ID_OE: r.OE, ID_SERVICIO: s.ID_SERVICIO, ID_ARTICULO: q.ID_ARTICULO, ID_ITEM_CHK: r.ITEM || '', DESCRIPCION: q.NOMBRE, CANTIDAD: q.CANT * cant, PRECIO_LISTA: q.PRECIO, DESCUENTO_PCT: 0, COSTO_UNIT: q.COSTO }, kp = [r.OE, s.ID_SERVICIO, q.ID_ARTICULO, r.ITEM || ''].join('|'); if (T.pRep && T.pRep[kp] !== undefined) lr.PRECIO_UNIT = T.pRep[kp]; lin.push(lr); });
   });
   if (T.editar && T.fijas) T.fijas.forEach(function(d) { lin.push(d); n++; });
