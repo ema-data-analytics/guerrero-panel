@@ -1699,7 +1699,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611251400';
+var EMA_BUILD = '202611251415';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -10125,7 +10125,7 @@ function pcPintar() {
 // ================================================================
 // 1. CARGA DE CASCOS (por cliente, cada casco con su N° interno)
 // ================================================================
-function pcCasVacio() { var ant = PC_.kf.length ? PC_.kf[PC_.kf.length - 1] : null; return { TIPO: ant ? ant.TIPO : '', DOT: '', MEDIDA: ant ? ant.MEDIDA : '', MARCA_FAB: ant ? ant.MARCA_FAB : '', OBSERVACIONES: '', TRABAJO: ant ? ant.TRABAJO : 'RECAPADO', DIBUJO: ant ? ant.DIBUJO || '' : '' }; }
+function pcCasVacio() { var ant = PC_.kf.length ? PC_.kf[PC_.kf.length - 1] : (PC_.ke || null); return { TIPO: ant ? ant.TIPO : '', DOT: '', MEDIDA: ant ? ant.MEDIDA : '', MARCA_FAB: ant ? ant.MARCA_FAB : '', OBSERVACIONES: '', TRABAJO: ant ? ant.TRABAJO : 'RECAPADO', DIBUJO: ant ? ant.DIBUJO || '' : '' }; }
 // Dibujo de la banda según el tipo de cubierta (05/11/2026, Anibal): camión lisa/mixta/taco, camioneta HT/AT/MT, auto…
 var PC_DIB_TIPO = { CAMION: ['LISA', 'MIXTA', 'TACO'], COLECTIVO: ['LISA', 'MIXTA', 'TACO'], CAMIONETA: ['HT', 'AT', 'MT'], AUTO: ['TURISMO', 'ALTO RENDIMIENTO', 'RUN FLAT'] };
 function pcDibOpts(tipo, v) { var l = PC_DIB_TIPO[String(tipo || '').toUpperCase()] || []; if (v && l.indexOf(v) === -1) l = l.concat([v]); return '<option value="">' + (l.length ? '— elegí —' : '—') + '</option>' + l.map(function(x) { return '<option' + (x === v ? ' selected' : '') + '>' + x + '</option>'; }).join(''); }
@@ -10517,7 +10517,7 @@ function pcBoletaAviso(v, idAv) {
 }
 function pcCascos() {
   var d = PC_.d;
-  if (!PC_.kf.length) PC_.kf = [pcCasVacio()];
+  if (!PC_.ke) { PC_.ke = pcCasVacio(); PC_.kedit = -1; }
   var ult = PC_.ultOT ? (d.ordTrabajo || []).filter(function(o) { return o.NRO === PC_.ultOT; })[0] : null;
   var h = (document.body.classList.contains('modo-cascos') ? '' : '<div class="mb3"><button class="btn btn-s" onclick="PC_.tab=\'otrab\';pcPintar()">← Volver a la lista de órdenes de trabajo</button></div>') + pcAvisoLinea() + (ult ? '<div class="al al-g mb3" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span>✓ Grabada · ' + (ult.NRO_MANUAL ? 'Boleta N° <b style="font-size:18px">' + pcEsc(ult.NRO_MANUAL) + '</b> <span style="font-size:12px">(sistema ' + pcEsc(ult.NRO) + ')</span>' : 'N° de orden <b style="font-size:18px">' + pcEsc(ult.NRO) + '</b>') + ' · ' + pcEsc(ult.CLIENTE) + '<br><span style="font-size:12px">' + (ult.FIRMA_ID ? '✓ Entregó: ' + pcEsc(ult.FIRMA_NOMBRE) : '1) Que firme quien entrega los cascos') + ' · ' + (ult.RECEP_ESTADO === 'RECIBIDA' ? '✓ Recibida en planta por ' + pcEsc(ult.RECEP_USUARIO || '') : ult.RECEP_ESTADO === 'PARCIAL' ? 'Recibida en parte: faltan cascos' : '2) Confirmar la recepción en planta') + '</span></span><span class="flex gap2" style="flex-wrap:wrap">' + (ult.FIRMA_ID ? '' : '<button class="btn btn-p btn-sm" onclick="pcFirmaOT(' + ult.ID_OTRAB + ')">✍ Firma de quien entrega</button>') + (ult.RECEP_ESTADO === 'PENDIENTE' || ult.RECEP_ESTADO === 'PARCIAL' ? '<button class="btn btn-p btn-sm" onclick="pcRecibirOT(' + ult.ID_OTRAB + ')">📥 Confirmar recepción</button>' : '') + '<button class="btn ' + (ult.RECEP_ESTADO === 'RECIBIDA' ? 'btn-p' : 'btn-s') + ' btn-sm" onclick="pcImpOTrab(' + ult.ID_OTRAB + ')"><i class="fas fa-file-pdf"></i> Comprobante (PDF)</button></span></div>' : '') +
     pcPorRecibir(ult) +
@@ -10528,8 +10528,8 @@ function pcCascos() {
     pcNroAuto('pc-k-man') +
     '<div class="fg"><label class="fl">Fecha</label><input class="fi" type="date" id="pc-k-f" value="' + fechaISO(new Date()) + '"/></div></div>' +
     pcMedidasList() + '<datalist id="pc-fabricantes">' + (d.marcas || []).map(function(m) { return '<option value="' + pcEsc(m) + '">'; }).join('') + '</datalist>' +
-    '<div class="tw" data-noimp="1"><table style="font-size:12px" class="pc-rec" id="pc-k-t"><thead><tr><th style="width:40px">#</th><th>N° interno</th><th>Tipo *</th><th title="La pone el sistema al grabar">Marca grabada</th><th title="El que trae la cubierta. Si no tiene o no se lee, vacío">DOT</th><th>Medida *</th><th>Marca</th><th>Trabajo</th><th>Dibujo</th><th>Observaciones</th><th></th></tr></thead><tbody id="pc-k-filas"></tbody></table></div>' +
-    '<div id="pc-k-err" class="mt3"></div><div class="flex gap2 mt3"><button class="btn btn-s btn-sm" id="pc-k-mas" onclick="PC_.kf.push(pcCasVacio());pcCasFilas()"><i class="fas fa-plus"></i> Otro casco</button>' +
+    '<div id="pc-k-filas"></div>' +
+    '<div id="pc-k-err" class="mt3"></div><div class="flex gap2 mt3">' +
     '<button class="btn btn-p" id="pc-k-ok" onclick="pcCasGrabar()"><i class="fas fa-save"></i> Grabar boleta</button><button class="btn btn-s" id="pc-k-can" onclick="pcCasCancelar()">✕ Cancelar</button><button class="btn btn-s" onclick="pcAnuladas()">🗂 Anuladas</button><span class="tdim" style="font-size:12px;align-self:center">Si dejás el trabajo vacío, el casco queda sin orden y lo asignás después en "Órdenes de trabajo".</span></div></div></div>' +
     '<div class="card"><div class="card-hd"><span class="card-title">Cascos declarados con anterioridad</span><span class="badge b-blue" id="pc-k-n"></span></div><div id="pc-k-ant"></div></div>';
   $id('pc-body').innerHTML = h;
@@ -10579,7 +10579,7 @@ function pcCompraDatos() {
 }
 // Alta rápida de medida o marca sin salir de la carga de cascos (queda en el maestro y elegida en el renglón)
 function pcAltaRapida(que, i) {
-  var f = PC_.kf[i] || {}, med = que === 'MEDIDA';
+  var f = (i < 0 ? PC_.ke : PC_.kf[i]) || {}, med = que === 'MEDIDA';
   if (med && !f.TIPO) { toast('Elegí primero el tipo de cubierta del renglón', 'r2'); return; }
   showModal('<div class="mh"><span class="mt">' + (med ? 'Medida nueva' : 'Marca nueva') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
     (med ? '<div class="tdim mb2" style="font-size:12px">Tipo ' + pcEsc(f.TIPO) + ' · línea ' + pcEsc(pcLineaDeTipo(f.TIPO)) + '. Queda en el maestro de medidas.</div>' : '<div class="tdim mb2" style="font-size:12px">Marca de fábrica del casco. Queda en el maestro de marcas.</div>') +
@@ -10588,7 +10588,7 @@ function pcAltaRapida(que, i) {
   setTimeout(function() { var e = $id('pc-ar-v'); if (e) e.focus(); }, 50);
 }
 async function pcAltaRapidaOk(que, i) {
-  var f = PC_.kf[i], v = String($v('pc-ar-v') || '').trim().toUpperCase(); if (!v) { toast('Escribí el valor', 'r2'); return; }
+  var f = i < 0 ? PC_.ke : PC_.kf[i], v = String($v('pc-ar-v') || '').trim().toUpperCase(); if (!v) { toast('Escribí el valor', 'r2'); return; }
   var b = $id('pc-ar-ok'); b.disabled = true;
   try {
     var r = await gsRun('gsPC_AltaRapida', que, v, que === 'MEDIDA' ? pcLineaDeTipo(f.TIPO) : '');
@@ -10599,34 +10599,67 @@ async function pcAltaRapidaOk(que, i) {
   } catch (e) { toast(e.message, 'r2'); } finally { b.disabled = false; }
 }
 function pcCasFilasLuego() { clearTimeout(PC_._cft); PC_._cft = setTimeout(pcCasFilas, 0); }
+// 25/11/2026 (Anibal): carga de cascos como un comprobante. Un solo renglón de carga arriba y cada casco que se agrega
+// baja como una línea al detalle de la orden (se puede corregir o sacar). Se graba todo junto con «Grabar boleta».
 function pcCasFilas() {
-  var ae = document.activeElement, tb = $id('pc-k-filas'); if (!tb) return;
-  if (ae && tb.contains(ae) && ae.blur) ae.blur();
-  pcCasAuto();
-  var optT = '<option value="">— sin orden —</option>' + PC_.d.trabajos.filter(function(x) { return x.ACTIVO != 0; }).map(function(x) { return '<option>' + pcEsc(x.TRABAJO) + '</option>'; }).join('');
-  var d = PC_.d, opt = '<option value="">—</option>' + d.tipos.filter(function(x) { return x.ACTIVO != 0; }).map(function(x) { return '<option>' + pcEsc(x.TIPO) + '</option>'; }).join('');
-  $id('pc-k-filas').innerHTML = PC_.kf.map(function(f, i) {
-    return '<tr><td class="mono tc" data-l="Casco">' + (i + 1) + '</td><td class="tdim" data-l="N° interno">auto</td><td data-l="Tipo *"><select class="fs" data-i="' + i + '" data-k="TIPO" style="min-width:115px">' + opt.replace('<option>' + pcEsc(f.TIPO) + '</option>', '<option selected>' + pcEsc(f.TIPO) + '</option>') + '</select></td>' +
-      '<td data-l="Marca grabada"><b class="mono" title="La pone el sistema al grabar">' + (f._MK ? pcEsc(f._MK) : '<span class="tdim" style="font-weight:400">elegí el cliente</span>') + '</b></td>' +
-      '<td data-l="DOT (si la cubierta lo trae)"><input class="fi" data-i="' + i + '" data-k="DOT" value="' + pcEsc(f.DOT) + '" placeholder="Si no tiene, vacío" style="width:150px;text-transform:uppercase"/></td>' +
-      '<td data-l="Medida *"><div class="pc-celda"><input class="fi" list="' + (f.TIPO ? pcMedKey(f.TIPO) : 'pc-medidas') + '" data-i="' + i + '" data-k="MEDIDA" value="' + pcEsc(f.MEDIDA) + '" placeholder="' + (f.TIPO ? '' : 'Elegí el tipo') + '" style="width:140px"/><button class="btn btn-s btn-xs" title="Medida nueva" onclick="pcAltaRapida(\'MEDIDA\',' + i + ')">＋</button></div></td>' +
-      '<td data-l="Marca"><div class="pc-celda"><input class="fi" list="pc-fabricantes" data-i="' + i + '" data-k="MARCA_FAB" value="' + pcEsc(f.MARCA_FAB) + '" style="width:130px;text-transform:uppercase"/><button class="btn btn-s btn-xs" title="Marca nueva" onclick="pcAltaRapida(\'MARCA\',' + i + ')">＋</button></div></td>' +
-      '<td data-l="Trabajo"><select class="fs" data-i="' + i + '" data-k="TRABAJO" style="min-width:150px">' + (f.TIPO && f.MEDIDA ? pcTrabOpts(f.TIPO, f.MEDIDA, f.TRABAJO, f.MARCA_FAB).replace('— elegí —', '— sin orden —') : optT.replace('<option>' + pcEsc(f.TRABAJO) + '</option>', '<option selected>' + pcEsc(f.TRABAJO) + '</option>')) + '</select></td>' +
-      '<td data-l="Dibujo"><select class="fs" data-i="' + i + '" data-k="DIBUJO" style="min-width:110px"' + ((PC_DIB_TIPO[String(f.TIPO || '').toUpperCase()] || []).length ? '' : ' disabled title="Elegí el tipo"') + '>' + pcDibOpts(f.TIPO, f.DIBUJO) + '</select></td>' +
-      '<td data-l="Observaciones"><input class="fi" data-i="' + i + '" data-k="OBSERVACIONES" value="' + pcEsc(f.OBSERVACIONES) + '" style="min-width:120px"/></td>' +
-      '<td>' + (PC_.kf.length > 1 ? '<button class="btn btn-xs btn-d" onclick="PC_.kf.splice(' + i + ',1);pcCasFilas()">✕</button>' : '') + '</td></tr>';
-  }).join('');
-  document.querySelectorAll('#pc-k-filas [data-i]').forEach(function(e) {
-    var fija = function(el) { var f = PC_.kf[+el.dataset.i]; f[el.dataset.k] = el.value; };
-    e.addEventListener('change', function() {
-      fija(this);
-      if (this.dataset.k === 'MEDIDA' && this.value.trim()) { var f = PC_.kf[+this.dataset.i]; if (!f.TIPO) { toast('Primero elegí el tipo', 'r2'); f.MEDIDA = ''; } else if (!pcMedDeTipo(f.TIPO, this.value)) { toast('La medida ' + this.value.toUpperCase() + ' no es de ' + (pcLineaDeTipo(f.TIPO) || f.TIPO).toLowerCase() + '. Si es nueva, agregala con el ＋', 'r2'); f.MEDIDA = ''; } }
-      if (this.dataset.k === 'TIPO') { var f2 = PC_.kf[+this.dataset.i]; if (f2.MEDIDA && !pcMedDeTipo(f2.TIPO, f2.MEDIDA)) f2.MEDIDA = ''; if (f2.DIBUJO && (PC_DIB_TIPO[String(f2.TIPO).toUpperCase()] || []).indexOf(f2.DIBUJO) === -1) f2.DIBUJO = ''; }
-      if (this.dataset.k === 'TIPO' || this.dataset.k === 'MEDIDA') pcCasFilasLuego();
-    });
-    e.addEventListener('input', function() { fija(this); });
+  var tb = $id('pc-k-filas'); if (!tb) return;
+  var ae = document.activeElement; if (ae && tb.contains(ae) && ae.blur) ae.blur();
+  if (!PC_.ke) { PC_.ke = pcCasVacio(); PC_.kedit = -1; }
+  var f = PC_.ke, ed = PC_.kedit >= 0, d = PC_.d;
+  // marca grabada que va a tomar el casco que se está cargando (la definitiva la da el servidor)
+  PC_.kf.push(f); pcCasAuto(); var mkSig = f._MK; PC_.kf.pop(); pcCasAuto(); if (ed && PC_.kf[PC_.kedit]) mkSig = PC_.kf[PC_.kedit]._MK;
+  var optT = '<option value="">— sin orden —</option>' + d.trabajos.filter(function(x) { return x.ACTIVO != 0; }).map(function(x) { return '<option' + (x.TRABAJO === f.TRABAJO ? ' selected' : '') + '>' + pcEsc(x.TRABAJO) + '</option>'; }).join('');
+  var optTipo = '<option value="">— elegí —</option>' + d.tipos.filter(function(x) { return x.ACTIVO != 0; }).map(function(x) { return '<option' + (x.TIPO === f.TIPO ? ' selected' : '') + '>' + pcEsc(x.TIPO) + '</option>'; }).join('');
+  var dibOk = (PC_DIB_TIPO[String(f.TIPO || '').toUpperCase()] || []).length;
+  var fg = function(lab, html, extra) { return '<div class="fg" style="margin:0;' + (extra || '') + '"><label class="fl">' + lab + '</label>' + html + '</div>'; };
+  var h = '<div style="border:2px solid ' + (ed ? '#f59e0b' : '#2563eb') + ';border-radius:12px;padding:12px;background:' + (ed ? '#fffbeb' : '#f8fbff') + ';margin:6px 0 12px">' +
+    '<div class="flex" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px"><b style="font-size:14px">' + (ed ? '✏ Corrigiendo el casco ' + (PC_.kedit + 1) : '＋ Casco ' + (PC_.kf.length + 1)) + '</b>' +
+    '<span style="font-size:13px">Marca grabada: <b class="mono" style="font-size:15px">' + (mkSig ? pcEsc(mkSig) : '<span class="tdim" style="font-weight:400">elegí el cliente</span>') + '</b></span></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px">' +
+    fg('Tipo *', '<select class="fs" id="pc-ke-TIPO">' + optTipo + '</select>') +
+    fg('Medida *', '<div class="pc-celda"><input class="fi" id="pc-ke-MEDIDA" list="' + (f.TIPO ? pcMedKey(f.TIPO) : 'pc-medidas') + '" value="' + pcEsc(f.MEDIDA) + '" placeholder="' + (f.TIPO ? 'Escribí o elegí' : 'Elegí el tipo') + '"/><button class="btn btn-s btn-xs" title="Medida nueva" onclick="pcAltaRapida(\'MEDIDA\',-1)">＋</button></div>') +
+    fg('Marca', '<div class="pc-celda"><input class="fi" id="pc-ke-MARCA_FAB" list="pc-fabricantes" value="' + pcEsc(f.MARCA_FAB) + '" style="text-transform:uppercase"/><button class="btn btn-s btn-xs" title="Marca nueva" onclick="pcAltaRapida(\'MARCA\',-1)">＋</button></div>') +
+    fg('Dibujo', '<select class="fs" id="pc-ke-DIBUJO"' + (dibOk ? '' : ' disabled title="Elegí el tipo"') + '>' + pcDibOpts(f.TIPO, f.DIBUJO) + '</select>') +
+    fg('Trabajo', '<select class="fs" id="pc-ke-TRABAJO">' + (f.TIPO && f.MEDIDA ? pcTrabOpts(f.TIPO, f.MEDIDA, f.TRABAJO, f.MARCA_FAB).replace('— elegí —', '— sin orden —') : optT) + '</select>') +
+    fg('DOT (si la cubierta lo trae)', '<input class="fi" id="pc-ke-DOT" value="' + pcEsc(f.DOT) + '" placeholder="Si no tiene, vacío" style="text-transform:uppercase"/>') +
+    fg('Observaciones', '<input class="fi" id="pc-ke-OBSERVACIONES" value="' + pcEsc(f.OBSERVACIONES) + '"/>', 'grid-column:span 2') +
+    '</div><div class="flex gap2 mt2" style="flex-wrap:wrap"><button class="btn btn-p" id="pc-ke-ok" style="min-height:46px;font-size:15px;flex:1;max-width:340px" onclick="pcCasAgregar()">' + (ed ? '✓ Guardar cambios del casco ' + (PC_.kedit + 1) : '＋ Agregar casco a la orden') + '</button>' +
+    (ed ? '<button class="btn btn-s" onclick="document.activeElement&&document.activeElement.blur();PC_.ke=pcCasVacio();PC_.kedit=-1;pcCasFilas()">Cancelar corrección</button>' : '<span class="tdim" style="font-size:12px;align-self:center">Tipo, medida, marca, dibujo y trabajo quedan del casco anterior: cambiá solo lo distinto. Enter en el DOT agrega.</span>') + '</div></div>';
+  // Detalle: los cascos cargados en esta orden
+  var n = PC_.kf.length;
+  h += '<div class="fl" style="margin-bottom:4px">Detalle de cascos de esta orden <span class="badge b-blue">' + n + '</span></div>' +
+    '<div class="tw tw-cards"><table style="font-size:12.5px"><thead><tr><th style="width:36px">#</th><th>Marca grabada</th><th>Tipo</th><th>Medida</th><th>Marca</th><th>Dibujo</th><th>DOT</th><th>Trabajo</th><th>Observaciones</th><th></th></tr></thead><tbody>' +
+    (n ? PC_.kf.map(function(k, i) { return '<tr' + (i === PC_.kedit ? ' style="background:#fffbeb"' : '') + '><td class="mono tc" data-l="#"><b>' + (i + 1) + '</b></td><td class="mono" data-l="Marca grabada"><b>' + pcEsc(k._MK || '—') + '</b></td><td data-l="Tipo">' + pcEsc(k.TIPO) + '</td><td class="mono" data-l="Medida">' + pcEsc(k.MEDIDA) + '</td><td data-l="Marca">' + pcEsc(k.MARCA_FAB || '') + '</td><td data-l="Dibujo">' + pcEsc(k.DIBUJO || '') + '</td><td class="mono" data-l="DOT">' + (k.DOT ? pcEsc(String(k.DOT).toUpperCase()) : '<span class="tdim">sin DOT</span>') + '</td><td data-l="Trabajo">' + (k.TRABAJO ? pcEsc(k.TRABAJO) : '<span class="tdim">sin orden</span>') + '</td><td data-l="Observaciones">' + pcEsc(k.OBSERVACIONES || '') + '</td>' +
+      '<td><div class="flex gap2"><button class="btn btn-s btn-xs" title="Corregir" onclick="pcCasEditar(' + i + ')"><i class="fas fa-pen"></i> Corregir</button><button class="btn btn-d btn-xs" title="Sacar" onclick="pcCasSacar(' + i + ')"><i class="fas fa-times"></i> Sacar</button></div></td></tr>'; }).join('') :
+      '<tr><td colspan="10" class="tc tdim" style="padding:14px">Todavía no agregaste cascos: completá el renglón de arriba y tocá «＋ Agregar casco a la orden».</td></tr>') + '</tbody></table></div>';
+  tb.innerHTML = h;
+  ['TIPO', 'MEDIDA', 'MARCA_FAB', 'DIBUJO', 'TRABAJO', 'DOT', 'OBSERVACIONES'].forEach(function(k) { var el = $id('pc-ke-' + k); if (!el) return;
+    el.addEventListener('input', function() { PC_.ke[k] = this.value; });
+    el.addEventListener('change', function() { var e = PC_.ke; e[k] = this.value;
+      if (k === 'MEDIDA' && this.value.trim()) { if (!e.TIPO) { toast('Primero elegí el tipo', 'r2'); e.MEDIDA = ''; } else if (!pcMedDeTipo(e.TIPO, this.value)) { toast('La medida ' + this.value.toUpperCase() + ' no es de ' + (pcLineaDeTipo(e.TIPO) || e.TIPO).toLowerCase() + '. Si es nueva, agregala con el ＋', 'r2'); e.MEDIDA = ''; } }
+      if (k === 'TIPO') { if (e.MEDIDA && !pcMedDeTipo(e.TIPO, e.MEDIDA)) e.MEDIDA = ''; if (e.DIBUJO && (PC_DIB_TIPO[String(e.TIPO).toUpperCase()] || []).indexOf(e.DIBUJO) === -1) e.DIBUJO = ''; }
+      if (k === 'TIPO' || k === 'MEDIDA' || k === 'MARCA_FAB') pcCasFilasLuego(); });
+    if (k === 'DOT' || k === 'OBSERVACIONES') el.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') { ev.preventDefault(); PC_.ke[k] = this.value; pcCasAgregar(); } });
   });
 }
+function pcCasAgregar() {
+  var ae = document.activeElement; if (ae && ae.blur) ae.blur(); // que el «change» del campo no pise el casco nuevo
+  var e = PC_.ke; ['TIPO', 'MEDIDA', 'MARCA_FAB', 'DIBUJO', 'TRABAJO', 'DOT', 'OBSERVACIONES'].forEach(function(k) { var el = $id('pc-ke-' + k); if (el) e[k] = el.value; });
+  if (!e.TIPO) { toast('Elegí el tipo', 'r2'); return; }
+  if (!e.MEDIDA || !pcMedDeTipo(e.TIPO, e.MEDIDA)) { toast('Elegí la medida de la lista (si es nueva, agregala con el ＋)', 'r2'); return; }
+  if (e.TRABAJO && !pcRecetaDe(e.TIPO, e.MEDIDA, e.TRABAJO, '', e.MARCA_FAB)) { toast('Ese trabajo no tiene receta para esa medida: elegí uno de los de arriba de la lista o dejalo sin orden', 'r2'); return; }
+  var dot = pcDotNorm(e.DOT);
+  if (dot && PC_.kf.some(function(k, i) { return i !== PC_.kedit && pcDotNorm(k.DOT) === dot; })) { toast('Ese DOT ya está en el detalle de esta orden', 'r2'); return; }
+  var lin = { TIPO: e.TIPO, MEDIDA: e.MEDIDA, MARCA_FAB: String(e.MARCA_FAB || '').toUpperCase(), DIBUJO: e.DIBUJO || '', TRABAJO: e.TRABAJO || '', DOT: String(e.DOT || '').toUpperCase().trim(), OBSERVACIONES: e.OBSERVACIONES || '' };
+  var msg;
+  if (PC_.kedit >= 0) { PC_.kf[PC_.kedit] = lin; msg = 'Casco ' + (PC_.kedit + 1) + ' corregido ✓'; }
+  else { PC_.kf.push(lin); msg = 'Casco ' + PC_.kf.length + ' agregado ✓'; }
+  PC_.kedit = -1; PC_.ke = pcCasVacio(); pcCasFilas(); toast(msg, 'g');
+  var d = $id('pc-ke-DOT'); if (d) d.focus();
+}
+function pcCasEditar(i) { var k = PC_.kf[i]; if (!k) return; var ae = document.activeElement; if (ae && ae.blur) ae.blur(); PC_.kedit = i; PC_.ke = { TIPO: k.TIPO, MEDIDA: k.MEDIDA, MARCA_FAB: k.MARCA_FAB, DIBUJO: k.DIBUJO, TRABAJO: k.TRABAJO, DOT: k.DOT, OBSERVACIONES: k.OBSERVACIONES }; pcCasFilas(); var t = $id('pc-k-filas'); if (t) t.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+async function pcCasSacar(i) { var k = PC_.kf[i]; if (!k) return; if (!(await uiConfirmar('¿Sacar el casco ' + (i + 1) + (k._MK ? ' (' + k._MK + ')' : '') + ' de esta orden?', 'Sí, sacar'))) return;
+  PC_.kf.splice(i, 1); if (PC_.kedit === i) { PC_.kedit = -1; PC_.ke = pcCasVacio(); } else if (PC_.kedit > i) PC_.kedit--; pcCasFilas(); }
 var PC_CAS_EST = { NUEVO: ['b-orange', 'Sin orden de trabajo'], EN_OT: ['b-blue', 'En orden de trabajo'], ANULADO: ['b-gray', 'Anulado'] };
 function pcCasAnt() {
   var el = $id('pc-k-ant'); if (!el) return;
@@ -10662,6 +10695,9 @@ async function pcCasGrabar() {
   var compra = null;
   if (PC_.korig === 'COMPRA') { compra = pcCompraDatos(); if (compra.error) { pcCasErr(compra.error); return; } }
   var cli = compra ? pcStockPropioId() : pcCliId($v('pc-k-cli')); if (!cli) { pcCasErr('Elegí el cliente'); return; }
+  if (PC_.kedit >= 0) { pcCasErr('Estás corrigiendo el casco ' + (PC_.kedit + 1) + ': tocá «Guardar cambios» o «Cancelar corrección»'); return; }
+  if (PC_.ke && String(PC_.ke.DOT || '').trim()) { pcCasErr('El casco de arriba tiene DOT cargado pero no lo agregaste: tocá «＋ Agregar casco a la orden» o borrá el DOT'); return; }
+  if (!PC_.kf.length) { pcCasErr('Agregá al menos un casco al detalle'); return; }
   var faltan = []; PC_.kf.forEach(function(f, i) { if (!f.TIPO || !f.MEDIDA) faltan.push(i + 1); });
   if (faltan.length) { pcCasErr('Casco ' + faltan.join(', ') + ': falta el tipo o la medida'); return; }
   var sinR = PC_.kf.filter(function(f) { return f.TRABAJO && !pcRecetaDe(f.TIPO, f.MEDIDA, f.TRABAJO, '', f.MARCA_FAB); });
@@ -10673,14 +10709,14 @@ async function pcCasGrabar() {
     if (!r || !r.ok) { pcCasErr((r && r.error) || 'No se pudo'); return; }
     toast('Grabados ' + r.IDS.length + ' cascos · marcas ' + (r.MARCAS || r.DOTS || []).join(', ') + (r.OT ? ' · orden de trabajo ' + r.OT + ' con ' + r.OT_N + (r.OT_N === 1 ? ' cubierta' : ' cubiertas') : '') + (r.SIN_RECETA ? ' · ' + r.SIN_RECETA + ' sin receta' : '') + ' ✓', r.SIN_RECETA ? 'r2' : 'g');
     if (compra) { toast('Compra de cascos registrada' + (r.FALTA_COSTO ? ' · FALTA COSTO: completalo en "Cascos comprados"' : '') + ' ✓', r.FALTA_COSTO ? 'b' : 'g'); PC_.kc = null; }
-    PC_.kf = []; PC_.kcli = cli; PC_.kman = ''; PC_.ultOT = r.OT || ''; await pcRecargar(); var gOk = document.querySelector('#pc-body .al.al-g'); if (gOk) gOk.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    PC_.kf = []; PC_.ke = null; PC_.kedit = -1; PC_.kcli = cli; PC_.kman = ''; PC_.ultOT = r.OT || ''; await pcRecargar(); var gOk = document.querySelector('#pc-body .al.al-g'); if (gOk) gOk.scrollIntoView({ block: 'center', behavior: 'smooth' });
   } catch (e) { pcCasErr(e.message); } finally { b.disabled = false; }
 }
 // Cancelar la carga que se está haciendo (no graba nada) y dejar la pantalla limpia
 async function pcCasCancelar() {
-  var hay = PC_.kcli || PC_.kf.some(function(f) { return f.MEDIDA || f.DOT || f.MARCA_FAB || f.OBSERVACIONES; });
+  var hay = PC_.kcli || PC_.kf.length || (PC_.ke && (PC_.ke.DOT || PC_.ke.OBSERVACIONES));
   if (hay && !(await uiConfirmar('¿Cancelar esta carga? No se graba nada de lo que escribiste.', 'Sí, cancelar'))) return;
-  PC_.kf = []; PC_.kcli = ''; PC_.kman = ''; PC_.ultOT = ''; PC_.korig = ''; PC_.kc = null; pcCasErr(''); pcPintar(); window.scrollTo(0, 0); toast('Carga cancelada', 'g');
+  PC_.kf = []; PC_.ke = null; PC_.kedit = -1; PC_.kcli = ''; PC_.kman = ''; PC_.ultOT = ''; PC_.korig = ''; PC_.kc = null; pcCasErr(''); pcPintar(); window.scrollTo(0, 0); toast('Carga cancelada', 'g');
 }
 // Órdenes de trabajo y cascos anulados: quién, cuándo y por qué
 function pcAnuladas() {
@@ -17531,7 +17567,7 @@ function mtTilAdd(sel, uid) { if (!sel.length) return; var oe = Number(String(ui
 function mtTilHtml() {
   var T = MT_.til, opS = MT_.d.SERVICIOS.map(function(x) { return { v: x.ID_SERVICIO, t: x.NOMBRE, sub: x.SISTEMA + ' · ' + x.CODIGO }; });
   var bOk = T.agregar ? '＋ Agregar al presupuesto' : '💾 Guardar presupuesto';
-  var css = '<style>.mt-tg{display:grid;grid-template-columns:30px minmax(150px,1.4fr) minmax(170px,1.3fr) 58px 100px 100px 110px;gap:6px;align-items:center;padding:8px 6px;border-bottom:1px solid #e5e7eb}.mt-tg.hd{font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db;padding-top:0}.mt-tg input[type=checkbox]{width:22px;height:22px}.mt-tg .fi{padding:6px 8px;min-height:38px}.mt-tg .mt-tsb{text-align:right;font-weight:600}.mt-tl{display:none;font-size:11px;color:#6b7280}@media(max-width:800px){.mt-tg{grid-template-columns:34px 1fr 1fr;}.mt-tg.hd{display:none}.mt-tg .c2,.mt-tg .c3{grid-column:2 / span 2}.mt-tl{display:block}}</style>';
+  var css = '<style>.mt-tg{display:grid;grid-template-columns:30px minmax(150px,1.4fr) minmax(170px,1.3fr) 58px 100px 100px 110px;gap:6px;align-items:center;padding:8px 6px;border-bottom:1px solid #e5e7eb}.mt-tg.hd{font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db;padding-top:0}.mt-tg input[type=checkbox]{width:22px;height:22px}.mt-tg .fi{padding:6px 8px;min-height:38px}.mt-tg .mt-tsb{text-align:right;font-weight:600}.mt-tn{display:contents}.mt-tn label{display:block;margin:0}.mt-tl{display:none;font-size:11px;color:#6b7280;margin-bottom:2px}@media(max-width:800px){.mt-tg{grid-template-columns:30px 1fr;align-items:start;padding:10px 4px}.mt-tg.hd{display:none}.mt-tg .c2,.mt-tg .mt-tn,.mt-tg .mt-tsb{grid-column:2}.mt-tg .mt-tn{display:grid;grid-template-columns:64px 1fr 1fr;gap:6px}.mt-tl{display:block}.mt-tg .mt-tsb{text-align:right;font-size:14px}}</style>';
   var h = css + '<div class="tdim mb2" style="font-size:13px">Están <b>solo</b> los puntos del check list que dieron <b>NO</b> o tienen <b>observación</b>, todos tildados: <b>destildá lo que no se cobra</b>, revisá la cantidad y poné el precio (sin IVA o con IVA, el otro se calcula). Cada renglón lleva su servicio codificado; si un tildado no tiene, elegilo de la lista.</div>';
   (MT_.ord.EQUIPOS || []).forEach(function(x) {
     var e = mtEq(x.ID_EQUIPO), rs = [];
@@ -17544,9 +17580,9 @@ function mtTilHtml() {
       h += '<div class="mt-tg" id="mt-tr-' + k + '" style="' + (r.ON ? '' : 'opacity:.45') + '"><input type="checkbox" id="mt-tc-' + k + '"' + (r.ON ? ' checked' : '') + ' onchange="MT_.til.rows[' + k + '].ON=this.checked?1:0;mtTilTot()">' +
         '<div style="font-size:13px"><b>' + pcEsc(r.NOMBRE) + '</b> ' + (r.HOJA ? '<span class="mt-bd mt-b-b">agregado</span>' : '<span class="mt-bd ' + (r.MAL ? 'mt-b-o' : 'mt-b-x') + '">' + pcEsc(r.R) + '</span>') + (r.OBS && !r.ALT ? '<div class="tdim" style="font-size:12px">' + pcEsc(r.OBS) + '</div>' : '') + (r.ALT ? '<div class="tdim" style="font-size:12px">otro servicio del mismo punto</div>' : '') + '</div>' +
         '<div class="c2">' + uiBusca('mt-ts-' + k, { opciones: opS, sel: r.SERV ? [String(r.SERV)] : [], max: 0, ph: 'Elegí el servicio', onchange: 'mtTilServ' }) + '<div class="tdim" id="mt-trec-' + k + '" style="font-size:11px">' + mtTilRecTxt(r) + '</div></div>' +
-        '<label class="c3" style="display:contents"><span class="mt-tl">Cantidad</span><input class="fi tr" inputmode="decimal" value="' + r.CANT + '" oninput="mtTilPrecio(' + k + ',\'CANT\',this.value)"></label>' +
-        '<label style="display:contents"><span class="mt-tl">Precio sin IVA</span><input class="fi tr" id="mt-tp-' + k + '" inputmode="decimal" placeholder="poné el precio" value="' + (pu ? String(pu).replace('.', ',') : '') + '" oninput="mtTilPrecio(' + k + ',\'SIN\',this.value)"></label>' +
-        '<label style="display:contents"><span class="mt-tl">Precio con IVA</span><input class="fi tr" id="mt-tq-' + k + '" inputmode="decimal" value="' + (pu ? String(Math.round(pu * 121) / 100).replace('.', ',') : '') + '" oninput="mtTilPrecio(' + k + ',\'CON\',this.value)"></label>' +
+        '<div class="mt-tn"><label><span class="mt-tl">Cantidad</span><input class="fi tr" inputmode="decimal" value="' + r.CANT + '" oninput="mtTilPrecio(' + k + ',\'CANT\',this.value)"></label>' +
+        '<label><span class="mt-tl">Precio sin IVA</span><input class="fi tr" id="mt-tp-' + k + '" inputmode="decimal" placeholder="poné el precio" value="' + (pu ? String(pu).replace('.', ',') : '') + '" oninput="mtTilPrecio(' + k + ',\'SIN\',this.value)"></label>' +
+        '<label><span class="mt-tl">Precio con IVA</span><input class="fi tr" id="mt-tq-' + k + '" inputmode="decimal" value="' + (pu ? String(Math.round(pu * 121) / 100).replace('.', ',') : '') + '" oninput="mtTilPrecio(' + k + ',\'CON\',this.value)"></label></div>' +
         '<div class="mt-tsb" id="mt-tsub-' + k + '">' + (r.ON ? mtPlata(mtTilSub(r)) : '—') + '</div></div>'; });
     h += '<div class="fg mt2" style="max-width:520px"><label class="fl">＋ Otro servicio que se hizo en esta unidad</label>' + uiBusca('mt-ta-' + x.ID_OE, { opciones: opS, sel: [], max: 0, ph: 'Buscá el servicio', onchange: 'mtTilAdd' }) + '</div></div></div>';
   });
