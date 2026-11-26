@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ed39ccda0c0c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "eb78bdcc38ba"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1708,7 +1708,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611261901';
+var EMA_BUILD = '202611262036';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13981,7 +13981,7 @@ function puInspHTML() {
   if (I.apta === true) {
     h += '<div style="font-weight:700">' + (I.niv === 1 ? 'Parches que lleva' : 'Parches que se agregan acá') + '</div>' + (I.parches.length ? '' : '<div class="tdim">Sin parches. Si lleva, tocá "+ Parche".</div>') +
       I.parches.map(function(p, i) { return '<div style="display:flex;gap:8px;align-items:center"><select class="pu-q pu-insp-p" data-i="' + i + '" style="font-size:16px;flex:1;text-transform:none"><option value="">— elegí el parche —</option>' +
-        X.parches.map(function(x) { return '<option value="' + puEsc(x.ID_INSUMO) + '"' + (x.ID_INSUMO === p.id ? ' selected' : '') + '>' + puEsc(x.NOMBRE) + '</option>'; }).join('') + '</select>' +
+        X.parches.map(function(x) { return '<option value="' + puEsc(x.ID_INSUMO) + '"' + (x.ID_INSUMO === p.id ? ' selected' : '') + '>' + puEsc(x.NOMBRE) + (x.STOCK !== undefined ? ' · hay ' + x.STOCK : '') + '</option>'; }).join('') + '</select>' +
         '<input class="pu-q pu-insp-c" data-i="' + i + '" type="number" min="0" step="1" value="' + puEsc(p.cant) + '" placeholder="Cant." style="width:110px;font-size:18px"/><button class="pu-btn pu-min" onclick="PU_.insp.parches.splice(' + i + ',1);puFicha()">✕</button></div>'; }).join('') +
       '<button class="pu-btn pu-min" style="width:max-content" onclick="PU_.insp.parches.push({id:\'\',cant:1});puFicha()">+ Parche</button>' +
       (I.niv === 1 && (X.extras || []).length ? '<div style="font-weight:700">Trabajos extra que lleva</div><div class="tdim" style="font-size:14px">Tocá los que hacen falta. Sus insumos aparecen en la estación ' + puEsc(X.estExtras || '5') + '.</div>' +
