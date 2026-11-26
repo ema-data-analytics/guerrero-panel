@@ -1699,7 +1699,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611252024';
+var EMA_BUILD = '202611261612';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -10649,7 +10649,7 @@ function pcCasAgregar() {
   if (!e.MEDIDA || !pcMedDeTipo(e.TIPO, e.MEDIDA)) { toast('Elegí la medida de la lista (si es nueva, agregala con el ＋)', 'r2'); return; }
   if (e.TRABAJO && !pcRecetaDe(e.TIPO, e.MEDIDA, e.TRABAJO, '', e.MARCA_FAB)) { toast('Ese trabajo no tiene receta para esa medida: elegí uno de los de arriba de la lista o dejalo sin orden', 'r2'); return; }
   var dot = pcDotNorm(e.DOT);
-  if (dot && PC_.kf.some(function(k, i) { return i !== PC_.kedit && pcDotNorm(k.DOT) === dot; })) { toast('Ese DOT ya está en el detalle de esta orden', 'r2'); return; }
+  // El DOT se puede repetir (26/11/2026, Anibal): cubiertas de la misma fábrica y semana traen el mismo DOT; lo único de cada casco es la marca grabada
   var lin = { TIPO: e.TIPO, MEDIDA: e.MEDIDA, MARCA_FAB: String(e.MARCA_FAB || '').toUpperCase(), DIBUJO: e.DIBUJO || '', TRABAJO: e.TRABAJO || '', DOT: String(e.DOT || '').toUpperCase().trim(), OBSERVACIONES: e.OBSERVACIONES || '' };
   var msg;
   if (PC_.kedit >= 0) { PC_.kf[PC_.kedit] = lin; msg = 'Casco ' + (PC_.kedit + 1) + ' corregido ✓'; }
