@@ -1699,7 +1699,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611261612';
+var EMA_BUILD = '202611261642';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -17307,7 +17307,7 @@ function mtPl(id) { return MT_.d.PLANTILLAS.filter(function(p) { return p.ID_PLA
 function mtOrdenVer() {
   var O = MT_.ord, o = mtOrdenRes(O.ORDEN.ID_ORDEN) || {}, P = O.PRESUP, an = O.ORDEN.ESTADO === 'ANULADA';
   var cerr = ['ANULADA', 'FACTURADA', 'TERMINADA'].indexOf(O.ORDEN.ESTADO) !== -1;
-  var h = '<div class="mb3 flex gap2" style="flex-wrap:wrap"><button class="btn btn-s" onclick="MT_.ord=null;mtPintar()">← Volver a la lista de órdenes</button><button class="btn btn-s" onclick="mtImpOrden(' + O.ORDEN.ID_ORDEN + ')">🖨 Orden con check list</button>' + (P ? '<button class="btn btn-s" onclick="mtImpPresup()">🖨 Presupuesto</button>' : '') + '</div>' +
+  var h = '<div class="mb3 flex gap2" style="flex-wrap:wrap"><button class="btn btn-s" onclick="MT_.ord=null;mtPintar()">← Volver a la lista de órdenes</button><button class="btn btn-s" onclick="mtImpOrden(' + O.ORDEN.ID_ORDEN + ')">🖨 Orden con check list</button><button class="btn btn-s" onclick="mtImpResumenCli(' + O.ORDEN.ID_ORDEN + ')">🖨 Resumen para el cliente</button><button class="btn btn-s" onclick="mtWhatsResumen(' + O.ORDEN.ID_ORDEN + ')">📱 Resumen por WhatsApp</button>' + (P ? '<button class="btn btn-s" onclick="mtImpPresup()">🖨 Presupuesto</button>' : '') + '</div>' +
     '<div class="card mb3"><div class="card-hd"><span class="card-title">' + pcEsc(O.ORDEN.NRO) + ' · ' + pcEsc(o.CLIENTE || 'Interno') + '</span>' + mtBadge(O.ORDEN.ESTADO) + '</div><div class="card-body">' +
     '<div class="tdim mb2" style="font-size:13px">' + fmtD(o.FECHA) + ' · Sucursal <b>' + pcEsc(o.SUCURSAL) + '</b>' + (o.SOLICITANTE ? ' · Pidió: <b>' + pcEsc(o.SOLICITANTE) + '</b>' + (o.SOLICITANTE_TEL ? ' (' + pcEsc(o.SOLICITANTE_TEL) + ')' : '') : '') + (o.OBSERVACIONES ? '<br>' + pcEsc(o.OBSERVACIONES) : '') + '</div>' +
     '<label class="fl">Check list de cada equipo</label><div class="mt-eqs mb2">' + O.EQUIPOS.map(function(x) { var e = mtEq(x.ID_EQUIPO), pl = mtPl(x.ID_PLANTILLA), t = 0, r = Object.keys(x.RESP).length, no = 0;
@@ -17848,8 +17848,9 @@ async function mtCheckSalir() {
 // Check list en blanco: se imprime antes, el mecánico lo marca a mano (sin batería o sin señal) y después se pasa al sistema en la orden
 function mtChkTablaImp(pl, resp) {
   resp = resp || {};
-  var c = '<table class="det"><thead><tr><th style="width:6%">N°</th><th style="width:49%">Ítem</th><th class="ck">OK/SÍ</th><th class="ck">NO</th><th class="ck">N/A</th><th>Observación</th></tr></thead><tbody>';
-  pl.GRUPOS.forEach(function(g) { c += '<tr><td colspan="6" style="background:#f3f4f6;font-weight:700">' + pcEsc(g.NOMBRE) + '</td></tr>';
+  // 26/11/2026 (Anibal): letra más grande para leer sin anteojos (no exagerada)
+  var c = '<style>table.chkg th{font-size:11px}table.chkg td{font-size:12.5px;padding:5px 6px}table.chkg td.ck{font-size:17px;line-height:1}</style><table class="det chkg"><thead><tr><th style="width:6%">N°</th><th style="width:49%">Ítem</th><th class="ck">OK/SÍ</th><th class="ck">NO</th><th class="ck">N/A</th><th>Observación</th></tr></thead><tbody>';
+  pl.GRUPOS.forEach(function(g) { c += '<tr><td colspan="6" style="background:#f3f4f6;font-weight:700;font-size:13px">' + pcEsc(g.NOMBRE) + '</td></tr>';
     g.ITEMS.forEach(function(i) { var v = (resp[i.ID] || {}).R || ''; c += '<tr><td style="font-family:monospace;font-size:10px">' + i.ID + '</td><td>' + pcEsc(i.NOMBRE) + (i.ESENCIAL ? ' <b>*</b>' : '') + '</td><td class="ck">' + (v === 'OK' || v === 'SI' ? '✔' : '☐') + '</td><td class="ck">' + (v === 'NO' ? '✖' : '☐') + '</td><td class="ck">' + (v === 'NA' ? '—' : '☐') + '</td><td>' + pcEsc((resp[i.ID] || {}).OBS || '') + '</td></tr>'; }); });
   return c + '</tbody></table>';
 }
@@ -18015,6 +18016,42 @@ async function mtImpChkBlanco() {
     '<h2>' + pcEsc(pl.CODIGO + ' · ' + pl.NOMBRE) + '</h2><div class="nota">Marcá una opción por ítem. Los marcados con * son esenciales. Si algo dio NO, anotá qué tiene en Observación.</div>' + mtChkTablaImp(pl) + mtTrabManoImp() +
     '<div class="firmas"><div>Mecánico</div><div>Cliente / chofer</div><div>Cargado en el sistema (quién y cuándo)</div></div>';
   pcImprimir('Check list ' + pl.CODIGO, c);
+}
+// 26/11/2026 (Anibal): resumen del check list para el cliente: solo lo que dio NO o tiene observación, y cuántos puntos se controlaron
+function mtChkResumen(r) {
+  var out = [];
+  r.EQUIPOS.forEach(function(x) { var e = mtEq(x.ID_EQUIPO), pl = mtPl(x.ID_PLANTILLA); if (!pl) return; var R = x.RESP || {}, n = { OK: 0, NO: 0, NA: 0, SIN: 0, T: 0 }, mal = [];
+    pl.GRUPOS.forEach(function(g) { g.ITEMS.forEach(function(i) { var v = R[i.ID] || {}, rr = v.R || ''; n.T++;
+      if (rr === 'OK' || rr === 'SI') n.OK++; else if (rr === 'NO') n.NO++; else if (rr === 'NA') n.NA++; else n.SIN++;
+      if (rr === 'NO' || (v.OBS && rr !== 'NA')) mal.push({ G: g.NOMBRE, I: i.NOMBRE, NO: rr === 'NO', OBS: v.OBS || '' }); }); });
+    var ru = []; Object.keys(x.RUEDAS || {}).forEach(function(k) { var v = x.RUEDAS[k]; if (['R', 'V', 'C'].indexOf(v.EST) !== -1) ru.push(k + ': ' + (MT_RU_EST[v.EST] || v.EST) + (v.OBS ? ' (' + v.OBS + ')' : '')); });
+    out.push({ ID: mtEqIdent(e), TIPO: mtEqTipo(e), MM: (e.MARCA + ' ' + e.MODELO).trim(), N: n, MAL: mal, RU: ru, OBS: x.OBSERVACIONES || '' }); });
+  return out;
+}
+async function mtImpResumenCli(id) {
+  var r = MT_.ord && MT_.ord.ORDEN.ID_ORDEN === id ? MT_.ord : await gsRun('gsMT_Orden', id); if (!r || !r.ok) { toast('No se pudo', 'r2'); return; }
+  var o = mtOrdenRes(id) || {}, L = mtChkResumen(r);
+  var c = pcEncImp('Resumen del control de la unidad', r.ORDEN.NRO, '') + '<div class="dat"><div><b>Cliente</b>' + pcEsc(o.CLIENTE || '') + '</div><div><b>Fecha</b>' + fmtD(o.FECHA) + '</div></div>';
+  L.forEach(function(u) {
+    c += '<h2 style="font-size:15px">' + pcEsc(u.ID) + ' · ' + pcEsc(u.TIPO) + (u.MM ? ' · ' + pcEsc(u.MM) : '') + '</h2><div style="font-size:13.5px;margin:2px 0 8px">Se controlaron <b>' + u.N.T + ' puntos</b>: <b style="color:#166534">' + u.N.OK + ' bien</b> · <b style="color:#b91c1c">' + u.N.NO + ' a reparar</b>' + (u.N.NA ? ' · ' + u.N.NA + ' no corresponden' : '') + (u.N.SIN ? ' · ' + u.N.SIN + ' sin revisar' : '') + '.</div>';
+    if (u.MAL.length) c += '<table class="det" style="table-layout:auto"><thead><tr><th style="font-size:11px">Qué se encontró</th><th style="font-size:11px">Detalle</th></tr></thead><tbody>' + u.MAL.map(function(m) { return '<tr><td style="font-size:12.5px;padding:5px 6px">' + (m.NO ? '<b style="color:#b91c1c">A reparar</b> · ' : '') + pcEsc(m.I) + '<div style="font-size:10px;color:#555">' + pcEsc(m.G) + '</div></td><td style="font-size:12.5px;padding:5px 6px">' + pcEsc(m.OBS) + '</td></tr>'; }).join('') + '</tbody></table>';
+    else c += '<div class="nota" style="font-size:13px">No se encontró nada para reparar.</div>';
+    if (u.RU.length) c += '<div style="font-size:12.5px;margin-top:6px"><b>Cubiertas:</b> ' + pcEsc(u.RU.join(' · ')) + '</div>';
+    if (u.OBS) c += '<div class="nota" style="font-size:12.5px">Observaciones: ' + pcEsc(u.OBS) + '</div>';
+  });
+  c += '<div class="firmas"><div>Vulcan Tread</div><div>Cliente</div></div>';
+  pcImprimir('Resumen ' + r.ORDEN.NRO, c);
+}
+async function mtWhatsResumen(id) {
+  var o = mtOrdenRes(id); if (!o) return; var t = String(o.SOLICITANTE_TEL || '').replace(/\D/g, ''); if (!t) { toast('La orden no tiene teléfono: cargalo en ✏ Modificar', 'r2'); return; }
+  t = t.replace(/^0+/, ''); if (t.indexOf('54') !== 0) t = '549' + t;
+  var r = MT_.ord && MT_.ord.ORDEN.ID_ORDEN === id ? MT_.ord : await gsRun('gsMT_Orden', id); if (!r || !r.ok) { toast('No se pudo', 'r2'); return; }
+  var m = 'Hola' + (o.SOLICITANTE ? ' ' + o.SOLICITANTE : '') + ', te pasamos el resumen del control de la orden ' + o.NRO + ' de Vulcan Tread.';
+  mtChkResumen(r).forEach(function(u) { m += '\n\n*' + u.ID + ' · ' + u.TIPO + '*\nSe controlaron ' + u.N.T + ' puntos: ' + u.N.OK + ' bien, ' + u.N.NO + ' a reparar.';
+    u.MAL.forEach(function(x) { m += '\n• ' + (x.NO ? 'A reparar: ' : '') + x.I + (x.OBS ? ' (' + x.OBS + ')' : ''); });
+    if (u.RU.length) m += '\nCubiertas: ' + u.RU.join(' · '); });
+  if (o.PRESUP) m += '\n\nPresupuesto ' + o.PRESUP.NRO + ': ' + mtPlata(o.PRESUP.TOTAL) + ' sin IVA.';
+  window.open('https://wa.me/' + t + '?text=' + encodeURIComponent(m), '_blank');
 }
 async function mtImpOrden(id) {
   var r = MT_.ord && MT_.ord.ORDEN.ID_ORDEN === id ? MT_.ord : await gsRun('gsMT_Orden', id); if (!r || !r.ok) { toast('No se pudo', 'r2'); return; }
