@@ -1708,7 +1708,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611262151';
+var EMA_BUILD = '202611262202';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -22544,6 +22544,60 @@ async function calcRptDibujos(soloFiltro) {
   box.innerHTML = h;
 }
 function vEscR(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+// ── Ventas por tipo (26/11/2026): la pantalla del menú estaba vacía (no tenía función). Ventas sin IVA del período:
+// servicios (recapado, vulcanizado, taller) contra artículos (cubiertas nuevas, insumos). Las notas de crédito restan; anuladas y presupuestos no cuentan.
+async function renderRptVentas() {
+  var el = $id('page-rpt-ventas'); if (!el) return;
+  var d0 = rdibHoy(0).slice(0, 8) + '01';
+  el.innerHTML = '<div class="page-hdr"><div><div class="page-title"><i class="fas fa-chart-line" style="color:#2563eb"></i> Ventas por tipo</div>' +
+    '<div class="page-sub">SIN IVA · SERVICIOS Y ARTÍCULOS · LAS NOTAS DE CRÉDITO RESTAN</div></div></div><div class="content">' +
+    '<div class="card mb4"><div class="card-body"><div class="g3">' +
+    '<div class="fg"><label class="fl">Desde</label><input id="rvt-d" class="fi" type="date" value="' + d0 + '" onchange="calcRptVentas()"/></div>' +
+    '<div class="fg"><label class="fl">Hasta</label><input id="rvt-h" class="fi" type="date" value="' + rdibHoy(0) + '" onchange="calcRptVentas()"/></div>' +
+    '<div class="fg"><label class="fl">Ver</label><select id="rvt-t" class="fs" onchange="calcRptVentas(true)"><option value="">Todo</option><option value="SERVICIO">Solo servicios</option><option value="ARTICULO">Solo artículos</option></select></div>' +
+    '</div></div></div><div id="rvt-res"><div class="tdim">Cargando…</div></div></div>';
+  calcRptVentas();
+}
+var RVT_ = { b: null };
+async function calcRptVentas(soloFiltro) {
+  var box = $id('rvt-res'); if (!box) return;
+  if (!soloFiltro || !RVT_.b) {
+    box.innerHTML = '<div class="tdim">Cargando…</div>';
+    try { RVT_.b = await gsRun('gsBatchLoad', ['ventas_enc', 'ventas_det']); } catch (e) { box.innerHTML = '<div class="al">' + vEscR(e.message) + '</div>'; return; }
+  }
+  var dt = new Date($v('rvt-d') + 'T00:00:00-03:00').getTime(), ht = new Date($v('rvt-h') + 'T23:59:59-03:00').getTime(), ft = $v('rvt-t');
+  if (isNaN(dt) || isNaN(ht)) { box.innerHTML = '<div class="al">Elegí las fechas</div>'; return; }
+  var signo = {}, nComp = 0;
+  (RVT_.b.ventas_enc || []).forEach(function(v) {
+    var tc = String(v.TIPO_COMP || '');
+    if (v.ESTADO === 'ANULADA' || tc === 'PRESUPUESTO' || !(v.FECHA >= dt && v.FECHA <= ht)) return;
+    signo[String(v.ID_VENTA)] = tc.indexOf('NC') === 0 ? -1 : 1; nComp++;
+  });
+  var tipos = { SERVICIO: { imp: 0, cant: 0 }, ARTICULO: { imp: 0, cant: 0 } }, prod = {};
+  (RVT_.b.ventas_det || []).forEach(function(x) {
+    var sg = signo[String(x.ID_VENTA)]; if (!sg) return;
+    var t = String(x.TIPO_ITEM || '') === 'SERVICIO' ? 'SERVICIO' : 'ARTICULO';
+    var imp = parseFloat(x.PRECIO_NETO) > 0 ? parseFloat(x.PRECIO_NETO) : (parseFloat(x.SUBTOTAL) || 0) / (1 + (parseFloat(x.IVA_ALICUOTA) || 0) / 100), cant = parseFloat(x.CANTIDAD) || 0;
+    tipos[t].imp += sg * imp; tipos[t].cant += sg * cant;
+    var k = t + '|' + String(x.NOMBRE || x.CODIGO_PRODUCTO || 'Sin nombre');
+    if (!prod[k]) prod[k] = { t: t, n: String(x.NOMBRE || x.CODIGO_PRODUCTO || 'Sin nombre'), imp: 0, cant: 0 };
+    prod[k].imp += sg * imp; prod[k].cant += sg * cant;
+  });
+  var tot = tipos.SERVICIO.imp + tipos.ARTICULO.imp;
+  var $m = function(n) { return '$ ' + (Math.round(n * 100) / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var pc = function(n) { return tot ? Math.round(n / tot * 1000) / 10 + ' %' : '—'; };
+  var kp = function(tit, v, sub, col) { return '<div class="card" style="flex:1 1 180px"><div class="card-body"><div class="tdim" style="font-size:12px">' + tit + '</div><div style="font-size:22px;font-weight:800;color:' + (col || 'inherit') + '">' + v + '</div><div class="tdim" style="font-size:12px">' + sub + '</div></div></div>'; };
+  var h = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">' +
+    kp('Total vendido sin IVA', $m(tot), nComp + ' comprobante' + (nComp === 1 ? '' : 's')) +
+    kp('Servicios', $m(tipos.SERVICIO.imp), pc(tipos.SERVICIO.imp) + ' de lo vendido', '#2563eb') +
+    kp('Artículos', $m(tipos.ARTICULO.imp), pc(tipos.ARTICULO.imp) + ' de lo vendido', '#16a34a') + '</div>';
+  var fil = Object.keys(prod).map(function(k) { return prod[k]; }).filter(function(p) { return !ft || p.t === ft; }).sort(function(a, b) { return b.imp - a.imp; });
+  h += '<div class="card"><div class="card-hd"><span class="card-title">Qué se vendió (' + fil.length + ')</span></div><div class="tw"><table><thead><tr><th>Tipo</th><th>Producto o servicio</th><th class="tr">Cantidad</th><th class="tr">Vendido sin IVA</th><th class="tr">% del total</th></tr></thead><tbody>' +
+    (fil.length ? fil.map(function(p) { return '<tr><td>' + (p.t === 'SERVICIO' ? 'Servicio' : 'Artículo') + '</td><td>' + vEscR(p.n) + '</td><td class="mono tr">' + Math.round(p.cant * 100) / 100 + '</td><td class="mono tr">' + $m(p.imp) + '</td><td class="mono tr">' + pc(p.imp) + '</td></tr>'; }).join('')
+      : '<tr><td colspan="5" class="tdim">No hay ventas en esas fechas</td></tr>') + '</tbody></table></div></div>';
+  box.innerHTML = h;
+}
 </script>
 
 <script>
