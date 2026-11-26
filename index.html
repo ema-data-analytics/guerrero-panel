@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "0b54d9f58922"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "ed39ccda0c0c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1708,7 +1708,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611261837';
+var EMA_BUILD = '202611261901';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -11556,6 +11556,17 @@ function pcImpPrep() {
   var r = PC_.prep; if (!r) return;
   var n3 = function(x) { return (Math.round((+x || 0) * 1000) / 1000).toString().replace('.', ','); }, ests = [];
   r.LINEAS.forEach(function(l) { if (ests.indexOf(l.ESTACION) === -1) ests.push(l.ESTACION); });
+  // 26/11/2026 (Anibal): con el pesaje de inicio confirmado, la hoja sale con lo confirmado (no con lo previsto ni el margen)
+  if (r.CONFIRMADO) {
+    var hc = pcEncImp('HOJA DE PREPARACIÓN Y PESAJE', r.NRO_OT) +
+      '<div class="nota">Pesaje de inicio confirmado el ' + pcEsc(String(r.DIA || '').split('-').reverse().join('/')) + (r.OPERARIO_PESAJE ? ' por ' + pcEsc(r.OPERARIO_PESAJE) : '') + '. Lo que no se pesa va como dice la receta.</div>' +
+      '<table><thead><tr><th>Estación</th><th>Material</th><th>Receta</th><th>Confirmado</th><th class="ck">Listo</th></tr></thead><tbody>' +
+      ests.map(function(e) { return r.LINEAS.filter(function(l) { return l.ESTACION === e; }).map(function(l, k) { var c = l.PESA && l.CONF !== undefined && l.CONF !== null;
+        return '<tr><td>' + (k ? '' : '<b>' + pcEsc(e) + '</b>') + '</td><td>' + pcEsc(l.NOMBRE) + (l.PESA ? ' <b>· PESADO</b>' : '') + '</td><td>' + n3(l.CANT) + ' ' + pcEsc(l.UNIDAD) + '</td><td><b>' + (c ? n3(l.CONF) : l.PESA ? 'sin confirmar' : n3(l.CANT)) + ' ' + (c || !l.PESA ? pcEsc(l.UNIDAD) : '') + '</b></td><td class="ck"></td></tr>'; }).join(''); }).join('') +
+      '</tbody></table><div class="firmas"><div>Preparó</div><div>Encargado de línea</div></div>';
+    pcImprimir('Preparación ' + r.NRO_OT, hc, false);
+    return;
+  }
   var h = pcEncImp('HOJA DE PREPARACIÓN Y PESAJE', r.NRO_OT) +
     '<div class="nota">Lo que la receta prevé para la carga. Lo marcado "PESAR" se pesa al retirarlo (margen ' + r.MARGEN + '%) y al final del día se pesa lo que sobra.</div>' +
     '<table><thead><tr><th>Estación</th><th>Material</th><th>Receta</th><th>Retirar</th><th>Pesado real</th><th class="ck">Listo</th></tr></thead><tbody>' +
