@@ -1708,7 +1708,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611262202';
+var EMA_BUILD = '202611262206';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -2027,7 +2027,7 @@ async function renderDashboard() {
   var _stores=['ventas_enc','compras_enc','carga_gastos','carga_combustible',
     'consumo_insumos','produccion_encabezado','produccion_detalle_serv',
     'carga_sueldos','carga_transporte','carga_impositivo','gasto_det_financiero',
-    'ventas_det','cobros_enc','cheques','clientes','pc_ot_cub'];
+    'ventas_det','cobros_enc','cheques','clientes','pc_ot_cub','bd_articulos'];
   var _b;
   if(isGsMode()){
     _b=await gsRun('gsBatchLoad',_stores);
@@ -2208,7 +2208,8 @@ function dbPintar(X) {
   var topDeu = Object.keys(deu).map(function(k) { return { k: k, v: deu[k].v, d: deu[k].dias }; }).sort(function(a, c) { return c.v - a.v; }).slice(0, 5);
   // ventas por tipo (servicios de recapado vs artículos)
   var idsV = {}; X.ventas.forEach(function(v) { idsV[String(v.ID_VENTA)] = String(v.TIPO_COMP || '').indexOf('NC') === 0 ? -1 : 1; });
-  var porTipo = { SERVICIO: 0, ARTICULO: 0 }; (b.ventas_det || []).forEach(function(x) { var sg = idsV[String(x.ID_VENTA)]; if (!sg) return; var t = String(x.TIPO_ITEM || '') === 'SERVICIO' ? 'SERVICIO' : 'ARTICULO'; var imp = parseFloat(x.PRECIO_NETO) > 0 ? parseFloat(x.PRECIO_NETO) : (parseFloat(x.SUBTOTAL) || 0) / (1 + (parseFloat(x.IVA_ALICUOTA) || 0) / 100); porTipo[t] += sg * imp; });
+  var artServ = {}; (b.bd_articulos || []).forEach(function(a) { if (String(a.TIPO_ARTICULO || '').toUpperCase() === 'SERVICIO') artServ[String(a.ID_ARTICULO)] = true; });
+  var porTipo = { SERVICIO: 0, ARTICULO: 0 }; (b.ventas_det || []).forEach(function(x) { var sg = idsV[String(x.ID_VENTA)]; if (!sg) return; var t = String(x.TIPO_ITEM || '') === 'SERVICIO' || artServ[String(x.CODIGO_PRODUCTO)] ? 'SERVICIO' : 'ARTICULO'; var imp = parseFloat(x.PRECIO_NETO) > 0 ? parseFloat(x.PRECIO_NETO) : (parseFloat(x.SUBTOTAL) || 0) / (1 + (parseFloat(x.IVA_ALICUOTA) || 0) / 100); porTipo[t] += sg * imp; });
   // cheques
   var semana = Date.now() + 7 * 864e5, chC = { n: 0, v: 0, sem: 0 }, chP = { n: 0, v: 0, sem: 0 };
   (b.cheques || []).forEach(function(c) { var e = String(c.ESTADO || ''), imp = parseFloat(c.IMPORTE) || 0, f = parseFloat(c.FECHA_ACREDITACION) || 0;
@@ -22564,7 +22565,7 @@ async function calcRptVentas(soloFiltro) {
   var box = $id('rvt-res'); if (!box) return;
   if (!soloFiltro || !RVT_.b) {
     box.innerHTML = '<div class="tdim">Cargando…</div>';
-    try { RVT_.b = await gsRun('gsBatchLoad', ['ventas_enc', 'ventas_det']); } catch (e) { box.innerHTML = '<div class="al">' + vEscR(e.message) + '</div>'; return; }
+    try { RVT_.b = await gsRun('gsBatchLoad', ['ventas_enc', 'ventas_det', 'bd_articulos']); } catch (e) { box.innerHTML = '<div class="al">' + vEscR(e.message) + '</div>'; return; }
   }
   var dt = new Date($v('rvt-d') + 'T00:00:00-03:00').getTime(), ht = new Date($v('rvt-h') + 'T23:59:59-03:00').getTime(), ft = $v('rvt-t');
   if (isNaN(dt) || isNaN(ht)) { box.innerHTML = '<div class="al">Elegí las fechas</div>'; return; }
@@ -22574,10 +22575,12 @@ async function calcRptVentas(soloFiltro) {
     if (v.ESTADO === 'ANULADA' || tc === 'PRESUPUESTO' || !(v.FECHA >= dt && v.FECHA <= ht)) return;
     signo[String(v.ID_VENTA)] = tc.indexOf('NC') === 0 ? -1 : 1; nComp++;
   });
-  var tipos = { SERVICIO: { imp: 0, cant: 0 }, ARTICULO: { imp: 0, cant: 0 } }, prod = {};
+  var tipos = { SERVICIO: { imp: 0, cant: 0 }, ARTICULO: { imp: 0, cant: 0 } }, prod = {}, artServ = {};
+  // El servicio facturado desde un remito queda como renglón de artículo: se toma el tipo del artículo (SERVICIO o PRODUCTO)
+  (RVT_.b.bd_articulos || []).forEach(function(a) { if (String(a.TIPO_ARTICULO || '').toUpperCase() === 'SERVICIO') artServ[String(a.ID_ARTICULO)] = true; });
   (RVT_.b.ventas_det || []).forEach(function(x) {
     var sg = signo[String(x.ID_VENTA)]; if (!sg) return;
-    var t = String(x.TIPO_ITEM || '') === 'SERVICIO' ? 'SERVICIO' : 'ARTICULO';
+    var t = String(x.TIPO_ITEM || '') === 'SERVICIO' || artServ[String(x.CODIGO_PRODUCTO)] ? 'SERVICIO' : 'ARTICULO';
     var imp = parseFloat(x.PRECIO_NETO) > 0 ? parseFloat(x.PRECIO_NETO) : (parseFloat(x.SUBTOTAL) || 0) / (1 + (parseFloat(x.IVA_ALICUOTA) || 0) / 100), cant = parseFloat(x.CANTIDAD) || 0;
     tipos[t].imp += sg * imp; tipos[t].cant += sg * cant;
     var k = t + '|' + String(x.NOMBRE || x.CODIGO_PRODUCTO || 'Sin nombre');
