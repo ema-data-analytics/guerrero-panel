@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "da063a85fb75"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "b750984de3f1"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -812,6 +812,8 @@ function tienePermiso(modulo, accion) {
 }
 
 // Usuario de la línea (12/11/2026, Anibal): solo mira la línea y las recetas. No carga nada, no ve precios, costos ni configuración.
+// Secciones de producción que usa una sucursal sin planta (recepción de cubiertas)
+var PC_SECC_SUCURSAL = ['otrab', 'cascos', 'hist'];
 var LINEA_PAGINAS = ['tablero-linea', 'recetas', 'produccion-cubiertas', 'inicio-movil'];
 var LINEA_SECCIONES = ['os', 'rech', 'herramental', 'equipos', 'alarmas', 'hist', 'pesaje', 'plan'];
 function rolLinea() { return String((SES && SES.rol) || '').toUpperCase() === 'LINEA_SOLO_VER'; }
@@ -852,6 +854,8 @@ function puedeVerPagina(page) {
   // Recetas: solo administradores (el resto carga a ciegas lo que pesa o mide)
   if (page === 'recetas') { if (rolLinea()) return true; var rR = String((SES && SES.rol) || '').toUpperCase(); return rR === 'SUPER' || rR.indexOf('ADMIN') !== -1; }
   // Las pantallas de la planta de recapado no se muestran a los usuarios de una sucursal sin planta (el servidor también lo frena)
+  // 26/11/2026 (Anibal): una sucursal sin planta (Güemes) recibe cubiertas: ve solo órdenes de trabajo (carga de cascos) e historial
+  if (SES && SES.planta === false && page === 'produccion-cubiertas') return tienePermiso('PRODUCCION', 'VER');
   if (SES && SES.planta === false && moduloDePagina(page) === 'PRODUCCION') return false;
   return tienePermiso(moduloDePagina(page), 'VER');
 }
@@ -889,6 +893,7 @@ function aplicarPermisosMenu() {
   document.querySelectorAll('.nav-item').forEach(function(el) {
     var ve = el.dataset.acc === 'ped-prov' ? tienePermiso('COMPRAS', 'VER') : puedeVerPagina(el.dataset.page) && ((el.dataset.page !== 'agenda' && el.dataset.page !== 'bitacora') || String((SES && SES.rol) || '').toUpperCase() === 'SUPER');
     if (ve && rolLinea() && el.dataset.page === 'produccion-cubiertas') ve = LINEA_SECCIONES.indexOf(String(el.dataset.acc || '').replace(/^pc-/, '')) !== -1;
+    if (ve && SES && SES.planta === false && el.dataset.page === 'produccion-cubiertas') ve = PC_SECC_SUCURSAL.indexOf(String(el.dataset.acc || '').replace(/^pc-/, '')) !== -1;
     el.style.display = ve ? '' : 'none';
   });
   lineaActivar();
@@ -1699,7 +1704,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611261719';
+var EMA_BUILD = '202611261744';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -1983,8 +1988,8 @@ async function renderDashboard() {
   if (_selPrev && _selPrev.value) _dsPeriodo = _selPrev.value;
   var fecha = new Date().toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).toUpperCase();
   el.innerHTML =
-    '<div class="page-hdr"><div><div class="page-title">Cómo va la empresa</div>'+
-    '<div class="page-sub">TABLERO GENERAL · '+fecha+'</div></div>'+
+    '<div class="page-hdr"><div><div class="page-title">'+(dbSinPlanta()?'Cómo va '+dbEsc(SES.sucNombre||'la sucursal'):'Cómo va la empresa')+'</div>'+
+    '<div class="page-sub">'+(dbSinPlanta()?'SOLO '+dbEsc(SES.sucNombre||'ESTA SUCURSAL').toUpperCase():'TABLERO GENERAL')+' · '+fecha+'</div></div>'+
     '<div style="display:flex;gap:8px;align-items:center">'+
     '<select id="ds-periodo" class="fs" style="max-width:160px" onchange="renderDashboard()">'+
     ['hoy','semana','mes','mes_ant','todo'].map(function(v){
@@ -2135,6 +2140,7 @@ function detalleLinea(titulo, icono, valor, sub, pagina, color) {
 }
 // ===== Tablero general (03/11/2026): mismo estilo sala de control que el tablero de la línea =====
 function dbM(v) { v = Math.round(v || 0); var a = Math.abs(v), s = v < 0 ? '-' : ''; if (a >= 1e6) return s + '$ ' + (a / 1e6).toFixed(a >= 1e7 ? 1 : 2).replace('.', ',') + ' M'; if (a >= 1e3) return s + '$ ' + Math.round(a / 1e3) + ' mil'; return s + '$ ' + a; }
+function dbSinPlanta() { return !!(typeof SES !== 'undefined' && SES && SES.planta === false); }
 function dbEsc(x) { return String(x === undefined || x === null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function dbN(n, uno, varios) { return n + ' ' + (n === 1 ? uno : varios); }
 function dbDia(ms) { var d = new Date(ms); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
@@ -2260,6 +2266,10 @@ function dbPintar(X) {
   h += '<div class="dbp" id="db-stock"><h3>Insumos por acabarse</h3><div class="dbnota">Cargando…</div></div>';
   h += '<div class="dbnota">Importes sin IVA, como el estado de resultados. Tocá cualquier cuadro para ir al detalle. Entregas pendientes: ' + X.ventasPendEntrega.length + '.</div></div>';
   $id('ds-content').innerHTML = h;
+  // 26/11/2026 (Anibal): una sucursal sin planta (Güemes) no ve la producción ni los insumos de la planta
+  if (dbSinPlanta()) { var dc = $id('ds-content');
+    dc.querySelectorAll('.dbc').forEach(function(x) { if (/Cubiertas terminadas/.test(x.textContent)) x.parentNode.removeChild(x); });
+    dc.querySelectorAll('.dbp').forEach(function(x) { var t = x.querySelector('h3'); if (x.id === 'db-stock' || (t && /^Producción/.test(t.textContent))) x.parentNode.removeChild(x); }); }
   dbExtras();
 }
 async function dbExtras() {
@@ -2267,6 +2277,7 @@ async function dbExtras() {
     var el = $id('db-cajas'); if (el) el.innerHTML = '<h3>Caja y bancos</h3><p class="sub">Saldo de hoy</p><div class="dbbig" style="color:' + (tot >= 0 ? '#86efac' : '#fca5a5') + '">' + dbM(tot) + '</div>' +
       cs.map(function(c) { return '<div class="dbr" onclick="navTo(\'caja\')"><div>' + (c.TIPO === 'BANCO' ? '🏦 ' : '💵 ') + dbEsc(c.CAJA_DESC) + '</div><div class="m" style="color:' + ((Number(c.SALDO) || 0) < 0 ? '#fca5a5' : '#e6ebf5') + '">' + dbM(c.SALDO) + '</div></div>'; }).join(''); }
   catch (e) { var el2 = $id('db-cajas'); if (el2) el2.innerHTML = '<h3>Caja y bancos</h3><div class="dbnota">No tenés permiso para ver las cajas.</div>'; }
+  if (dbSinPlanta()) return;
   try { var lst = [], vistos = {};
     try { var cb = await gsRun('gsINS_Cobertura', { ALERTA: 1 }); ((cb && cb.ok && cb.filas) || []).forEach(function(f) { vistos[String(f.NOMBRE)] = 1; lst.push({ n: f.NOMBRE, r: f.NIVEL === 'r', txt: f.STOCK <= 0 ? 'sin stock' : f.DIAS === null || f.DIAS === undefined ? 'sin dato de consumo' : f.DIAS <= 0 ? 'se acaba hoy' : f.DIAS === 1 ? 'queda 1 día' : 'quedan ' + f.DIAS + ' días', p: f.STOCK <= 0 ? 0 : Math.min(1, (f.DIAS || 0) / 15) }); }); } catch (ec) {}
     var s = await gsRun('gsST_General');
@@ -10105,6 +10116,7 @@ function pcMenuMarcar() {
 function pcPintar() {
   var el = $id('page-produccion-cubiertas'), d = PC_.d;
   if (typeof rolLinea === 'function' && rolLinea() && LINEA_SECCIONES.indexOf(PC_.tab) === -1) PC_.tab = 'os';
+  if (typeof SES !== 'undefined' && SES && SES.planta === false && PC_SECC_SUCURSAL.indexOf(PC_.tab) === -1) PC_.tab = 'otrab';
   var n = function(e) { return d.cubiertas.filter(function(c) { return c.ESTADO === e; }).length; };
   var abiertas = d.ots.filter(function(o) { return o.ESTADO === 'ARMADA' || o.ESTADO === 'EN_PROCESO'; }).length;
   var nNuevos = (d.cascos || []).filter(function(k) { return k.ESTADO === 'NUEVO'; }).length;
