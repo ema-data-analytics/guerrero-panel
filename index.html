@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "eb78bdcc38ba"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "eeedd060dee2"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1708,7 +1708,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611262036';
+var EMA_BUILD = '202611262047';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13484,7 +13484,8 @@ function puAutoclavePintar() {
     var min = Math.max(0, Math.floor((Date.now() + (PU_.dt || 0) - r.cocinando.INICIO) / 60000)), falta = r.minutos - min;
     h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:24px;font-weight:800;color:var(--warn)" id="pu-ac-min">Cocinando · ' + min + ' de ~' + r.minutos + ' min</div>' +
       '<div style="font-size:16px">Empezó a las ' + new Date(r.cocinando.INICIO).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + '. ' + (falta > 0 ? 'Faltan unos ' + falta + ' min.' : 'Ya pasó el tiempo aproximado.') + ' Cuando salga, tocá <b>Terminó la cocción</b>.</div></div>' +
-      '<div class="pu-reg"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:17px;font-weight:700">🌡 Lecturas de temperatura y presión</div><button class="pu-btn pu-min" onclick="puAcLectura(\'DURANTE\')">+ Registrar lectura</button></div>' +
+      '<div class="pu-reg"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:17px;font-weight:700">🌡 Lecturas de temperatura y presión</div>' + (r.controlHecho ? '<button class="pu-btn pu-min" onclick="puAcLectura(\'DURANTE\')">+ Otra lectura</button>' : '<button class="pu-btn pu-ok" onclick="puAcLectura(\'DURANTE\')">📷 Control EPC (≈' + (r.controlMin || 80) + ' min)</button>') + '</div>' +
+      (r.controlHecho ? '' : '<div style="font-size:14px;font-weight:700;color:var(--warning,#b45309)">Falta el control EPC: a los ' + (r.controlMin || 80) + ' minutos más o menos, foto del termómetro y el manómetro. Lleva ' + Math.max(0, Math.round((Date.now() - r.cocinando.INICIO) / 60000)) + ' min.</div>') +
       '<div class="tdim" style="font-size:13px">' + puEsc(puAcEspTxt(r.espec)) + (r.lecturaObligatoria ? ' · al terminar, la lectura final es obligatoria' : '') + '</div>' + puAcLecturasHTML(r.cocinando.LECTURAS, r.espec && r.espec.PUNI) + '</div>';
   } else if (!listas.length) {
     h += '<div class="pu-reg"><div style="font-size:18px;font-weight:700">No hay cubiertas listas para el autoclave en esta orden.</div>' + (r.anteriores.length ? '<div class="tdim">Ya se cocinó: ' + r.anteriores.map(function(a) { return a.N + ' cubiertas · ' + a.MINUTOS + ' min'; }).join(' · ') + '</div>' : '') + '</div>';
@@ -13531,7 +13532,7 @@ function puAcLectura(momento) {
   var emps = ((PU_.d && PU_.d.empleados) || []).map(function(e) { return e.NOMBRE; });
   PU_.acL = { oper: PU_.operF || PU_.oper || '', foto: '' };
   var fin = momento === 'FIN';
-  showModal('<div class="mh"><span class="mt">' + (fin ? '■ Terminó la cocción · lectura final' : '🌡 Lectura del autoclave') + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
+  showModal('<div class="mh"><span class="mt">' + (fin ? '■ Terminó la cocción · lectura final' : (PU_.ac && PU_.ac.d && !PU_.ac.d.controlHecho ? '📷 Control EPC del autoclave (≈' + (PU_.ac.d.controlMin || 80) + ' min)' : '🌡 Lectura del autoclave')) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2 pu-vent">' +
     '<div style="font-size:15px">' + (fin ? 'Antes de abrir, mirá el termómetro y el manómetro y cargá lo que marcan.' : 'Cargá lo que marcan el termómetro y el manómetro ahora.') + ' <span class="tdim">' + puEsc(puAcEspTxt(r.espec)) + '</span></div>' +
     '<div class="pu-qty"><b style="font-size:15px;min-width:110px">Temperatura</b><input inputmode="decimal" id="pu-acl-t" placeholder="°C" aria-label="Temperatura"><span>°C</span></div>' +
     '<div class="pu-qty"><b style="font-size:15px;min-width:110px">Presión</b><input inputmode="decimal" id="pu-acl-p" placeholder="Presión" aria-label="Presión"><span>' + puEsc((r.espec && r.espec.PUNI) || '') + '</span></div>' +
@@ -13604,6 +13605,7 @@ async function puAcIni() {
 }
 async function puAcFin() {
   var A = PU_.ac, c = A.d.cocinando; if (!c) return;
+  if (A.d.controlObligatorio && !A.d.controlHecho) { toast('Primero el control EPC (≈' + (A.d.controlMin || 80) + ' min) con su foto', 'r2'); return puAcLectura('DURANTE'); }
   if (A.d.lecturaObligatoria) return puAcLectura('FIN');
   try {
     var r = await gsRun('gsPC_AutoclaveTerminar', c.ID_AUTOC, PU_.oper);
