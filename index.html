@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "5c660263eb4d"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "0b54d9f58922"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -346,6 +346,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="ventas" data-acc="fact-rem"><span class="nav-icon"><i class="fas fa-file-invoice"></i></span> Facturar remitos</div>
         <div class="nav-item" data-page="documentos"><span class="nav-icon"><i class="fas fa-file-pdf"></i></span> Documentos para el cliente</div>
         <div class="nav-item" data-page="pedidos-web"><span class="nav-icon"><i class="fas fa-store"></i></span> Pedidos web</div>
+        <div class="nav-item" data-page="whatsapp"><span class="nav-icon"><i class="fab fa-whatsapp"></i></span> WhatsApp a clientes</div>
       </div></div>
       <div class="sb-grp" data-g="pre"><div class="sb-gh" onclick="menuGrupo('pre')"><span class="sb-gi-ic">💲</span><span class="sb-gt">Precios</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="precios-nuevos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Lista de precios</div>
@@ -513,6 +514,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-armado" class="hidden"></div>
     <div id="page-bitacora" class="hidden"></div>
     <div id="page-audios" class="hidden"></div>
+    <div id="page-whatsapp" class="hidden"></div>
     <div id="page-caja" class="hidden"></div>
     <div id="page-cobranzas" class="hidden"></div>
     <div id="page-cta-cte-clientes" class="hidden"></div>
@@ -787,7 +789,7 @@ function _mcDelAll(){ _MC={}; }
 // El servidor devuelve un "pase" (token) que acompaña cada llamada.
 // ══════════════════════════════════════════════════════════════════
 var PAGINA_MODULO = {
-  'dashboard':'REPORTES', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'tablero-linea':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'taller':'VENTAS', 'flota':'VENTAS', 'precios-nuevos':'VENTAS', 'catalogo-tienda':'VENTAS', 'margen':'VENTAS', 'armado':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
+  'dashboard':'REPORTES', 'whatsapp':'VENTAS', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'tablero-linea':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'taller':'VENTAS', 'flota':'VENTAS', 'precios-nuevos':'VENTAS', 'catalogo-tienda':'VENTAS', 'margen':'VENTAS', 'armado':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
   'carga-gastos':'GASTOS', 'carga-financiero':'ADMINISTRACION', 'carga-transporte':'ADMINISTRACION',
   'carga-impositivo':'ADMINISTRACION', 'carga-sueldos':'ADMINISTRACION', 'asistencia':'ADMINISTRACION', 'fichaje':'PRODUCCION', 'carga-combustible':'COMBUSTIBLE',
   'cheques':'COBRANZAS', 'cobranzas':'COBRANZAS', 'caja':'COBRANZAS', 'cta-cte-clientes':'COBRANZAS',
@@ -1416,6 +1418,7 @@ function getPage(name) {
     'armado': function(){ if(typeof renderArmado!=='undefined') renderArmado(); },
     'bitacora': function(){ if(typeof renderBitacora!=='undefined') renderBitacora(); },
     'audios': function(){ if(typeof renderAudios!=='undefined') renderAudios(); },
+    'whatsapp': function(){ if(typeof renderWhatsApp!=='undefined') renderWhatsApp(); },
     'configuracion': typeof renderConfiguracion !== 'undefined' ? renderConfiguracion : null,
     'backup-page': typeof renderBackupPage !== 'undefined' ? renderBackupPage : null,
     'gsheets': typeof renderGsheets !== 'undefined' ? renderGsheets : null,
@@ -1705,7 +1708,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611261751';
+var EMA_BUILD = '202611261837';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -25994,6 +25997,145 @@ function audGoogleProbar(it, k, lista, i, cuerpo, vuelta) {
       it.estado = 'Todos los modelos de Google ocupados: se vuelve a probar solo en ' + esp + ' s…'; audPintarItem(it);
       return new Promise(function(ok) { setTimeout(ok, esp * 1000); }).then(function() { return audGoogleProbar(it, k, lista, 0, cuerpo, vuelta + 1); });
     });
+}
+</script>
+
+<script>
+// ── WhatsApp a clientes (26/11/2026, Anibal): envío masivo y envío a un número desde el sistema, con plantillas aprobadas por Meta.
+// La clave de WhatsApp está guardada en Supabase (nunca en el panel). Cada envío queda registrado: a quién, cuándo y cómo salió.
+var WA_ = { d: null, tab: 'masivo', sel: {}, q: '', loc: '', confirma: '' };
+function waEsc(s) { return String(s === null || s === undefined ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function waFecha(ms) { if (!ms) return ''; var d = new Date(Number(ms)); var p = function(n) { return (n < 10 ? '0' : '') + n; }; return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+function waTelVer(w) { return w ? '+' + w.substring(0, 2) + ' ' + w.substring(2, 3) + ' ' + w.substring(3, 6) + ' ' + w.substring(6) : ''; }
+async function renderWhatsApp() {
+  var el = $id('page-whatsapp'); if (!el) return;
+  el.innerHTML = '<div class="card"><div class="card-body tdim">Cargando…</div></div>';
+  try { WA_.d = await gsRun('gsWA_Datos'); } catch (e) { el.innerHTML = '<div class="al al-r">' + waEsc(e.message) + '</div>'; return; }
+  if (!WA_.d || WA_.d.ok === false) { el.innerHTML = '<div class="al al-r">' + waEsc((WA_.d && WA_.d.error) || 'No se pudo cargar') + '</div>'; return; }
+  waPintar();
+}
+function waEstadoTxt(e) { return ({ APPROVED: '✅ Aprobada', PENDING: '⏳ En revisión de Meta', REJECTED: '❌ Rechazada', SIN_PEDIR: '— Sin pedir', PAUSED: '⏸ Pausada', DISABLED: '⛔ Desactivada' })[e] || e; }
+function waPlantOpts() { return WA_.d.PLANTILLAS.map(function(p) { return '<option value="' + p.CLAVE + '"' + (p.ESTADO === 'APPROVED' ? '' : ' disabled') + '>' + waEsc(p.NOMBRE) + (p.ESTADO === 'APPROVED' ? '' : ' (' + waEstadoTxt(p.ESTADO).replace(/^\S+ /, '') + ')') + '</option>'; }).join(''); }
+function waPintar() {
+  var el = $id('page-whatsapp'), d = WA_.d, apr = d.PLANTILLAS.filter(function(p) { return p.ESTADO === 'APPROVED'; }).length;
+  var conCel = d.CLIENTES.filter(function(c) { return c.WA; }).length;
+  var h = '<div class="page-hd"><div><div class="page-title">WhatsApp a clientes</div><div class="page-sub">Mensajes masivos o a un número, desde el sistema. Cada envío queda registrado.</div></div></div>';
+  h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Plantillas de mensaje</span><span class="flex gap2">' +
+    '<button class="btn btn-s btn-sm" onclick="waEstadoPl()">🔄 Ver estado de las plantillas</button>' +
+    '<button class="btn btn-p btn-sm" onclick="waPedirPl()">📨 Mandar plantillas a aprobar</button></span></div><div class="card-body">' +
+    '<div class="tdim mb2" style="font-size:12.5px">Meta solo deja escribirle primero a un cliente con una plantilla aprobada. El sistema completa el nombre del cliente y tu mensaje.</div>' +
+    '<table class="tw"><thead><tr><th>Plantilla</th><th>Cómo le llega al cliente</th><th>Estado</th></tr></thead><tbody>' +
+    d.PLANTILLAS.map(function(p) { return '<tr><td><b>' + waEsc(p.NOMBRE) + '</b><div class="tdim" style="font-size:11px">' + (p.CATEGORIA === 'MARKETING' ? 'Promoción' : 'Aviso') + '</div></td><td style="white-space:pre-line;font-size:12.5px">' +
+      waEsc(p.CUERPO.replace('{{1}}', '[nombre]').replace('{{2}}', '[tu mensaje]')) + '</td><td>' + waEstadoTxt(p.ESTADO) + '</td></tr>'; }).join('') +
+    '</tbody></table>' + (d.CONFIG_FECHA ? '<div class="tdim mt2" style="font-size:11px">Última consulta a Meta: ' + waFecha(d.CONFIG_FECHA) + '</div>' : '') + '<div id="wa-pl-msg"></div></div></div>';
+  if (!apr) h += '<div class="al al-y mb3">Todavía no hay ninguna plantilla aprobada: hasta que Meta apruebe una, no se puede mandar. Si WhatsApp no está conectado todavía, los botones te van a avisar.</div>';
+  var tabs = [['masivo', '📣 Envío masivo'], ['uno', '👤 A un número'], ['hist', '🗂 Envíos hechos (' + d.ENVIOS.length + ')']];
+  h += '<div class="flex gap2 mb3" style="flex-wrap:wrap">' + tabs.map(function(t) { return '<button class="btn ' + (WA_.tab === t[0] ? 'btn-p' : 'btn-s') + '" onclick="WA_.tab=\'' + t[0] + '\';WA_.confirma=\'\';waPintar()">' + t[1] + '</button>'; }).join('') + '</div><div id="wa-body"></div>';
+  el.innerHTML = h;
+  if (WA_.tab === 'masivo') waMasivo(conCel); else if (WA_.tab === 'uno') waUno(); else waHist();
+}
+function waVista(txt, nombre) {
+  var pk = ($id('wa-pl') || {}).value, p = WA_.d.PLANTILLAS.filter(function(x) { return x.CLAVE === pk; })[0] || WA_.d.PLANTILLAS[0];
+  var t = String(txt || '').replace(/[\r\n\t]+/g, ' · ');
+  return p.CUERPO.replace('{{1}}', nombre || 'Juan').replace('{{2}}', t || '…');
+}
+function waVistaPintar() { var v = $id('wa-vista'); if (v) v.textContent = waVista(($id('wa-txt') || {}).value, ($id('wa-nom') || {}).value); }
+function waMasivo(conCel) {
+  var d = WA_.d, q = WA_.q.toLowerCase(), loc = WA_.loc;
+  var locs = {}; d.CLIENTES.forEach(function(c) { if (c.LOCALIDAD) locs[c.LOCALIDAD] = 1; });
+  var lista = d.CLIENTES.filter(function(c) { return (!q || c.NOMBRE.toLowerCase().indexOf(q) !== -1) && (!loc || c.LOCALIDAD === loc); });
+  var nSel = Object.keys(WA_.sel).filter(function(k) { return WA_.sel[k]; }).length;
+  var h = '<div class="card mb3"><div class="card-body"><div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">' +
+    '<div><label class="fl">Plantilla</label><select id="wa-pl" class="fi" onchange="waVistaPintar()">' + waPlantOpts() + '</select>' +
+    '<label class="fl mt2">Tu mensaje</label><textarea id="wa-txt" class="fi" rows="4" maxlength="900" placeholder="Ej: esta semana tenemos recapado de camión con 10% de descuento." oninput="waVistaPintar()">' + waEsc(WA_.txt || '') + '</textarea></div>' +
+    '<div><label class="fl">Así le llega a cada cliente</label><div id="wa-vista" style="white-space:pre-line;background:#dcf8c6;color:#111;border-radius:10px;padding:10px 12px;font-size:13.5px;min-height:90px"></div>' +
+    '<div class="tdim mt2" style="font-size:11.5px">«Juan» se reemplaza por el nombre de cada cliente.</div></div></div></div></div>';
+  h += '<div class="card"><div class="card-hd"><span class="card-title">Clientes (' + conCel + ' de ' + d.CLIENTES.length + ' con celular válido)</span><span class="flex gap2" style="flex-wrap:wrap">' +
+    '<input class="fi" id="wa-q" placeholder="Buscar cliente…" style="width:170px" value="' + waEsc(WA_.q) + '" oninput="WA_.q=this.value;waMasivo(' + conCel + ')">' +
+    '<select class="fi" style="width:150px" onchange="WA_.loc=this.value;waMasivo(' + conCel + ')"><option value="">Todas las localidades</option>' + Object.keys(locs).sort().map(function(l) { return '<option' + (l === loc ? ' selected' : '') + '>' + waEsc(l) + '</option>'; }).join('') + '</select>' +
+    '<button class="btn btn-s btn-sm" onclick="waMarcar(true)">Marcar los que se ven</button><button class="btn btn-s btn-sm" onclick="waMarcar(false)">Desmarcar todo</button></span></div>' +
+    '<div class="card-body" style="max-height:420px;overflow:auto"><table class="tw"><thead><tr><th style="width:34px"></th><th>Cliente</th><th>Localidad</th><th>Celular</th></tr></thead><tbody>' +
+    lista.map(function(c) { return '<tr style="' + (c.WA ? '' : 'opacity:.55') + '"><td>' + (c.WA ? '<input type="checkbox" ' + (WA_.sel[c.ID] ? 'checked' : '') + ' onchange="WA_.sel[' + c.ID + ']=this.checked;waContar()">' : '') + '</td><td>' + waEsc(c.NOMBRE) + '</td><td>' + waEsc(c.LOCALIDAD) + '</td><td>' +
+      (c.WA ? waTelVer(c.WA) : '<span class="tdim">' + (c.TEL ? 'no válido: ' + waEsc(c.TEL) : 'sin celular') + '</span>') + '</td></tr>'; }).join('') +
+    '</tbody></table></div><div class="card-body" style="border-top:1px solid var(--border,#333);display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b id="wa-nsel">' + nSel + ' elegidos</b>' +
+    '<button class="btn ' + (WA_.confirma === 'masivo' ? 'btn-r' : 'btn-p') + '" onclick="waEnviarMasivo()">' + (WA_.confirma === 'masivo' ? '⚠ Tocá de nuevo para mandar a ' + nSel + ' clientes' : '📣 Mandar') + '</button><span id="wa-res"></span></div></div>';
+  var b = $id('wa-body'); var foco = document.activeElement && document.activeElement.id; b.innerHTML = h;
+  if (foco === 'wa-q') { var iq = $id('wa-q'); iq.focus(); iq.setSelectionRange(iq.value.length, iq.value.length); }
+  var sp = WA_.d.PLANTILLAS.filter(function(p) { return p.ESTADO === 'APPROVED'; })[0]; if (sp) $id('wa-pl').value = sp.CLAVE;
+  if (WA_.pl) $id('wa-pl').value = WA_.pl;
+  waVistaPintar();
+}
+function waGuardarForm() { var t = $id('wa-txt'), p = $id('wa-pl'); if (t) WA_.txt = t.value; if (p) WA_.pl = p.value; }
+function waContar() { var n = Object.keys(WA_.sel).filter(function(k) { return WA_.sel[k]; }).length; var e = $id('wa-nsel'); if (e) e.textContent = n + ' elegidos'; WA_.confirma = ''; }
+function waMarcar(si) {
+  waGuardarForm();
+  var q = WA_.q.toLowerCase(), loc = WA_.loc;
+  if (!si) WA_.sel = {};
+  else WA_.d.CLIENTES.forEach(function(c) { if (c.WA && (!q || c.NOMBRE.toLowerCase().indexOf(q) !== -1) && (!loc || c.LOCALIDAD === loc)) WA_.sel[c.ID] = true; });
+  WA_.confirma = ''; waPintar();
+}
+async function waEnviarMasivo() {
+  waGuardarForm();
+  var ids = Object.keys(WA_.sel).filter(function(k) { return WA_.sel[k]; }).map(Number);
+  if (!ids.length) { toast('Elegí al menos un cliente', 'r2'); return; }
+  if (String(WA_.txt || '').trim().length < 5) { toast('Escribí el mensaje', 'r2'); return; }
+  if (WA_.confirma !== 'masivo') { WA_.confirma = 'masivo'; waPintar(); return; }
+  WA_.confirma = '';
+  await waMandar({ TIPO: 'MASIVO', PLANTILLA: WA_.pl, TEXTO: WA_.txt, IDS: ids });
+}
+function waUno() {
+  var h = '<div class="card"><div class="card-body"><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">' +
+    '<div><label class="fl">Nombre</label><input id="wa-nom" class="fi" maxlength="60" placeholder="Ej: Juan" oninput="waVistaPintar()">' +
+    '<label class="fl mt2">Celular (con característica)</label><input id="wa-tel" class="fi" inputmode="tel" placeholder="Ej: 387 5123456">' +
+    '<label class="fl mt2">Plantilla</label><select id="wa-pl" class="fi" onchange="waVistaPintar()">' + waPlantOpts() + '</select>' +
+    '<label class="fl mt2">Tu mensaje</label><textarea id="wa-txt" class="fi" rows="4" maxlength="900" oninput="waVistaPintar()"></textarea>' +
+    '<button class="btn btn-p mt3" onclick="waEnviarUno()">📤 Mandar</button> <span id="wa-res"></span></div>' +
+    '<div><label class="fl">Así le llega</label><div id="wa-vista" style="white-space:pre-line;background:#dcf8c6;color:#111;border-radius:10px;padding:10px 12px;font-size:13.5px;min-height:90px"></div></div></div></div></div>';
+  $id('wa-body').innerHTML = h;
+  var sp = WA_.d.PLANTILLAS.filter(function(p) { return p.ESTADO === 'APPROVED'; })[0]; if (sp) $id('wa-pl').value = sp.CLAVE;
+  waVistaPintar();
+}
+async function waEnviarUno() {
+  var o = { TIPO: 'UNO', NOMBRE: $id('wa-nom').value, TELEFONO: $id('wa-tel').value, PLANTILLA: $id('wa-pl').value, TEXTO: $id('wa-txt').value };
+  if (!String(o.TELEFONO).trim()) { toast('Poné el celular', 'r2'); return; }
+  await waMandar(o);
+}
+async function waMandar(o) {
+  var r = $id('wa-res'); if (r) r.innerHTML = '<span class="tdim">Mandando…</span>';
+  var x; try { x = await gsRun('gsWA_Enviar', o); } catch (e) { x = { ok: false, error: e.message }; }
+  if (!x || x.ok === false) { if (r) r.innerHTML = '<span style="color:#f87171">' + waEsc((x && x.error) || 'No se pudo mandar') + '</span>'; toast((x && x.error) || 'No se pudo mandar', 'r2'); return; }
+  var msg = 'Envío N° ' + x.ID_ENVIO + ': ' + x.ENVIADOS + ' enviados' + (x.FALLADOS ? ', ' + x.FALLADOS + ' fallados' : '') + (x.ERROR ? ' · ' + x.ERROR : '');
+  toast(msg, x.FALLADOS ? 'r2' : 'g');
+  WA_.sel = {}; WA_.txt = ''; WA_.tab = 'hist';
+  await renderWhatsApp();
+}
+function waHist() {
+  var d = WA_.d;
+  var h = '<div class="card"><div class="card-body">' + (d.ENVIOS.length ? '<table class="tw"><thead><tr><th>N°</th><th>Fecha</th><th>Tipo</th><th>Mensaje</th><th>A</th><th>Enviados</th><th>Llegaron</th><th>Leídos</th><th>Fallados</th><th>Quién</th><th></th></tr></thead><tbody>' +
+    d.ENVIOS.map(function(e) { return '<tr><td>' + e.ID + '</td><td>' + waFecha(e.FECHA) + '</td><td>' + (e.TIPO === 'UNO' ? 'A un número' : 'Masivo') + '</td><td style="max-width:320px">' + waEsc(e.TEXTO) + '</td><td>' + e.DEST + '</td><td>' + e.C.ENV + '</td><td>' + e.C.ENT + '</td><td>' + e.C.LEI + '</td><td' + (e.C.FAL ? ' style="color:#f87171"' : '') + '>' + e.C.FAL + '</td><td>' + waEsc(e.USUARIO) + '</td><td><button class="btn btn-s btn-sm" onclick="waVerDet(' + e.ID + ')">Ver</button></td></tr>'; }).join('') +
+    '</tbody></table>' : '<div class="tdim">Todavía no se mandó nada.</div>') + '<div id="wa-det"></div></div></div>';
+  $id('wa-body').innerHTML = h;
+}
+async function waVerDet(id) {
+  var el = $id('wa-det'); el.innerHTML = '<div class="tdim mt3">Cargando…</div>';
+  var x; try { x = await gsRun('gsWA_Detalle', id); } catch (e) { x = { ok: false, error: e.message }; }
+  if (!x || x.ok === false) { el.innerHTML = '<div class="al al-r mt3">' + waEsc((x && x.error) || 'Error') + '</div>'; return; }
+  var est = { ENVIADO: '📤 Enviado', ENTREGADO: '✔✔ Llegó', LEIDO: '👁 Leído', FALLADO: '❌ Falló', PENDIENTE: '⏳ Pendiente' };
+  el.innerHTML = '<h3 class="mt3">Envío N° ' + x.ENVIO.ID + '</h3><table class="tw"><thead><tr><th>Cliente</th><th>Celular</th><th>Estado</th><th>Detalle</th></tr></thead><tbody>' +
+    x.DET.map(function(r) { return '<tr><td>' + waEsc(r.NOMBRE) + '</td><td>' + waTelVer(r.TEL) + '</td><td>' + (est[r.ESTADO] || r.ESTADO) + '</td><td class="tdim" style="font-size:12px">' + waEsc(r.ERROR) + '</td></tr>'; }).join('') + '</tbody></table>';
+}
+async function waEstadoPl() {
+  var m = $id('wa-pl-msg'); m.innerHTML = '<div class="tdim mt2">Consultando a Meta…</div>';
+  var x; try { x = await gsRun('gsWA_EstadoPlantillas'); } catch (e) { x = { ok: false, error: e.message }; }
+  if (!x || x.ok === false) { m.innerHTML = '<div class="al al-r mt2">' + waEsc((x && x.error) || 'Error') + '</div>'; return; }
+  toast('Estado de las plantillas actualizado', 'g'); renderWhatsApp();
+}
+async function waPedirPl() {
+  var m = $id('wa-pl-msg'); m.innerHTML = '<div class="tdim mt2">Mandando a Meta…</div>';
+  var x; try { x = await gsRun('gsWA_PedirPlantillas'); } catch (e) { x = { ok: false, error: e.message }; }
+  if (!x || x.ok === false) { m.innerHTML = '<div class="al al-r mt2">' + waEsc((x && x.error) || 'Error') + '</div>'; return; }
+  if (x.ERRORES && x.ERRORES.length) { m.innerHTML = '<div class="al al-y mt2">' + x.ERRORES.map(waEsc).join('<br>') + '</div>'; return; }
+  toast('Plantillas mandadas a aprobar: Meta tarda de minutos a un día', 'g'); renderWhatsApp();
 }
 </script>
 
