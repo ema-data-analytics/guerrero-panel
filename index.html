@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "cfeaf0999982"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "528c8887a4bc"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1708,7 +1708,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611262102';
+var EMA_BUILD = '202611262125';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -11380,7 +11380,7 @@ async function pcOSAnular(id) {
 function pcArmar() {
   var d = PC_.d, esp = d.cubiertas.filter(function(c) { return c.ESTADO === 'EN_ESPERA'; });
   PC_.rpVisto = PC_.rpVisto || {};
-  esp.forEach(function(c) { if (c.REPROCESO_PEND && !PC_.sel[c.ID_CUB] && !PC_.rpVisto[c.ID_CUB]) { PC_.sel[c.ID_CUB] = 'TITULAR'; PC_.rpVisto[c.ID_CUB] = 1; } });
+  esp.forEach(function(c) { if (c.REPROCESO_PEND && !c.SIGUE_DE && !PC_.sel[c.ID_CUB] && !PC_.rpVisto[c.ID_CUB]) { PC_.sel[c.ID_CUB] = 'TITULAR'; PC_.rpVisto[c.ID_CUB] = 1; } });
   esp.forEach(function(c) { if (!c.MARCA && PC_.mk[c.ID_CUB] === undefined && c.DOT) PC_.mk[c.ID_CUB] = String(c.DOT).toUpperCase().replace(/\s+/g, ''); });
   // Sugerencias del buscador: clientes y OT que tienen cubiertas esperando
   var porCli = {}, porOT = {};
@@ -11406,7 +11406,7 @@ function pcArmar() {
         '<td><input type="checkbox" class="pc-ck" data-id="' + c.ID_CUB + '" data-v="TITULAR" style="width:18px;height:18px"' + (s === 'TITULAR' ? ' checked' : '') + dis + '/></td>' +
         '<td><input type="checkbox" class="pc-ck" data-id="' + c.ID_CUB + '" data-v="SUPLENTE"' + (s === 'SUPLENTE' ? ' checked' : '') + dis + '/></td>' +
         '<td>' + (c.MARCA ? '<b class="mono">' + pcEsc(c.MARCA) + '</b>' : '<input class="fi pc-mk" data-id="' + c.ID_CUB + '" value="' + pcEsc(PC_.mk[c.ID_CUB] || '') + '" placeholder="Grabada" style="width:110px;text-transform:uppercase"' + (c.ID_RECETA ? '' : ' disabled') + '/>') + '</td>' +
-        '<td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcDotTxt(c.DOT) + '</td><td>' + pcEsc(pcLineaDeTipo(c.TIPO)) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + (c.TRABAJO === 'VULCANIZADO' && !c.REPROCESO_PEND ? ' <button class="btn btn-s btn-sm" title="El casco da para recapar" onclick="pcTrabEspera(' + c.ID_CUB + ',\'RECAPADO\')">⇄ Pasar a recapado</button>' : '') + (c.ID_RECETA ? '' : ' <span class="badge b-red">sin receta</span> <button class="btn btn-p btn-xs" onclick="event.stopPropagation();pcArmTrab(' + c.ID_CUB + ')">Cambiar trabajo</button>') + (noRec ? ' <span class="badge b-red">' + (c.RECEP === 'FALTA' ? 'no llegó a planta' : 'sin recibir en planta') + '</span> <button class="btn btn-p btn-xs" onclick="event.stopPropagation();pcRecibirOT(' + c.ID_OTRAB + ')">Recibir</button>' : '') + (c.REPROCESO_PEND ? ' <span class="badge b-orange">reproceso de ' + pcEsc(pcNroOS(c.REPROCESO_PEND)) + ': solo autoclave, control y pintura</span>' : '') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + '</td><td class="mono">' + pcEsc(c.NRO_MANUAL || '') + '</td><td>' + fmtD(c.FECHA_RECEPCION) + '</td></tr>';
+        '<td class="mono">' + pcEsc(c.ID_CASCO || '') + '</td><td class="mono">' + pcDotTxt(c.DOT) + '</td><td>' + pcEsc(pcLineaDeTipo(c.TIPO)) + '</td><td>' + pcEsc(c.TIPO) + '</td><td class="mono">' + pcEsc(c.MEDIDA) + '</td><td>' + pcEsc(c.TRABAJO) + (c.SIGUE_DE ? ' <span class="badge b-orange" title="Salió de esa orden con estaciones hechas: sigue desde donde quedó">sigue de ' + pcEsc(c.SIGUE_DE) + (c.SIGUE_EST ? ' desde ' + pcEsc(c.SIGUE_EST) : '') + '</span>' : '') + (c.TRABAJO === 'VULCANIZADO' && !c.REPROCESO_PEND ? ' <button class="btn btn-s btn-sm" title="El casco da para recapar" onclick="pcTrabEspera(' + c.ID_CUB + ',\'RECAPADO\')">⇄ Pasar a recapado</button>' : '') + (c.ID_RECETA ? '' : ' <span class="badge b-red">sin receta</span> <button class="btn btn-p btn-xs" onclick="event.stopPropagation();pcArmTrab(' + c.ID_CUB + ')">Cambiar trabajo</button>') + (noRec ? ' <span class="badge b-red">' + (c.RECEP === 'FALTA' ? 'no llegó a planta' : 'sin recibir en planta') + '</span> <button class="btn btn-p btn-xs" onclick="event.stopPropagation();pcRecibirOT(' + c.ID_OTRAB + ')">Recibir</button>' : '') + (c.REPROCESO_PEND ? ' <span class="badge b-orange">reproceso de ' + pcEsc(pcNroOS(c.REPROCESO_PEND)) + ': solo autoclave, control y pintura</span>' : '') + '</td><td>' + pcEsc(c.CLIENTE) + '</td><td class="mono">' + pcEsc(pcNroOTrab(c.ID_OTRAB)) + '</td><td class="mono">' + pcEsc(c.NRO_MANUAL || '') + '</td><td>' + fmtD(c.FECHA_RECEPCION) + '</td></tr>';
     }).join('') + '</tbody></table>' + (esp.length ? '' : '<div class="tdim" style="padding:12px">No hay cubiertas en espera.</div>') + '</div>' +
     '<div class="fr mt3" style="border-top:1px solid var(--border);padding-top:12px"></div>' +
     '<div class="fr"><div class="fg" id="pc-tope-wrap" style="display:none"><label class="fl">Carga mezclada: tope</label><select class="fs" id="pc-tope">' + d.lineas.filter(function(l) { return l.ACTIVO != 0; }).map(function(l) { return '<option value="' + l.LINEA + '">' + l.LINEA + ' (' + l.CAPACIDAD + ' + ' + l.SUPLENTES + ')</option>'; }).join('') + '</select></div>' +
@@ -11760,6 +11760,7 @@ function pcPintarOT() {
         (i.POS_AUTOCLAVE ? '<div class="tdim" style="font-size:10px">autoclave lugar ' + pcEsc(i.POS_AUTOCLAVE) + '</div>' : '') +
         (i.PASADA > 1 ? '<div><span class="badge b-orange" style="font-size:9px">' + (i.PULIR ? 'repulir' : 'corrección') + '</span></div>' : '') +
         (i.REPROCESO_DE ? '<div><span class="badge b-orange" style="font-size:9px">reproceso de ' + pcEsc(i.REPROCESO_DE) + '</span></div>' : '') +
+        (i.SIGUE_DE ? '<div><span class="badge b-orange" style="font-size:9px">sigue lo hecho en ' + pcEsc(i.SIGUE_DE) + '</span></div>' : '') +
         (i.REPROCESO_EN ? '<div class="tdim" style="font-size:10px">siguió en ' + pcEsc(i.REPROCESO_EN) + '</div>' : '') + '</td><td style="font-size:11px;min-width:170px">' + pcEsc(i.TIPO + ' ' + i.MEDIDA) + '<div class="tdim">' + pcEsc(i.TRABAJO + ' · ' + i.CLIENTE) + '</div></td><td>' + (i.ROL === 'SUPLENTE' ? '<span class="badge b-orange">suplente</span>' : 'titular') + '</td>' +
         (function() { var obl = +((PC_.d.param || {}).ESTACIONES_OBLIGATORIAS) === 1, act = !fuera && (i.ESTADO === 'PENDIENTE' || i.ESTADO === 'EN_PROCESO');
           i._hh = {}; if (i.HECHAS) i.HECHAS.forEach(function(x) { i._hh[x.ID_ESTACION] = x; }); else i.REGISTROS.forEach(function(r) { i._hh[r.ID_ESTACION] = r; });
@@ -11780,7 +11781,7 @@ function pcPintarOT() {
         '<td style="white-space:nowrap">' + (abierta && (i.ESTADO === 'PENDIENTE' || i.ESTADO === 'EN_PROCESO') ?
           '<button class="btn btn-s btn-xs" onclick="pcTerminar(' + i.ID_CUB + ',\'RECHAZADA\')">Rechazar</button> ' +
           (i.ROL === 'SUPLENTE' ? '<button class="btn btn-s btn-xs" onclick="pcPromover(' + i.ID_CUB + ')">A titular</button> ' : '') +
-          (i.REGISTROS.length ? '' : '<button class="btn btn-s btn-xs" onclick="pcRetirar(' + i.ID_CUB + ')">Sacar</button> ' + (pcPuede('EDITAR') ? '<button class="btn btn-s btn-xs" onclick="pcOSAgregar(' + i.ID_CUB + ')">Reemplazar</button>' : '')) : (i.ESTADO === 'TERMINADA' ? '<button class="btn btn-s btn-xs" onclick="pcVerCosto(' + i.ID_CUB + ')">Costo</button>' : '')) + '</td></tr>';
+          '<button class="btn btn-s btn-xs" onclick="pcRetirar(' + i.ID_CUB + ')"' + (i.REGISTROS.length ? ' title="Sale guardando lo hecho y sigue después en otra orden"' : '') + '>Sacar</button> ' + (pcPuede('EDITAR') ? '<button class="btn btn-s btn-xs" onclick="pcOSAgregar(' + i.ID_CUB + ')">Reemplazar</button>' : '') : (i.ESTADO === 'TERMINADA' ? '<button class="btn btn-s btn-xs" onclick="pcVerCosto(' + i.ID_CUB + ')">Costo</button>' : '')) + '</td></tr>';
     }).join('') + '</tbody></table></div>' +
     (tot.n ? '<div class="flex jb" style="padding:10px 14px;font-size:12px"><span class="tdim">Terminadas: ' + tot.n + ' · materiales ' + fmt(tot.mat) + ' · herramental ' + fmt(tot.herr) + ' · mano de obra ' + fmt(tot.mo) + ' · fijos ' + fmt(tot.fij) + '</span><b>Promedio por cubierta ' + fmt(tot.t / tot.n) + '</b></div>' : '') +
     '<div class="tdim" style="padding:8px 14px;font-size:11px">Tocá una celda para registrar la estación (insumos reales, herramental, resultado). Para corregir, abrí la celda y anulá el registro.</div></div>';
@@ -11918,7 +11919,7 @@ function pcOSAgregar(rep) {
   var lin = String(o.LINEA || '').toUpperCase();
   var esp = (PC_.d.cubiertas || []).filter(function(c) { return c.ESTADO === 'EN_ESPERA' && c.RECEP !== 'PEND' && c.RECEP !== 'FALTA' && (!pcLineaDeTipo(c.TIPO) || String(pcLineaDeTipo(c.TIPO)).toUpperCase() === lin); });
   var h = '<div class="mh"><span class="mt">' + (it ? 'Reemplazar ' + pcEsc(it.MARCA) + ' en ' : 'Agregar cubiertas a ') + pcEsc(o.NRO_OT) + '</span><button class="mc" onclick="closeModal()">×</button></div><div class="mb2">' +
-    '<p class="tdim" style="font-size:12px">' + (it ? 'Elegí la cubierta que entra en su lugar. La que sale vuelve a espera.' : 'Entran como titulares mientras haya lugar (tope ' + o.TOPE + '); después como suplentes.') + ' Si ya hiciste el pesaje, sumá los materiales de las nuevas en «Preparación y pesaje».</p>' +
+    '<p class="tdim" style="font-size:12px">' + (it ? 'Elegí la cubierta que entra en su lugar (arranca desde cero). ' + (it.REGISTROS.length ? 'La que sale ya pasó ' + it.REGISTROS.length + ' estación(es): vuelve a espera guardando lo hecho y en la próxima orden sigue desde donde quedó.' : 'La que sale vuelve a espera.') : 'Entran como titulares mientras haya lugar (tope ' + o.TOPE + '); después como suplentes.') + ' Si ya hiciste el pesaje, sumá los materiales de las nuevas en «Preparación y pesaje».</p>' +
     (esp.length ? '<div class="tw" style="max-height:50vh;overflow:auto"><table style="font-size:12px"><thead><tr><th></th><th>Marca grabada · DOT</th><th>Cubierta</th><th>Cliente</th></tr></thead><tbody>' +
       esp.map(function(c) { return '<tr style="cursor:pointer" onclick="pcAgTocar(' + c.ID_CUB + ')"><td><input type="' + (it ? 'radio' : 'checkbox') + '" name="pcag" id="pcag-' + c.ID_CUB + '"></td><td class="mono"><b>' + pcEsc(c.MARCA || '—') + '</b>' + pcCubIdent(c) + '</td><td>' + pcEsc(c.TIPO + ' ' + c.MEDIDA) + '<div class="tdim">' + pcEsc(c.TRABAJO) + '</div></td><td>' + pcEsc(c.CLIENTE || '') + '</td></tr>'; }).join('') + '</tbody></table></div>'
       : '<p><b>No hay cubiertas en espera de esta línea.</b> Primero tienen que estar recibidas en planta.</p>') +
@@ -11939,11 +11940,14 @@ async function pcAgGuardar() {
   var r; try { r = await gsRun('gsPC_OSAgregar', { ID_OT: PC_.ot.ot.ID_OT, IDS: ids, REEMPLAZA: PCAG_.rep, MOTIVO: mot }); } catch (e) { r = { ok: false, error: e.message }; }
   if (b) b.disabled = false;
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
-  closeModal(); toast(r.SALE ? 'Sale ' + r.SALE + ', entra ' + r.AGREGADAS.join(', ') + ' ✓' : 'Agregadas: ' + r.AGREGADAS.join(', ') + ' ✓', 'g');
+  closeModal(); toast(r.SALE ? 'Sale ' + r.SALE + (r.SALE_CON_LO_HECHO ? ' (con lo hecho, sigue desde ' + r.SIGUE_EN + ')' : '') + ', entra ' + r.AGREGADAS.join(', ') + ' ✓' : 'Agregadas: ' + r.AGREGADAS.join(', ') + ' ✓', 'g');
   await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT);
 }
 async function pcPromover(idCub) { var r = await gsRun('gsPC_PromoverSuplente', PC_.ot.ot.ID_OT, idCub); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Pasó a titular ✓', 'g'); pcAbrirOT(PC_.ot.ot.ID_OT); }
-async function pcRetirar(idCub) { if (!(await uiConfirmar('¿Sacar la cubierta de la orden de servicio? Vuelve a espera.', 'Sí, sacar'))) return; var r = await gsRun('gsPC_RetirarCubierta', PC_.ot.ot.ID_OT, idCub, 'sacada de la OT'); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('Volvió a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
+async function pcRetirar(idCub) { var it = PC_.ot.items.filter(function(x) { return String(x.ID_CUB) === String(idCub); })[0], hecho = it && it.REGISTROS.length, mot = 'sacada de la OT';
+  if (hecho) { mot = await uiPedir('La cubierta ' + it.MARCA + ' ya pasó ' + it.REGISTROS.length + ' estación(es). Sale guardando lo hecho y en la próxima orden sigue desde donde quedó. ¿Por qué sale?', { obligatorio: true }); if (mot === null) return; }
+  else if (!(await uiConfirmar('¿Sacar la cubierta de la orden de servicio? Vuelve a espera.', 'Sí, sacar'))) return;
+  var r = await gsRun('gsPC_RetirarCubierta', PC_.ot.ot.ID_OT, idCub, mot); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast(r.CON_LO_HECHO ? 'Volvió a espera con lo hecho: sigue desde ' + r.SIGUE_EN + ' ✓' : 'Volvió a espera ✓', 'g'); await pcRecargar(); pcAbrirOT(PC_.ot.ot.ID_OT); }
 async function pcCerrarOT() { var id = PC_.ot.ot.ID_OT, r = await gsRun('gsPC_CerrarOT', id); if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; } toast('OT cerrada ✓ · ' + ((r.REMITOS || []).length) + ' remito(s) de entrega', 'g'); await pcRecargar(); await pcAbrirOT(id); if ((r.REMITOS || []).length) pcRemitosLista(r.REMITOS); }
 // ── OK final de la carga (03/11/2026): el encargado da el OK cuando salen de pintura; recién ahí se terminan y se cierra la orden ──
 var OKF_ = { d: null, sel: {} };
@@ -13136,6 +13140,7 @@ function puLista() {
       var tag = c.SIGUIENTE ? '<span class="pu-tag aca">→ Está en: ' + puEsc((c.SIGUIENTE.NRO || c.SIGUIENTE.ORDEN) + ' · ' + c.SIGUIENTE.NOMBRE) + '</span>' : '<span class="pu-tag ok">✓ Pasó por todas: lista para terminar</span>';
       if (c.PASADA > 1) tag += '<span class="pu-tag sup">' + (c.PULIR ? '✂ Repulir (exceso de material)' : '↻ Corrección') + '</span>';
       if (c.REPROCESO) tag += '<span class="pu-tag sup">Viene de reproceso</span>';
+      if (c.SIGUE_DE) tag += '<span class="pu-tag sup">Sigue lo hecho en ' + puEsc(c.SIGUE_DE) + '</span>';
       return '<button class="pu-cub aca" onclick="' + (c.AUTOCLAVE ? 'puAutoclave(' + c.ID_OT + ')' : 'puPanel(' + c.ID_OT + ',' + c.ID_CUB + ')') + '">' + puMk(c) + puFabDot(c) +
         '<span class="d">' + puEsc(c.TIPO + ' ' + c.MEDIDA + ' · ' + c.TRABAJO) + '</span><span class="d">' + puEsc(c.CLIENTE || '') + ' · ' + puEsc(c.NRO_OT) + '</span>' + tag + puMapa(c, true) + '</button>';
     }).join('') + '</div>';
@@ -13407,6 +13412,7 @@ function puFicha() {
   else if (f.cub.PASADA > 1) h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:19px;font-weight:700;color:var(--warn)">↻ Corrección: vuelve a ' + puEsc((f.cub.REHACER || []).map(function(e) { return (e.NRO || e.ORDEN) + ' · ' + e.NOMBRE; }).join(', ')) + '</div>' +
     '<div style="font-size:15px">' + puEsc(f.cub.MOTIVO_REPROCESO) + '</div><div class="tdim" style="font-size:14px">Cuando termine la corrección, espera la próxima carga del autoclave (entra ocupando un lugar).</div></div>';
   if (f.vueltaAca && /Vuelve de /.test(f.cub.MOTIVO_REPROCESO || '')) { var vtx = String(f.cub.MOTIVO_REPROCESO).split(' | ').filter(function(x) { return /^Vuelve de /.test(x); }).pop(); h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:18px;font-weight:700;color:var(--warn)">↩ ' + puEsc(vtx) + '</div><div class="tdim" style="font-size:14px">Lo que se use ahora se suma a lo de la primera vez.</div></div>'; }
+  if (f.cub.SIGUE_DE) h += '<div><span class="pu-tag sup">Sigue lo que se hizo en ' + puEsc(f.cub.SIGUE_DE) + ': las estaciones anteriores ya están hechas</span></div>';
   if (f.cub.REPROCESO_DE) h += '<div><span class="pu-tag sup">Viene de reproceso de ' + puEsc(f.cub.REPROCESO_DE) + '</span>' + (f.cub.MOTIVO_ORIGEN ? '<div style="font-size:15px;margin-top:4px"><b>Qué se corrigió:</b> ' + puEsc(f.cub.MOTIVO_ORIGEN) + '</div>' : '') + '</div>';
   if (PU_.ctrl) h += puControlHTML();
   if (PU_.insp) { if (PU_.insp.niv === 1) h += puTrabajoHTML(); h += puInspHTML(); if (PU_.insp.apta === false) { $id('pu-body').innerHTML = h; puPieFicha(); return; } }
