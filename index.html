@@ -348,6 +348,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="pedidos-web"><span class="nav-icon"><i class="fas fa-store"></i></span> Pedidos web</div>
         <div class="nav-item" data-page="whatsapp"><span class="nav-icon"><i class="fab fa-whatsapp"></i></span> WhatsApp a clientes</div>
         <div class="nav-item" data-page="emergencias"><span class="nav-icon"><i class="fas fa-triangle-exclamation"></i></span> Emergencias de clientes</div>
+        <div class="nav-item" data-page="emergencias" data-acc="app-cli"><span class="nav-icon"><i class="fas fa-mobile-screen"></i></span> App de clientes (ver)</div>
       </div></div>
       <div class="sb-grp" data-g="pre"><div class="sb-gh" onclick="menuGrupo('pre')"><span class="sb-gi-ic">💲</span><span class="sb-gt">Precios</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="precios-nuevos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Lista de precios</div>
@@ -897,6 +898,7 @@ function menuClick(el) {
 function aplicarPermisosMenu() {
   document.querySelectorAll('.nav-item').forEach(function(el) {
     var ve = el.dataset.acc === 'ped-prov' ? tienePermiso('COMPRAS', 'VER') : puedeVerPagina(el.dataset.page) && ((el.dataset.page !== 'agenda' && el.dataset.page !== 'bitacora') || String((SES && SES.rol) || '').toUpperCase() === 'SUPER');
+    if (ve && el.dataset.acc === 'app-cli') ve = /SUPER|ADMIN/.test(String((SES && SES.rol) || '').toUpperCase());
     if (ve && rolLinea() && el.dataset.page === 'produccion-cubiertas') ve = LINEA_SECCIONES.indexOf(String(el.dataset.acc || '').replace(/^pc-/, '')) !== -1;
     if (ve && SES && SES.planta === false && el.dataset.page === 'produccion-cubiertas') ve = PC_SECC_SUCURSAL.indexOf(String(el.dataset.acc || '').replace(/^pc-/, '')) !== -1;
     el.style.display = ve ? '' : 'none';
@@ -1713,7 +1715,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611271542';
+var EMA_BUILD = '202611271555';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -24078,6 +24080,7 @@ var MV_OPC = [
   ['ventas', '🧾', 'Ventas', 'Facturas, presupuestos y notas de crédito', 'ventas', '', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
   ['facturar', '💵', 'Facturar remitos', 'Lo entregado que falta facturar', 'ventas', 'FACTURAR', 'FACTURACION ENCARGADO_SUCURSAL'],
   ['remitos-venta', '📃', 'Remitos de venta', 'Ver, mandar y hacer remitos', 'ventas', 'REMITOS', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL RECEPCION'],
+  ['app-clientes', '📱', 'App de clientes', 'Verla como la ve cada empresa', 'emergencias', '', 'SOLO_ADMIN'],
   ['pedidos-web', '🛒', 'Pedidos web', 'Lo que piden los clientes en la tienda', 'pedidos-web', '', 'VENDEDOR FACTURACION ENCARGADO_SUCURSAL'],
   ['fichaje', '🕘', 'Fichaje', 'Entrada y salida del personal', 'fichaje', '', ''],
   ['asistencia', '👥', 'Asistencia', 'Quién vino, faltas y certificados', 'asistencia', '', ''],
@@ -24088,6 +24091,7 @@ var MV_OPC = [
 function mvOpciones(rol) {
   return MV_OPC.filter(function(o) {
     if (o[6] === 'SOLO_SUPER') return rol === 'SUPER';
+    if (o[6] === 'SOLO_ADMIN') return rol === 'SUPER' || rol === 'ADMINISTRADOR';
     if (rol === 'SUPER' || rol === 'ADMINISTRADOR') return o[0] === 'avance' || puedeVerPagina(o[4]);
     return (' ' + o[6] + ' ').indexOf(' ' + rol + ' ') !== -1 && puedeVerPagina(o[4]);
   });
@@ -24110,6 +24114,7 @@ function mvInicio() { closeModal(); if (typeof pcCerrarVista === 'function') pcC
 // Cada botón abre una sola cosa: en Producción por cubierta, la pestaña que corresponde sin las demás (modo foco)
 function mvAbrir(k) {
   var o = MV_OPC.filter(function(x) { return x[0] === k; })[0]; if (!o) return;
+  if (k === 'app-clientes') { abrirAppClientes(); return; }
   if (k === 'catalogo') { window.open(location.origin + location.pathname.replace(/[^\/]*$/, '') + 'tienda/', '_blank'); return; }
   document.body.classList.remove('en-inicio-movil'); document.body.classList.remove('modo-cascos'); PC_.foco = null;
   if (o[4] === 'produccion-cubiertas' && o[5]) { document.body.classList.add('modo-cascos'); PC_.tab = o[5]; PC_.foco = o; }
@@ -26452,7 +26457,7 @@ function emgPintar() {
   var l = d.EMERGENCIAS.filter(function(x) { return EMG_.f === 'TODAS' || ab.indexOf(x.ESTADO) !== -1; });
   var nAb = d.EMERGENCIAS.filter(function(x) { return ab.indexOf(x.ESTADO) !== -1; }).length;
   var h = '<div class="page-hd"><div><div class="page-title">Emergencias de clientes</div><div class="page-sub">Lo que mandan las empresas desde la app con el botón de emergencia. Le llega al mecánico de guardia' + (d.NUMERO ? ' (' + waTelVer(d.NUMERO) + ')' : '') + ' por WhatsApp.</div></div>' +
-    '<button class="btn btn-s btn-sm" onclick="renderEmergencias()">🔄 Actualizar</button></div>';
+    '<span class="flex gap2"><button class="btn btn-s btn-sm" onclick="abrirAppClientes()">📱 Ver la app de clientes</button><button class="btn btn-s btn-sm" onclick="renderEmergencias()">🔄 Actualizar</button></span></div>';
   if (!d.NUMERO) h += '<div class="al al-y mb3">Falta cargar el número del mecánico: Configuración, parámetro emergencia_whatsapp.</div>';
   h += '<div class="flex gap2 mb3">' + [['ABIERTAS', 'Abiertas (' + nAb + ')'], ['TODAS', 'Todas']].map(function(t) { return '<button class="btn btn-sm ' + (EMG_.f === t[0] ? 'btn-p' : 'btn-s') + '" onclick="EMG_.f=\'' + t[0] + '\';emgPintar()">' + t[1] + '</button>'; }).join('') + '</div>';
   if (!l.length) h += '<div class="card"><div class="card-body tdim">' + (EMG_.f === 'ABIERTAS' ? 'No hay emergencias abiertas.' : 'Todavía no llegó ninguna emergencia.') + '</div></div>';
@@ -26478,6 +26483,13 @@ async function emgCerrarOk(id, est) {
   if (!r || r.ok === false) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   closeModal(); toast('Guardado', 'g'); renderEmergencias();
 }
+// ── Abrir la app de clientes desde el sistema (27/11/2026): con la misma sesión, para verla como cada empresa ──
+function abrirAppClientes() {
+  if (!SES || !/SUPER|ADMIN/.test(String(SES.rol || '').toUpperCase())) { toast('Solo SUPER y ADMINISTRADOR pueden ver la app de clientes', 'r2'); return; }
+  try { localStorage.setItem('vulcan_cli_ses', JSON.stringify({ token: SES.token, nombre: SES.nombre, rol: String(SES.rol).toUpperCase(), usuario: SES.usuario })); localStorage.removeItem('vulcan_cli_ver'); } catch (e) {}
+  window.open(location.origin + location.pathname.replace(/[^\/]*$/, '') + 'clientes/', '_blank');
+}
+document.addEventListener('click', function(e) { var it = e.target && e.target.closest && e.target.closest('.nav-item[data-acc="app-cli"]'); if (!it) return; e.stopImmediatePropagation(); e.preventDefault(); abrirAppClientes(); }, true);
 </script>
 
 <script>
