@@ -1708,7 +1708,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611270239';
+var EMA_BUILD = '202611270245';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -13180,6 +13180,7 @@ async function puAbrir(idOt, idCub, estF) {
   try { f = await puConTiempo(gsRun('gsPC_PuestoFicha', idOt, idCub, puE()), 15000); PUQ_.off = 0; if (f && f.ok) puFichaGuardar(f, puE()); }
   catch (e) {
     if (!puSinSenal(e)) { toast(e.message, 'r2'); return puLista(); }
+    if (puPendCola(idOt, idCub, puE())) { toast('Ese paso ya está confirmado en la tablet: se manda solo cuando vuelve la señal', 'w'); return puLista(); }
     f = puFichaLeer(idOt, idCub, puE());
     if (!f) { toast('📵 Sin internet: esta cubierta no quedó guardada en la tablet para esta estación. Esperá que vuelva la señal.', 'r2'); return puLista(); }
     PU_.fOff = 1; if (!PUQ_.off) PUQ_.off = Date.now();
@@ -14584,7 +14585,9 @@ function puColaPintar() {
     (m ? '<button class="pu-chip" style="background:#fee2e2;color:#991b1b;border:2px solid #ef4444" onclick="flqVer()">⚠ ' + m + ' paso' + (m === 1 ? '' : 's') + ' hecho' + (m === 1 ? '' : 's') + ' sin internet no se registr' + (m === 1 ? 'ó' : 'aron') + ' · avisá al encargado · ver</button>' : '') + '</div>' : '');
 }
 // Cuando la cola terminó de mandarse: se vuelve a pedir la lista de la estación
-function puColaListo() { var pg = puEl(); if (pg && !pg.classList.contains('hidden') && (PU_.vista === 'lista' || PU_.vista === 'listo')) puCargar(); else puColaPintar(); }
+function puColaListo() {
+  if (PU_.fin && PU_.fin.sinRed && !puPendCola(PU_.fin.ot, PU_.fin.cub, puE())) PU_.fin.sinRed = 0;
+  var pg = puEl(); if (pg && !pg.classList.contains('hidden') && (PU_.vista === 'lista' || PU_.vista === 'listo')) puCargar(); else puColaPintar(); }
 if (typeof window !== 'undefined' && !window._puOff) { window._puOff = 1;
   window.addEventListener('offline', function() { PUQ_.off = PUQ_.off || Date.now(); puColaPintar(); });
   window.addEventListener('online', function() { setTimeout(function() { if (PUQ_.off && PU_.vista === 'lista') puCargar(); }, 2500); });
