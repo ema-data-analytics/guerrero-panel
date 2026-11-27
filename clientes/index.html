@@ -189,7 +189,7 @@ var ICO = {
 };
 function pintarMarco() {
   $('raiz').innerHTML = '<div class="app"><div id="vista"></div></div>' +
-    '<div class="emg" id="emg"><button class="bt-verde" onclick="abrirDetalle()" aria-label="Contar qué pasó al mecánico">' + icoMsg() + 'Contar qué pasó</button>' +
+    '<div class="emg" id="emg"><button class="bt-verde" onclick="abrirDetalle()" aria-label="Contactar al mecánico">' + icoMsg() + 'Contactar al mecánico</button>' +
     '<button class="bt-rojo" id="bt-rojo" aria-label="Emergencia: mantené apretado 2 segundos"><i class="fill"></i><span>⚠ Emergencia</span></button></div>' +
     '<nav class="nav"><div class="in2">' + [['ini', 'Inicio'], ['mec', 'Mecánica'], ['gom', 'Gomería'], ['pre', 'Precurado']].map(function(t) {
       return '<button id="nv-' + t[0] + '" onclick="ir(\'' + t[0] + '\')">' + ICO[t[0]] + '<span>' + t[1] + '</span><span class="bad" id="bd-' + t[0] + '" hidden></span></button>'; }).join('') + '</div></nav>';
@@ -231,9 +231,9 @@ function vInicio() {
     CL.data.ini = r; CL.emg = (r.EMERG || [])[0] || null; badges(r);
     var graves = (r.AVISOS || []).filter(function(a) { return a.GRAV > 0; }).length;
     var h = cabecera(r.EMPRESA, r.UNIDADES + ' unidades · ' + r.CUBIERTAS + ' cubiertas montadas') + '<div class="body">';
-    if (CL.emg) h += '<button class="aviso g2" onclick="verAlerta()"><i class="dot"></i><span><b>Emergencia ' + esc(CL.emg.NRO) + '</b> · ' + estEmg(CL.emg) + '<br><span class="s">Tocá para ver o mandar el detalle</span></span></button>';
+    if (CL.emg) h += '<button class="aviso g2" onclick="verAlerta()"><i class="dot"></i><span><b>Emergencia ' + esc(CL.emg.NRO) + '</b> · ' + estEmg(CL.emg) + '<br><span class="s">Tocá para verla o contactar al mecánico</span></span></button>';
     h += '<div class="bigemg"><button class="bt-rojo" id="bt-rojo2"><i class="fill"></i><span>⚠ Emergencia<small>Mantené apretado 2 segundos: le llega tu ubicación al mecánico</small></span></button>' +
-      '<button class="bt-verde" onclick="abrirDetalle()"><span>' + icoMsg() + ' Contar qué pasó<small>Le mandás el detalle al mecánico y queda registrado</small></span></button></div>';
+      '<button class="bt-verde" onclick="abrirDetalle()"><span>' + icoMsg() + ' Contactar al mecánico<small>Le mandás un mensaje con lo que pasa y queda registrado</small></span></button></div>';
     h += '<div class="tiles">' +
       tile("ir('mec')", ICO_G.mec, 'Mecánica', r.RESUMEN.MEC ? r.RESUMEN.MEC + ' para atender' : 'Trabajos y servicios', r.RESUMEN.MEC) +
       tile("ir('gom')", ICO_G.gom, 'Gomería', r.RESUMEN.GOM ? r.RESUMEN.GOM + ' cubiertas a revisar' : 'Mapa de cubiertas', r.RESUMEN.GOM) +
@@ -455,9 +455,9 @@ function verAlerta(u) {
   var sal = e.WA === 'ENVIADO', cerr = e.ESTADO === 'CANCELADA' || e.ESTADO === 'RESUELTA';
   var h = '<div class="alerta" style="' + (cerr ? 'background:var(--head)' : '') + '"><div class="lab" style="color:#ffd9d4">EMERGENCIA ' + esc(e.NRO) + ' · ' + hora(e.F) + '</div><h1>' + (cerr ? (e.ESTADO === 'RESUELTA' ? 'Resuelta' : 'Cancelada') : e.ESTADO === 'EN_CAMINO' ? 'El mecánico va en camino' : sal ? 'Alerta enviada' : 'Alerta registrada') + '</h1>' +
     '<div>' + (cerr ? '' : sal ? 'Le llegó al mecánico de guardia por WhatsApp, con tu ubicación. Te va a llamar.' : e.WA === 'FALLO' ? 'Quedó registrada en Vulcan, pero el WhatsApp no salió. Llamá a Vulcan.' : 'Quedó registrada en Vulcan. El aviso por WhatsApp todavía no está conectado: llamá a Vulcan.') + '</div></div><div class="body">';
-  h += '<div class="card pad s">' + (e.LAT !== '' && e.LNG !== '' ? '📍 Ubicación enviada' + (u && u.PREC ? ' (precisión ' + u.PREC + ' m)' : '') : '📍 No se pudo tomar la ubicación: contala en el detalle') + (e.F_DET ? '<br>Detalle enviado: ' + esc(e.QUE_PASO) + (e.DETALLE ? ' · ' + esc(e.DETALLE) : '') : '') + '</div>';
+  h += '<div class="card pad s">' + (e.LAT !== '' && e.LNG !== '' ? '📍 Ubicación enviada' + (u && u.PREC ? ' (precisión ' + u.PREC + ' m)' : '') : '📍 No se pudo tomar la ubicación: escribila en el mensaje al mecánico') + (e.F_DET ? '<br>Mensaje enviado: ' + esc(e.QUE_PASO) + (e.DETALLE ? ' · ' + esc(e.DETALLE) : '') : '') + '</div>';
   if (!cerr) {
-    h += '<button class="btn btn-g" onclick="abrirDetalle(' + e.ID + ')">' + (e.F_DET ? 'Corregir el detalle' : 'Contar qué pasó') + '</button>';
+    h += '<button class="btn btn-g" onclick="abrirDetalle(' + e.ID + ')">' + (e.F_DET ? 'Corregir el mensaje al mecánico' : 'Contactar al mecánico') + '</button>';
     if (!sal || e.WA === 'FALLO') h += llamarFijo();
     if (e.ESTADO !== 'EN_CAMINO') h += '<button class="btn btn-l" onclick="cancelarAlerta(' + e.ID + ')">Fue sin querer: cancelar</button>';
   }
@@ -472,7 +472,7 @@ function abrirDetalle(id) {
   marcoVisible(false); window.scrollTo(0, 0);
   var e = id && CL.emg && String(CL.emg.ID) === String(id) ? CL.emg : null, vehs = (CL.data.ini && CL.data.ini.VEHICULOS) || [];
   var sel = e && e.QUE_PASO ? e.QUE_PASO : '';
-  var h = '<div class="hd" style="background:var(--green)"><button class="back" style="color:#d6f3df" onclick="' + (e ? 'verAlerta()' : 'ir(\'ini\')') + '">‹ Volver</button><h1>Contar qué pasó</h1><div class="sub" style="color:#d6f3df">Le llega al mecánico de guardia por WhatsApp y queda registrado en Vulcan</div></div>' +
+  var h = '<div class="hd" style="background:var(--green)"><button class="back" style="color:#d6f3df" onclick="' + (e ? 'verAlerta()' : 'ir(\'ini\')') + '">‹ Volver</button><h1>Contactar al mecánico</h1><div class="sub" style="color:#d6f3df">Le llega al mecánico de guardia por WhatsApp y queda registrado en Vulcan</div></div>' +
     '<form class="body" onsubmit="enviarDetalle(event,' + (e ? e.ID : 0) + ')">';
   h += '<div class="fld"><label for="dt-u">¿Qué vehículo?</label><select class="in" id="dt-u"><option value="">Elegí</option>' + vehs.map(function(v) { var s = String((e && e.ID_EQUIPO) || CL.eq) === String(v.ID); return '<option value="' + v.ID + '"' + (s ? ' selected' : '') + '>' + esc(v.IDENT) + (v.MM ? ' · ' + esc(v.MM) : '') + '</option>'; }).join('') + '</select></div>';
   h += '<div class="fld"><label>¿Qué pasó?</label><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px" id="dt-q">' + QUE_PASO.map(function(q) { return '<button type="button" class="chip' + (q === sel ? ' on' : '') + '" style="border-radius:10px;height:46px" onclick="qp(this)">' + q + '</button>'; }).join('') + '</div></div>';
