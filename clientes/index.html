@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="../icono-vulcan-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap">
-<script>window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f67facfe385f"};</script>
+<script>window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "16e469f964f8"};</script>
 <style>
 /* App de clientes de Vulcan: taller y ruta. Fondo claro de papel, encabezado grafito, naranja Vulcan para acciones, rojo solo para la emergencia */
 :root{--bg:#f3f3ef;--card:#fff;--line:#dcdcd5;--fg:#1d2024;--dim:#5d636b;--head:#23272c;--headfg:#f4f4f2;--headdim:#c9ccd1;
@@ -111,7 +111,7 @@ textarea.in{height:auto;padding:10px 12px;resize:vertical}
 <script>
 /* App de clientes · Vulcan Tread (27/11/2026). Solo lectura de la flota de la empresa + botón de emergencia.
    Todo pasa por la función gs del sistema con el pase de sesión del usuario (rol CLIENTE_APP). */
-var APP_VER = '202611271645';
+var APP_VER = '202611271705';
 var CL = { ses: null, tab: 'ini', data: {}, eq: '', ver: '', emg: null, cub: null, pend: null };
 var CL_PV = '99990000000000';
 var CL_KEY = 'vulcan_cli_ses';
@@ -249,6 +249,8 @@ function vInicio() {
     CL.data.ini = r; CL.emg = (r.EMERG || [])[0] || null; badges(r);
     var graves = (r.AVISOS || []).filter(function(a) { return a.GRAV > 0; }).length;
     var h = cabecera(r.EMPRESA, r.UNIDADES + ' unidades · ' + r.CUBIERTAS + ' cubiertas montadas') + '<div class="body">';
+    var vimp = (r.AVISOS || []).filter(function(a) { return a.VULCAN; })[0];
+    if (vimp) h += '<button class="aviso ' + (vimp.GRAV > 1 ? 'g2' : 'g1') + '" onclick="vAvisos()" style="text-align:left"><i class="dot"></i><span><span class="s" style="font-weight:600">Aviso de Vulcan · ' + fch(vimp.F) + (vimp.UNIDAD ? ' · ' + esc(vimp.UNIDAD) : '') + '</span><br>' + esc(vimp.T).replace(/\n/g, '<br>') + '</span></button>';
     if (CL.emg) h += '<button class="aviso g2" onclick="verAlerta()"><i class="dot"></i><span><b>Emergencia ' + esc(CL.emg.NRO) + '</b> · ' + estEmg(CL.emg) + '<br><span class="s">Tocá para verla o mandar mensaje al mecánico</span></span></button>';
     h += '<div class="bigemg"><button class="bt-rojo" id="bt-rojo2"><i class="fill"></i><span>⚠ Emergencia<small>Mantené apretado 2 segundos: le llega tu ubicación al mecánico</small></span></button>' +
       '<button class="bt-verde" onclick="abrirDetalle()"><span>' + icoMsg() + ' Mandar mensaje al mecánico<small>Le mandás un mensaje con lo que pasa y queda registrado</small></span></button></div>';
@@ -264,11 +266,13 @@ function vInicio() {
     $('vista').innerHTML = h; armarRojo($('bt-rojo2'));
   }).catch(function(e) { fallo('Mi flota', e); });
 }
+function avisoVulcan(a) { return '<div class="aviso ' + (a.GRAV > 1 ? 'g2' : 'g1') + '" style="cursor:default"><i class="dot"></i><span><span class="s" style="font-weight:600">' + (a.GRAV > 1 ? '⚠ Importante · ' : '') + 'Vulcan · ' + fch(a.F) + (a.UNIDAD ? ' · ' + esc(a.UNIDAD) : '') + '</span><br>' + esc(a.T).replace(/\n/g, '<br>') + '</span></div>'; }
 function vAvisos() {
   var r = CL.data.ini; if (!r) { ir('ini'); return; }
   marcoVisible(true); window.scrollTo(0, 0); var em = $('emg'); if (em) em.style.display = '';
-  var av = r.AVISOS || [], graves = av.filter(function(a) { return a.GRAV > 0; }).sort(function(a, b) { return b.GRAV - a.GRAV; });
+  var av = r.AVISOS || [], vul = av.filter(function(a) { return a.VULCAN; }), graves = av.filter(function(a) { return a.GRAV > 0 && !a.VULCAN; }).sort(function(a, b) { return b.GRAV - a.GRAV; });
   var h = cabecera('Avisos', 'Recordatorios de tu flota', "ir('ini')") + '<div class="body">';
+  if (vul.length) h += '<div class="h2">De Vulcan</div>' + vul.map(avisoVulcan).join('') + '<div class="h2">De tu flota</div>';
   if (!graves.length) h += '<div class="card pad s">Todo al día: no hay servicios vencidos ni cubiertas para revisar.</div>';
   graves.slice(0, 60).forEach(function(a) { h += '<button class="aviso g' + Math.min(2, a.GRAV) + '" onclick="ir(\'' + tabDe(a.RUBRO) + '\')"><i class="dot"></i><span>' + (a.UNIDAD ? '<b>' + esc(a.UNIDAD) + '</b> · ' : '') + esc(a.T) + '<br><span class="s">' + esc(a.RUBRO) + '</span></span></button>'; });
   av.filter(function(a) { return a.LISTO; }).forEach(function(a) { h += '<button class="aviso" onclick="ir(\'pre\')"><i class="dot"></i><span>' + esc(a.T) + '<br><span class="s">Precurado</span></span></button>'; });

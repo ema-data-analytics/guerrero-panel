@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f67facfe385f"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "16e469f964f8"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -348,6 +348,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="pedidos-web"><span class="nav-icon"><i class="fas fa-store"></i></span> Pedidos web</div>
         <div class="nav-item" data-page="whatsapp"><span class="nav-icon"><i class="fab fa-whatsapp"></i></span> WhatsApp a clientes</div>
         <div class="nav-item" data-page="emergencias"><span class="nav-icon"><i class="fas fa-triangle-exclamation"></i></span> Emergencias de clientes</div>
+        <div class="nav-item" data-page="avisos-cli"><span class="nav-icon"><i class="fas fa-bell"></i></span> Avisos a clientes</div>
         <div class="nav-item" data-page="emergencias" data-acc="app-cli"><span class="nav-icon"><i class="fas fa-mobile-screen"></i></span> App de clientes (ver)</div>
       </div></div>
       <div class="sb-grp" data-g="pre"><div class="sb-gh" onclick="menuGrupo('pre')"><span class="sb-gi-ic">💲</span><span class="sb-gt">Precios</span><span class="sb-car">›</span></div><div class="sb-gl">
@@ -518,6 +519,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-audios" class="hidden"></div>
     <div id="page-whatsapp" class="hidden"></div>
     <div id="page-emergencias" class="hidden"></div>
+    <div id="page-avisos-cli" class="hidden"></div>
     <div id="page-caja" class="hidden"></div>
     <div id="page-cobranzas" class="hidden"></div>
     <div id="page-cta-cte-clientes" class="hidden"></div>
@@ -792,7 +794,7 @@ function _mcDelAll(){ _MC={}; }
 // El servidor devuelve un "pase" (token) que acompaña cada llamada.
 // ══════════════════════════════════════════════════════════════════
 var PAGINA_MODULO = {
-  'dashboard':'REPORTES', 'whatsapp':'VENTAS', 'emergencias':'VENTAS', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'tablero-linea':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'taller':'VENTAS', 'flota':'VENTAS', 'precios-nuevos':'VENTAS', 'catalogo-tienda':'VENTAS', 'margen':'VENTAS', 'armado':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
+  'dashboard':'REPORTES', 'whatsapp':'VENTAS', 'emergencias':'VENTAS', 'avisos-cli':'VENTAS', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'tablero-linea':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'taller':'VENTAS', 'flota':'VENTAS', 'precios-nuevos':'VENTAS', 'catalogo-tienda':'VENTAS', 'margen':'VENTAS', 'armado':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
   'carga-gastos':'GASTOS', 'carga-financiero':'ADMINISTRACION', 'carga-transporte':'ADMINISTRACION',
   'carga-impositivo':'ADMINISTRACION', 'carga-sueldos':'ADMINISTRACION', 'asistencia':'ADMINISTRACION', 'fichaje':'PRODUCCION', 'carga-combustible':'COMBUSTIBLE',
   'cheques':'COBRANZAS', 'cobranzas':'COBRANZAS', 'caja':'COBRANZAS', 'cta-cte-clientes':'COBRANZAS',
@@ -1426,6 +1428,7 @@ function getPage(name) {
     'audios': function(){ if(typeof renderAudios!=='undefined') renderAudios(); },
     'whatsapp': function(){ if(typeof renderWhatsApp!=='undefined') renderWhatsApp(); },
     'emergencias': function(){ if(typeof renderEmergencias!=='undefined') renderEmergencias(); },
+    'avisos-cli': function(){ if(typeof renderAvisosCli!=='undefined') renderAvisosCli(); },
     'configuracion': typeof renderConfiguracion !== 'undefined' ? renderConfiguracion : null,
     'backup-page': typeof renderBackupPage !== 'undefined' ? renderBackupPage : null,
     'gsheets': typeof renderGsheets !== 'undefined' ? renderGsheets : null,
@@ -1715,7 +1718,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611271645';
+var EMA_BUILD = '202611271705';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -26490,6 +26493,77 @@ function abrirAppClientes() {
   window.open(location.origin + location.pathname.replace(/[^\/]*$/, '') + 'clientes/?v=' + Date.now(), '_blank');
 }
 document.addEventListener('click', function(e) { var it = e.target && e.target.closest && e.target.closest('.nav-item[data-acc="app-cli"]'); if (!it) return; e.stopImmediatePropagation(); e.preventDefault(); abrirAppClientes(); }, true);
+// ── Avisos a clientes (27/11/2026): se escriben acá, aparecen arriba en la app de la empresa y se mandan por WhatsApp
+// desde el celular de quien lo carga (sin chip todavía). Más adelante se automatizan. ──
+var AVC_ = { d: null, emp: '', q: '', f: 'VIGENTES' };
+async function renderAvisosCli() {
+  var el = $id('page-avisos-cli'); if (!el) return;
+  el.innerHTML = '<div class="card"><div class="card-body tdim">Cargando…</div></div>';
+  try { AVC_.d = await gsRun('gsAVC_Lista', {}); } catch (e) { el.innerHTML = '<div class="al al-r">' + waEsc(e.message) + '</div>'; return; }
+  if (!AVC_.d || AVC_.d.ok === false) { el.innerHTML = '<div class="al al-r">' + waEsc((AVC_.d && AVC_.d.error) || 'No se pudo cargar') + '</div>'; return; }
+  avcPintar();
+}
+function avcEmp(id) { return (AVC_.d.EMPRESAS || []).filter(function(e) { return String(e.ID) === String(id); })[0]; }
+function avcPintar() {
+  var el = $id('page-avisos-cli');
+  var h = '<div class="page-hd"><div><div class="page-title">Avisos a clientes</div><div class="page-sub">Lo que escribís acá le aparece arriba en la app a la empresa, y lo mandás por WhatsApp desde tu celular.</div></div>' +
+    '<button class="btn btn-s btn-sm" onclick="abrirAppClientes()">📱 Ver la app de clientes</button></div>';
+  h += '<div class="card mb3"><div class="card-hd"><span class="card-title">Nuevo aviso</span></div><div class="card-body">' +
+    '<div class="fr mb3"><div class="fg"><label class="fl">Empresa *</label><input id="avc-q" class="fi" placeholder="🔎 Buscar empresa…" oninput="avcEmpOpts()" autocomplete="off" style="margin-bottom:6px"><select id="avc-emp" class="fs" onchange="avcEmpCambio()"></select><div id="avc-emp-info" class="tdim" style="font-size:12px;margin-top:4px"></div></div>' +
+    '<div class="fg"><label class="fl">Unidad (opcional)</label><select id="avc-eq" class="fs"><option value="">Toda la flota</option></select></div></div>' +
+    '<div class="fg mb3"><label class="fl">Aviso *</label><textarea id="avc-txt" class="fi" rows="3" maxlength="600" placeholder="Ej.: Tus 8 cubiertas recapadas están listas para retirar."></textarea></div>' +
+    '<div class="fr mb3"><div class="fg"><label class="fl">Importancia</label><select id="avc-imp" class="fs"><option value="INFO">Informativo</option><option value="IMPORTANTE">Importante (en rojo)</option></select></div>' +
+    '<div class="fg"><label class="fl">Se muestra en la app durante</label><select id="avc-dias" class="fs"><option value="3">3 días</option><option value="7" selected>7 días</option><option value="15">15 días</option><option value="30">30 días</option><option value="0">Hasta que lo saque</option></select></div></div>' +
+    '<div id="avc-err"></div><button class="btn btn-p" id="avc-b" onclick="avcGuardar()">Guardar y mandar por WhatsApp</button></div></div>';
+  var l = (AVC_.d.AVISOS || []).filter(function(a) { return AVC_.f === 'TODOS' || a.VIGENTE; });
+  h += '<div class="flex gap2 mb3">' + [['VIGENTES', 'Vigentes (' + (AVC_.d.AVISOS || []).filter(function(a) { return a.VIGENTE; }).length + ')'], ['TODOS', 'Todos']].map(function(t) { return '<button class="btn btn-sm ' + (AVC_.f === t[0] ? 'btn-p' : 'btn-s') + '" onclick="AVC_.f=\'' + t[0] + '\';avcPintar()">' + t[1] + '</button>'; }).join('') + '</div>';
+  h += !l.length ? '<div class="card"><div class="card-body tdim">' + (AVC_.f === 'VIGENTES' ? 'No hay avisos vigentes.' : 'Todavía no se mandó ningún aviso.') + '</div></div>' :
+    '<div class="card"><div class="card-body" style="padding:0"><table class="tw"><thead><tr><th>Fecha</th><th>Empresa · Unidad</th><th>Aviso</th><th>Estado</th><th></th></tr></thead><tbody>' + l.map(function(a) {
+      var est = a.ESTADO === 'ANULADO' ? '<span class="badge b-gray">Sacado</span><div class="tdim" style="font-size:11px">' + waEsc(a.MOTIVO) + '</div>' : a.VIGENTE ? '<span class="badge b-green">En la app</span>' + (a.HASTA ? '<div class="tdim" style="font-size:11px">hasta ' + waFecha(a.HASTA).split(' ')[0] + '</div>' : '') : '<span class="badge b-gray">Vencido</span>';
+      est += '<div style="font-size:11px">' + (a.VISTO ? '👁 lo vio el ' + waFecha(a.VISTO) : '<span class="tdim">todavía no lo vio</span>') + '</div><div style="font-size:11px">' + (a.WA ? '📱 WhatsApp abierto ' + waFecha(a.F_WA) : '<span class="tdim">sin WhatsApp</span>') + '</div>';
+      return '<tr><td style="white-space:nowrap">' + waFecha(a.F) + '<div class="tdim" style="font-size:11px">' + waEsc(a.POR) + '</div></td><td>' + waEsc(a.CLIENTE) + '<div class="tdim" style="font-size:11px">' + waEsc(a.UNIDAD || 'Toda la flota') + '</div></td>' +
+        '<td style="white-space:pre-line;font-size:13px">' + (a.IMP === 'IMPORTANTE' ? '<span class="badge b-red">Importante</span> ' : '') + waEsc(a.TEXTO) + '</td><td>' + est + '</td>' +
+        '<td style="white-space:nowrap">' + (a.ESTADO !== 'ANULADO' ? '<button class="btn btn-s btn-sm" onclick="avcWa(' + a.ID + ')">📲 WhatsApp</button> <button class="btn btn-s btn-sm" onclick="avcAnular(' + a.ID + ')">Sacar</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+  el.innerHTML = h; avcEmpOpts();
+}
+function avcEmpOpts() {
+  var sel = $id('avc-emp'); if (!sel) return; var q = (($id('avc-q') || {}).value || '').toUpperCase().trim(), act = sel.value || AVC_.emp;
+  var l = (AVC_.d.EMPRESAS || []).filter(function(e) { return !q || String(e.ID) === String(act) || e.NOMBRE.toUpperCase().indexOf(q) !== -1; });
+  sel.innerHTML = '<option value="">' + (q ? l.length + ' empresas con «' + waEsc(q) + '»' : 'Elegí la empresa') + '</option>' + l.map(function(e) { return '<option value="' + e.ID + '"' + (String(e.ID) === String(act) ? ' selected' : '') + '>' + waEsc(e.NOMBRE) + (e.APP ? ' · 📱 usa la app' : '') + '</option>'; }).join('');
+  if (q && !sel.value && l.length === 1) sel.value = String(l[0].ID);
+  if (String(sel.value) !== String(AVC_.emp)) avcEmpCambio();
+}
+async function avcEmpCambio() {
+  var id = ($id('avc-emp') || {}).value || ''; AVC_.emp = id; var info = $id('avc-emp-info'), eq = $id('avc-eq');
+  if (eq) eq.innerHTML = '<option value="">Toda la flota</option>';
+  if (!id) { if (info) info.innerHTML = ''; return; }
+  var e = avcEmp(id); if (info) info.innerHTML = (e.APP ? '📱 Tiene usuario de la app. ' : '⚠ No tiene usuario de la app: solo le llega por WhatsApp. ') + (e.TEL ? 'WhatsApp: +' + waEsc(e.TEL) : '<b style="color:#b91c1c">Sin celular cargado: el WhatsApp no se puede mandar (cargalo en Clientes).</b>');
+  try { var r = await gsRun('gsAVC_Unidades', id); if (r && r.ok && eq && AVC_.emp === id) eq.innerHTML = '<option value="">Toda la flota</option>' + r.UNIDADES.map(function(u) { return '<option value="' + u.ID + '">' + waEsc(u.IDENT) + (u.MM ? ' · ' + waEsc(u.MM) : '') + '</option>'; }).join(''); } catch (x) {}
+}
+async function avcGuardar() {
+  var b = $id('avc-b'), er = $id('avc-err'); er.innerHTML = '';
+  var d = { ID_CLIENTE: $id('avc-emp').value, ID_EQUIPO: $id('avc-eq').value, TEXTO: $id('avc-txt').value, IMPORTANCIA: $id('avc-imp').value, DIAS: $id('avc-dias').value };
+  if (!d.ID_CLIENTE) { er.innerHTML = '<div class="al al-r mb2">Elegí la empresa</div>'; return; }
+  if (String(d.TEXTO).trim().length < 3) { er.innerHTML = '<div class="al al-r mb2">Escribí el aviso</div>'; return; }
+  b.disabled = true; b.textContent = 'Guardando…'; var r;
+  try { r = await gsRun('gsAVC_Guardar', d); } catch (e) { r = { ok: false, error: e.message }; }
+  b.disabled = false; b.textContent = 'Guardar y mandar por WhatsApp';
+  if (!r || r.ok === false) { er.innerHTML = '<div class="al al-r mb2">' + waEsc((r && r.error) || 'No se pudo guardar') + '</div>'; return; }
+  toast('Aviso guardado: ya aparece en la app', 'g'); AVC_.emp = ''; await renderAvisosCli(); avcModalWa(r.ID, r.WA_LINK);
+}
+async function avcWa(id) { var r; try { r = await gsRun('gsAVC_WaLink', id); } catch (e) { toast(e.message, 'r2'); return; } if (!r || r.ok === false) { toast((r && r.error) || 'No se pudo', 'r2'); return; } avcModalWa(id, r.WA_LINK); }
+function avcModalWa(id, link) {
+  showModal('<div class="mh"><span class="mt">Mandar el aviso por WhatsApp</span><button class="mc" onclick="closeModal()">&times;</button></div><div class="mb2">' +
+    (link ? '<p>Se abre WhatsApp con el número de la empresa y el aviso ya escrito: tocá <b>Enviar</b>. Si lo hacés desde la PC, se abre WhatsApp Web.</p><a class="btn btn-p" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none" href="' + waEsc(link) + '" target="_blank" rel="noopener" onclick="avcWaOk(' + id + ')">📲 Abrir WhatsApp</a>'
+      : '<div class="al al-y">La empresa no tiene un celular cargado: el aviso quedó en la app, pero no se puede mandar por WhatsApp. Cargá el celular en Clientes y después tocá «📲 WhatsApp» en la lista.</div>') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cerrar</button></div>');
+}
+async function avcWaOk(id) { try { await gsRun('gsAVC_WaMarcar', id); } catch (e) {} setTimeout(function() { closeModal(); renderAvisosCli(); }, 400); }
+async function avcAnular(id) {
+  showModal('<div class="mh"><span class="mt">Sacar el aviso de la app</span><button class="mc" onclick="closeModal()">&times;</button></div><div class="mb2"><div class="fg"><label class="fl">¿Por qué se saca? *</label><input id="avc-mot" class="fi" placeholder="Ej.: ya retiró las cubiertas"></div></div>' +
+    '<div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="avcAnularOk(' + id + ')">Sacar</button></div>');
+}
+async function avcAnularOk(id) { var r; try { r = await gsRun('gsAVC_Anular', id, ($id('avc-mot') || {}).value || ''); } catch (e) { r = { ok: false, error: e.message }; } if (!r || r.ok === false) { toast((r && r.error) || 'No se pudo', 'r2'); return; } closeModal(); toast('Aviso sacado de la app', 'g'); renderAvisosCli(); }
 </script>
 
 <script>
