@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="../icono-vulcan-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap">
-<script>window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "efbd285ed0bf"};</script>
+<script>window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f67facfe385f"};</script>
 <style>
 /* App de clientes de Vulcan: taller y ruta. Fondo claro de papel, encabezado grafito, naranja Vulcan para acciones, rojo solo para la emergencia */
 :root{--bg:#f3f3ef;--card:#fff;--line:#dcdcd5;--fg:#1d2024;--dim:#5d636b;--head:#23272c;--headfg:#f4f4f2;--headdim:#c9ccd1;
@@ -111,7 +111,7 @@ textarea.in{height:auto;padding:10px 12px;resize:vertical}
 <script>
 /* App de clientes · Vulcan Tread (27/11/2026). Solo lectura de la flota de la empresa + botón de emergencia.
    Todo pasa por la función gs del sistema con el pase de sesión del usuario (rol CLIENTE_APP). */
-var APP_VER = '202611271600';
+var APP_VER = '202611271645';
 var CL = { ses: null, tab: 'ini', data: {}, eq: '', ver: '', emg: null, cub: null, pend: null };
 var CL_PV = '99990000000000';
 var CL_KEY = 'vulcan_cli_ses';
@@ -285,6 +285,7 @@ function estEmg(e) {
   if (e.ESTADO === 'CANCELADA') return 'cancelada';
   if (e.WA === 'ENVIADO') return 'le llegó al mecánico por WhatsApp';
   if (e.WA === 'FALLO') return 'registrada, el WhatsApp no salió: llamá a Vulcan';
+  if (e.WA === 'CELULAR') return 'registrada: falta mandarla por WhatsApp';
   if (e.WA === 'SIN_WHATSAPP' || e.WA === 'SIN_NUMERO') return 'registrada en Vulcan';
   return 'enviando…';
 }
@@ -461,7 +462,7 @@ function mandarAlerta() {
   ubicacion(8000).then(function(u) {
     var d = { OP_KEY: k, ID_EQUIPO: CL.eq || '' }; if (u) { d.LAT = u.LAT; d.LNG = u.LNG; d.PREC = u.PREC; }
     CL.pend = d;
-    return api('gsCLI_Alerta', d).then(function(r) { CL.pend = null; CL.emg = r; verAlerta(u); });
+    return api('gsCLI_Alerta', d).then(function(r) { CL.pend = null; CL.emg = r; CL.waLink = r.WA_LINK || ''; verAlerta(u); });
   }).catch(function(e) {
     if (String(e.message) === 'SESION') return;
     $('vista').innerHTML = '<div class="alerta"><h1>No salió la alerta</h1><div>' + esc(e.message) + '</div></div><div class="body">' +
@@ -472,16 +473,19 @@ function llamarFijo() { var t = CL.data.ini && CL.data.ini.TEL_VULCAN; return t 
 function verAlerta(u) {
   var e = CL.emg; if (!e) { ir('ini'); return; }
   marcoVisible(false); window.scrollTo(0, 0);
-  var sal = e.WA === 'ENVIADO', cerr = e.ESTADO === 'CANCELADA' || e.ESTADO === 'RESUELTA';
-  var h = '<div class="alerta" style="' + (cerr ? 'background:var(--head)' : '') + '"><div class="lab" style="color:#ffd9d4">EMERGENCIA ' + esc(e.NRO) + ' · ' + hora(e.F) + '</div><h1>' + (cerr ? (e.ESTADO === 'RESUELTA' ? 'Resuelta' : 'Cancelada') : e.ESTADO === 'EN_CAMINO' ? 'El mecánico va en camino' : sal ? 'Alerta enviada' : 'Alerta registrada') + '</h1>' +
-    '<div>' + (cerr ? '' : sal ? 'Le llegó al mecánico de guardia por WhatsApp, con tu ubicación. Te va a llamar.' : e.WA === 'FALLO' ? 'Quedó registrada en Vulcan, pero el WhatsApp no salió. Llamá a Vulcan.' : 'Quedó registrada en Vulcan. El aviso por WhatsApp todavía no está conectado: llamá a Vulcan.') + '</div></div><div class="body">';
-  h += '<div class="card pad s">' + (e.LAT !== '' && e.LNG !== '' ? '📍 Ubicación enviada' + (u && u.PREC ? ' (precisión ' + u.PREC + ' m)' : '') : '📍 No se pudo tomar la ubicación: escribila en el mensaje al mecánico') + (e.F_DET ? '<br>Mensaje enviado: ' + esc(e.QUE_PASO) + (e.DETALLE ? ' · ' + esc(e.DETALLE) : '') : '') + '</div>';
+  var sal = e.WA === 'ENVIADO', cel = e.WA === 'CELULAR', link = e.WA_LINK || CL.waLink || '', cerr = e.ESTADO === 'CANCELADA' || e.ESTADO === 'RESUELTA';
+  if (e.WA_LINK) CL.waLink = e.WA_LINK;
+  var tit = cerr ? (e.ESTADO === 'RESUELTA' ? 'Resuelta' : 'Cancelada') : e.ESTADO === 'EN_CAMINO' ? 'El mecánico va en camino' : sal ? 'Alerta enviada' : cel ? 'Falta mandarla por WhatsApp' : 'Alerta registrada';
+  var txt = cerr ? '' : sal ? 'Le llegó al mecánico de guardia por WhatsApp. Te va a llamar.' : cel ? 'Quedó registrada en Vulcan. Tocá el botón verde: se abre tu WhatsApp con el mensaje para el mecánico ya escrito, y tocá «Enviar».' : e.WA === 'FALLO' ? 'Quedó registrada en Vulcan, pero el WhatsApp no salió. Llamá a Vulcan.' : 'Quedó registrada en Vulcan. Llamá a Vulcan para avisar.';
+  var h = '<div class="alerta" style="' + (cerr ? 'background:var(--head)' : '') + '"><div class="lab" style="color:#ffd9d4">EMERGENCIA ' + esc(e.NRO) + ' · ' + hora(e.F) + '</div><h1>' + tit + '</h1><div>' + txt + '</div></div><div class="body">';
+  if (!cerr && link) h += '<a class="btn btn-g" style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;height:64px;font-size:18px" href="' + esc(link) + '" target="_blank" rel="noopener" onclick="CL.waAbierto=1">' + icoMsg() + ' Abrir WhatsApp y mandar al mecánico</a>';
+  h += '<div class="card pad s">' + (e.LAT !== '' && e.LNG !== '' ? '📍 Ubicación incluida' + (u && u.PREC ? ' (precisión ' + u.PREC + ' m)' : '') : '📍 No se pudo tomar la ubicación: escribí dónde estás en el mensaje') + (e.F_DET ? '<br>Qué pasó: ' + esc(e.QUE_PASO) + (e.DETALLE ? ' · ' + esc(e.DETALLE) : '') : '') + '</div>';
   if (!cerr) {
-    h += '<button class="btn btn-g" onclick="abrirDetalle(' + e.ID + ')">' + (e.F_DET ? 'Corregir el mensaje al mecánico' : 'Mandar mensaje al mecánico') + '</button>';
+    h += '<button class="btn ' + (link ? 'btn-l' : 'btn-g') + '" onclick="abrirDetalle(' + e.ID + ')">' + (e.F_DET ? 'Corregir qué pasó' : 'Agregar qué pasó, dónde y teléfono') + '</button>';
     if (!sal || e.WA === 'FALLO') h += llamarFijo();
     if (e.ESTADO !== 'EN_CAMINO') h += '<button class="btn btn-l" onclick="cancelarAlerta(' + e.ID + ')">Fue sin querer: cancelar</button>';
   }
-  h += '<button class="btn btn-l" onclick="ir(\'ini\')">Volver al inicio</button><div class="s">No se muestran el nombre ni el teléfono del mecánico. Vulcan registra cada emergencia: cuándo llegó, quién la atendió y qué se hizo.</div></div>';
+  h += '<button class="btn btn-l" onclick="ir(\'ini\')">Volver al inicio</button><div class="s">Vulcan registra cada emergencia: cuándo llegó, quién la atendió y qué se hizo.</div></div>';
   $('vista').innerHTML = h;
 }
 function cancelarAlerta(id) {
@@ -501,7 +505,7 @@ function abrirDetalle(id) {
   h += '<div class="fld"><label for="dt-t">Teléfono para que te llamen</label><input class="in" id="dt-t" type="tel" inputmode="tel" value="' + esc((e && e.TELEFONO) || lsGet('vulcan_cli_tel') || '') + '" required></div>' +
     '<div class="fld"><label for="dt-x">Algo más (opcional)</label><textarea class="in" id="dt-x" rows="3" placeholder="Rueda, ruido, lo que veas">' + esc(e ? e.DETALLE : '') + '</textarea></div>' +
     '<div id="dt-err"></div><button class="btn btn-g" id="dt-b">Mandar al mecánico</button>' +
-    '<div class="s">No se muestran el nombre ni el teléfono del mecánico. Para una alerta inmediata usá el botón rojo.</div></form>';
+    '<div class="s">Al tocar el botón se abre tu WhatsApp con el mensaje para el mecánico ya escrito: solo tocá «Enviar». Para una alerta inmediata usá el botón rojo.</div></form>';
   $('vista').innerHTML = h;
 }
 function qp(b) { Array.prototype.forEach.call($('dt-q').children, function(x) { x.className = 'chip'; }); b.className = 'chip on'; }
@@ -511,7 +515,7 @@ function enviarDetalle(ev, id) {
   if (!q) { er.innerHTML = '<div class="err">Elegí qué pasó</div>'; return; }
   var d = { ID: id || '', ID_EQUIPO: $('dt-u').value, QUE_PASO: q.textContent, UBICACION: $('dt-d').value.trim(), LAT: $('dt-lat').value, LNG: $('dt-lng').value, TELEFONO: $('dt-t').value.trim(), DETALLE: $('dt-x').value.trim(), OP_KEY: id ? '' : opKey() };
   lsSet('vulcan_cli_tel', d.TELEFONO); b.disabled = true; b.textContent = 'Mandando…'; er.innerHTML = '';
-  api('gsCLI_Detalle', d).then(function(r) { CL.emg = r; toast(r.WA === 'ENVIADO' ? 'Le llegó al mecánico' : 'Quedó registrado en Vulcan'); verAlerta(); })
+  api('gsCLI_Detalle', d).then(function(r) { CL.emg = r; CL.waLink = r.WA_LINK || ''; toast(r.WA === 'ENVIADO' ? 'Le llegó al mecánico' : r.WA_LINK ? 'Ahora mandalo por WhatsApp' : 'Quedó registrado en Vulcan'); verAlerta(); })
     .catch(function(e) { b.disabled = false; b.textContent = 'Mandar al mecánico'; if (String(e.message) !== 'SESION') er.innerHTML = '<div class="err">' + esc(e.message) + '</div>'; });
 }
 

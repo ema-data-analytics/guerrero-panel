@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "efbd285ed0bf"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "f67facfe385f"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1715,7 +1715,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611271600';
+var EMA_BUILD = '202611271645';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -26444,7 +26444,7 @@ async function waPedirPl() {
 // ── Emergencias de clientes (27/11/2026): lo que mandan desde la app con el botón rojo y el verde ──
 var EMG_ = { d: null, f: 'ABIERTAS' };
 var EMG_EST = { SIN_ENVIAR: ['b-warn', 'Registrada'], ENVIADA: ['b-red', 'Enviada al mecánico'], EN_CAMINO: ['b-blue', 'En camino'], RESUELTA: ['b-green', 'Resuelta'], CANCELADA: ['b-gray', 'Cancelada por el cliente'] };
-var EMG_WA = { ENVIADO: '✅ le llegó por WhatsApp', FALLO: '❌ el WhatsApp falló', SIN_WHATSAPP: '— WhatsApp no conectado', SIN_NUMERO: '— falta el número del mecánico' };
+var EMG_WA = { CELULAR: '📱 se abrió el WhatsApp del cliente al mecánico', ENVIADO: '✅ le llegó por WhatsApp', FALLO: '❌ el WhatsApp falló', SIN_WHATSAPP: '— WhatsApp no conectado', SIN_NUMERO: '— falta el número del mecánico' };
 async function renderEmergencias() {
   var el = $id('page-emergencias'); if (!el) return;
   el.innerHTML = '<div class="card"><div class="card-body tdim">Cargando…</div></div>';
