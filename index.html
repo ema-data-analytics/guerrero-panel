@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "3efb12f9474b"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e746572b040c"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -347,6 +347,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
         <div class="nav-item" data-page="documentos"><span class="nav-icon"><i class="fas fa-file-pdf"></i></span> Documentos para el cliente</div>
         <div class="nav-item" data-page="pedidos-web"><span class="nav-icon"><i class="fas fa-store"></i></span> Pedidos web</div>
         <div class="nav-item" data-page="whatsapp"><span class="nav-icon"><i class="fab fa-whatsapp"></i></span> WhatsApp a clientes</div>
+        <div class="nav-item" data-page="emergencias"><span class="nav-icon"><i class="fas fa-triangle-exclamation"></i></span> Emergencias de clientes</div>
       </div></div>
       <div class="sb-grp" data-g="pre"><div class="sb-gh" onclick="menuGrupo('pre')"><span class="sb-gi-ic">💲</span><span class="sb-gt">Precios</span><span class="sb-car">›</span></div><div class="sb-gl">
         <div class="nav-item" data-page="precios-nuevos"><span class="nav-icon"><i class="fas fa-tags"></i></span> Lista de precios</div>
@@ -515,6 +516,7 @@ tfoot td{border-top:2px solid var(--border);background:#eef6ff;font-weight:700;f
     <div id="page-bitacora" class="hidden"></div>
     <div id="page-audios" class="hidden"></div>
     <div id="page-whatsapp" class="hidden"></div>
+    <div id="page-emergencias" class="hidden"></div>
     <div id="page-caja" class="hidden"></div>
     <div id="page-cobranzas" class="hidden"></div>
     <div id="page-cta-cte-clientes" class="hidden"></div>
@@ -789,7 +791,7 @@ function _mcDelAll(){ _MC={}; }
 // El servidor devuelve un "pase" (token) que acompaña cada llamada.
 // ══════════════════════════════════════════════════════════════════
 var PAGINA_MODULO = {
-  'dashboard':'REPORTES', 'whatsapp':'VENTAS', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'tablero-linea':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'taller':'VENTAS', 'flota':'VENTAS', 'precios-nuevos':'VENTAS', 'catalogo-tienda':'VENTAS', 'margen':'VENTAS', 'armado':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
+  'dashboard':'REPORTES', 'whatsapp':'VENTAS', 'emergencias':'VENTAS', 'carga-produccion':'PRODUCCION', 'ordenes-trabajo':'PRODUCCION', 'recetas':'PRODUCCION', 'stock-insumos':'PRODUCCION', 'produccion-cubiertas':'PRODUCCION', 'tablero-linea':'PRODUCCION', 'documentos':'PRODUCCION', 'puesto-estacion':'PRODUCCION', 'ventas':'VENTAS', 'taller':'VENTAS', 'flota':'VENTAS', 'precios-nuevos':'VENTAS', 'catalogo-tienda':'VENTAS', 'margen':'VENTAS', 'armado':'VENTAS', 'pedidos-web':'VENTAS', 'carga-compras':'COMPRAS',
   'carga-gastos':'GASTOS', 'carga-financiero':'ADMINISTRACION', 'carga-transporte':'ADMINISTRACION',
   'carga-impositivo':'ADMINISTRACION', 'carga-sueldos':'ADMINISTRACION', 'asistencia':'ADMINISTRACION', 'fichaje':'PRODUCCION', 'carga-combustible':'COMBUSTIBLE',
   'cheques':'COBRANZAS', 'cobranzas':'COBRANZAS', 'caja':'COBRANZAS', 'cta-cte-clientes':'COBRANZAS',
@@ -958,6 +960,8 @@ async function doLogin() {
     errEl.textContent = (data && data.error) ? data.error : 'Usuario o contraseña incorrectos';
     errEl.style.display = 'block'; return;
   }
+  // Usuario de una empresa (app de clientes): no entra al sistema, va a su app con la misma sesión
+  if (data.app === 'clientes') { try { localStorage.setItem('vulcan_cli_ses', JSON.stringify({ token: data.token, nombre: data.nombre, rol: data.rol, usuario: data.usuario })); } catch (e) {} location.href = 'clientes/'; return; }
 
   SES = { usuario: data.usuario, nombre: data.nombre, rol: data.rol, token: data.token, permisos: data.permisos, suc: data.sucursal || 'TODAS', sucNombre: data.sucursalNombre || '', planta: data.planta !== false };
   document.getElementById('lp').value = '';
@@ -1419,6 +1423,7 @@ function getPage(name) {
     'bitacora': function(){ if(typeof renderBitacora!=='undefined') renderBitacora(); },
     'audios': function(){ if(typeof renderAudios!=='undefined') renderAudios(); },
     'whatsapp': function(){ if(typeof renderWhatsApp!=='undefined') renderWhatsApp(); },
+    'emergencias': function(){ if(typeof renderEmergencias!=='undefined') renderEmergencias(); },
     'configuracion': typeof renderConfiguracion !== 'undefined' ? renderConfiguracion : null,
     'backup-page': typeof renderBackupPage !== 'undefined' ? renderBackupPage : null,
     'gsheets': typeof renderGsheets !== 'undefined' ? renderGsheets : null,
@@ -1708,7 +1713,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611270245';
+var EMA_BUILD = '202611271417';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -22957,7 +22962,7 @@ function segEditarUsuario(id) {
 
 function segModalUsuario(u) {
   var titulo = u ? 'Editar usuario' : 'Nuevo usuario';
-  var roles = ['SUPER','ADMINISTRADOR','ENCARGADO_PLANTA','RECEPCION','OPERADOR','ENCARGADO_SUCURSAL','VENDEDOR','FACTURACION','COMPRAS','LINEA_SOLO_VER'];
+  var roles = ['SUPER','ADMINISTRADOR','ENCARGADO_PLANTA','RECEPCION','OPERADOR','ENCARGADO_SUCURSAL','VENDEDOR','FACTURACION','COMPRAS','LINEA_SOLO_VER','CLIENTE_APP'];
   var sucs = (window._segSucs || []).map(function(x) { return x.CODIGO; });
   var sucAct = u ? (u.SUCURSAL || 'PLANTA') : 'PLANTA';
   var sucOpts = ['TODAS'].concat(sucs).map(function(c) { var x = (window._segSucs || []).filter(function(y) { return y.CODIGO === c; })[0]; return '<option value="' + c + '"' + (c === sucAct ? ' selected' : '') + '>' + (x ? x.NOMBRE : 'TODAS (solo SUPER y ADMINISTRADOR)') + '</option>'; }).join('');
@@ -22975,18 +22980,33 @@ function segModalUsuario(u) {
     '</div>'+
     '<div class="fr mb3">'+
       '<div class="fg"><label class="fl">Rol *</label>'+
-      '<select id="su-rol" class="fs">'+roleOpts+'</select></div>'+
+      '<select id="su-rol" class="fs" onchange="segRolCli()">'+roleOpts+'</select></div>'+
       '<div class="fg"><label class="fl">Sucursal *</label>'+
       '<select id="su-suc" class="fs">'+sucOpts+'</select><div class="tdim" style="font-size:11px">Solo ve y carga lo de su sucursal</div></div>'+
       '<div class="fg"><label class="fl">'+(u?'Nueva contraseña (dejar vacío para no cambiar)':'Contraseña *')+'</label>'+
       '<input id="su-pass" class="fi" type="password" placeholder="'+(u?'Nueva contraseña...':'Contraseña')+'"/></div>'+
     '</div>'+
+    '<div class="fr mb3" id="su-cli-box" style="display:none"><div class="fg"><label class="fl">Empresa que ve en la app de clientes *</label><select id="su-cli" class="fs"><option value="">Cargando…</option></select>'+
+      '<div class="tdim" style="font-size:11px">Entra por sistema.vulcantreadsrl.com.ar/clientes/ y solo ve la flota de esta empresa. No entra al sistema.</div></div></div>'+
     '</div>'+
     '<div class="mf">'+
       '<button class="btn btn-s" onclick="closeModal()">Cancelar</button>'+
       '<button class="btn btn-p" onclick="segGuardarUsuario('+(u?'\''+u.ID_USUARIO+'\'':'null')+')">Guardar</button>'+
     '</div>'
-  );
+  );  window._segCliAct = u ? (u.ID_CLIENTE || '') : '';
+  segRolCli();
+}
+// App de clientes (27/11/2026): el usuario CLIENTE_APP lleva su empresa
+function segRolCli() {
+  var box = document.getElementById('su-cli-box'), rol = (document.getElementById('su-rol')||{}).value;
+  if (!box) return; box.style.display = rol === 'CLIENTE_APP' ? '' : 'none';
+  if (rol !== 'CLIENTE_APP' || window._segCliCargado) { segCliOpts(); return; }
+  gsRun('gsCLI_Empresas').then(function(r) { window._segCliLista = (r && r.EMPRESAS) || []; window._segCliCargado = 1; segCliOpts(); }).catch(function(e) { toast('No se pudieron leer las empresas: ' + e.message, 'r2'); });
+}
+function segCliOpts() {
+  var sel = document.getElementById('su-cli'); if (!sel || !window._segCliCargado) return;
+  var act = String(window._segCliAct || '');
+  sel.innerHTML = '<option value="">Elegí la empresa</option>' + (window._segCliLista || []).map(function(e) { return '<option value="' + e.ID + '"' + (String(e.ID) === act ? ' selected' : '') + '>' + pcEsc(e.NOMBRE) + ' (' + e.UNIDADES + ' unidades)</option>'; }).join('');
 }
 
 async function segGuardarUsuario(id) {
@@ -22995,10 +23015,13 @@ async function segGuardarUsuario(id) {
   var rol = (document.getElementById('su-rol')||{}).value||'';
   var pass = (document.getElementById('su-pass')||{}).value||'';
   var suc = (document.getElementById('su-suc')||{}).value||'';
+  var idCli = (document.getElementById('su-cli')||{}).value||'';
+  if(rol==='CLIENTE_APP' && !idCli) { toast('Elegí la empresa que va a ver','r2'); return; }
   if(!nombre.trim()||!usuario.trim()) { toast('Completar nombre y usuario','r2'); return; }
   if(!id && !pass) { toast('Ingresar contraseña para nuevo usuario','r2'); return; }
   try {
     var rec = { NOMBRE:nombre.trim().toUpperCase(), USUARIO:usuario.trim().toLowerCase(), ROL:rol, ACTIVO:1, SUCURSAL:suc };
+    if(rol==='CLIENTE_APP') rec.ID_CLIENTE = idCli;
     if(id) rec.ID_USUARIO = id;
     if(pass) rec.PASS_NUEVA = pass;
     var res = await gsRun('gsSaveUsuario', rec);
@@ -26287,7 +26310,7 @@ async function renderWhatsApp() {
   waPintar();
 }
 function waEstadoTxt(e) { return ({ APPROVED: '✅ Aprobada', PENDING: '⏳ En revisión de Meta', REJECTED: '❌ Rechazada', SIN_PEDIR: '— Sin pedir', PAUSED: '⏸ Pausada', DISABLED: '⛔ Desactivada' })[e] || e; }
-function waPlantOpts() { return WA_.d.PLANTILLAS.map(function(p) { return '<option value="' + p.CLAVE + '"' + (p.ESTADO === 'APPROVED' ? '' : ' disabled') + '>' + waEsc(p.NOMBRE) + (p.ESTADO === 'APPROVED' ? '' : ' (' + waEstadoTxt(p.ESTADO).replace(/^\S+ /, '') + ')') + '</option>'; }).join(''); }
+function waPlantOpts() { return WA_.d.PLANTILLAS.filter(function(p) { return p.CLAVE !== 'vulcan_emergencia'; }).map(function(p) { return '<option value="' + p.CLAVE + '"' + (p.ESTADO === 'APPROVED' ? '' : ' disabled') + '>' + waEsc(p.NOMBRE) + (p.ESTADO === 'APPROVED' ? '' : ' (' + waEstadoTxt(p.ESTADO).replace(/^\S+ /, '') + ')') + '</option>'; }).join(''); }
 function waPintar() {
   var el = $id('page-whatsapp'), d = WA_.d, apr = d.PLANTILLAS.filter(function(p) { return p.ESTADO === 'APPROVED'; }).length;
   var conCel = d.CLIENTES.filter(function(c) { return c.WA; }).length;
@@ -26408,6 +26431,48 @@ async function waPedirPl() {
   if (!x || x.ok === false) { m.innerHTML = '<div class="al al-r mt2">' + waEsc((x && x.error) || 'Error') + '</div>'; return; }
   if (x.ERRORES && x.ERRORES.length) { m.innerHTML = '<div class="al al-y mt2">' + x.ERRORES.map(waEsc).join('<br>') + '</div>'; return; }
   toast('Plantillas mandadas a aprobar: Meta tarda de minutos a un día', 'g'); renderWhatsApp();
+}
+// ── Emergencias de clientes (27/11/2026): lo que mandan desde la app con el botón rojo y el verde ──
+var EMG_ = { d: null, f: 'ABIERTAS' };
+var EMG_EST = { SIN_ENVIAR: ['b-warn', 'Registrada'], ENVIADA: ['b-red', 'Enviada al mecánico'], EN_CAMINO: ['b-blue', 'En camino'], RESUELTA: ['b-green', 'Resuelta'], CANCELADA: ['b-gray', 'Cancelada por el cliente'] };
+var EMG_WA = { ENVIADO: '✅ le llegó por WhatsApp', FALLO: '❌ el WhatsApp falló', SIN_WHATSAPP: '— WhatsApp no conectado', SIN_NUMERO: '— falta el número del mecánico' };
+async function renderEmergencias() {
+  var el = $id('page-emergencias'); if (!el) return;
+  el.innerHTML = '<div class="card"><div class="card-body tdim">Cargando…</div></div>';
+  try { EMG_.d = await gsRun('gsEMG_Lista'); } catch (e) { el.innerHTML = '<div class="al al-r">' + waEsc(e.message) + '</div>'; return; }
+  if (!EMG_.d || EMG_.d.ok === false) { el.innerHTML = '<div class="al al-r">' + waEsc((EMG_.d && EMG_.d.error) || 'No se pudo cargar') + '</div>'; return; }
+  emgPintar();
+}
+function emgPintar() {
+  var el = $id('page-emergencias'), d = EMG_.d, ab = ['SIN_ENVIAR', 'ENVIADA', 'EN_CAMINO'];
+  var l = d.EMERGENCIAS.filter(function(x) { return EMG_.f === 'TODAS' || ab.indexOf(x.ESTADO) !== -1; });
+  var nAb = d.EMERGENCIAS.filter(function(x) { return ab.indexOf(x.ESTADO) !== -1; }).length;
+  var h = '<div class="page-hd"><div><div class="page-title">Emergencias de clientes</div><div class="page-sub">Lo que mandan las empresas desde la app con el botón de emergencia. Le llega al mecánico de guardia' + (d.NUMERO ? ' (' + waTelVer(d.NUMERO) + ')' : '') + ' por WhatsApp.</div></div>' +
+    '<button class="btn btn-s btn-sm" onclick="renderEmergencias()">🔄 Actualizar</button></div>';
+  if (!d.NUMERO) h += '<div class="al al-y mb3">Falta cargar el número del mecánico: Configuración, parámetro emergencia_whatsapp.</div>';
+  h += '<div class="flex gap2 mb3">' + [['ABIERTAS', 'Abiertas (' + nAb + ')'], ['TODAS', 'Todas']].map(function(t) { return '<button class="btn btn-sm ' + (EMG_.f === t[0] ? 'btn-p' : 'btn-s') + '" onclick="EMG_.f=\'' + t[0] + '\';emgPintar()">' + t[1] + '</button>'; }).join('') + '</div>';
+  if (!l.length) h += '<div class="card"><div class="card-body tdim">' + (EMG_.f === 'ABIERTAS' ? 'No hay emergencias abiertas.' : 'Todavía no llegó ninguna emergencia.') + '</div></div>';
+  else h += '<div class="card"><div class="card-body" style="padding:0"><table class="tw"><thead><tr><th>Nro · Fecha</th><th>Empresa · Unidad</th><th>Qué pasó</th><th>Ubicación</th><th>Estado</th><th></th></tr></thead><tbody>' + l.map(function(x) {
+    var e = EMG_EST[x.ESTADO] || ['b-gray', x.ESTADO], mapa = x.LAT !== '' && x.LNG !== '' ? '<a href="https://maps.google.com/?q=' + encodeURIComponent(x.LAT + ',' + x.LNG) + '" target="_blank" rel="noopener">📍 Ver en el mapa</a>' : '<span class="tdim">sin ubicación</span>';
+    return '<tr><td><b>' + waEsc(x.NRO) + '</b><div class="tdim" style="font-size:11px">' + waFecha(x.F) + '</div></td><td>' + waEsc(x.CLIENTE) + '<div class="tdim" style="font-size:11px">' + waEsc(x.UNIDAD || 'sin indicar') + '</div></td>' +
+      '<td>' + (x.QUE_PASO ? '<b>' + waEsc(x.QUE_PASO) + '</b>' : '<span class="tdim">solo el botón rojo</span>') + (x.DETALLE ? '<div style="font-size:12px">' + waEsc(x.DETALLE) + '</div>' : '') + (x.TELEFONO ? '<div style="font-size:12px">📞 ' + waEsc(x.TELEFONO) + '</div>' : '') + '</td>' +
+      '<td>' + mapa + (x.UBICACION ? '<div style="font-size:12px">' + waEsc(x.UBICACION) + '</div>' : '') + '</td>' +
+      '<td><span class="badge ' + e[0] + '">' + e[1] + '</span><div class="tdim" style="font-size:11px">' + waEsc(EMG_WA[x.WA] || x.WA || '') + '</div>' + (x.ATENDIO ? '<div style="font-size:11px">Atendió: ' + waEsc(x.ATENDIO) + '</div>' : '') + (x.NOTA ? '<div style="font-size:11px">' + waEsc(x.NOTA) + '</div>' : '') + '</td>' +
+      '<td style="white-space:nowrap">' + (['SIN_ENVIAR', 'ENVIADA'].indexOf(x.ESTADO) !== -1 ? '<button class="btn btn-s btn-sm" onclick="emgCerrar(' + x.ID + ',\'EN_CAMINO\')">🚗 En camino</button> ' : '') + (ab.indexOf(x.ESTADO) !== -1 ? '<button class="btn btn-p btn-sm" onclick="emgCerrar(' + x.ID + ',\'RESUELTA\')">✔ Resuelta</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+  el.innerHTML = h;
+}
+function emgCerrar(id, est) {
+  var x = EMG_.d.EMERGENCIAS.filter(function(e) { return e.ID === id; })[0]; if (!x) return;
+  showModal('<div class="mh"><span class="mt">' + (est === 'RESUELTA' ? 'Cerrar ' : 'En camino · ') + waEsc(x.NRO) + '</span><button class="mc" onclick="closeModal()">&times;</button></div><div class="mb2">' +
+    '<div class="fg mb3"><label class="fl">Quién la atiende</label><input id="emg-at" class="fi" value="' + waEsc(x.ATENDIO || '') + '" placeholder="Nombre del mecánico"></div>' +
+    (est === 'RESUELTA' ? '<div class="fg"><label class="fl">Qué se hizo *</label><textarea id="emg-nota" class="fi" rows="3"></textarea></div>' : '<div class="tdim" style="font-size:12.5px">El cliente lo ve en la app: «El mecánico va en camino». No ve el nombre.</div>') +
+    '</div><div class="mf"><button class="btn btn-s" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="emgCerrarOk(' + id + ',\'' + est + '\')">Guardar</button></div>');
+}
+async function emgCerrarOk(id, est) {
+  var n = $id('emg-nota'), r;
+  try { r = await gsRun('gsEMG_Cerrar', { ID: id, ESTADO: est, ATENDIO: ($id('emg-at') || {}).value || '', NOTA: n ? n.value : '' }); } catch (e) { toast(e.message, 'r2'); return; }
+  if (!r || r.ok === false) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
+  closeModal(); toast('Guardado', 'g'); renderEmergencias();
 }
 </script>
 

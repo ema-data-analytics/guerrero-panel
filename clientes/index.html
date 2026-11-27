@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Vulcan Flota</title>
+<meta name="theme-color" content="#23272c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../icono-vulcan-192.png">
+<link rel="apple-touch-icon" href="../icono-vulcan-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap">
+<script>window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e746572b040c"};</script>
+<style>
+/* App de clientes de Vulcan: taller y ruta. Fondo claro de papel, encabezado grafito, naranja Vulcan para acciones, rojo solo para la emergencia */
+:root{--bg:#f3f3ef;--card:#fff;--line:#dcdcd5;--fg:#1d2024;--dim:#5d636b;--head:#23272c;--headfg:#f4f4f2;--headdim:#c9ccd1;
+  --or:#d8661c;--or2:#a84c10;--ok:#1f7a3d;--okbg:#e3f1e7;--warn:#8a5a00;--warnbg:#fbf0d6;--warnln:#e7cf8f;--bad:#a32b22;--badbg:#fbe3e0;--red:#c0281e;--green:#1f7a3d;
+  --fd:"Barlow Condensed","Arial Narrow",sans-serif;--fb:Inter,system-ui,sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171a;--card:#1e2125;--line:#33373d;--fg:#eceef0;--dim:#a2a8b0;--head:#0d0f11;
+  --okbg:#183323;--warnbg:#3a2d10;--warnln:#6b5420;--badbg:#3d1714;--warn:#e0b25a;--ok:#5fc283;--bad:#f08a80;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--fb);font-size:15px;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--or)}
+.app{max-width:760px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;position:relative}
+.hd{background:var(--head);color:var(--headfg);padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;display:flex;flex-direction:column;gap:2px}
+.hd .top{display:flex;align-items:center;gap:10px}
+.hd .back{color:#f08a43;font-size:14px;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.hd h1{font-family:var(--fd);font-size:28px;font-weight:700;margin:0;line-height:1.05;flex:1;min-width:0}
+.hd .sub{font-size:13px;color:var(--headdim)}
+.hd .cta{background:none;border:1px solid #4a5058;color:var(--headfg);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;white-space:nowrap}
+.body{flex:1;padding:14px 16px calc(150px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+.h2{font-family:var(--fd);font-size:21px;font-weight:700;margin:6px 0 -2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px}
+.pad{padding:12px 14px}
+.row{padding:11px 14px;display:flex;flex-direction:column;gap:3px}
+.row+.row{border-top:1px solid var(--line)}
+.rowb{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.t{font-weight:600;font-size:14px}
+.s{font-size:12.5px;color:var(--dim);line-height:1.45}
+.num{font-variant-numeric:tabular-nums}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi span:first-child{font-size:11.5px;color:var(--dim)}
+.kpi b{font-family:var(--fd);font-size:26px;font-weight:700;line-height:1}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.tg-ok{background:var(--okbg);color:var(--ok)}.tg-w{background:var(--warnbg);color:var(--warn)}.tg-b{background:var(--badbg);color:var(--bad)}.tg-n{background:var(--bg);color:var(--dim);border:1px solid var(--line)}
+.aviso{border-radius:12px;padding:11px 14px;font-size:13.5px;line-height:1.45;display:flex;gap:10px;align-items:flex-start;cursor:pointer;border:1px solid var(--line);background:var(--card);text-align:left;width:100%}
+.aviso.g2{background:var(--badbg);border-color:transparent}.aviso.g1{background:var(--warnbg);border-color:var(--warnln)}
+.aviso .dot{width:10px;height:10px;border-radius:50%;flex:none;margin-top:5px;background:var(--ok)}
+.aviso.g1 .dot{background:#d39a1a}.aviso.g2 .dot{background:var(--red)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-size:13.5px;white-space:nowrap;cursor:pointer}
+.chip.on{background:var(--head);color:#fff;border-color:var(--head);font-weight:600}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld label{font-size:13px;font-weight:600}
+.in{height:48px;border-radius:10px;border:1px solid #c8c8c0;background:var(--card);padding:0 12px;font-size:16px;width:100%}
+textarea.in{height:auto;padding:10px 12px;resize:vertical}
+.btn{height:50px;border-radius:12px;border:0;font-weight:700;font-size:16px;cursor:pointer;padding:0 18px;width:100%}
+.btn-p{background:var(--or);color:#fff}.btn-p:active{background:var(--or2)}
+.btn-g{background:var(--green);color:#fff}.btn-r{background:var(--red);color:#fff}
+.btn-l{background:transparent;border:1px solid var(--line);color:var(--fg);font-weight:600}
+.btn:disabled{opacity:.55}
+.err{background:var(--badbg);color:var(--bad);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);z-index:20;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav .in2{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));height:62px}
+.nav button{background:none;border:0;font-size:12.5px;color:var(--dim);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative}
+.nav button svg{width:22px;height:22px}
+.nav button.on{color:var(--or);font-weight:700}
+.nav .bad{position:absolute;top:7px;left:calc(50% + 6px);background:var(--red);color:#fff;border-radius:999px;font-size:10px;font-weight:700;min-width:17px;height:17px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.emg{position:fixed;right:max(16px,calc(50% - 364px));bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:21;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.bt-rojo{position:relative;overflow:hidden;background:var(--red);color:#fff;border:0;border-radius:999px;padding:13px 18px;font-weight:700;font-size:15px;box-shadow:0 6px 18px rgba(160,30,20,.35);cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none}
+.bt-rojo .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.28)}
+.bt-rojo span{position:relative}
+.bt-verde{background:var(--green);color:#fff;border:0;border-radius:999px;padding:11px 16px;font-weight:700;font-size:14px;box-shadow:0 6px 16px rgba(20,90,45,.3);cursor:pointer;display:flex;gap:7px;align-items:center}
+.bigemg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bigemg .bt-rojo,.bigemg .bt-verde{border-radius:14px;padding:16px 12px;font-size:15.5px;justify-content:center;text-align:center;box-shadow:none;line-height:1.25}
+.bigemg small{display:block;font-weight:500;font-size:12px;opacity:.9;margin-top:3px}
+.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+.steps i{height:6px;border-radius:3px;background:var(--line)}
+.steps i.d{background:var(--ok)}.steps i.c{background:var(--or)}
+.map{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px}
+.leg{display:flex;gap:12px;font-size:12px;color:var(--dim);flex-wrap:wrap;justify-content:center}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin-right:3px}
+.load{padding:40px 0;text-align:center;color:var(--dim);font-size:14px}
+.mg{font-family:var(--fd);font-size:30px;font-weight:700;line-height:1;letter-spacing:.01em}
+.lab{font-size:11.5px;color:var(--headdim);letter-spacing:.08em}
+.login{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;padding:24px 20px;gap:14px;max-width:420px;margin:0 auto}
+.login img{width:92px;height:auto;border-radius:12px;align-self:center}
+.login h1{font-family:var(--fd);font-size:34px;margin:0;text-align:center}
+.alerta{background:var(--red);color:#fff;padding:calc(18px + env(safe-area-inset-top,0px)) 18px 18px;display:flex;flex-direction:column;gap:4px}
+.alerta h1{font-family:var(--fd);font-size:32px;margin:0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));background:var(--head);color:#fff;border-radius:10px;padding:10px 16px;font-size:14px;z-index:40;max-width:90%;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.hold{position:fixed;inset:0;background:rgba(160,30,20,.92);z-index:50;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px}
+.hold .ring{width:150px;height:150px}
+.hold b{font-family:var(--fd);font-size:30px}
+</style></head>
+<body>
+<div id="raiz"></div>
+<script>
+/* App de clientes · Vulcan Tread (27/11/2026). Solo lectura de la flota de la empresa + botón de emergencia.
+   Todo pasa por la función gs del sistema con el pase de sesión del usuario (rol CLIENTE_APP). */
+var CL = { ses: null, tab: 'ini', data: {}, eq: '', ver: '', emg: null, cub: null, pend: null };
+var CL_PV = '99990000000000';
+var CL_KEY = 'vulcan_cli_ses';
+var QUE_PASO = ['Pinchadura', 'Reventón', 'No arranca', 'Falla mecánica', 'Falla eléctrica', 'Choque', 'Otro'];
+
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function fch(ms) { if (!ms) return ''; var d = new Date(Number(ms)); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear(); }
+function hora(ms) { if (!ms) return ''; var d = new Date(Number(ms)); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+function nf(n) { if (n === '' || n === null || n === undefined || isNaN(Number(n))) return ''; return Number(n).toLocaleString('es-AR'); }
+function dot(d) { return d ? esc(d) : '<span style="color:var(--dim)">sin cargar</span>'; }
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+function toast(t, ms) { var el = document.createElement('div'); el.className = 'toast'; el.textContent = t; document.body.appendChild(el); setTimeout(function() { el.remove(); }, ms || 3200); }
+
+// ── Servidor ──
+function llamar(fn, args) {
+  return fetch(EMA_SB.url + '/functions/v1/gs', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: EMA_SB.key },
+    body: JSON.stringify({ esquema: EMA_SB.esquema, v: EMA_SB.v || '', pv: CL_PV, fn: fn, args: args }) })
+    .then(function(r) { return r.text().then(function(t) { var d = null; try { d = JSON.parse(t); } catch (e) { throw new Error('No hay conexión con Vulcan (' + r.status + ')'); }
+      if (!d || d.ok !== true) throw new Error((d && d.error) || 'Error del servidor'); return d.r === undefined ? null : d.r; }); },
+      function() { throw new Error('Sin conexión: revisá la señal'); });
+}
+function api(fn, d) {
+  if (!CL.ses) return Promise.reject(new Error('SESION'));
+  var x = d || {}; if (CL.ver) x.VER = CL.ver;
+  return llamar('gsApi', [CL.ses.token, fn, [x]]).then(function(r) {
+    if (r && r.ok === false) throw new Error(r.error || 'No se pudo');
+    return r;
+  }).catch(function(e) {
+    var m = String(e.message || e);
+    if (m.indexOf('SESION:') !== -1) { salir(m.substring(m.indexOf('SESION:') + 7).trim() || 'Tu sesión terminó: entrá de nuevo'); throw new Error('SESION'); }
+    throw new Error(m.replace(/^PERMISO:\s*/, ''));
+  });
+}
+
+// ── Entrada ──
+function pintarLogin(msg) {
+  $('raiz').innerHTML = '<form class="login" onsubmit="entrar(event)"><img src="../logo_vulcan.png" alt="Vulcan Tread">' +
+    '<h1>Mi flota en Vulcan</h1><div class="s" style="text-align:center">Mecánica, gomería y precurado de tus vehículos</div>' +
+    (msg ? '<div class="err">' + esc(msg) + '</div>' : '') +
+    '<div class="fld"><label for="lg-u">Usuario</label><input class="in" id="lg-u" autocomplete="username" autocapitalize="none" required></div>' +
+    '<div class="fld"><label for="lg-p">Contraseña</label><input class="in" id="lg-p" type="password" autocomplete="current-password" required></div>' +
+    '<button class="btn btn-p" id="lg-b">Entrar</button>' +
+    '<div class="s" style="text-align:center">¿No tenés usuario? Pedíselo a Vulcan Tread.</div></form>';
+}
+function entrar(ev) {
+  ev.preventDefault(); var b = $('lg-b'); b.disabled = true; b.textContent = 'Entrando…';
+  llamar('gsLogin', [$('lg-u').value.trim(), $('lg-p').value]).then(function(r) {
+    if (!r || !r.ok) { pintarLogin((r && r.error) || 'Usuario o contraseña incorrectos'); return; }
+    var rol = String(r.rol || '').toUpperCase();
+    if (rol !== 'CLIENTE_APP' && rol !== 'SUPER' && rol !== 'ADMINISTRADOR') { pintarLogin('Ese usuario es del sistema de Vulcan: entrá por sistema.vulcantreadsrl.com.ar'); return; }
+    CL.ses = { token: r.token, nombre: r.nombre, rol: rol, usuario: r.usuario };
+    lsSet(CL_KEY, JSON.stringify(CL.ses)); arrancar();
+  }).catch(function(e) { pintarLogin(e.message); });
+}
+function salir(msg) { CL.ses = null; CL.data = {}; CL.ver = ''; lsSet(CL_KEY, null); lsSet('vulcan_cli_ver', null); pintarLogin(msg || ''); }
+function esAdmin() { return CL.ses && CL.ses.rol !== 'CLIENTE_APP'; }
+
+function arrancar() {
+  if (esAdmin() && !CL.ver) { CL.ver = lsGet('vulcan_cli_ver') || ''; if (!CL.ver) { elegirEmpresa(); return; } }
+  pintarMarco(); ir(CL.tab || 'ini');
+}
+// Vista previa para Vulcan: SUPER y ADMINISTRADOR eligen qué empresa ver
+function elegirEmpresa() {
+  $('raiz').innerHTML = '<div class="app"><div class="hd"><div class="top"><h1>Ver la app como…</h1><button class="cta" onclick="salir()">Salir</button></div><div class="sub">Vista previa para Vulcan: elegí la empresa</div></div><div class="body" id="emp"><div class="load">Cargando empresas…</div></div></div>';
+  llamar('gsApi', [CL.ses.token, 'gsCLI_Empresas', [{}]]).then(function(r) {
+    $('emp').innerHTML = '<div class="card">' + (r.EMPRESAS || []).map(function(e) { return '<button class="row" style="width:100%;background:none;border:0;text-align:left;cursor:pointer" onclick="verEmpresa(' + e.ID + ')"><div class="rowb"><span class="t">' + esc(e.NOMBRE) + '</span><span class="s">' + e.UNIDADES + ' unidades</span></div></button>'; }).join('') + '</div>';
+  }).catch(function(e) { $('emp').innerHTML = '<div class="err">' + esc(e.message) + '</div>'; });
+}
+function verEmpresa(id) { CL.ver = String(id); lsSet('vulcan_cli_ver', CL.ver); CL.data = {}; CL.eq = ''; pintarMarco(); ir('ini'); }
+
+// ── Marco: barra de abajo y botones de emergencia ──
+var ICO = {
+  ini: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>',
+  mec: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>',
+  gom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M12 3v5.5M12 15.5V21M3 12h5.5M15.5 12H21"/></svg>',
+  pre: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="19" cy="17" r="2"/></svg>'
+};
+function pintarMarco() {
+  $('raiz').innerHTML = '<div class="app"><div id="vista"></div></div>' +
+    '<div class="emg" id="emg"><button class="bt-verde" onclick="abrirDetalle()" aria-label="Contar qué pasó al mecánico">' + icoMsg() + 'Contar qué pasó</button>' +
+    '<button class="bt-rojo" id="bt-rojo" aria-label="Emergencia: mantené apretado 2 segundos"><i class="fill"></i><span>⚠ Emergencia</span></button></div>' +
+    '<nav class="nav"><div class="in2">' + [['ini', 'Inicio'], ['mec', 'Mecánica'], ['gom', 'Gomería'], ['pre', 'Precurado']].map(function(t) {
+      return '<button id="nv-' + t[0] + '" onclick="ir(\'' + t[0] + '\')">' + ICO[t[0]] + '<span>' + t[1] + '</span><span class="bad" id="bd-' + t[0] + '" hidden></span></button>'; }).join('') + '</div></nav>';
+  armarRojo($('bt-rojo'));
+}
+// Burbuja de mensaje (genérica: no es el logo de WhatsApp)
+function icoMsg() { return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 19.5 5.3 15A8 8 0 1 1 9 18.7z"/></svg>'; }
+function marcoVisible(si) { var e = $('emg'), n = document.querySelector('.nav'); if (e) e.style.display = si ? '' : 'none'; if (n) n.style.display = si ? '' : 'none'; }
+function cabecera(tit, sub, back) {
+  return '<div class="hd"><div class="top">' + (back ? '' : '<h1>' + esc(tit) + '</h1><button class="cta" onclick="cuenta()">' + (esAdmin() ? 'Vista previa' : 'Mi cuenta') + '</button>') + '</div>' +
+    (back ? '<button class="back" onclick="' + back + '">‹ Volver</button><h1>' + esc(tit) + '</h1>' : '') + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+}
+function ir(tab) {
+  CL.tab = tab; marcoVisible(true); window.scrollTo(0, 0);
+  ['ini', 'mec', 'gom', 'pre'].forEach(function(t) { var b = $('nv-' + t); if (b) b.className = t === tab ? 'on' : ''; });
+  ({ ini: vInicio, mec: vMecanica, gom: vGomeria, pre: vPrecurado })[tab]();
+}
+function cargando(tit, sub) { $('vista').innerHTML = cabecera(tit, sub) + '<div class="body"><div class="load">Cargando…</div></div>'; }
+function fallo(tit, e) { if (String(e.message) === 'SESION') return; $('vista').innerHTML = cabecera(tit) + '<div class="body"><div class="err">' + esc(e.message) + '</div><button class="btn btn-l" onclick="ir(CL.tab)">Probar de nuevo</button></div>'; }
+
+// ── Inicio ──
+function vInicio() {
+  cargando('Mi flota', '');
+  api('gsCLI_Inicio', {}).then(function(r) {
+    CL.data.ini = r; CL.emg = (r.EMERG || [])[0] || null; badges(r);
+    var av = r.AVISOS || [], graves = av.filter(function(a) { return a.GRAV > 0; }).sort(function(a, b) { return b.GRAV - a.GRAV; });
+    var h = cabecera(r.EMPRESA, r.UNIDADES + ' unidades · ' + r.CUBIERTAS + ' cubiertas montadas') + '<div class="body">';
+    if (CL.emg) h += '<button class="aviso g2" onclick="verAlerta()"><i class="dot"></i><span><b>Emergencia ' + esc(CL.emg.NRO) + '</b> · ' + estEmg(CL.emg) + '<br><span class="s">Tocá para ver o mandar el detalle</span></span></button>';
+    h += '<div class="bigemg"><button class="bt-rojo" id="bt-rojo2"><i class="fill"></i><span>⚠ Emergencia<small>Mantené apretado 2 segundos: le llega tu ubicación al mecánico</small></span></button>' +
+      '<button class="bt-verde" onclick="abrirDetalle()"><span>' + icoMsg() + ' Contar qué pasó<small>Le mandás el detalle al mecánico y queda registrado</small></span></button></div>';
+    h += '<div class="kpis"><div class="kpi"><span>Mecánica</span><b style="color:' + (r.RESUMEN.MEC ? 'var(--warn)' : 'var(--ok)') + '">' + r.RESUMEN.MEC + '</b><span class="s">avisos</span></div>' +
+      '<div class="kpi"><span>Gomería</span><b style="color:' + (r.RESUMEN.GOM ? 'var(--warn)' : 'var(--ok)') + '">' + r.RESUMEN.GOM + '</b><span class="s">avisos</span></div>' +
+      '<div class="kpi"><span>Precurado</span><b>' + r.RESUMEN.PRE_PLANTA + '</b><span class="s">en la planta</span></div></div>';
+    h += '<div class="h2">Avisos y recordatorios</div>';
+    if (!graves.length) h += '<div class="card pad s">Todo al día: no hay servicios vencidos ni cubiertas para revisar.</div>';
+    graves.slice(0, 30).forEach(function(a) { h += '<button class="aviso g' + Math.min(2, a.GRAV) + '" onclick="ir(\'' + tabDe(a.RUBRO) + '\')"><i class="dot"></i><span>' + (a.UNIDAD ? '<b>' + esc(a.UNIDAD) + '</b> · ' : '') + esc(a.T) + '<br><span class="s">' + esc(a.RUBRO) + '</span></span></button>'; });
+    av.filter(function(a) { return a.LISTO; }).forEach(function(a) { h += '<button class="aviso" onclick="ir(\'pre\')"><i class="dot"></i><span>' + esc(a.T) + '<br><span class="s">Precurado</span></span></button>'; });
+    h += '<div class="s" style="text-align:center;margin-top:4px">Los avisos también te llegan por WhatsApp de Vulcan.</div></div>';
+    $('vista').innerHTML = h; armarRojo($('bt-rojo2'));
+  }).catch(function(e) { fallo('Mi flota', e); });
+}
+function tabDe(rubro) { return rubro === 'Cubiertas' ? 'gom' : rubro === 'Precurado' ? 'pre' : 'mec'; }
+function badges(r) {
+  var b = { mec: r.RESUMEN.MEC, gom: r.RESUMEN.GOM, pre: 0, ini: 0 };
+  Object.keys(b).forEach(function(k) { var el = $('bd-' + k); if (!el) return; el.hidden = !b[k]; el.textContent = b[k] > 99 ? '99+' : b[k]; });
+}
+function estEmg(e) {
+  if (e.ESTADO === 'EN_CAMINO') return 'el mecánico va en camino';
+  if (e.ESTADO === 'RESUELTA') return 'resuelta';
+  if (e.ESTADO === 'CANCELADA') return 'cancelada';
+  if (e.WA === 'ENVIADO') return 'le llegó al mecánico por WhatsApp';
+  if (e.WA === 'FALLO') return 'registrada, el WhatsApp no salió: llamá a Vulcan';
+  if (e.WA === 'SIN_WHATSAPP' || e.WA === 'SIN_NUMERO') return 'registrada en Vulcan';
+  return 'enviando…';
+}
+
+// ── Mecánica ──
+function selUnidad(vehs, fn) {
+  return '<div class="chips"><button class="chip' + (!CL.eq ? ' on' : '') + '" onclick="CL.eq=\'\';' + fn + '()">Todas</button>' + (vehs || []).map(function(v) {
+    return '<button class="chip' + (String(CL.eq) === String(v.ID) ? ' on' : '') + '" onclick="CL.eq=\'' + v.ID + '\';' + fn + '()">' + esc(v.IDENT) + '</button>'; }).join('') + '</div>';
+}
+var EST_SERV = { VENCIDO: ['tg-b', 'Vencido'], PRONTO: ['tg-w', 'Se viene'], SIN_REGISTRO: ['tg-n', 'Sin registro'], OK: ['tg-ok', 'Al día'] };
+function vMecanica() {
+  cargando('Mecánica', 'Trabajos hechos y próximos servicios');
+  api('gsCLI_Mecanica', { ID_EQUIPO: CL.eq }).then(function(r) {
+    var h = cabecera('Mecánica', 'Trabajos hechos y próximos servicios') + '<div class="body">' + selUnidad(r.VEHICULOS, 'vMecanica');
+    h += '<div class="h2">Próximos servicios</div>';
+    if (!r.PROXIMOS.length) h += '<div class="card pad s">Todavía no hay servicios programados para ' + (CL.eq ? 'esta unidad' : 'tus unidades') + '. Vulcan los carga según el km o la fecha.</div>';
+    else h += '<div class="card">' + r.PROXIMOS.map(function(s) { var e = EST_SERV[s.ESTADO] || ['tg-n', s.ESTADO], cuando = [];
+      if (s.PROX_KM !== '' && s.PROX_KM !== undefined) cuando.push('a los ' + nf(s.PROX_KM) + ' km' + (s.FALTA_KM !== '' ? ' (' + (s.FALTA_KM < 0 ? 'pasado ' + nf(-s.FALTA_KM) : 'faltan ' + nf(s.FALTA_KM)) + ' km)' : ''));
+      if (s.PROX_F) cuando.push('el ' + fch(s.PROX_F) + (s.FALTA_DIAS !== '' ? ' (' + (s.FALTA_DIAS < 0 ? 'hace ' + (-s.FALTA_DIAS) : 'en ' + s.FALTA_DIAS) + ' días)' : ''));
+      return '<div class="row"><div class="rowb"><span class="t">' + esc(s.SERVICIO) + '</span><span class="tag ' + e[0] + '">' + e[1] + '</span></div><span class="s">' + esc(s.UNIDAD) +
+        (s.ULT_F ? ' · último ' + fch(s.ULT_F) + (s.ULT_KM !== '' ? ' con ' + nf(s.ULT_KM) + ' km' : '') : '') + (cuando.length ? '<br>Próximo ' + cuando.join(' o ') : '') +
+        (s.CADA_KM || s.CADA_DIAS ? '<br>Cada ' + [s.CADA_KM ? nf(s.CADA_KM) + ' km' : '', s.CADA_DIAS ? s.CADA_DIAS + ' días' : ''].filter(Boolean).join(' o ') : '') + '</span></div>'; }).join('') + '</div>';
+    h += '<div class="h2">Trabajos realizados</div>';
+    var ev = r.TRABAJOS.slice().sort(function(a, b) { return b.F - a.F; });
+    if (!ev.length) h += '<div class="card pad s">Sin trabajos registrados en los últimos dos años.</div>';
+    else h += '<div class="card">' + ev.slice(0, 150).map(function(x) {
+      return '<div class="row"><div class="rowb"><span class="t">' + esc(x.QUE) + '</span><span class="s num">' + fch(x.F) + '</span></div><span class="s">' + esc(x.UNIDAD) + ' · ' + esc(x.RUBRO === 'Check list' ? 'Check list' : x.SIS || x.RUBRO) +
+        (x.KM !== '' && x.KM !== undefined ? ' · ' + nf(x.KM) + ' km' : '') + (x.DOC ? ' · ' + esc(x.DOC) : '') + (x.DET ? '<br>' + esc(x.DET) : '') + '</span></div>'; }).join('') + '</div>' +
+      (ev.length > 150 ? '<div class="s">Se muestran los 150 más recientes.</div>' : '');
+    $('vista').innerHTML = h + '</div>';
+  }).catch(function(e) { fallo('Mecánica', e); });
+}
+
+// ── Gomería: mapa de la unidad; al tocar una cubierta, su ficha ──
+var GRAV_COL = ['#1f7a3d', '#d39a1a', '#c0281e'];
+function vGomeria() {
+  cargando('Gomería', 'Tocá una cubierta para ver toda su historia');
+  api('gsCLI_Gomeria', { ID_EQUIPO: CL.eq }).then(function(r) {
+    CL.data.gom = r; if (r.ID_EQUIPO) CL.eq = String(r.ID_EQUIPO);
+    var h = cabecera('Gomería', 'Tocá una cubierta para ver toda su historia') + '<div class="body">';
+    if (!r.UNIDADES.length) { $('vista').innerHTML = h + '<div class="card pad s">No hay unidades con cubiertas cargadas.</div></div>'; return; }
+    h += '<div class="chips">' + r.UNIDADES.map(function(u) { return '<button class="chip' + (String(CL.eq) === String(u.ID) ? ' on' : '') + '" onclick="CL.eq=\'' + u.ID + '\';vGomeria()">' + esc(u.IDENT) + (u.AVISOS ? ' <span class="tag tg-w">' + u.AVISOS + '</span>' : '') + '</button>'; }).join('') + '</div>';
+    (r.MAPA || []).forEach(function(u, k) {
+      h += '<div class="card"><div class="pad" style="padding-bottom:0"><div class="rowb"><span class="t">' + (k ? 'Enganchado: ' : '') + esc(u.IDENT) + '</span><span class="s">' + esc([u.MARCA, u.MODELO].filter(Boolean).join(' ')) + (u.KM ? ' · ' + nf(u.KM) + ' km' : '') + '</span></div></div>' +
+        '<div class="map">' + (u.CFG ? dibujo(u) : '<div class="s">Esta unidad no tiene cargada la configuración de ejes.</div>') + '</div></div>';
+    });
+    h += '<div class="leg"><span><i style="background:#1f7a3d"></i>bien</span><span><i style="background:#d39a1a"></i>revisar pronto</span><span><i style="background:#c0281e"></i>cambiar</span><span><i style="background:#f1f5f9;border:1px dashed #94a3b8"></i>vacía</span></div>';
+    h += '<div id="gm-sel"></div></div>';
+    $('vista').innerHTML = h;
+  }).catch(function(e) { fallo('Gomería', e); });
+}
+function montDe(u, idPos) { return (u.MONT || []).filter(function(m) { return String(m.ID_POS) === String(idPos); })[0]; }
+// Mismo dibujo que el sistema (ejes, duales, auxilios), simplificado para el celular
+function dibujo(u) {
+  var ejes = u.CFG.EJES || [], pos = u.CFG.POS || [], W = Math.min(330, Math.max(260, window.innerWidth - 60)), n = ejes.length, cx = W / 2;
+  var tw = Math.round(W * 0.12), th = 64, mx = Math.round(W * 0.05), gap = 3, aux = pos.filter(function(p) { return p.AUX; });
+  var yEje = [], sep = th + 30; ejes.forEach(function(e, k) { yEje.push(26 + th / 2 + k * sep); });
+  var largo = (n ? yEje[n - 1] + th / 2 : 80) + 14, H = largo + (aux.length ? tw + 34 : 4);
+  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" style="max-width:100%;height:auto;font-family:Inter,Arial,sans-serif;user-select:none" role="img" aria-label="Mapa de cubiertas de ' + esc(u.IDENT) + '">';
+  s += '<text x="' + cx + '" y="12" text-anchor="middle" font-size="10" fill="#5d636b" font-weight="700" letter-spacing=".1em">▲ ADELANTE</text>';
+  var rl = cx - W * 0.09, rr = cx + W * 0.09 - 6;
+  s += '<rect x="' + rl + '" y="20" width="6" height="' + (largo - 22) + '" rx="2" fill="#6b7280"/><rect x="' + rr + '" y="20" width="6" height="' + (largo - 22) + '" rx="2" fill="#6b7280"/>';
+  var xDe = function(X, dual) { if (!dual) return X === 0 ? mx + (tw + gap) / 2 : W - mx - tw - (tw + gap) / 2; return { 0: mx, 1: mx + tw + gap, 3: W - mx - 2 * tw - gap, 4: W - mx - tw }[X]; };
+  var duales = {}; pos.forEach(function(p) { if (!p.AUX && (p.X === 1 || p.X === 3)) duales[p.Y] = 1; });
+  ejes.forEach(function(e, k) { var y = yEje[k], d = duales[k + 1], x1 = xDe(d ? 1 : 0, d) + tw - 2, x2 = xDe(d ? 3 : 4, d) + 2;
+    s += '<rect x="' + x1 + '" y="' + (y - 5) + '" width="' + (x2 - x1) + '" height="10" rx="4" fill="#9aa0a8"/><circle cx="' + cx + '" cy="' + y + '" r="9" fill="#23272c"/><text x="' + cx + '" y="' + (y + 3.5) + '" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">' + e.NRO + '</text>'; });
+  pos.forEach(function(p) {
+    var x, y, w = tw, h = th;
+    if (p.AUX) { var ia = aux.indexOf(p); w = th; h = tw; x = cx - (aux.length * (w + 10) - 10) / 2 + ia * (w + 10); y = largo + 22; }
+    else { x = xDe(p.X, duales[p.Y]); y = yEje[p.Y - 1] - th / 2; }
+    var m = montDe(u, p.ID), c = m && m.C, r = Math.min(w, h) * 0.28;
+    s += '<g style="cursor:pointer" onclick="selCub(' + u.ID + ',' + p.ID + ')"><title>' + esc(p.COD + (c ? ' · ' + c.MARCA : ' · vacía')) + '</title>';
+    if (!c) s += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + r + '" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="4 3"/>';
+    else s += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + r + '" fill="#2b2f34" stroke="' + GRAV_COL[Math.min(2, c.GRAV || 0)] + '" stroke-width="3.5"/>';
+    s += '<text x="' + (x + w / 2) + '" y="' + (y - 3) + '" text-anchor="middle" font-size="8.5" font-weight="700" fill="#5d636b">' + esc(p.COD) + '</text>';
+    if (c && c.PROF !== '' && c.PROF !== undefined) s += '<text x="' + (x + w / 2) + '" y="' + (y + h / 2 + 3) + '" text-anchor="middle" font-size="9" font-weight="700" fill="#fff"' + (p.AUX ? '' : ' transform="rotate(-90 ' + (x + w / 2) + ' ' + (y + h / 2) + ')"') + '>' + esc(String(c.PROF).replace('.', ',')) + ' mm</text>';
+    s += '</g>';
+  });
+  if (aux.length) s += '<text x="' + mx + '" y="' + (largo + 14) + '" font-size="9" fill="#5d636b" font-weight="700">AUXILIOS</text>';
+  return s + '</svg>';
+}
+function posTxt(u, idPos) { var p = (u.CFG.POS || []).filter(function(x) { return String(x.ID) === String(idPos); })[0]; if (!p) return ''; if (p.AUX) return 'Auxilio ' + p.COD;
+  return 'Eje ' + p.Y + ' · ' + (p.LADO === 'I' ? 'izquierda' : 'derecha') + (p.UB === 'E' ? ' afuera' : p.UB === 'I' ? ' adentro' : '') + ' (' + p.COD + ')'; }
+function selCub(idEq, idPos) {
+  var u = (CL.data.gom.MAPA || []).filter(function(x) { return String(x.ID) === String(idEq); })[0]; if (!u) return;
+  var m = montDe(u, idPos), c = m && m.C, el = $('gm-sel');
+  if (!c) { el.innerHTML = '<div class="card pad"><div class="t">' + esc(posTxt(u, idPos)) + '</div><div class="s">Sin cubierta montada.</div></div>'; el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); return; }
+  var g = Math.min(2, c.GRAV || 0), min = CL.data.gom.P && CL.data.gom.P.DIBUJO_MIN;
+  el.innerHTML = '<div class="card pad" style="display:flex;flex-direction:column;gap:5px"><div class="t">' + esc(u.IDENT) + ' · ' + esc(posTxt(u, idPos)) + '</div>' +
+    '<div class="s" style="color:var(--fg)">Marca grabada <b>' + esc(c.MARCA) + '</b> · DOT ' + dot(c.DOT) + '</div>' +
+    '<div class="s">' + esc([c.MEDIDA, c.FAB].filter(Boolean).join(' · ')) + (c.RECAP ? ' · ' + c.RECAP + (c.RECAP === 1 ? ' recapado' : ' recapados') : ' · sin recapar') + '</div>' +
+    '<div class="s">' + (c.PROF !== '' ? 'Dibujo ' + String(c.PROF).replace('.', ',') + ' mm' + (min ? ' (mínimo ' + String(min).replace('.', ',') + ')' : '') : 'Sin medir') + (c.PRES !== '' && c.PRES !== undefined ? ' · ' + esc(c.PRES) + ' psi' : '') + (c.FMED ? ' · medida el ' + fch(c.FMED) : '') + (m.DESDE ? ' · montada el ' + fch(m.DESDE) : '') + '</div>' +
+    (c.AVISO ? '<div class="s" style="color:' + (g === 2 ? 'var(--bad)' : 'var(--warn)') + ';font-weight:600">' + esc(c.AVISO) + '</div>' : (c.EST ? '<div class="s">Estado: ' + esc(c.EST) + '</div>' : '')) +
+    '<button class="btn btn-l" style="height:44px;margin-top:4px" onclick="verCubierta(' + c.ID + ')">Ver historia completa ›</button></div>';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function verCubierta(id) {
+  var vuelve = CL.tab; marcoVisible(true); window.scrollTo(0, 0);
+  $('vista').innerHTML = cabecera('Cubierta', '', 'ir(\'' + vuelve + '\')') + '<div class="body"><div class="load">Cargando…</div></div>';
+  api('gsCLI_Cubierta', { ID_CASCO: id }).then(function(r) {
+    var c = r.C, max = r.RECAP_MAX;
+    var h = '<div class="hd"><button class="back" onclick="ir(\'' + vuelve + '\')">‹ Volver</button><div class="lab">MARCA GRABADA</div><div class="mg">' + esc(c.MARCA) + '</div>' +
+      '<div class="sub">DOT ' + (c.DOT ? esc(c.DOT) : 'sin cargar') + ' · ' + esc([c.MEDIDA, c.FAB].filter(Boolean).join(' · ')) + '</div></div><div class="body">';
+    h += '<div class="kpis"><div class="kpi"><span>Dibujo</span><b>' + (c.PROF !== '' ? esc(String(c.PROF).replace('.', ',')) + '<span style="font-size:15px"> mm</span>' : '–') + '</b></div>' +
+      '<div class="kpi"><span>Recapados</span><b' + (max !== '' && c.RECAP >= max ? ' style="color:var(--warn)"' : '') + '>' + c.RECAP + (max !== '' ? '<span style="font-size:15px"> de ' + max + '</span>' : '') + '</b></div>' +
+      '<div class="kpi"><span>Km recorridos</span><b>' + (nf(r.KM_TOTAL) || '0') + '</b></div></div>';
+    if (max !== '' && c.RECAP >= max) h += '<div class="aviso g1" style="cursor:default"><i class="dot"></i><span>Esta cubierta ya llegó al máximo de recapados para su casco.</span></div>';
+    if (c.UBIC) h += '<div class="card pad s">Dónde está: <b style="color:var(--fg)">' + esc(c.UBIC) + '</b></div>';
+    var hist = [];
+    (r.MOVS || []).forEach(function(x) { var t = esc(x.TIPO); if (x.UNIDAD) t += ' · ' + esc(x.UNIDAD); if (x.DE && x.A && x.DE !== x.A) t += ' · de ' + esc(x.DE) + ' a ' + esc(x.A); else if (x.A) t += ' · ' + esc(x.A);
+      if (x.KM !== '') t += ' · ' + nf(x.KM) + ' km'; if (x.CAUSA) t += ' · ' + esc(x.CAUSA);
+      if (x.MED) t += '<br><span class="s">' + [x.MED.PROF !== '' ? 'dibujo ' + esc(String(x.MED.PROF).replace('.', ',')) + ' mm' : '', x.MED.PRES !== '' ? esc(x.MED.PRES) + ' psi' : '', esc(x.MED.EST)].filter(Boolean).join(' · ') + '</span>';
+      hist.push({ F: x.F, T: t }); });
+    var EP = { TERMINADA: 'Recapado terminado en la planta Vulcan', RECHAZADA: 'Rechazada en la inspección de la planta', EN_OT: 'En producción en la planta Vulcan', EN_ESPERA: 'Recibida en la planta Vulcan' };
+    (r.PROD || []).forEach(function(x) { if (!EP[x.ESTADO]) return; hist.push({ F: x.F, T: EP[x.ESTADO] + (x.TRABAJO ? ' · ' + esc(x.TRABAJO) : '') }); });
+    hist.sort(function(a, b) { return b.F - a.F; });
+    h += '<div class="h2">Historia</div>' + (hist.length ? '<div class="card">' + hist.map(function(x) { return '<div class="row" style="display:grid;grid-template-columns:82px 1fr;gap:10px"><span class="s num">' + fch(x.F) + '</span><span style="font-size:13.5px">' + x.T + '</span></div>'; }).join('') + '</div>' : '<div class="card pad s">Sin movimientos registrados.</div>');
+    if ((r.MONTAJES || []).length) h += '<div class="h2">Dónde anduvo</div><div class="card">' + r.MONTAJES.slice().reverse().map(function(m) { return '<div class="row"><div class="rowb"><span class="t">' + esc(m.UNIDAD) + ' · ' + esc(m.POS) + '</span><span class="s num">' + nf(m.KM) + ' km</span></div><span class="s">' + fch(m.DESDE) + ' → ' + (m.HASTA ? fch(m.HASTA) : 'hoy') + '</span></div>'; }).join('') + '</div>';
+    $('vista').innerHTML = h + '</div>';
+  }).catch(function(e) { fallo('Cubierta', e); });
+}
+
+// ── Precurado ──
+var PASOS = ['Recibida', 'Inspección', 'Producción', 'Autoclave', 'Lista'];
+function vPrecurado() {
+  cargando('Precurado', 'Tus cubiertas recapadas en Vulcan');
+  api('gsCLI_Precurado', {}).then(function(r) {
+    var h = cabecera('Precurado', 'Tus cubiertas recapadas en Vulcan') + '<div class="body">';
+    h += '<div class="kpis"><div class="kpi"><span>En la planta</span><b>' + r.EN_PLANTA.length + '</b></div><div class="kpi"><span>Terminadas (30 días)</span><b style="color:var(--ok)">' + r.LISTAS + '</b></div>' +
+      '<div class="kpi"><span>En el último recapado</span><b style="color:' + (r.AL_MAXIMO.length ? 'var(--warn)' : 'var(--fg)') + '">' + (r.RECAP_MAX === '' ? '–' : r.AL_MAXIMO.length) + '</b></div></div>';
+    h += '<div class="h2">En la planta ahora</div>';
+    if (!r.EN_PLANTA.length) h += '<div class="card pad s">No tenés cubiertas en la planta.</div>';
+    else h += '<div class="card">' + r.EN_PLANTA.map(function(c) {
+      return '<div class="row" style="gap:6px"><div class="rowb"><span class="t">Marca grabada ' + esc(c.MARCA) + '</span><span class="s">DOT ' + dot(c.DOT) + '</span></div>' +
+        '<div class="steps">' + PASOS.map(function(p, k) { return '<i class="' + (k + 1 < c.PASO ? 'd' : k + 1 === c.PASO ? 'c' : '') + '"></i>'; }).join('') + '</div>' +
+        '<span class="s">' + PASOS.map(function(p, k) { return k + 1 === c.PASO ? '<b style="color:var(--fg)">' + p + '</b>' : p; }).join(' → ') + '<br>' + esc(c.ETAPA) + ' · ' + esc([c.MEDIDA, c.TRABAJO].filter(Boolean).join(' · ')) + ' · recibida el ' + fch(c.F_REC) + '</span></div>'; }).join('') + '</div>';
+    if (r.AL_MAXIMO.length) h += '<div class="h2">Avisos de recapado</div><div class="aviso g1" style="cursor:default"><i class="dot"></i><span>' + r.AL_MAXIMO.length + (r.AL_MAXIMO.length === 1 ? ' cubierta ya lleva' : ' cubiertas ya llevan') + ' ' + r.RECAP_MAX + ' recapados o más, el máximo para su casco. La próxima vez van a cambio.</span></div>' +
+      '<div class="card">' + r.AL_MAXIMO.map(function(c) { return '<button class="row" style="width:100%;background:none;border:0;text-align:left;cursor:pointer" onclick="verCubierta(' + c.ID_CASCO + ')"><div class="rowb"><span class="t">Marca grabada ' + esc(c.MARCA) + '</span><span class="tag tg-w">' + c.RECAP + ' recapados</span></div><span class="s">DOT ' + dot(c.DOT) + ' · ' + esc(c.MEDIDA) + '</span></button>'; }).join('') + '</div>';
+    if (r.RECHAZADAS.length) h += '<div class="h2">Rechazadas (90 días)</div><div class="card">' + r.RECHAZADAS.map(function(c) { return '<div class="row"><div class="rowb"><span class="t">Marca grabada ' + esc(c.MARCA) + '</span><span class="s num">' + fch(c.F) + '</span></div><span class="s">DOT ' + dot(c.DOT) + ' · ' + esc(c.MEDIDA) + (c.MOTIVO ? '<br>Motivo: ' + esc(c.MOTIVO) : '') + '</span></div>'; }).join('') + '</div>';
+    h += '<div class="h2">Terminadas (90 días)</div>' + (r.TERMINADAS.length ? '<div class="card">' + r.TERMINADAS.map(function(c) { return '<button class="row" style="width:100%;background:none;border:0;text-align:left;cursor:' + (c.ID_CASCO ? 'pointer' : 'default') + '"' + (c.ID_CASCO ? ' onclick="verCubierta(' + c.ID_CASCO + ')"' : '') + '><div class="rowb"><span class="t">Marca grabada ' + esc(c.MARCA) + '</span><span class="s num">' + fch(c.F) + '</span></div><span class="s">DOT ' + dot(c.DOT) + ' · ' + esc([c.MEDIDA, c.TRABAJO].filter(Boolean).join(' · ')) + '</span></button>'; }).join('') + '</div>' : '<div class="card pad s">Sin cubiertas terminadas en los últimos 90 días.</div>');
+    $('vista').innerHTML = h + '</div>';
+  }).catch(function(e) { fallo('Precurado', e); });
+}
+
+// ── Emergencia ──
+// Botón rojo: hay que mantenerlo apretado 2 segundos (para que no salga sin querer en el bolsillo)
+function armarRojo(b) {
+  if (!b) return; var t0 = 0, raf = 0, fill = b.querySelector('.fill');
+  var parar = function() { t0 = 0; cancelAnimationFrame(raf); if (fill) fill.style.width = '0'; var o = $('hold'); if (o) o.remove(); };
+  var paso = function() { if (!t0) return; var p = Math.min(1, (Date.now() - t0) / 2000); if (fill) fill.style.width = (p * 100) + '%'; var c = $('hold-c'); if (c) c.setAttribute('stroke-dashoffset', String(440 * (1 - p)));
+    if (p >= 1) { parar(); if (navigator.vibrate) navigator.vibrate(200); mandarAlerta(); return; } raf = requestAnimationFrame(paso); };
+  b.addEventListener('pointerdown', function(e) { e.preventDefault(); t0 = Date.now(); try { b.setPointerCapture(e.pointerId); } catch (x) {}
+    var o = document.createElement('div'); o.className = 'hold'; o.id = 'hold'; o.innerHTML = '<svg class="ring" viewBox="0 0 150 150"><circle cx="75" cy="75" r="70" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="8"/><circle id="hold-c" cx="75" cy="75" r="70" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-dasharray="440" stroke-dashoffset="440" transform="rotate(-90 75 75)"/></svg><b>Seguí apretando…</b><span>Soltá para cancelar</span>';
+    document.body.appendChild(o); raf = requestAnimationFrame(paso); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(ev) { b.addEventListener(ev, parar); });
+  b.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+  b.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (confirmarTeclado()) mandarAlerta(); } });
+}
+function confirmarTeclado() { return true; }
+function ubicacion(ms) {
+  return new Promise(function(res) {
+    if (!navigator.geolocation) { res(null); return; }
+    var listo = false, fin = function(v) { if (!listo) { listo = true; res(v); } };
+    setTimeout(function() { fin(null); }, ms || 8000);
+    navigator.geolocation.getCurrentPosition(function(p) { fin({ LAT: p.coords.latitude, LNG: p.coords.longitude, PREC: Math.round(p.coords.accuracy) }); }, function() { fin(null); }, { enableHighAccuracy: true, timeout: ms || 8000, maximumAge: 60000 });
+  });
+}
+function opKey() { return 'C' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function mandarAlerta() {
+  marcoVisible(false); window.scrollTo(0, 0);
+  $('vista').innerHTML = '<div class="alerta"><h1>Mandando la alerta…</h1><div>Buscando tu ubicación</div></div><div class="body"><div class="load">Un momento</div></div>';
+  var k = CL.pend && CL.pend.OP_KEY ? CL.pend.OP_KEY : opKey();
+  ubicacion(8000).then(function(u) {
+    var d = { OP_KEY: k, ID_EQUIPO: CL.eq || '' }; if (u) { d.LAT = u.LAT; d.LNG = u.LNG; d.PREC = u.PREC; }
+    CL.pend = d;
+    return api('gsCLI_Alerta', d).then(function(r) { CL.pend = null; CL.emg = r; verAlerta(u); });
+  }).catch(function(e) {
+    if (String(e.message) === 'SESION') return;
+    $('vista').innerHTML = '<div class="alerta"><h1>No salió la alerta</h1><div>' + esc(e.message) + '</div></div><div class="body">' +
+      '<button class="btn btn-r" onclick="mandarAlerta()">Probar de nuevo</button>' + llamarFijo() + '<button class="btn btn-l" onclick="ir(\'ini\')">Volver</button></div>';
+  });
+}
+function llamarFijo() { var t = CL.data.ini && CL.data.ini.TEL_VULCAN; return t ? '<a class="btn btn-l" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="tel:' + esc(String(t).replace(/[^\d+]/g, '')) + '">📞 Llamar a Vulcan</a>' : ''; }
+function verAlerta(u) {
+  var e = CL.emg; if (!e) { ir('ini'); return; }
+  marcoVisible(false); window.scrollTo(0, 0);
+  var sal = e.WA === 'ENVIADO', cerr = e.ESTADO === 'CANCELADA' || e.ESTADO === 'RESUELTA';
+  var h = '<div class="alerta" style="' + (cerr ? 'background:var(--head)' : '') + '"><div class="lab" style="color:#ffd9d4">EMERGENCIA ' + esc(e.NRO) + ' · ' + hora(e.F) + '</div><h1>' + (cerr ? (e.ESTADO === 'RESUELTA' ? 'Resuelta' : 'Cancelada') : e.ESTADO === 'EN_CAMINO' ? 'El mecánico va en camino' : sal ? 'Alerta enviada' : 'Alerta registrada') + '</h1>' +
+    '<div>' + (cerr ? '' : sal ? 'Le llegó al mecánico de guardia por WhatsApp, con tu ubicación. Te va a llamar.' : e.WA === 'FALLO' ? 'Quedó registrada en Vulcan, pero el WhatsApp no salió. Llamá a Vulcan.' : 'Quedó registrada en Vulcan. El aviso por WhatsApp todavía no está conectado: llamá a Vulcan.') + '</div></div><div class="body">';
+  h += '<div class="card pad s">' + (e.LAT !== '' && e.LNG !== '' ? '📍 Ubicación enviada' + (u && u.PREC ? ' (precisión ' + u.PREC + ' m)' : '') : '📍 No se pudo tomar la ubicación: contala en el detalle') + (e.F_DET ? '<br>Detalle enviado: ' + esc(e.QUE_PASO) + (e.DETALLE ? ' · ' + esc(e.DETALLE) : '') : '') + '</div>';
+  if (!cerr) {
+    h += '<button class="btn btn-g" onclick="abrirDetalle(' + e.ID + ')">' + (e.F_DET ? 'Corregir el detalle' : 'Contar qué pasó') + '</button>';
+    if (!sal || e.WA === 'FALLO') h += llamarFijo();
+    if (e.ESTADO !== 'EN_CAMINO') h += '<button class="btn btn-l" onclick="cancelarAlerta(' + e.ID + ')">Fue sin querer: cancelar</button>';
+  }
+  h += '<button class="btn btn-l" onclick="ir(\'ini\')">Volver al inicio</button><div class="s">No se muestran el nombre ni el teléfono del mecánico. Vulcan registra cada emergencia: cuándo llegó, quién la atendió y qué se hizo.</div></div>';
+  $('vista').innerHTML = h;
+}
+function cancelarAlerta(id) {
+  api('gsCLI_Cancelar', { ID: id }).then(function(r) { CL.emg = r; toast('Alerta cancelada'); verAlerta(); }).catch(function(e) { toast(e.message); });
+}
+// Botón verde: el detalle (si no hubo alerta antes, la crea con el detalle)
+function abrirDetalle(id) {
+  marcoVisible(false); window.scrollTo(0, 0);
+  var e = id && CL.emg && String(CL.emg.ID) === String(id) ? CL.emg : null, vehs = (CL.data.ini && CL.data.ini.VEHICULOS) || [];
+  var sel = e && e.QUE_PASO ? e.QUE_PASO : '';
+  var h = '<div class="hd" style="background:var(--green)"><button class="back" style="color:#d6f3df" onclick="' + (e ? 'verAlerta()' : 'ir(\'ini\')') + '">‹ Volver</button><h1>Contar qué pasó</h1><div class="sub" style="color:#d6f3df">Le llega al mecánico de guardia por WhatsApp y queda registrado en Vulcan</div></div>' +
+    '<form class="body" onsubmit="enviarDetalle(event,' + (e ? e.ID : 0) + ')">';
+  h += '<div class="fld"><label for="dt-u">¿Qué vehículo?</label><select class="in" id="dt-u"><option value="">Elegí</option>' + vehs.map(function(v) { var s = String((e && e.ID_EQUIPO) || CL.eq) === String(v.ID); return '<option value="' + v.ID + '"' + (s ? ' selected' : '') + '>' + esc(v.IDENT) + (v.MM ? ' · ' + esc(v.MM) : '') + '</option>'; }).join('') + '</select></div>';
+  h += '<div class="fld"><label>¿Qué pasó?</label><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px" id="dt-q">' + QUE_PASO.map(function(q) { return '<button type="button" class="chip' + (q === sel ? ' on' : '') + '" style="border-radius:10px;height:46px" onclick="qp(this)">' + q + '</button>'; }).join('') + '</div></div>';
+  h += '<div class="fld"><label for="dt-d">¿Dónde está?</label><input class="in" id="dt-d" placeholder="Ruta, km, ciudad" value="' + esc(e ? e.UBICACION : '') + '"></div>' +
+    '<button type="button" class="btn btn-l" style="height:44px;border-style:dashed" onclick="tomarUbic(this)">📍 ' + (e && e.LAT !== '' ? 'Actualizar mi ubicación' : 'Mandar mi ubicación') + '</button><input type="hidden" id="dt-lat"><input type="hidden" id="dt-lng">';
+  h += '<div class="fld"><label for="dt-t">Teléfono para que te llamen</label><input class="in" id="dt-t" type="tel" inputmode="tel" value="' + esc((e && e.TELEFONO) || lsGet('vulcan_cli_tel') || '') + '" required></div>' +
+    '<div class="fld"><label for="dt-x">Algo más (opcional)</label><textarea class="in" id="dt-x" rows="3" placeholder="Rueda, ruido, lo que veas">' + esc(e ? e.DETALLE : '') + '</textarea></div>' +
+    '<div id="dt-err"></div><button class="btn btn-g" id="dt-b">Mandar al mecánico</button>' +
+    '<div class="s">No se muestran el nombre ni el teléfono del mecánico. Para una alerta inmediata usá el botón rojo.</div></form>';
+  $('vista').innerHTML = h;
+}
+function qp(b) { Array.prototype.forEach.call($('dt-q').children, function(x) { x.className = 'chip'; }); b.className = 'chip on'; }
+function tomarUbic(b) { b.textContent = '📍 Buscando…'; ubicacion(10000).then(function(u) { if (!u) { b.textContent = '📍 No se pudo: escribí dónde estás'; return; } $('dt-lat').value = u.LAT; $('dt-lng').value = u.LNG; b.textContent = '📍 Ubicación tomada (' + u.PREC + ' m)'; }); }
+function enviarDetalle(ev, id) {
+  ev.preventDefault(); var q = document.querySelector('#dt-q .chip.on'), b = $('dt-b'), er = $('dt-err');
+  if (!q) { er.innerHTML = '<div class="err">Elegí qué pasó</div>'; return; }
+  var d = { ID: id || '', ID_EQUIPO: $('dt-u').value, QUE_PASO: q.textContent, UBICACION: $('dt-d').value.trim(), LAT: $('dt-lat').value, LNG: $('dt-lng').value, TELEFONO: $('dt-t').value.trim(), DETALLE: $('dt-x').value.trim(), OP_KEY: id ? '' : opKey() };
+  lsSet('vulcan_cli_tel', d.TELEFONO); b.disabled = true; b.textContent = 'Mandando…'; er.innerHTML = '';
+  api('gsCLI_Detalle', d).then(function(r) { CL.emg = r; toast(r.WA === 'ENVIADO' ? 'Le llegó al mecánico' : 'Quedó registrado en Vulcan'); verAlerta(); })
+    .catch(function(e) { b.disabled = false; b.textContent = 'Mandar al mecánico'; if (String(e.message) !== 'SESION') er.innerHTML = '<div class="err">' + esc(e.message) + '</div>'; });
+}
+
+// ── Cuenta ──
+function cuenta() {
+  marcoVisible(false); window.scrollTo(0, 0);
+  var h = '<div class="hd"><button class="back" onclick="ir(CL.tab)">‹ Volver</button><h1>' + (esAdmin() ? 'Vista previa' : 'Mi cuenta') + '</h1><div class="sub">' + esc(CL.ses.nombre || CL.ses.usuario) + '</div></div><div class="body">';
+  if (esAdmin()) h += '<div class="card pad s">Estás viendo la app como la ve la empresa. Solo los usuarios de Vulcan con rol SUPER o ADMINISTRADOR pueden hacerlo.</div><button class="btn btn-l" onclick="CL.ver=\'\';lsSet(\'vulcan_cli_ver\',null);CL.data={};CL.eq=\'\';elegirEmpresa()">Ver otra empresa</button>';
+  else h += '<div class="h2">Cambiar contraseña</div><form class="card pad" style="display:flex;flex-direction:column;gap:10px" onsubmit="cambiarClave(event)"><div class="fld"><label for="ck-a">Contraseña actual</label><input class="in" id="ck-a" type="password" autocomplete="current-password" required></div>' +
+    '<div class="fld"><label for="ck-n">Contraseña nueva</label><input class="in" id="ck-n" type="password" autocomplete="new-password" minlength="6" required></div><div id="ck-e"></div><button class="btn btn-p" id="ck-b">Guardar</button></form>' +
+    '<div class="h2">Facturas y cuenta corriente</div><div class="card pad s">Muy pronto vas a ver acá tus facturas, remitos y el saldo.</div>';
+  h += '<button class="btn btn-l" onclick="salir()">Salir</button><div class="s" style="text-align:center">Vulcan Tread Neumáticos S.R.L. · Salta</div></div>';
+  $('vista').innerHTML = h;
+}
+function cambiarClave(ev) {
+  ev.preventDefault(); var b = $('ck-b'); b.disabled = true;
+  llamar('gsApi', [CL.ses.token, 'gsCambiarMiClave', [$('ck-a').value, $('ck-n').value]]).then(function(r) {
+    b.disabled = false; if (r && r.ok === false) { $('ck-e').innerHTML = '<div class="err">' + esc(r.error) + '</div>'; return; } toast('Contraseña cambiada'); ir(CL.tab);
+  }).catch(function(e) { b.disabled = false; $('ck-e').innerHTML = '<div class="err">' + esc(String(e.message).replace(/^PERMISO:\s*/, '')) + '</div>'; });
+}
+
+// ── Estado de una emergencia abierta: se vuelve a mirar cada 30 segundos ──
+setInterval(function() {
+  if (!CL.ses || document.hidden || !CL.emg || CL.emg.ESTADO === 'RESUELTA' || CL.emg.ESTADO === 'CANCELADA') return;
+  api('gsCLI_Emergencias', {}).then(function(r) {
+    var n = (r.ABIERTAS || []).filter(function(x) { return String(x.ID) === String(CL.emg.ID); })[0];
+    if (!n) return; var cambio = n.ESTADO !== CL.emg.ESTADO || n.WA !== CL.emg.WA; CL.emg = n;
+    if (cambio && n.ESTADO === 'EN_CAMINO') { toast('El mecánico va en camino', 5000); if (navigator.vibrate) navigator.vibrate([150, 80, 150]); }
+    if (cambio && $('vista') && $('vista').querySelector('.alerta')) verAlerta();
+  }).catch(function() {});
+}, 30000);
+
+(function() {
+  var s = null; try { s = JSON.parse(lsGet(CL_KEY) || 'null'); } catch (e) { s = null; }
+  if (s && s.token) { CL.ses = s; arrancar(); } else pintarLogin('');
+})();
+</script>
+</body></html>
