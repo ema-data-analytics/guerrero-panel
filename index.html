@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "af3c14b091e8"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "9d6367743af0"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1713,7 +1713,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611271514';
+var EMA_BUILD = '202611271537';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -23000,6 +23000,8 @@ function segModalUsuario(u) {
 function segRolCli() {
   var box = document.getElementById('su-cli-box'), rol = (document.getElementById('su-rol')||{}).value;
   if (!box) return; box.style.display = rol === 'CLIENTE_APP' ? '' : 'none';
+  var sg = document.getElementById('su-suc'); if (sg) { var fg = sg.closest('.fg'); if (fg) fg.style.display = rol === 'CLIENTE_APP' ? 'none' : ''; }
+  var nt = document.getElementById('su-cli-suc'); if (!nt && box) { nt = document.createElement('div'); nt.id = 'su-cli-suc'; nt.className = 'tdim'; nt.style.fontSize = '12px'; nt.style.marginTop = '4px'; nt.textContent = 'Ve los trabajos de todas las sucursales: Planta Vulcan, Salta y Güemes.'; box.querySelector('.fg').appendChild(nt); }
   if (rol !== 'CLIENTE_APP' || window._segCliCargado) { segCliOpts(); return; }
   gsRun('gsCLI_Empresas').then(function(r) { window._segCliLista = (r && r.EMPRESAS) || []; window._segCliCargado = 1; segCliOpts(); }).catch(function(e) { toast('No se pudieron leer las empresas: ' + e.message, 'r2'); });
 }
