@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="../icono-vulcan-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap">
-<script>window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "16e469f964f8"};</script>
+<script>window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "d8cf2da4c75f"};</script>
 <style>
 /* App de clientes de Vulcan: taller y ruta. Fondo claro de papel, encabezado grafito, naranja Vulcan para acciones, rojo solo para la emergencia */
 :root{--bg:#f3f3ef;--card:#fff;--line:#dcdcd5;--fg:#1d2024;--dim:#5d636b;--head:#23272c;--headfg:#f4f4f2;--headdim:#c9ccd1;
@@ -111,7 +111,7 @@ textarea.in{height:auto;padding:10px 12px;resize:vertical}
 <script>
 /* App de clientes · Vulcan Tread (27/11/2026). Solo lectura de la flota de la empresa + botón de emergencia.
    Todo pasa por la función gs del sistema con el pase de sesión del usuario (rol CLIENTE_APP). */
-var APP_VER = '202611271705';
+var APP_VER = '202611271716';
 var CL = { ses: null, tab: 'ini', data: {}, eq: '', ver: '', emg: null, cub: null, pend: null };
 var CL_PV = '99990000000000';
 var CL_KEY = 'vulcan_cli_ses';
@@ -228,6 +228,44 @@ function ir(tab) {
 function cargando(tit, sub) { $('vista').innerHTML = cabecera(tit, sub) + '<div class="body"><div class="load">Cargando…</div></div>'; }
 function fallo(tit, e) { if (String(e.message) === 'SESION') return; $('vista').innerHTML = cabecera(tit) + '<div class="body"><div class="err">' + esc(e.message) + '</div><button class="btn btn-l" onclick="ir(CL.tab)">Probar de nuevo</button></div>'; }
 
+// ── Notificaciones en este celular (27/11/2026) ──
+var PUSH = { ok: 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window, clave: '' };
+function pushIos() { return /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window.navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)); }
+function b64u(s) { var p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+function swRegistro() { return navigator.serviceWorker.register('../sw.js', { scope: '../' }).then(function() { return navigator.serviceWorker.ready; }); }
+function pushSuscribir(pedir) {
+  if (!PUSH.ok || esAdmin()) return Promise.resolve(false);
+  var perm = pedir ? Notification.requestPermission() : Promise.resolve(Notification.permission);
+  return perm.then(function(p) {
+    if (p !== 'granted') return false;
+    return swRegistro().then(function(reg) {
+      return (PUSH.clave ? Promise.resolve(PUSH.clave) : fetch(EMA_SB.url + '/functions/v1/gs?push=clave').then(function(r) { return r.json(); }).then(function(j) { if (!j.ok) throw new Error(j.error || 'Sin clave'); PUSH.clave = j.publica; return j.publica; }))
+        .then(function(k) { return reg.pushManager.getSubscription().then(function(s) { return s || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(k) }); }); });
+    }).then(function(s) {
+      var j = s.toJSON(); PUSH.endpoint = j.endpoint;
+      return api('gsCLI_PushAlta', { ENDPOINT: j.endpoint, P256DH: j.keys.p256dh, AUTH: j.keys.auth, UA: navigator.userAgent.slice(0, 180) }).then(function() { return true; });
+    });
+  });
+}
+function pushTarjeta() {
+  if (esAdmin()) return '';
+  if (pushIos()) return '<div class="card pad s">🔔 Para recibir los avisos en el iPhone: tocá <b>Compartir</b> › <b>Agregar a pantalla de inicio</b> y abrí la app desde ese ícono.</div>';
+  if (!PUSH.ok) return '';
+  if (Notification.permission === 'granted') return '';
+  if (Notification.permission === 'denied') return '<div class="card pad s">🔕 Las notificaciones están bloqueadas para esta app. Activálas en la configuración del celular (Notificaciones › navegador) para recibir los avisos de Vulcan.</div>';
+  return '<button class="aviso" style="background:var(--warnbg);border-color:var(--warnln)" onclick="pushActivar(this)"><i class="dot" style="background:var(--or)"></i><span><b>🔔 Activar avisos en este celular</b><br><span class="s">Te llegan aunque tengas la app cerrada: avisos de Vulcan y cuando el mecánico va en camino.</span></span></button>';
+}
+function pushActivar(b) {
+  if (b) b.disabled = true;
+  pushSuscribir(true).then(function(ok) { toast(ok ? 'Listo: te van a llegar los avisos' : 'No se activaron las notificaciones'); if (CL.tab === 'ini') vInicio(); })
+    .catch(function(e) { toast('No se pudo: ' + e.message); if (b) b.disabled = false; });
+}
+function pushProbar() {
+  pushSuscribir(false).then(function(ok) {
+    if (!ok) { toast('Primero activá los avisos en este celular'); return; }
+    return api('gsCLI_PushPrueba', { ENDPOINT: PUSH.endpoint }).then(function(r) { toast(r.PUSH && r.PUSH.enviados ? 'Mandada: te tiene que llegar en unos segundos' : 'No salió la notificación'); });
+  }).catch(function(e) { toast(e.message); });
+}
 // ── Inicio ──
 // Pantalla principal: íconos grandes, como el menú del sistema; desde acá se entra a cada opción
 var ICO_G = {
@@ -252,6 +290,7 @@ function vInicio() {
     var vimp = (r.AVISOS || []).filter(function(a) { return a.VULCAN; })[0];
     if (vimp) h += '<button class="aviso ' + (vimp.GRAV > 1 ? 'g2' : 'g1') + '" onclick="vAvisos()" style="text-align:left"><i class="dot"></i><span><span class="s" style="font-weight:600">Aviso de Vulcan · ' + fch(vimp.F) + (vimp.UNIDAD ? ' · ' + esc(vimp.UNIDAD) : '') + '</span><br>' + esc(vimp.T).replace(/\n/g, '<br>') + '</span></button>';
     if (CL.emg) h += '<button class="aviso g2" onclick="verAlerta()"><i class="dot"></i><span><b>Emergencia ' + esc(CL.emg.NRO) + '</b> · ' + estEmg(CL.emg) + '<br><span class="s">Tocá para verla o mandar mensaje al mecánico</span></span></button>';
+    h += pushTarjeta();
     h += '<div class="bigemg"><button class="bt-rojo" id="bt-rojo2"><i class="fill"></i><span>⚠ Emergencia<small>Mantené apretado 2 segundos: le llega tu ubicación al mecánico</small></span></button>' +
       '<button class="bt-verde" onclick="abrirDetalle()"><span>' + icoMsg() + ' Mandar mensaje al mecánico<small>Le mandás un mensaje con lo que pasa y queda registrado</small></span></button></div>';
     h += '<div class="tiles">' +
@@ -264,6 +303,7 @@ function vInicio() {
       tile('salirPreg()', ICO_G.sal, 'Salir', 'Cerrar la sesión', 0) + '</div>';
     h += '<div class="s" style="text-align:center;margin-top:4px">Los avisos también te llegan por WhatsApp de Vulcan.</div></div>';
     $('vista').innerHTML = h; armarRojo($('bt-rojo2'));
+    if (PUSH.ok && !esAdmin() && Notification.permission === 'granted' && !PUSH.endpoint) pushSuscribir(false).catch(function() {});
   }).catch(function(e) { fallo('Mi flota', e); });
 }
 function avisoVulcan(a) { return '<div class="aviso ' + (a.GRAV > 1 ? 'g2' : 'g1') + '" style="cursor:default"><i class="dot"></i><span><span class="s" style="font-weight:600">' + (a.GRAV > 1 ? '⚠ Importante · ' : '') + 'Vulcan · ' + fch(a.F) + (a.UNIDAD ? ' · ' + esc(a.UNIDAD) : '') + '</span><br>' + esc(a.T).replace(/\n/g, '<br>') + '</span></div>'; }
@@ -530,6 +570,7 @@ function cuenta() {
   if (esAdmin()) h += '<div class="card pad s">Estás viendo la app como la ve la empresa. Solo los usuarios de Vulcan con rol SUPER o ADMINISTRADOR pueden hacerlo.</div><button class="btn btn-l" onclick="CL.ver=\'\';lsSet(\'vulcan_cli_ver\',null);CL.data={};CL.eq=\'\';elegirEmpresa()">Ver otra empresa</button>';
   else h += '<div class="h2">Cambiar contraseña</div><form class="card pad" style="display:flex;flex-direction:column;gap:10px" onsubmit="cambiarClave(event)"><div class="fld"><label for="ck-a">Contraseña actual</label><input class="in" id="ck-a" type="password" autocomplete="current-password" required></div>' +
     '<div class="fld"><label for="ck-n">Contraseña nueva</label><input class="in" id="ck-n" type="password" autocomplete="new-password" minlength="6" required></div><div id="ck-e"></div><button class="btn btn-p" id="ck-b">Guardar</button></form>' +
+    '<div class="h2">Avisos en este celular</div><div class="card pad" style="display:flex;flex-direction:column;gap:10px"><div class="s">' + (!PUSH.ok ? (pushIos() ? 'En iPhone primero agregá la app a la pantalla de inicio.' : 'Este navegador no permite notificaciones.') : Notification.permission === 'granted' ? '🔔 Activados en este celular.' : Notification.permission === 'denied' ? '🔕 Bloqueados: activálos en la configuración del celular.' : 'Todavía no están activados.') + '</div>' + (PUSH.ok && Notification.permission !== 'denied' ? '<button type="button" class="btn btn-l" onclick="' + (Notification.permission === 'granted' ? 'pushProbar()' : 'pushActivar(this)') + '">' + (Notification.permission === 'granted' ? 'Mandarme una de prueba' : '🔔 Activar avisos') + '</button>' : '') + '</div>' +
     '<div class="h2">Facturas y cuenta corriente</div><div class="card pad s">Muy pronto vas a ver acá tus facturas, remitos y el saldo.</div>';
   h += '<button class="btn btn-l" onclick="salir()">Salir</button><div class="s" style="text-align:center">Vulcan Tread Neumáticos S.R.L. · Salta</div></div>';
   $('vista').innerHTML = h;
@@ -558,6 +599,7 @@ function verNueva() {
     var m = t.match(/var APP_VER = '(\d+)'/); if (m && m[1] > APP_VER) location.replace(location.pathname + '?v=' + m[1]);
   }).catch(function() {});
 }
+if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('../sw.js', { scope: '../' }).catch(function() {}); } catch (e) {} }
 verNueva(); setInterval(function() { if (!document.hidden) verNueva(); }, 300000);
 document.addEventListener('visibilitychange', function() { if (!document.hidden) verNueva(); });
 (function() {

@@ -30,3 +30,22 @@ self.addEventListener('fetch', function(e) {
     });
   }));
 });
+
+// ── Notificaciones de Vulcan en el celular (27/11/2026): llegan aunque la app esté cerrada; al tocarla se abre la app ──
+self.addEventListener('push', function(e) {
+  var d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'Vulcan Tread', body: e.data ? e.data.text() : '' }; }
+  var base = self.registration.scope;
+  e.waitUntil(self.registration.showNotification(d.title || 'Vulcan Tread', {
+    body: d.body || '', icon: base + 'icono-vulcan-192.png', badge: base + 'icono-vulcan-192.png',
+    tag: d.tag || undefined, renotify: !!d.tag, data: { url: new URL(d.url || '/clientes/', base).href }
+  }));
+});
+self.addEventListener('notificationclick', function(e) {
+  e.notification.close();
+  var url = (e.notification.data && e.notification.data.url) || new URL('/clientes/', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(ls) {
+    for (var i = 0; i < ls.length; i++) { if (ls[i].url.indexOf('/clientes/') !== -1 && 'focus' in ls[i]) { ls[i].navigate(url).catch(function() {}); return ls[i].focus(); } }
+    return self.clients.openWindow(url);
+  }));
+});
