@@ -1715,7 +1715,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611271555';
+var EMA_BUILD = '202611271600';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -26487,7 +26487,7 @@ async function emgCerrarOk(id, est) {
 function abrirAppClientes() {
   if (!SES || !/SUPER|ADMIN/.test(String(SES.rol || '').toUpperCase())) { toast('Solo SUPER y ADMINISTRADOR pueden ver la app de clientes', 'r2'); return; }
   try { localStorage.setItem('vulcan_cli_ses', JSON.stringify({ token: SES.token, nombre: SES.nombre, rol: String(SES.rol).toUpperCase(), usuario: SES.usuario })); localStorage.removeItem('vulcan_cli_ver'); } catch (e) {}
-  window.open(location.origin + location.pathname.replace(/[^\/]*$/, '') + 'clientes/', '_blank');
+  window.open(location.origin + location.pathname.replace(/[^\/]*$/, '') + 'clientes/?v=' + Date.now(), '_blank');
 }
 document.addEventListener('click', function(e) { var it = e.target && e.target.closest && e.target.closest('.nav-item[data-acc="app-cli"]'); if (!it) return; e.stopImmediatePropagation(); e.preventDefault(); abrirAppClientes(); }, true);
 </script>

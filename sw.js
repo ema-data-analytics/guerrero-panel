@@ -13,7 +13,8 @@ self.addEventListener('fetch', function(e) {
   var imagen = mismo && /\.(png|jpe?g|svg|ico|webmanifest)$/i.test(url.pathname);
   if (!(mismo && req.mode === 'navigate') && !libreria && !imagen) return;
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).then(function(r) {
+    // cache 'no-cache': siempre le pregunta al servidor si hay versión nueva (GitHub guarda las páginas 10 minutos)
+    e.respondWith(fetch(new Request(req.url, { cache: 'no-cache', credentials: 'same-origin' })).then(function(r) {
       if (r && r.ok) { var c = r.clone(); caches.open(CACHE).then(function(ca) { ca.put(url.pathname, c); }); }
       return r;
     }).catch(function() {

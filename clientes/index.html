@@ -111,6 +111,7 @@ textarea.in{height:auto;padding:10px 12px;resize:vertical}
 <script>
 /* App de clientes · Vulcan Tread (27/11/2026). Solo lectura de la flota de la empresa + botón de emergencia.
    Todo pasa por la función gs del sistema con el pase de sesión del usuario (rol CLIENTE_APP). */
+var APP_VER = '202611271600';
 var CL = { ses: null, tab: 'ini', data: {}, eq: '', ver: '', emg: null, cub: null, pend: null };
 var CL_PV = '99990000000000';
 var CL_KEY = 'vulcan_cli_ses';
@@ -543,6 +544,14 @@ setInterval(function() {
   }).catch(function() {});
 }, 30000);
 
+// La app se fija si hay una versión nueva publicada y se recarga sola (el navegador puede tener guardada la vieja)
+function verNueva() {
+  fetch('./?chk=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.text(); }).then(function(t) {
+    var m = t.match(/var APP_VER = '(\d+)'/); if (m && m[1] > APP_VER) location.replace(location.pathname + '?v=' + m[1]);
+  }).catch(function() {});
+}
+verNueva(); setInterval(function() { if (!document.hidden) verNueva(); }, 300000);
+document.addEventListener('visibilitychange', function() { if (!document.hidden) verNueva(); });
 (function() {
   var s = null; try { s = JSON.parse(lsGet(CL_KEY) || 'null'); } catch (e) { s = null; }
   if (s && s.token) { CL.ses = s; arrancar(); } else pintarLogin('');
