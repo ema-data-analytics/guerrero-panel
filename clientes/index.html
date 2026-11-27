@@ -65,6 +65,7 @@ textarea.in{height:auto;padding:10px 12px;resize:vertical}
 .nav button{background:none;border:0;font-size:12.5px;color:var(--dim);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative}
 .nav button svg{width:22px;height:22px}
 .nav button.on{color:var(--or);font-weight:700}
+.nav .bad[hidden]{display:none}
 .nav .bad{position:absolute;top:7px;left:calc(50% + 6px);background:var(--red);color:#fff;border-radius:999px;font-size:10px;font-weight:700;min-width:17px;height:17px;display:flex;align-items:center;justify-content:center;padding:0 4px}
 .emg{position:fixed;right:max(16px,calc(50% - 364px));bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:21;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
 .bt-rojo{position:relative;overflow:hidden;background:var(--red);color:#fff;border:0;border-radius:999px;padding:13px 18px;font-weight:700;font-size:15px;box-shadow:0 6px 18px rgba(160,30,20,.35);cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -205,6 +206,7 @@ function pintarMarco() {
 function icoMsg() { return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 19.5 5.3 15A8 8 0 1 1 9 18.7z"/></svg>'; }
 function marcoVisible(si) { var e = $('emg'), n = document.querySelector('.nav'); if (e) e.style.display = si ? '' : 'none'; if (n) n.style.display = si ? '' : 'none'; }
 function cabecera(tit, sub, back) {
+  if (!back && CL.tab !== 'ini' && tit !== 'Ver la app como…') return '<div class="hd"><button class="back" onclick="ir(\'ini\')">‹ Inicio</button><div class="top"><h1>' + esc(tit) + '</h1><button class="cta" onclick="cuenta()">' + (esAdmin() ? 'Vista previa' : 'Mi cuenta') + '</button></div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
   return '<div class="hd"><div class="top">' + (back ? '' : '<h1>' + esc(tit) + '</h1><button class="cta" onclick="cuenta()">' + (esAdmin() ? 'Vista previa' : 'Mi cuenta') + '</button>') + '</div>' +
     (back ? '<button class="back" onclick="' + back + '">‹ Volver</button><h1>' + esc(tit) + '</h1>' : '') + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
 }
@@ -354,7 +356,7 @@ function dibujo(u) {
   return s + '</svg>';
 }
 function posTxt(u, idPos) { var p = (u.CFG.POS || []).filter(function(x) { return String(x.ID) === String(idPos); })[0]; if (!p) return ''; if (p.AUX) return 'Auxilio ' + p.COD;
-  return 'Eje ' + p.Y + ' · ' + (p.LADO === 'I' ? 'izquierda' : 'derecha') + (p.UB === 'E' ? ' afuera' : p.UB === 'I' ? ' adentro' : '') + ' (' + p.COD + ')'; }
+  return 'Eje ' + p.Y + ' · ' + (p.LADO === 'I' ? 'izquierda' : 'derecha') + (p.UB === 'EXT' || p.UB === 'E' ? ' afuera' : p.UB === 'INT' || p.UB === 'I' ? ' adentro' : '') + ' (' + p.COD + ')'; }
 function selCub(idEq, idPos) {
   var u = (CL.data.gom.MAPA || []).filter(function(x) { return String(x.ID) === String(idEq); })[0]; if (!u) return;
   var m = montDe(u, idPos), c = m && m.C, el = $('gm-sel');
@@ -379,7 +381,8 @@ function verCubierta(id) {
       '<div class="kpi"><span>Recapados</span><b' + (max !== '' && c.RECAP >= max ? ' style="color:var(--warn)"' : '') + '>' + c.RECAP + (max !== '' ? '<span style="font-size:15px"> de ' + max + '</span>' : '') + '</b></div>' +
       '<div class="kpi"><span>Km recorridos</span><b>' + (nf(r.KM_TOTAL) || '0') + '</b></div></div>';
     if (max !== '' && c.RECAP >= max) h += '<div class="aviso g1" style="cursor:default"><i class="dot"></i><span>Esta cubierta ya llegó al máximo de recapados para su casco.</span></div>';
-    if (c.UBIC) h += '<div class="card pad s">Dónde está: <b style="color:var(--fg)">' + esc(c.UBIC) + '</b></div>';
+    var UBT = { UNIDAD: 'Montada en una unidad', TALLER: 'En el taller de Vulcan', DEPOSITO: 'En el depósito de Vulcan', CLIENTE: 'Entregada a tu empresa', RECAPADO: 'En la planta de recapado', BAJA: 'Dada de baja', ANULADO: 'Dada de baja' };
+    if (c.UBIC) h += '<div class="card pad s">Dónde está: <b style="color:var(--fg)">' + esc(UBT[c.UBIC] || c.UBIC) + '</b></div>';
     var hist = [];
     (r.MOVS || []).forEach(function(x) { var t = esc(x.TIPO); if (x.UNIDAD) t += ' · ' + esc(x.UNIDAD); if (x.DE && x.A && x.DE !== x.A) t += ' · de ' + esc(x.DE) + ' a ' + esc(x.A); else if (x.A) t += ' · ' + esc(x.A);
       if (x.KM !== '') t += ' · ' + nf(x.KM) + ' km'; if (x.CAUSA) t += ' · ' + esc(x.CAUSA);
