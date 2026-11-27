@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "335e0f3298bc"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
+<script>window.EMA_MOTOR="supabase";window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "3efb12f9474b"};window.EMA_ORIGEN="github";window.google={script:{run:{}}};</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <script>
 // Acceso directo de la tablet/celular: con ?puesto entra directo a las estaciones (sin menú) y se puede "Agregar a pantalla de inicio"
@@ -1708,7 +1708,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611262206';
+var EMA_BUILD = '202611270239';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -12988,15 +12988,20 @@ async function puCargar() {
   // Rápido: los datos de la estación y sus herramientas se piden juntos (en paralelo), no uno después del otro
   var fija = PU_.est && !puTodas();
   var pEq = fija ? gsRun('gsPC_PuestoEquipos', PU_.est).catch(function() { return null; }) : Promise.resolve(null);
-  try { PU_.d = await gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est); } catch (e) { puEl().innerHTML = '<div class="al al-r">' + puEsc(e.message) + '</div>'; return; }
-  PU_.dt = PU_.d.ahora ? PU_.d.ahora - Date.now() : 0;
+  try { PU_.d = await puConTiempo(gsRun('gsPC_PuestoDatos', puTodas() ? '' : PU_.est), 20000); PUQ_.off = 0; }
+  catch (e) {
+    var cch = puSinSenal(e) ? puCacheLeer(PU_.est) : null;
+    if (!cch) { puEl().innerHTML = '<div class="al al-r">' + puEsc(puSinSenal(e) ? 'Sin internet y esta tablet todavía no tiene la estación guardada: esperá que vuelva la señal' : e.message) + '</div>'; return; }
+    PU_.d = cch.D; PUQ_.off = cch.F || 1;
+  }
+  if (!PUQ_.off) { puCacheGuardar(); setTimeout(puPrefetch, 1500); }
+  PU_.dt = PU_.d.ahora && !PUQ_.off ? PU_.d.ahora - Date.now() : (PU_.dt || 0);
   // Usuario con estaciones asignadas (Seguridad > Usuarios > 🛠 Estaciones): entra directo a la suya y no ve las otras
   PU_.mis = (PU_.d.MIS_EST || []).map(String);
   if (PU_.mis.length && (puTodas() || !PU_.est || PU_.mis.indexOf(String(PU_.est)) === -1)) { PU_.est = PU_.mis[0]; return puCargar(); }
   if (PU_.est && !puTodas() && !PU_.d.estacion) PU_.est = '';
   PU_.eq = await pEq;
-  await puPedContar();
-  if (PU_.est) await puPesajeCargar(); else PU_.pes = null;
+  if (!PUQ_.off) { await puPedContar(); if (PU_.est) await puPesajeCargar(); else PU_.pes = null; } else PU_.pes = null;
   puPintar();
   // Viene del tablero de la línea: abre esa cubierta (su mapa de estaciones) para seguir desde ahí
   // Viene del modo «Marcar» del tablero: abre directo la ficha de esa estación
@@ -13018,8 +13023,9 @@ function puPintar() {
     PU_.est ? '<div class="pu-top"><div class="est"><small>Estación de esta tablet</small>' + puEsc(puNomEst(PU_.est)) + '</div>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="puVerHerr()"><i class="fas fa-tools"></i> ' + (PU_.eq && !PU_.eq.controlDiario ? 'Se rompió / Me falta' : 'Herramientas') + '</button><button onclick="puPedir()">📦 Pedir insumo' + (PU_.pedMios ? ' (' + PU_.pedMios + ' pendiente' + (PU_.pedMios === 1 ? '' : 's') + ')' : '') + '</button>' + (PU_.pedPuede ? '<button onclick="puPedidosEnc()">📥 Pedidos de estaciones' + (PU_.pedN ? ' (' + PU_.pedN + ')' : '') + '</button>' : '') + '<button onclick="puVerRetiro()"><i class="fas fa-hand-paper"></i> Retirar consumibles</button><button onclick="puOperario()"><i class="fas fa-user"></i> ' + puEsc(PU_.oper || 'Operario: tocá para poner tu nombre') + '</button>' +
     ((PU_.mis || []).length === 1 ? '' : '<button onclick="puCambiarEst()">Cambiar estación</button>') + '<button onclick="pcAyuda(\'puesto\')">❓ Ayuda</button>' + (document.body.classList.contains('modo-puesto') ? '<button onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Salir</button>' : '') + '</div></div>' : '';
-  el.innerHTML = '<div class="pu-wrap">' + top + '<div id="pu-body"></div></div>' +
+  el.innerHTML = '<div class="pu-wrap">' + top + '<div id="pu-cola"></div><div id="pu-body"></div></div>' +
     '<div class="pu-pie" id="pu-pie" style="display:none"><div class="in"><div class="pu-falta" id="pu-falta"></div><button class="pu-btn pu-ok" id="pu-ok" onclick="puConfirmar()">✓ Confirmar paso</button></div></div>';
+  puColaPintar();
   if (!PU_.est) return puElegirEst();
   if (PU_.vista === 'panel') return puPintarPanel();
   if (PU_.vista === 'ficha') return puFicha();
@@ -13170,9 +13176,19 @@ async function puAbrir(idOt, idCub, estF) {
   if (estF) PU_.estF = String(estF);
   $id('pu-body').innerHTML = '<div class="card"><div class="card-body tdim">Abriendo…</div></div>';
   var f;
-  try { f = await gsRun('gsPC_PuestoFicha', idOt, idCub, puE()); } catch (e) { toast(e.message, 'r2'); return puLista(); }
+  PU_.fOff = 0;
+  try { f = await puConTiempo(gsRun('gsPC_PuestoFicha', idOt, idCub, puE()), 15000); PUQ_.off = 0; if (f && f.ok) puFichaGuardar(f, puE()); }
+  catch (e) {
+    if (!puSinSenal(e)) { toast(e.message, 'r2'); return puLista(); }
+    f = puFichaLeer(idOt, idCub, puE());
+    if (!f) { toast('📵 Sin internet: esta cubierta no quedó guardada en la tablet para esta estación. Esperá que vuelva la señal.', 'r2'); return puLista(); }
+    PU_.fOff = 1; if (!PUQ_.off) PUQ_.off = Date.now();
+  }
   if (!f || !f.ok) { toast((f && f.error) || 'No se pudo abrir', 'r2'); return puLista(); }
-  if (f.autoclave && !f.registro) return puAutoclave(idOt);
+  if (puPendCola(idOt, idCub, puE())) { toast('Ese paso ya está confirmado en la tablet: se manda solo cuando vuelve la señal', 'w'); return puLista(); }
+  if (f.autoclave && !f.registro) { if (PU_.fOff) { toast('📵 El autoclave necesita internet', 'r2'); return puLista(); } return puAutoclave(idOt); }
+  if (PU_.fOff && f.control && !f.registro) { toast('📵 La inspección final necesita internet', 'r2'); return puLista(); }
+  PU_.opk = 'pu-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
   puPararReloj();
   PU_.ctrl = f.control && !f.registro ? { dec: '', ests: [], motivo: '', txt: '' } : null;
   PU_.f = f; PU_.vista = 'ficha'; PU_.t0 = null; PU_.seg = 0; PU_.res = 'OK'; PU_.obs = ''; PU_.aut = { u: '', c: '' }; PU_.verOtros = false;
@@ -13407,7 +13423,7 @@ function puFicha() {
     (PU_.operF ? '<span class="pu-tag" style="font-size:15px">👷 ' + puEsc(PU_.operF) + '</span>' : '') + (PU_.corriendo ? '<button class="pu-btn pu-stop" onclick="puTermine()">■ TERMINÉ</button>' : (PU_.t0 === null ? '<button class="pu-btn pu-go" onclick="puEmpezar()">▶ EMPEZAR</button>' : '<span class="pu-tag ok">✓ ' + puDur(PU_.seg) + '</span> <button class="pu-btn pu-min" onclick="puEmpezar(true)">Seguir</button>')) + (PU_.t0 !== null ? ' <button class="pu-btn pu-min" onclick="puRelCancelar()" title="Borrar el tiempo y empezar de cero">↺ Cero</button>' : '') + '</div>';
   h += timer + '<button class="pu-btn pu-back" onclick="puVolver()">← Otra cubierta</button></div>';
   // 26/11/2026 (Anibal): mandar la cubierta a una estación anterior (con el motivo); lo que se use allá se suma
-  if (f.volverA && f.volverA.length && !PU_.corriendo) h += '<button class="pu-btn pu-min" style="width:max-content" onclick="puVolverAnt()">↩ Volver a una estación anterior</button>';
+  if (f.volverA && f.volverA.length && !PU_.corriendo && !PU_.fOff) h += '<button class="pu-btn pu-min" style="width:max-content" onclick="puVolverAnt()">↩ Volver a una estación anterior</button>';
   if (f.cub.PASADA > 1 && f.cub.PULIR) h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:19px;font-weight:700;color:var(--warn)">✂ Exceso de material: repulir en ' + puEsc((f.cub.REHACER || []).map(function(e) { return (e.NRO || e.ORDEN) + ' · ' + e.NOMBRE; }).join(', ')) + '</div>' +
     '<div style="font-size:15px">' + puEsc(f.cub.MOTIVO_REPROCESO) + '</div><div class="tdim" style="font-size:14px">Después de repulir va directo a Pintura. No vuelve al autoclave.</div></div>';
   else if (f.cub.PASADA > 1) h += '<div class="pu-reg" style="border-color:var(--warn);background:var(--warn-light)"><div style="font-size:19px;font-weight:700;color:var(--warn)">↻ Corrección: vuelve a ' + puEsc((f.cub.REHACER || []).map(function(e) { return (e.NRO || e.ORDEN) + ' · ' + e.NOMBRE; }).join(', ')) + '</div>' +
@@ -13797,7 +13813,8 @@ function puEmpezar(seguir) {
   var f = PU_.f; if (!f) return;
   var go = async function(oper) {
     var r, b = document.querySelector('[onclick^="puEmpezar"]'); if (b) { b.disabled = true; b.textContent = 'Empezando…'; }
-    try { r = await gsRun('gsPC_RelojEmpezar', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE(), OPERARIO: oper, SEGUIR: !!seguir }); } catch (e) { toast(e.message, 'r2'); return; }
+    try { r = await gsRun('gsPC_RelojEmpezar', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE(), OPERARIO: oper, SEGUIR: !!seguir }); }
+    catch (e) { if (!puSinSenal(e)) { toast(e.message, 'r2'); return; } r = puRelLocal('EMPEZAR', oper, !!seguir); }
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo empezar', 'r2'); return; }
     PU_.dt = r.AHORA - Date.now(); puRelGuardar(r.RELOJ); puRelAplicar(); puFicha();
     toast('▶ ' + puIdTxt(f.cub.MARCA, f.cub.DOT) + ' · ' + r.RELOJ.OPERARIO + ' empezó. Podés volver y empezar otra cubierta.', 'g');
@@ -13812,13 +13829,14 @@ function puEmpezar(seguir) {
 async function puTermine() {
   var f = PU_.f; if (!f) return;
   var r, b = document.querySelector('[onclick="puTermine()"]'); if (b) { b.disabled = true; b.textContent = 'Guardando…'; }
-  try { r = await gsRun('gsPC_RelojParar', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE() }); } catch (e) { toast(e.message, 'r2'); return; }
+  try { r = await gsRun('gsPC_RelojParar', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE() }); }
+  catch (e) { if (!puSinSenal(e)) { toast(e.message, 'r2'); return; } r = puRelLocal('PARAR'); }
   if (!r || !r.ok) { toast((r && r.error) || 'No se pudo', 'r2'); return; }
   PU_.dt = r.AHORA - Date.now(); puRelGuardar(r.RELOJ); puRelAplicar(); puFicha();
 }
 async function puRelCancelar() {
   var f = PU_.f; if (!f || !(await uiConfirmar('¿Borrar el tiempo de esta cubierta y empezar de cero?', 'Sí, borrar'))) return;
-  try { await gsRun('gsPC_RelojAnular', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE() }); } catch (e) { toast(e.message, 'r2'); return; }
+  try { await gsRun('gsPC_RelojAnular', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE() }); } catch (e) { if (!puSinSenal(e)) { toast(e.message, 'r2'); return; } }
   puRelQuitar(f.ot.ID_OT, f.cub.ID_CUB, puE()); puRelAplicar(); puFicha();
 }
 // Arriba de la lista: los trabajos que tienen el reloj en marcha o terminado sin confirmar. Se tocan para volver a esa cubierta.
@@ -13901,9 +13919,15 @@ async function puConfirmar() {
   }
   b.disabled = true; b.textContent = 'Guardando…';
   clearTimeout(PU_.borrT);
+  // 26/11/2026: cada paso lleva su clave; si se corta internet queda guardado en la tablet y se manda solo al volver (el servidor no lo registra dos veces)
+  var pay = { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE(), RESULTADO: PU_.res, OBSERVACION: PU_.obs, OPERARIO: PU_.operF || PU_.oper,
+      CONSUMOS: cons, ADICIONALES: adic, MINUTOS: PU_.d.tiempoOperario && !noAp ? Math.round(PU_.seg / 60 * 100) / 100 : '', AUTORIZA: noAp ? null : aut, INSPECCION: insp, SOBRANTE: PU_.sobra || 'VUELVE',
+      OP_KEY: PU_.opk || ('pu-' + Date.now().toString(36)), FECHA_REAL: Date.now() + (PU_.dt || 0) };
+  var sinRed = typeof navigator !== 'undefined' && navigator.onLine === false;
+  if (sinRed || PU_.fOff) return puConfirmarSinRed(pay, aut, cons, adic);
   try {
-    var r = await gsRun('gsPC_Registrar', { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE(), RESULTADO: PU_.res, OBSERVACION: PU_.obs, OPERARIO: PU_.operF || PU_.oper,
-      CONSUMOS: cons, ADICIONALES: adic, MINUTOS: PU_.d.tiempoOperario && !noAp ? Math.round(PU_.seg / 60 * 100) / 100 : '', AUTORIZA: noAp ? null : aut, INSPECCION: insp, SOBRANTE: PU_.sobra || 'VUELVE' });
+    var r;
+    try { r = await puConTiempo(gsRun('gsPC_Registrar', pay), 25000); } catch (eR) { if (puSinSenal(eR)) return puConfirmarSinRed(pay, aut, cons, adic); throw eR; }
     if ($id('pu-aut-c')) $id('pu-aut-c').value = '';
     if (!r || !r.ok) { toast((r && r.error) || 'No se pudo guardar', 'r2'); b.disabled = false; b.textContent = '✓ Confirmar paso'; return; }
     b.textContent = '✓ Confirmar paso';   // si no, en la estación siguiente el botón queda diciendo "Guardando…"
@@ -13948,8 +13972,8 @@ function puListo() {
   var wrap = document.querySelector('#page-puesto-estacion .pu-wrap'); if (wrap) wrap.classList.remove('pu-enficha');
   puPie(false);
   var x = PU_.fin, cd = puCubD(x.cub);
-  $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">' + (x.dec === 'RECHAZO' ? '⛔' : (x.dec === 'REPROCESO' ? '↻' : (x.dec === 'PULIR' ? '✂' : '✅'))) + '</div>' + puIdHTML(x.marca, x.dot) + '<h2>Paso confirmado</h2>' +
-    '<div class="tdim" style="font-size:18px">' + (x.min ? 'Tardó ' + puDur(x.min * 60) + ' · ' : '') + (x.n ? x.n + ' insumo' + (x.n === 1 ? '' : 's') + ' cargado' + (x.n === 1 ? '' : 's') + ' · ya se descontó del stock' : 'esta estación no lleva insumos') + '</div>' +
+  $id('pu-body').innerHTML = '<div class="pu-listo"><div class="big">' + (x.dec === 'RECHAZO' ? '⛔' : (x.dec === 'REPROCESO' ? '↻' : (x.dec === 'PULIR' ? '✂' : '✅'))) + '</div>' + puIdHTML(x.marca, x.dot) + '<h2>Paso confirmado</h2>' + (x.sinRed ? '<div class="al" style="background:#fef3c7;border-color:#f59e0b;font-size:17px">📵 <b>Guardado en la tablet.</b> Se manda solo cuando vuelve internet; el stock se descuenta recién ahí.</div>' : '') +
+    '<div class="tdim" style="font-size:18px">' + (x.min ? 'Tardó ' + puDur(x.min * 60) + ' · ' : '') + (x.n ? x.n + ' insumo' + (x.n === 1 ? '' : 's') + ' cargado' + (x.n === 1 ? '' : 's') + (x.sinRed ? '' : ' · ya se descontó del stock') : 'esta estación no lleva insumos') + '</div>' +
     (x.sinStock.length ? '<div style="color:var(--danger);font-weight:700">⚠ Sin stock en el sistema: ' + puEsc(x.sinStock.join(', ')) + '</div>' : '') +
     (x.reemplazos.length ? '<div style="color:var(--warn);font-weight:700">Reemplazo autorizado: ' + puEsc(x.reemplazos.join('; ')) + '</div>' : '') +
     ((x.devuelto || []).filter(function(v) { return v.VUELVE > 0; }).length ? '<div style="font-size:18px;color:var(--success);font-weight:700">↩ Volvió al stock: ' + x.devuelto.filter(function(v) { return v.VUELVE > 0; }).map(function(v) { return puF(v.VUELVE) + ' ' + puEsc(v.UNIDAD) + ' de ' + puEsc(v.NOMBRE); }).join(' · ') + '</div>' : '') +
@@ -14467,6 +14491,103 @@ async function puRtGuardar() {
     toast(av.length ? '⚠ Retiro guardado. Consumo alto: ' + av.join(', ') : 'Retiro guardado ✓' + (r.SIN_STOCK.length ? ' · sin stock en el sistema: ' + r.SIN_STOCK.join(', ') : ''), av.length ? 'r2' : 'g');
     PU_.vista = 'lista'; await puCargar();
   } catch (e) { toast(e.message, 'r2'); }
+}
+
+// ════════════════════════════════════════════════════════════════
+// TABLET SIN INTERNET (26/11/2026, Anibal, punto 8 de la línea)
+// Con señal, la tablet guarda la lista de su estación y la ficha de cada cubierta que espera ahí. Si se corta internet:
+// se sigue mostrando la lista, se abre la ficha guardada, el reloj corre en la tablet y el paso confirmado queda guardado
+// en la tablet con su clave; cuando vuelve la señal se manda solo, en orden (el servidor no lo registra dos veces).
+// Sin internet no se puede: autoclave, inspección final, reemplazo con clave, pesaje, pedidos ni volver a una estación.
+// ════════════════════════════════════════════════════════════════
+var PUQ_ = { off: 0, pre: 0 };
+// Si el servidor no contesta en ese tiempo se toma como sin internet (el paso lleva su clave: si igual llegó, no se duplica)
+function puConTiempo(p, ms) { return new Promise(function(ok, mal) { var t = setTimeout(function() { mal(new Error('Error de conexión con el servidor (no contestó)')); }, ms); p.then(function(v) { clearTimeout(t); ok(v); }, function(e) { clearTimeout(t); mal(e); }); }); }
+function puSinSenal(e) {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
+  var m = e && e.message ? e.message : String(e || '');
+  return m.indexOf('Error de conexión con el servidor') !== -1 || m.indexOf('Failed to fetch') !== -1 || m.indexOf('NetworkError') !== -1;
+}
+function puCacheK(est) { return 'pu_d_' + (est || 'TODAS'); }
+function puCacheGuardar() { try { if (PU_.d && PU_.est) localStorage.setItem(puCacheK(PU_.est), JSON.stringify({ F: Date.now(), D: PU_.d })); } catch (e) {} }
+function puCacheLeer(est) { try { return JSON.parse(localStorage.getItem(puCacheK(est)) || 'null'); } catch (e) { return null; } }
+function puFichaK(ot, cub, est) { return 'pu_f_' + ot + '|' + cub + '|' + est; }
+function puFichaGuardar(f, est) {
+  if (!f || !f.ot || !f.cub || !est) return;
+  var v = JSON.stringify({ F: Date.now(), D: f });
+  try { localStorage.setItem(puFichaK(f.ot.ID_OT, f.cub.ID_CUB, est), v); }
+  catch (e) { puFichasLimpiar(0); try { localStorage.setItem(puFichaK(f.ot.ID_OT, f.cub.ID_CUB, est), v); } catch (e2) {} }
+}
+function puFichaLeer(ot, cub, est) { try { var x = JSON.parse(localStorage.getItem(puFichaK(ot, cub, est)) || 'null'); return x ? x.D : null; } catch (e) { return null; } }
+function puFichaEdad(ot, cub, est) { try { var x = JSON.parse(localStorage.getItem(puFichaK(ot, cub, est)) || 'null'); return x ? Date.now() - x.F : 1e15; } catch (e) { return 1e15; } }
+function puFichaBorrar(ot, cub, est) { try { localStorage.removeItem(puFichaK(ot, cub, est)); } catch (e) {} }
+// Borra las fichas guardadas de más de 2 días (o todas si no hay lugar)
+function puFichasLimpiar(dias) {
+  try { var lim = Date.now() - (dias === 0 ? -1 : (dias || 2) * 864e5), ks = [];
+    for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('pu_f_') === 0) ks.push(k); }
+    ks.forEach(function(k) { var x = null; try { x = JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) {} if (!x || x.F < lim) localStorage.removeItem(k); });
+  } catch (e) {}
+}
+// Con señal: baja la ficha de cada cubierta que espera en esta estación (o en su estación siguiente si la tablet recorre todas)
+async function puPrefetch() {
+  if (PUQ_.off || PUQ_.pre || !PU_.d || !PU_.est) return;
+  PUQ_.pre = 1;
+  try {
+    puFichasLimpiar(2);
+    var cs = (PU_.d.cubiertas || []).filter(function(c) { return c.SIGUIENTE && (puTodas() || String(c.SIGUIENTE.ID_ESTACION) === String(PU_.est)); }).slice(0, 30);
+    for (var i = 0; i < cs.length; i++) {
+      var c = cs[i], e = String(c.SIGUIENTE.ID_ESTACION), ot = c.ID_OT;
+      if (!ot || puFichaEdad(ot, c.ID_CUB, e) < 15 * 60000) continue;
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) break;
+      try { var f = await gsRun('gsPC_PuestoFicha', ot, c.ID_CUB, e); if (f && f.ok) puFichaGuardar(f, e); } catch (x) { if (puSinSenal(x)) break; }
+    }
+  } finally { PUQ_.pre = 0; }
+}
+// Reloj sin internet: corre en la tablet; el tiempo va con el paso confirmado
+function puRelLocal(acc, oper, seguir) {
+  var f = PU_.f, ahora = Date.now() + (PU_.dt || 0), r = puRelDe(f.ot.ID_OT, f.cub.ID_CUB, puE());
+  var rel = { ID_OT: f.ot.ID_OT, ID_CUB: f.cub.ID_CUB, ID_ESTACION: puE(), MARCA: f.cub.MARCA, OPERARIO: oper || (r && r.OPERARIO) || PU_.oper || '', LOCAL: 1 };
+  if (acc === 'EMPEZAR') { rel.ESTADO = 'CORRIENDO'; rel.INICIO = seguir && r && r.ESTADO === 'PARADO' ? ahora - (r.SEG || 0) * 1000 : ahora; }
+  else { rel.ESTADO = 'PARADO'; rel.INICIO = r ? r.INICIO : ahora; rel.SEG = r && r.ESTADO === 'CORRIENDO' ? Math.max(0, Math.round((ahora - r.INICIO) / 1000)) : (r ? r.SEG || 0 : 0); rel.FIN = ahora; }
+  puRelGuardar(rel); puCacheGuardar();
+  toast('📵 Sin internet: el reloj corre en la tablet', 'w');
+  return { ok: true, AHORA: ahora, RELOJ: rel };
+}
+// ¿Ese paso ya está guardado en la tablet esperando la señal?
+function puColaLeer() { return typeof flqLeer === 'function' ? flqLeer() : []; }
+function puPendCola(ot, cub, est) { return puColaLeer().some(function(q) { return q.FN === 'gsPC_Registrar' && q.O && String(q.O.ID_OT) === String(ot) && String(q.O.ID_CUB) === String(cub) && String(q.O.ID_ESTACION) === String(est); }); }
+async function puConfirmarSinRed(pay, aut, cons, adic) {
+  var b = $id('pu-ok'), f = PU_.f;
+  var vuelve = function() { if (b) { b.disabled = false; b.textContent = '✓ Confirmar paso'; } };
+  if (aut) { vuelve(); toast('📵 Sin internet no se puede autorizar un reemplazo con clave: esperá que vuelva la señal (o usá lo de la receta)', 'r2'); return; }
+  if (typeof flEnviar !== 'function' || typeof flqLeer !== 'function') { vuelve(); toast('No se pudo guardar el paso en la tablet: esperá la señal', 'r2'); return; }
+  if (puPendCola(pay.ID_OT, pay.ID_CUB, pay.ID_ESTACION)) { vuelve(); toast('Ese paso ya está guardado en la tablet', 'w'); return; }
+  // Si en esta tablet hay un paso anterior de la misma cubierta sin mandar, este va después (la cola respeta el orden)
+  var l = flqLeer(); l.push({ FN: 'gsPC_Registrar', O: pay, D: 'Estación ' + puNomEst(pay.ID_ESTACION) + ' · ' + puIdTxt(f.cub.MARCA, f.cub.DOT), F: Date.now(), U: (typeof SES !== 'undefined' && SES && SES.nombre) || '' });
+  flqGrabar(l); if (typeof flqProgramar === 'function') flqProgramar();
+  if (b) b.textContent = '✓ Confirmar paso';
+  puRelQuitar(f.ot.ID_OT, f.cub.ID_CUB, puE()); PU_.borrKey = '';
+  puFichaBorrar(f.ot.ID_OT, f.cub.ID_CUB, puE());
+  PU_.fin = { marca: f.cub.MARCA, dot: f.cub.DOT || '', min: pay.MINUTOS || '', n: cons.filter(function(c) { return !c.NO_USO; }).length + adic.length, desvios: [], sinStock: [], reemplazos: [], sigue: puSiguiente(), sinRed: 1 };
+  PU_.fin.ot = f.ot.ID_OT; PU_.fin.cub = f.cub.ID_CUB; PU_.fin.rechazo = null; PU_.fin.devuelto = [];
+  if (pay.INSPECCION && pay.INSPECCION.APTA === false) PU_.fin.sigue = 'NO APTA: se registra cuando vuelve la señal';
+  else puMarcarHecha(f.cub.ID_CUB, puE());
+  puCacheGuardar(); puColaPintar();
+  PU_.vista = 'listo'; puListo();
+}
+function puColaPintar() {
+  var el = $id('pu-cola'); if (!el) return;
+  var n = puColaLeer().filter(function(q) { return q.FN === 'gsPC_Registrar'; }).length, m = (typeof flqLeer === 'function' ? flqLeer(FLQ_R) : []).filter(function(q) { return q.FN === 'gsPC_Registrar'; }).length;
+  var off = PUQ_.off ? '<div class="al mb2" style="background:#fee2e2;border-color:#ef4444;font-size:16px"><b>📵 Sin internet</b> · la tablet sigue con lo que tenía guardado' + (PUQ_.off > 1 ? ' (de las ' + new Date(PUQ_.off).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + ')' : '') + '. Los pasos que confirmes quedan guardados y se mandan solos cuando vuelve la señal. <button class="pu-chip" onclick="puCargar()">↻ Probar de nuevo</button></div>' : '';
+  el.innerHTML = off + (n || m ? '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' +
+    (n ? '<button class="pu-chip" style="background:#fef3c7;color:#92400e;border:2px solid #f59e0b" onclick="flqVer()">📵 ' + n + ' paso' + (n === 1 ? '' : 's') + ' guardado' + (n === 1 ? '' : 's') + ' en la tablet, sin mandar · ver</button>' : '') +
+    (m ? '<button class="pu-chip" style="background:#fee2e2;color:#991b1b;border:2px solid #ef4444" onclick="flqVer()">⚠ ' + m + ' paso' + (m === 1 ? '' : 's') + ' hecho' + (m === 1 ? '' : 's') + ' sin internet no se registr' + (m === 1 ? 'ó' : 'aron') + ' · avisá al encargado · ver</button>' : '') + '</div>' : '');
+}
+// Cuando la cola terminó de mandarse: se vuelve a pedir la lista de la estación
+function puColaListo() { var pg = puEl(); if (pg && !pg.classList.contains('hidden') && (PU_.vista === 'lista' || PU_.vista === 'listo')) puCargar(); else puColaPintar(); }
+if (typeof window !== 'undefined' && !window._puOff) { window._puOff = 1;
+  window.addEventListener('offline', function() { PUQ_.off = PUQ_.off || Date.now(); puColaPintar(); });
+  window.addEventListener('online', function() { setTimeout(function() { if (PUQ_.off && PU_.vista === 'lista') puCargar(); }, 2500); });
 }
 </script>
 
@@ -19661,18 +19782,20 @@ async function flqEnviarTodo(callado) {
   try {
     while (l.length) { var q = l[0];
       try { var r = await gsRun(q.FN, q.O); if (r && r.ok) ok++; else { mal++; var rc = flqLeer(FLQ_R); rc.push(Object.assign({}, q, { ERR: (r && r.error) || 'No se pudo' })); flqGrabar(rc, FLQ_R); } }
-      catch (e) { if (flSinSenal(e)) break; mal++; var rc2 = flqLeer(FLQ_R); rc2.push(Object.assign({}, q, { ERR: e.message })); flqGrabar(rc2, FLQ_R); }
+      catch (e) { if (flSinSenal(e) || String(e && e.message || '').indexOf('versión nueva') !== -1) break; mal++; var rc2 = flqLeer(FLQ_R); rc2.push(Object.assign({}, q, { ERR: e.message })); flqGrabar(rc2, FLQ_R); }
       l = flqLeer(); l.shift(); flqGrabar(l); }
   } finally { FLQ_.enviando = 0; }
   flqPintar();
   if (ok) toast('📶 Volvió la señal: se enviaron ' + ok + ' carga(s) hechas sin señal ✓', 'g');
   if (mal) toast('⚠ ' + mal + ' carga(s) hechas sin señal no se pudieron registrar: tocá el aviso de arriba para verlas', 'r2');
   if ((ok || mal) && typeof mtColaListo === 'function') mtColaListo();
+  if ((ok || mal) && typeof puColaListo === 'function') puColaListo();
   if ((ok || mal) && FL_.t === 'combustible' && FLC_.d) renderCombustible();
   if ((ok || mal) && FL_.t === 'mapa' && FLM_.d) { var e2 = FLM_.eq; FLM_.sel = null; flmCargar(e2); }
   else if (!ok && !mal && !callado) toast('Todavía no hay señal', 'w');
 }
 function flqPintar() {
+  if (typeof puColaPintar === 'function') puColaPintar();
   var el = $id('fl-cola'); if (!el) return; var n = flqLeer().length, m = flqLeer(FLQ_R).length;
   el.innerHTML = (n ? '<span class="fl-bd" style="background:#fef3c7;color:#92400e;cursor:pointer" onclick="flqVer()">📵 ' + n + ' sin enviar · ver</span> ' : '') + (m ? '<span class="fl-bd" style="background:#fee2e2;color:#991b1b;cursor:pointer" onclick="flqVer()">⚠ ' + m + ' no se registraron · ver</span>' : '');
 }
@@ -26285,5 +26408,9 @@ async function waPedirPl() {
 }
 </script>
 
+<script>
+// 26/11/2026: copia de la página en el aparato para poder abrir el sistema sin internet (la tablet de la estación)
+if ('serviceWorker' in navigator && location.protocol === 'https:') { try { navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {}); } catch (e) {} }
+</script>
 </body>
 </html>
