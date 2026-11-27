@@ -175,8 +175,14 @@ function arrancar() {
 function elegirEmpresa() {
   $('raiz').innerHTML = '<div class="app"><div class="hd"><div class="top"><h1>Ver la app como…</h1><button class="cta" onclick="salir()">Salir</button></div><div class="sub">Vista previa para Vulcan: elegí la empresa</div></div><div class="body" id="emp"><div class="load">Cargando empresas…</div></div></div>';
   llamar('gsApi', [CL.ses.token, 'gsCLI_Empresas', [{}]]).then(function(r) {
-    $('emp').innerHTML = '<div class="card">' + (r.EMPRESAS || []).map(function(e) { return '<button class="row" style="width:100%;background:none;border:0;text-align:left;cursor:pointer" onclick="verEmpresa(' + e.ID + ')"><div class="rowb"><span class="t">' + esc(e.NOMBRE) + '</span><span class="s">' + e.UNIDADES + ' unidades</span></div></button>'; }).join('') + '</div>';
+    CL.emps = r.EMPRESAS || [];
+    $('emp').innerHTML = '<input class="in" id="emp-q" placeholder="🔎 Buscar empresa…" oninput="empFiltrar()" autocomplete="off"><div class="card" id="emp-l"></div>';
+    empFiltrar(); $('emp-q').focus();
   }).catch(function(e) { $('emp').innerHTML = '<div class="err">' + esc(e.message) + '</div>'; });
+}
+function empFiltrar() {
+  var q = ($('emp-q').value || '').toUpperCase().trim(), l = (CL.emps || []).filter(function(e) { return !q || e.NOMBRE.toUpperCase().indexOf(q) !== -1; });
+  $('emp-l').innerHTML = l.length ? l.map(function(e) { return '<button class="row" style="width:100%;background:none;border:0;text-align:left;cursor:pointer" onclick="verEmpresa(' + e.ID + ')"><div class="rowb"><span class="t">' + esc(e.NOMBRE) + '</span><span class="s">' + e.UNIDADES + ' unidades</span></div></button>'; }).join('') : '<div class="pad s">Ninguna empresa con «' + esc(q) + '»</div>';
 }
 function verEmpresa(id) { CL.ver = String(id); lsSet('vulcan_cli_ver', CL.ver); CL.data = {}; CL.eq = ''; pintarMarco(); ir('ini'); }
 

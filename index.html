@@ -1713,7 +1713,7 @@ async function seedData() {
 </script><script>
 // ── Versión nueva: el celular a veces queda con la página vieja guardada. Se compara el número de versión publicado. ──
 // Sin sesión (pantalla de entrada): se recarga sola. Con sesión: aparece un aviso arriba para actualizar (hay que volver a entrar).
-var EMA_BUILD = '202611271436';
+var EMA_BUILD = '202611271514';
 function emaVersionNueva(cb) {
   if (EMA_BUILD.indexOf('__') === 0) return;
   // 1) Pregunta al servidor qué versión está publicada (no depende de la caché de la página)
@@ -22986,7 +22986,7 @@ function segModalUsuario(u) {
       '<div class="fg"><label class="fl">'+(u?'Nueva contraseña (dejar vacío para no cambiar)':'Contraseña *')+'</label>'+
       '<input id="su-pass" class="fi" type="password" placeholder="'+(u?'Nueva contraseña...':'Contraseña')+'"/></div>'+
     '</div>'+
-    '<div class="fr mb3" id="su-cli-box" style="display:none"><div class="fg"><label class="fl">Empresa que ve en la app de clientes *</label><select id="su-cli" class="fs"><option value="">Cargando…</option></select>'+
+    '<div class="fr mb3" id="su-cli-box" style="display:none"><div class="fg"><label class="fl">Empresa que ve en la app de clientes *</label><input id="su-cli-q" class="fi" placeholder="🔎 Buscar empresa…" oninput="segCliOpts()" autocomplete="off" style="margin-bottom:6px"><select id="su-cli" class="fs"><option value="">Cargando…</option></select>'+
       '<div class="tdim" style="font-size:11px">Entra por sistema.vulcantreadsrl.com.ar/clientes/ y solo ve la flota de esta empresa. No entra al sistema.</div></div></div>'+
     '</div>'+
     '<div class="mf">'+
@@ -23005,8 +23005,10 @@ function segRolCli() {
 }
 function segCliOpts() {
   var sel = document.getElementById('su-cli'); if (!sel || !window._segCliCargado) return;
-  var act = String(window._segCliAct || '');
-  sel.innerHTML = '<option value="">Elegí la empresa</option>' + (window._segCliLista || []).map(function(e) { return '<option value="' + e.ID + '"' + (String(e.ID) === act ? ' selected' : '') + '>' + pcEsc(e.NOMBRE) + ' (' + e.UNIDADES + ' unidades)</option>'; }).join('');
+  var act = String(sel.value || window._segCliAct || ''), q = ((document.getElementById('su-cli-q') || {}).value || '').toUpperCase().trim();
+  var l = (window._segCliLista || []).filter(function(e) { return !q || String(e.ID) === act || e.NOMBRE.toUpperCase().indexOf(q) !== -1; });
+  sel.innerHTML = '<option value="">' + (q ? l.length + ' empresas con «' + pcEsc(q) + '»' : 'Elegí la empresa') + '</option>' + l.map(function(e) { return '<option value="' + e.ID + '"' + (String(e.ID) === act ? ' selected' : '') + '>' + pcEsc(e.NOMBRE) + ' (' + e.UNIDADES + ' unidades)</option>'; }).join('');
+  if (q && !sel.value && l.length === 1) sel.value = String(l[0].ID);
 }
 
 async function segGuardarUsuario(id) {
