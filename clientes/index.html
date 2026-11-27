@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="../icono-vulcan-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap">
-<script>window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "e746572b040c"};</script>
+<script>window.EMA_SB={"url": "https://igxdgivroxmbuolsdagk.supabase.co", "key": "sb_publishable_dgGGJ5PSVp9i4l7Up1r5yw_ADYBEt_G", "esquema": "pruebas", "v": "af3c14b091e8"};</script>
 <style>
 /* App de clientes de Vulcan: taller y ruta. Fondo claro de papel, encabezado grafito, naranja Vulcan para acciones, rojo solo para la emergencia */
 :root{--bg:#f3f3ef;--card:#fff;--line:#dcdcd5;--fg:#1d2024;--dim:#5d636b;--head:#23272c;--headfg:#f4f4f2;--headdim:#c9ccd1;
@@ -80,6 +80,16 @@ textarea.in{height:auto;padding:10px 12px;resize:vertical}
 .map{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px}
 .leg{display:flex;gap:12px;font-size:12px;color:var(--dim);flex-wrap:wrap;justify-content:center}
 .leg i{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin-right:3px}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (min-width:560px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.tile{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 12px 16px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-height:150px;justify-content:center;text-align:center}
+.tile:active{transform:scale(.98)}
+.tile .tico{width:62px;height:62px;border-radius:18px;background:var(--warnbg);color:var(--or);display:flex;align-items:center;justify-content:center}
+.tile .tico svg{width:38px;height:38px}
+.tile .ttit{font-family:var(--fd);font-size:22px;font-weight:700;line-height:1.05}
+.tile .tsub{font-size:12.5px;color:var(--dim);line-height:1.3}
+.tile.off{opacity:.55}
+.tile .tbad{position:absolute;top:10px;right:10px;background:var(--red);color:#fff;border-radius:999px;font-size:12px;font-weight:700;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0 6px}
 .load{padding:40px 0;text-align:center;color:var(--dim);font-size:14px}
 .mg{font-family:var(--fd);font-size:30px;font-weight:700;line-height:1;letter-spacing:.01em}
 .lab{font-size:11.5px;color:var(--headdim);letter-spacing:.08em}
@@ -194,6 +204,7 @@ function cabecera(tit, sub, back) {
 }
 function ir(tab) {
   CL.tab = tab; marcoVisible(true); window.scrollTo(0, 0);
+  var em = $('emg'); if (em) em.style.display = tab === 'ini' ? 'none' : '';
   ['ini', 'mec', 'gom', 'pre'].forEach(function(t) { var b = $('nv-' + t); if (b) b.className = t === tab ? 'on' : ''; });
   ({ ini: vInicio, mec: vMecanica, gom: vGomeria, pre: vPrecurado })[tab]();
 }
@@ -201,25 +212,48 @@ function cargando(tit, sub) { $('vista').innerHTML = cabecera(tit, sub) + '<div 
 function fallo(tit, e) { if (String(e.message) === 'SESION') return; $('vista').innerHTML = cabecera(tit) + '<div class="body"><div class="err">' + esc(e.message) + '</div><button class="btn btn-l" onclick="ir(CL.tab)">Probar de nuevo</button></div>'; }
 
 // ── Inicio ──
+// Pantalla principal: íconos grandes, como el menú del sistema; desde acá se entra a cada opción
+var ICO_G = {
+  mec: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M29.4 12.6a8 8 0 0 0-10.8 10.8L6 36v6h6l12.6-12.6a8 8 0 0 0 10.8-10.8l-5.2 5.2-4.8-1.2-1.2-4.8z"/></svg>',
+  gom: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3"><circle cx="24" cy="24" r="18"/><circle cx="24" cy="24" r="7"/><path d="M24 6v11M24 31v11M6 24h11M31 24h11"/></svg>',
+  pre: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M8 14h32M8 24h32M8 34h20"/><circle cx="37" cy="34" r="4"/></svg>',
+  av: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M36 18a12 12 0 0 0-24 0c0 14-6 18-6 18h36s-6-4-6-18"/><path d="M27.5 42a4 4 0 0 1-7 0"/></svg>',
+  cta: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="24" cy="17" r="8"/><path d="M8 42c2-9 8-13 16-13s14 4 16 13"/></svg>',
+  fac: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><path d="M12 6h18l8 8v28H12z"/><path d="M30 6v8h8M18 24h12M18 31h12"/></svg>'
+};
+function tile(acc, ico, tit, sub, nAviso, apagado) {
+  return '<button class="tile' + (apagado ? ' off' : '') + '" onclick="' + acc + '">' + (nAviso ? '<span class="tbad">' + (nAviso > 99 ? '99+' : nAviso) + '</span>' : '') +
+    '<span class="tico">' + ico + '</span><span class="ttit">' + tit + '</span><span class="tsub">' + sub + '</span></button>';
+}
 function vInicio() {
   cargando('Mi flota', '');
   api('gsCLI_Inicio', {}).then(function(r) {
     CL.data.ini = r; CL.emg = (r.EMERG || [])[0] || null; badges(r);
-    var av = r.AVISOS || [], graves = av.filter(function(a) { return a.GRAV > 0; }).sort(function(a, b) { return b.GRAV - a.GRAV; });
+    var graves = (r.AVISOS || []).filter(function(a) { return a.GRAV > 0; }).length;
     var h = cabecera(r.EMPRESA, r.UNIDADES + ' unidades · ' + r.CUBIERTAS + ' cubiertas montadas') + '<div class="body">';
     if (CL.emg) h += '<button class="aviso g2" onclick="verAlerta()"><i class="dot"></i><span><b>Emergencia ' + esc(CL.emg.NRO) + '</b> · ' + estEmg(CL.emg) + '<br><span class="s">Tocá para ver o mandar el detalle</span></span></button>';
     h += '<div class="bigemg"><button class="bt-rojo" id="bt-rojo2"><i class="fill"></i><span>⚠ Emergencia<small>Mantené apretado 2 segundos: le llega tu ubicación al mecánico</small></span></button>' +
       '<button class="bt-verde" onclick="abrirDetalle()"><span>' + icoMsg() + ' Contar qué pasó<small>Le mandás el detalle al mecánico y queda registrado</small></span></button></div>';
-    h += '<div class="kpis"><div class="kpi"><span>Mecánica</span><b style="color:' + (r.RESUMEN.MEC ? 'var(--warn)' : 'var(--ok)') + '">' + r.RESUMEN.MEC + '</b><span class="s">avisos</span></div>' +
-      '<div class="kpi"><span>Gomería</span><b style="color:' + (r.RESUMEN.GOM ? 'var(--warn)' : 'var(--ok)') + '">' + r.RESUMEN.GOM + '</b><span class="s">avisos</span></div>' +
-      '<div class="kpi"><span>Precurado</span><b>' + r.RESUMEN.PRE_PLANTA + '</b><span class="s">en la planta</span></div></div>';
-    h += '<div class="h2">Avisos y recordatorios</div>';
-    if (!graves.length) h += '<div class="card pad s">Todo al día: no hay servicios vencidos ni cubiertas para revisar.</div>';
-    graves.slice(0, 30).forEach(function(a) { h += '<button class="aviso g' + Math.min(2, a.GRAV) + '" onclick="ir(\'' + tabDe(a.RUBRO) + '\')"><i class="dot"></i><span>' + (a.UNIDAD ? '<b>' + esc(a.UNIDAD) + '</b> · ' : '') + esc(a.T) + '<br><span class="s">' + esc(a.RUBRO) + '</span></span></button>'; });
-    av.filter(function(a) { return a.LISTO; }).forEach(function(a) { h += '<button class="aviso" onclick="ir(\'pre\')"><i class="dot"></i><span>' + esc(a.T) + '<br><span class="s">Precurado</span></span></button>'; });
+    h += '<div class="tiles">' +
+      tile("ir('mec')", ICO_G.mec, 'Mecánica', r.RESUMEN.MEC ? r.RESUMEN.MEC + ' para atender' : 'Trabajos y servicios', r.RESUMEN.MEC) +
+      tile("ir('gom')", ICO_G.gom, 'Gomería', r.RESUMEN.GOM ? r.RESUMEN.GOM + ' cubiertas a revisar' : 'Mapa de cubiertas', r.RESUMEN.GOM) +
+      tile("ir('pre')", ICO_G.pre, 'Precurado', r.RESUMEN.PRE_PLANTA ? r.RESUMEN.PRE_PLANTA + ' en la planta' : 'Tus recapados', 0) +
+      tile('vAvisos()', ICO_G.av, 'Avisos', graves ? graves + ' recordatorios' : 'Todo al día', graves) +
+      tile('cuenta()', ICO_G.cta, 'Mi cuenta', esAdmin() ? 'Vista previa' : 'Clave y datos', 0) +
+      tile("toast('Muy pronto: facturas, remitos y saldo')", ICO_G.fac, 'Facturas', 'Muy pronto', 0, true) + '</div>';
     h += '<div class="s" style="text-align:center;margin-top:4px">Los avisos también te llegan por WhatsApp de Vulcan.</div></div>';
     $('vista').innerHTML = h; armarRojo($('bt-rojo2'));
   }).catch(function(e) { fallo('Mi flota', e); });
+}
+function vAvisos() {
+  var r = CL.data.ini; if (!r) { ir('ini'); return; }
+  marcoVisible(true); window.scrollTo(0, 0); var em = $('emg'); if (em) em.style.display = '';
+  var av = r.AVISOS || [], graves = av.filter(function(a) { return a.GRAV > 0; }).sort(function(a, b) { return b.GRAV - a.GRAV; });
+  var h = cabecera('Avisos', 'Recordatorios de tu flota', "ir('ini')") + '<div class="body">';
+  if (!graves.length) h += '<div class="card pad s">Todo al día: no hay servicios vencidos ni cubiertas para revisar.</div>';
+  graves.slice(0, 60).forEach(function(a) { h += '<button class="aviso g' + Math.min(2, a.GRAV) + '" onclick="ir(\'' + tabDe(a.RUBRO) + '\')"><i class="dot"></i><span>' + (a.UNIDAD ? '<b>' + esc(a.UNIDAD) + '</b> · ' : '') + esc(a.T) + '<br><span class="s">' + esc(a.RUBRO) + '</span></span></button>'; });
+  av.filter(function(a) { return a.LISTO; }).forEach(function(a) { h += '<button class="aviso" onclick="ir(\'pre\')"><i class="dot"></i><span>' + esc(a.T) + '<br><span class="s">Precurado</span></span></button>'; });
+  $('vista').innerHTML = h + '</div>';
 }
 function tabDe(rubro) { return rubro === 'Cubiertas' ? 'gom' : rubro === 'Precurado' ? 'pre' : 'mec'; }
 function badges(r) {
